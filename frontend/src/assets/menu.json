@@ -1,0 +1,357 @@
+[
+  {
+    "key": "HomeView",
+    "title": "首页",
+    "icon": "ant-design:desktop-outlined",
+    "path": "/",
+    "component": "views/HomeView.vue"
+  },
+  {
+    "key": "personal",
+    "title": "个人中心",
+    "icon": "ant-design:user-outlined",
+    "children": [
+      {
+        "key": "PersonalTodo",
+        "title": "任务事项",
+        "path": "/personal/todo",
+        "component": "views/personal/TodoList.vue"
+      },
+      {
+        "key": "PersonalOrganization",
+        "title": "组织结构",
+        "path": "/personal/organization",
+        "component": "views/personal/Organization.vue"
+      },
+      {
+        "key": "PersonalMessages",
+        "title": "消息中心",
+        "path": "/personal/messages",
+        "component": "views/personal/Messages.vue"
+      },
+      {
+        "key": "PersonalDrive",
+        "title": "文件网盘",
+        "path": "/personal/drive",
+        "component": "views/personal/Drive.vue"
+      },
+      {
+        "key": "PersonalAccount",
+        "title": "账号信息",
+        "path": "/personal/account",
+        "component": "views/personal/Account.vue"
+      }
+    ]
+  },
+  {
+    "key": "contract",
+    "title": "合同管理",
+    "icon": "ant-design:file-text-outlined",
+    "children": [
+      {
+        "key": "ContractTrack",
+        "title": "合同列表",
+        "path": "/contract/track",
+        "component": "views/contract/ContractTrack.vue"
+      },
+      {
+        "key": "ContractTemplate",
+        "title": "合同模板",
+        "path": "/contract/template",
+        "component": "views/contract/ContractTemplate.vue"
+      },
+      {
+        "key": "ContractStats",
+        "title": "合同统计",
+        "path": "/contract/stats",
+        "component": "views/contract/ContractStats.vue"
+      },
+      {
+        "key": "ContractKnowledge",
+        "title": "合同知识库",
+        "path": "/contract/knowledge",
+        "component": "views/contract/ContractKnowledge.vue"
+      }
+    ]
+  },
+  {
+    "key": "project",
+    "title": "项目管理",
+    "icon": "ant-design:project-outlined",
+    "children": [
+      {
+        "key": "ProjectList",
+        "title": "项目统筹",
+        "path": "/project/list",
+        "component": "views/project/ProjectList.vue"
+      },
+      {
+        "key": "ProjectDoc",
+        "title": "文档协同",
+        "path": "/project/doc",
+        "component": "views/project/ProjectDoc.vue"
+      },
+      {
+        "key": "ProjectCost",
+        "title": "成本控制",
+        "path": "/project/cost",
+        "component": "views/project/ProjectCost.vue"
+      }
+    ]
+  },
+  {
+    "key": "finance",
+    "title": "财务管理",
+    "icon": "ant-design:pay-circle-outlined",
+    "children": [
+      {
+        "key": "FinanceApAr",
+        "title": "应收应付",
+        "path": "/finance/ap-ar",
+        "component": "views/finance/FinanceApAr.vue"
+      },
+      {
+        "key": "FinanceInvoice",
+        "title": "发票管理",
+        "path": "/finance/invoice",
+        "component": "views/finance/FinanceInvoice.vue"
+      },
+      {
+        "key": "FinanceReport",
+        "title": "财务报表",
+        "path": "/finance/report",
+        "component": "views/finance/FinanceReport.vue"
+      }
+    ]
+  },
+  {
+    "key": "sales",
+    "title": "销售管理",
+    "icon": "ant-design:shopping-cart-outlined",
+    "children": [
+      {
+        "key": "SalesOpportunity",
+        "title": "商机管理",
+        "path": "/sales/opportunity",
+        "component": "views/sales/Opportunity.vue"
+      },
+      {
+        "key": "SalesCustomer",
+        "title": "客户管理",
+        "path": "/sales/customer",
+        "component": "views/sales/Customer.vue"
+      },
+      {
+        "key": "SalesMaterials",
+        "title": "销售资料",
+        "path": "/sales/materials",
+        "component": "views/sales/Materials.vue"
+      },
+      {
+        "key": "SalesTargets",
+        "title": "销售目标",
+        "path": "/sales/targets",
+        "component": "views/sales/Targets.vue"
+      }
+    ]
+  },
+  {
+    "key": "procurement",
+    "title": "采购管理",
+    "icon": "ant-design:shopping-outlined",
+    "children": [
+      {
+        "key": "ProcurementRequest",
+        "title": "采购需求",
+        "path": "/procurement/request",
+        "component": "views/procurement/Request.vue"
+      },
+      {
+        "key": "ProcurementOrder",
+        "title": "采购订单",
+        "path": "/procurement/order",
+        "component": "views/procurement/Order.vue"
+      },
+      {
+        "key": "ProcurementSupplier",
+        "title": "供应商管理",
+        "path": "/procurement/supplier",
+        "component": "views/procurement/Supplier.vue"
+      },
+      {
+        "key": "ProcurementHistory",
+        "title": "历史采购",
+        "path": "/procurement/history",
+        "component": "views/procurement/History.vue"
+      }
+    ]
+  },
+  {
+    "key": "inventory",
+    "title": "库存管理",
+    "icon": "ant-design:shop-outlined",
+    "children": [
+      {
+        "key": "InventoryWarehouse",
+        "title": "仓库基础",
+        "path": "/inventory/warehouse",
+        "component": "views/inventory/Warehouse.vue"
+      },
+      {
+        "key": "InventoryProduct",
+        "title": "库存物品",
+        "path": "/inventory/product-info",
+        "component": "views/inventory/ProductInfo.vue"
+      },
+      {
+        "key": "InventoryInOut",
+        "title": "出入库管理",
+        "path": "/inventory/in-out",
+        "component": "views/inventory/InOut.vue"
+      },
+      {
+        "key": "InventoryInternal",
+        "title": "库内作业",
+        "path": "/inventory/internal",
+        "component": "views/inventory/InternalOps.vue"
+      },
+      {
+        "key": "InventoryStocktaking",
+        "title": "库存盘点",
+        "path": "/inventory/stocktaking",
+        "component": "views/inventory/Stocktaking.vue"
+      },
+      {
+        "key": "InventoryTrack",
+        "title": "库存跟踪",
+        "path": "/inventory/track",
+        "component": "views/inventory/InventoryTrack.vue"
+      },
+      {
+        "key": "InventoryAnalysis",
+        "title": "库存分析",
+        "path": "/inventory/analysis",
+        "component": "views/inventory/Analysis.vue"
+      }
+    ]
+  },
+  {
+    "key": "bpm",
+    "title": "流程管理",
+    "icon": "ant-design:apartment-outlined",
+    "children": [
+      {
+        "key": "BpmWorkflow",
+        "title": "审批流程",
+        "path": "/bpm/workflow",
+        "component": "views/bpm/BpmWorkflow.vue"
+      },
+      {
+        "key": "BpmTask",
+        "title": "任务自动化",
+        "path": "/bpm/task",
+        "component": "views/bpm/BpmTask.vue"
+      }
+    ]
+  },
+  {
+    "key": "bi",
+    "title": "数据分析",
+    "icon": "ant-design:bar-chart-outlined",
+    "children": [
+      {
+        "key": "BiDashboard",
+        "title": "经营仪表盘",
+        "path": "/bi/dashboard",
+        "component": "views/bi/BiDashboard.vue"
+      },
+      {
+        "key": "BiSales",
+        "title": "销售分析",
+        "path": "/bi/sales",
+        "component": "views/bi/BiSales.vue"
+      },
+      {
+        "key": "BiFinance",
+        "title": "财务分析",
+        "path": "/bi/finance",
+        "component": "views/bi/BiFinance.vue"
+      }
+    ]
+  },
+  {
+    "key": "archive",
+    "title": "档案管理",
+    "icon": "ant-design:folder-open-outlined",
+    "children": [
+      {
+        "key": "ArchiveList",
+        "title": "档案列表",
+        "path": "/archive/list",
+        "component": "views/archive/ArchiveList.vue"
+      }
+    ]
+  },
+  {
+    "key": "data",
+    "title": "数据管理",
+    "icon": "ant-design:database-outlined",
+    "children": [
+      {
+        "key": "DataSource",
+        "title": "数据源管理",
+        "path": "/data/source",
+        "component": "views/data/DataSource.vue"
+      },
+      {
+        "key": "DataInterface",
+        "title": "外部接口管理",
+        "path": "/data/interface",
+        "component": "views/data/DataInterface.vue"
+      },
+      {
+        "key": "InterfacePublish",
+        "title": "接口发布管理",
+        "path": "/data/interface-publish",
+        "component": "views/data/InterfacePublish/Index.vue"
+      },
+      {
+        "key": "ETL",
+        "title": "ETL管理",
+        "path": "/data/etl",
+        "component": "views/data/ETL/Index.vue"
+      }
+    ]
+  },
+  {
+    "key": "system",
+    "title": "系统管理",
+    "icon": "ant-design:setting-outlined",
+    "children": [
+      {
+        "key": "SysOrg",
+        "title": "组织权限",
+        "path": "/system/org",
+        "component": "views/system/SysOrg.vue"
+      },
+      {
+        "key": "SysConfig",
+        "title": "系统配置",
+        "path": "/system/config",
+        "component": "views/system/SysConfig.vue"
+      },
+      {
+        "key": "SysSecurity",
+        "title": "数据安全",
+        "path": "/system/security",
+        "component": "views/system/SysSecurity.vue"
+      },
+      {
+        "key": "SysIntegration",
+        "title": "系统集成",
+        "path": "/system/integration",
+        "component": "views/system/SysIntegration.vue"
+      }
+    ]
+  }
+]
