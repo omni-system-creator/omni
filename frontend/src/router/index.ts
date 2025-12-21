@@ -32,6 +32,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/login',
+      name: 'Login',
+      component: () => import('../views/Login.vue'),
+      meta: { title: '登录' }
+    },
+    {
       path: '/',
       component: MainLayout,
       children: [
@@ -44,5 +50,30 @@ const router = createRouter({
     }
   ]
 })
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  let token = '';
+  try {
+    const authData = JSON.parse(localStorage.getItem('oms.auth') || '{}');
+    token = authData.token;
+  } catch (e) {
+    console.error('Error parsing auth data', e);
+  }
+  
+  if (to.path === '/login') {
+    if (token) {
+      next('/');
+    } else {
+      next();
+    }
+  } else {
+    if (token) {
+      next();
+    } else {
+      next('/login');
+    }
+  }
+});
 
 export default router

@@ -179,7 +179,7 @@ const onPanelChange = (date: Dayjs) => {
 }
 
 :deep(.ant-picker-content th) {
-  line-height: 32px;
+  line-height: 48px;
 }
 
 :deep(.ant-picker-focused) {
@@ -208,7 +208,7 @@ const onPanelChange = (date: Dayjs) => {
 }
 
 .custom-date-cell {
-  height: 36px;
+  height: 38px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;

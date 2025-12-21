@@ -1,0 +1,75 @@
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+export const useUserStore = defineStore('user', () => {
+  // Helper to get initial state safely
+  const getInitialState = () => {
+    try {
+      const authData = JSON.parse(localStorage.getItem('oms.auth') || '{}');
+      const userData = JSON.parse(localStorage.getItem('oms.user') || '{}');
+      return {
+        token: authData.token || '',
+        username: userData.username || '',
+        nickname: userData.nickname || '',
+        avatar: userData.avatar || ''
+      };
+    } catch (e) {
+      console.error('Error parsing user store data', e);
+      return { token: '', username: '', nickname: '', avatar: '' };
+    }
+  };
+
+  const state = getInitialState();
+
+  const token = ref<string>(state.token);
+  const username = ref<string>(state.username);
+  const nickname = ref<string>(state.nickname);
+  const avatar = ref<string>(state.avatar);
+  const router = useRouter();
+
+  function setToken(newToken: string) {
+    token.value = newToken;
+    localStorage.setItem('oms.auth', JSON.stringify({ token: newToken }));
+  }
+
+  function setUserInfo(info: { username: string; nickname?: string; avatar?: string }) {
+    username.value = info.username;
+    nickname.value = info.nickname || '';
+    avatar.value = info.avatar || '';
+    
+    const userData = {
+      username: username.value,
+      nickname: nickname.value,
+      avatar: avatar.value
+    };
+    localStorage.setItem('oms.user', JSON.stringify(userData));
+  }
+
+  function logout() {
+    token.value = '';
+    username.value = '';
+    nickname.value = '';
+    avatar.value = '';
+    
+    localStorage.removeItem('oms.auth');
+    localStorage.removeItem('oms.user');
+    
+    // router.push('/login'); // 这里不直接跳转，由调用处或拦截器处理
+  }
+
+  function isLoggedIn() {
+    return !!token.value;
+  }
+
+  return {
+    token,
+    username,
+    nickname,
+    avatar,
+    setToken,
+    setUserInfo,
+    logout,
+    isLoggedIn
+  };
+});

@@ -165,7 +165,7 @@ const availableWidgets: WidgetMeta[] = [
     description: '常用功能的快速入口',
     icon: 'ant-design:appstore-outlined',
     defaultW: 4,
-    defaultH: 4,
+    defaultH: 6,
     allowDuplicate: false
   },
   {
@@ -173,8 +173,8 @@ const availableWidgets: WidgetMeta[] = [
     title: '核心数据',
     description: '展示关键业务指标',
     icon: 'ant-design:bar-chart-outlined',
-    defaultW: 6,
-    defaultH: 4,
+    defaultW: 4,
+    defaultH: 6,
     allowDuplicate: false
   },
   {
@@ -228,7 +228,7 @@ const availableWidgets: WidgetMeta[] = [
     description: '重要通知和公告',
     icon: 'ant-design:sound-outlined',
     defaultW: 12,
-    defaultH: 10,
+    defaultH: 6,
     allowDuplicate: false
   },
   {
@@ -254,14 +254,15 @@ const filteredAvailableWidgets = computed(() => {
 
 const defaultLayout: LayoutItem[] = [
   { i: 'welcome', x: 0, y: 0, w: 8, h: 4, type: 'WelcomeCard' },
-  { i: 'quick-nav', x: 8, y: 0, w: 4, h: 4, type: 'QuickNav' },
-  { i: 'stats', x: 0, y: 4, w: 12, h: 5, type: 'StatsCard' },
+  { i: 'todo', x: 8, y: 0, w: 4, h: 10, type: 'TodoCalendar'},
+  { i: 'quick-nav', x: 4, y: 4, w: 4, h: 6, type: 'QuickNav' },
+  { i: 'stats', x: 0, y: 4, w: 4, h: 6, type: 'StatsCard' },
   { i: 'system', x: 0, y: 9, w: 4, h: 10, type: 'SystemStatus' },
   { i: 'activities', x: 4, y: 9, w: 4, h: 10, type: 'RecentActivities' },
   { i: 'tasks', x: 8, y: 9, w: 4, h: 10, type: 'PendingTasks' },
   { i: 'projects', x: 0, y: 19, w: 8, h: 10, type: 'ProjectList' },
   { i: 'schedule', x: 8, y: 19, w: 4, h: 10, type: 'TeamSchedule' },
-  { i: 'announcement', x: 0, y: 29, w: 12, h: 10, type: 'AnnouncementCard' },
+  { i: 'announcement', x: 0, y: 29, w: 12, h: 6, type: 'AnnouncementCard' },
 ];
 
 const layout = ref<LayoutItem[]>([]);

@@ -95,22 +95,30 @@
 
             <a-dropdown>
               <span class="user-dropdown-link">
-                <a-avatar style="background-color: #1890ff" icon="user" />
-                <span class="username">Admin</span>
+                <a-avatar v-if="userStore.avatar" :src="userStore.avatar" />
+                <a-avatar v-else style="background-color: #bfbfbf">
+                  <template #icon><UserOutlined /></template>
+                </a-avatar>
+                <span class="username">{{ userStore.nickname || userStore.username }}</span>
               </span>
               <template #overlay>
                 <a-menu>
+                  <a-menu-item key="account" @click="router.push('/personal/account')">
+                    <DynamicIcon icon="ant-design:user-outlined" />
+                    <span style="margin-left: 8px">个人中心</span>
+                  </a-menu-item>
                   <a-menu-item key="password" @click="showChangePassword">
-                    <DynamicIcon icon="ant-design:lock-outlined" /> 修改密码
+                    <DynamicIcon icon="ant-design:lock-outlined" />
+                    <span style="margin-left: 8px">修改密码</span>
                   </a-menu-item>
                   <a-menu-item key="about" @click="showAbout">
                     <DynamicIcon icon="ant-design:info-circle-outlined" />
-                    <span>关于系统</span>
+                    <span style="margin-left: 8px">关于系统</span>
                   </a-menu-item>
                   <a-menu-divider />
-                  <a-menu-item key="logout">
+                  <a-menu-item key="logout" @click="handleLogout">
                     <DynamicIcon icon="ant-design:logout-outlined" />
-                    <span>退出登录</span>
+                    <span style="margin-left: 8px">退出登录</span>
                   </a-menu-item>
                 </a-menu>
               </template>
@@ -147,43 +155,43 @@
       <p style="color: #999;">Version 1.0.0</p>
     </div>
   </a-modal>
-  <a-modal
-    v-model:open="passwordVisible"
-    title="修改密码"
-    @ok="handlePasswordOk"
-  >
-    <a-form :model="passwordForm" layout="vertical">
-      <a-form-item label="旧密码" required>
-        <a-input-password v-model:value="passwordForm.oldPassword" placeholder="请输入旧密码" />
-      </a-form-item>
-      <a-form-item label="新密码" required>
-        <a-input-password v-model:value="passwordForm.newPassword" placeholder="请输入新密码" />
-      </a-form-item>
-      <a-form-item label="确认新密码" required>
-        <a-input-password v-model:value="passwordForm.confirmPassword" placeholder="请再次输入新密码" />
-      </a-form-item>
-    </a-form>
-  </a-modal>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed, watch, reactive } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
+import { UserOutlined } from '@ant-design/icons-vue';
 import TabsView from '../components/TabsView.vue';
 import { useTabsStore } from '../stores/tabs';
+import { useUserStore } from '@/stores/user';
 import menuDataJson from '@/assets/menu.json';
 import DynamicIcon from '@/components/DynamicIcon.vue';
 
-const collapsed = ref<boolean>(localStorage.getItem('oms_menu_collapsed') === 'true');
+const getSettings = () => {
+  try {
+    return JSON.parse(localStorage.getItem('oms.settings') || '{}');
+  } catch {
+    return {};
+  }
+};
+
+const saveSettings = (key: string, value: any) => {
+  const settings = getSettings();
+  settings[key] = value;
+  localStorage.setItem('oms.settings', JSON.stringify(settings));
+};
+
+const collapsed = ref<boolean>(getSettings().menuCollapsed === true);
 
 watch(collapsed, (val) => {
-  localStorage.setItem('oms_menu_collapsed', String(val));
+  saveSettings('menuCollapsed', val);
 });
 
 const router = useRouter();
 const route = useRoute();
 const tabsStore = useTabsStore();
+const userStore = useUserStore();
 
 const transitionName = ref('fade');
 
@@ -229,22 +237,14 @@ const selectedKeys = computed(() => [route.name as string]);
 
 // Initialize openKeys from localStorage or default to empty
 const getSavedOpenKeys = () => {
-  const saved = localStorage.getItem('oms_menu_open_keys');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      console.error('Failed to parse open keys from localStorage', e);
-    }
-  }
-  return [];
+  return getSettings().menuOpenKeys || [];
 };
 
 const openKeys = ref<string[]>(getSavedOpenKeys());
 
 const onOpenChange = (keys: string[]) => {
   openKeys.value = keys;
-  localStorage.setItem('oms_menu_open_keys', JSON.stringify(keys));
+  saveSettings('menuOpenKeys', keys);
 };
 
 const isHome = computed(() => route.path === '/' || route.name === 'HomeView');
@@ -301,34 +301,14 @@ const currentStatusColor = computed(() => {
 });
 
 // Password Logic
-const passwordVisible = ref(false);
-const passwordForm = reactive({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-});
-
 const showChangePassword = () => {
-  passwordVisible.value = true;
+  router.push('/personal/account?tab=security');
 };
 
-const handlePasswordOk = () => {
-  if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-    message.warning('请填写完整信息');
-    return;
-  }
-  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    message.error('两次输入的密码不一致');
-    return;
-  }
-  // Mock API call
-  setTimeout(() => {
-    message.success('密码修改成功');
-    passwordVisible.value = false;
-    passwordForm.oldPassword = '';
-    passwordForm.newPassword = '';
-    passwordForm.confirmPassword = '';
-  }, 1000);
+const handleLogout = () => {
+  userStore.logout();
+  message.success('已退出登录');
+  router.push('/login');
 };
 </script>
 
@@ -461,6 +441,10 @@ const handlePasswordOk = () => {
 
 .user-dropdown-link:hover {
   background: rgba(0, 0, 0, 0.025);
+}
+
+.username {
+  margin-left: 8px;
 }
 
 .site-layout-content {
