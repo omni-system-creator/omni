@@ -2,15 +2,14 @@
   <div class="sys-role-container">
     <SplitLayout>
       <template #left>
-        <a-card :bordered="false" class="dept-card" :body-style="{ padding: '10px', height: 'calc(100% - 40px)', overflow: 'hidden' }">
+        <a-card :bordered="false" class="dept-card"
+          :body-style="{ padding: '10px', height: 'calc(100% - 40px)', overflow: 'hidden' }">
           <template #title>
-            <span><ApartmentOutlined /> 组织结构</span>
+            <span>
+              <ApartmentOutlined /> 组织结构
+            </span>
           </template>
-          <DeptTree
-            v-model:selectedKeys="selectedDeptKeys"
-            @loaded="(data) => depts = data"
-            @select="loadData"
-          />
+          <DeptTree v-model:selectedKeys="selectedDeptKeys" @loaded="(data) => depts = data" @select="loadData" />
         </a-card>
       </template>
 
@@ -21,18 +20,15 @@
           </template>
           <template #extra>
             <a-button type="primary" @click="handleAdd">
-              <template #icon><PlusOutlined /></template>
+              <template #icon>
+                <PlusOutlined />
+              </template>
               新增角色
             </a-button>
           </template>
 
-          <a-table
-            :columns="columns"
-            :data-source="roles"
-            :loading="loading"
-            row-key="id"
-            :pagination="{ pageSize: 10 }"
-          >
+          <a-table :columns="columns" :data-source="roles" :loading="loading" row-key="id"
+            :pagination="{ pageSize: 10 }">
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'isSystem'">
                 <a-tag :color="record.isSystem ? 'orange' : 'green'">
@@ -48,14 +44,8 @@
                 <a-space divider type="vertical">
                   <a @click="handleEdit(record)">编辑</a>
                   <a @click="handlePermission(record)">分配权限</a>
-                  <a-popconfirm
-                    title="确定要删除该角色吗？此操作不可恢复"
-                    ok-text="删除"
-                    cancel-text="取消"
-                    ok-type="danger"
-                    @confirm="handleDelete(record)"
-                    v-if="!record.isSystem"
-                  >
+                  <a-popconfirm title="确定要删除该角色吗？此操作不可恢复" ok-text="删除" cancel-text="取消" ok-type="danger"
+                    @confirm="handleDelete(record)" v-if="!record.isSystem">
                     <a class="text-danger">删除</a>
                   </a-popconfirm>
                 </a-space>
@@ -67,18 +57,8 @@
     </SplitLayout>
 
     <!-- 角色表单弹窗 -->
-    <a-modal
-      v-model:open="modalVisible"
-      :title="modalTitle"
-      @ok="handleModalOk"
-      :confirmLoading="confirmLoading"
-    >
-      <a-form
-        ref="formRef"
-        :model="formState"
-        :rules="rules"
-        layout="vertical"
-      >
+    <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleModalOk" :confirmLoading="confirmLoading">
+      <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
         <a-form-item label="角色名称" name="name">
           <a-input v-model:value="formState.name" placeholder="请输入角色名称" />
         </a-form-item>
@@ -89,49 +69,25 @@
           <a-textarea v-model:value="formState.description" placeholder="请输入描述" :rows="3" />
         </a-form-item>
         <a-form-item label="所属部门" name="deptId" help="如果不选择，则为全局角色">
-          <a-tree-select
-            v-model:value="formState.deptId"
-            show-search
-            style="width: 100%"
-            :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
-            placeholder="请选择部门"
-            allow-clear
-            tree-default-expand-all
-            :tree-data="depts"
-            :field-names="{ children: 'children', label: 'name', value: 'id' }"
-          />
+          <a-tree-select v-model:value="formState.deptId" show-search style="width: 100%"
+            :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }" placeholder="请选择部门" allow-clear
+            tree-default-expand-all :tree-data="depts"
+            :field-names="{ children: 'children', label: 'name', value: 'id' }" />
         </a-form-item>
         <a-form-item label="包含角色" name="childRoleIds" help="选择此角色继承的其他角色权限">
-          <a-select
-            v-model:value="formState.childRoleIds"
-            mode="multiple"
-            style="width: 100%"
-            placeholder="请选择要继承的角色"
-            :options="roleOptions"
-          />
+          <a-select v-model:value="formState.childRoleIds" mode="multiple" style="width: 100%" placeholder="请选择要继承的角色"
+            :options="roleOptions" />
         </a-form-item>
       </a-form>
     </a-modal>
 
     <!-- 权限分配弹窗 -->
-    <a-modal
-      v-model:open="permModalVisible"
-      title="分配权限"
-      @ok="handlePermOk"
-      :confirmLoading="permSaving"
-      width="600px"
-    >
+    <a-modal v-model:open="permModalVisible" title="分配权限" @ok="handlePermOk" :confirmLoading="permSaving" width="600px">
       <a-spin :spinning="permLoading">
         <div style="max-height: 500px; overflow-y: auto;">
-          <a-tree
-            v-if="permissionTree.length > 0"
-            v-model:checkedKeys="checkedKeys"
-            checkable
-            :check-strictly="true"
-            :tree-data="permissionTree"
-            :field-names="{ children: 'children', title: 'name', key: 'id' }"
-            defaultExpandAll
-          />
+          <a-tree v-if="permissionTree.length > 0" v-model:checkedKeys="checkedKeys" checkable :check-strictly="true"
+            :tree-data="permissionTree" :field-names="{ children: 'children', title: 'name', key: 'id' }"
+            defaultExpandAll />
         </div>
       </a-spin>
     </a-modal>
@@ -141,18 +97,13 @@
 <script lang="ts" setup>
 import { ref, onMounted, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
-import { 
-  PlusOutlined,
-  BankOutlined,
-  ApartmentOutlined,
-  ClusterOutlined
-} from '@ant-design/icons-vue';
-import { 
-  getRoleList, createRole, updateRole, deleteRole, 
+import { PlusOutlined, ApartmentOutlined } from '@ant-design/icons-vue';
+import {
+  getRoleList, createRole, updateRole, deleteRole,
   getAllPermissions, getRolePermissionIds, assignRolePermissions,
-  type RoleDto, type PermissionTreeDto 
+  type RoleDto, type PermissionTreeDto
 } from '@/api/role';
-import { getDeptTree, type Dept, DeptType } from '@/api/dept';
+import { type Dept } from '@/api/dept';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
 import dayjs from 'dayjs';
@@ -186,11 +137,6 @@ const loadData = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-const onSelectDept = (keys: number[]) => {
-  selectedDeptKeys.value = keys;
-  loadData();
 };
 
 const initData = async () => {
@@ -259,7 +205,7 @@ const handleModalOk = async () => {
   try {
     await formRef.value.validate();
     confirmLoading.value = true;
-    
+
     if (currentId.value) {
       await updateRole(currentId.value, {
         name: formState.name,
@@ -278,7 +224,7 @@ const handleModalOk = async () => {
       });
       message.success('创建成功');
     }
-    
+
     modalVisible.value = false;
     loadData();
   } catch (error) {
@@ -320,7 +266,7 @@ const handlePermission = async (record: RoleDto) => {
   currentRoleId.value = record.id;
   permModalVisible.value = true;
   permLoading.value = true;
-  
+
   try {
     await loadPermissionTree();
     const ids = await getRolePermissionIds(record.id);
@@ -337,21 +283,21 @@ const handlePermission = async (record: RoleDto) => {
 
 const handlePermOk = async () => {
   if (!currentRoleId.value) return;
-  
+
   permSaving.value = true;
   try {
     // checkStrictly 为 true 时，checkedKeys 是 { checked: [], halfChecked: [] }
     let ids: number[] = [];
     if (Array.isArray(checkedKeys.value)) {
-        ids = checkedKeys.value;
+      ids = checkedKeys.value;
     } else {
-        ids = checkedKeys.value.checked;
-        // 如果需要把半选状态的父节点也传给后端（通常建议这样做，以便后端能构建完整树），可以合并
-        // ids = [...checkedKeys.value.checked, ...checkedKeys.value.halfChecked];
-        // 但用户明确要求"父子勾选不要关联各自独立勾选"，这意味着用户可能只想给子节点权限而不给父节点？
-        // 不过在菜单系统中，如果父节点没权限，子节点通常也不可见。
-        // 但既然用户要求“独立”，我们就只传用户明确勾选的（checked）。
-        // 如果用户需要父节点，他们应该手动勾选父节点。
+      ids = checkedKeys.value.checked;
+      // 如果需要把半选状态的父节点也传给后端（通常建议这样做，以便后端能构建完整树），可以合并
+      // ids = [...checkedKeys.value.checked, ...checkedKeys.value.halfChecked];
+      // 但用户明确要求"父子勾选不要关联各自独立勾选"，这意味着用户可能只想给子节点权限而不给父节点？
+      // 不过在菜单系统中，如果父节点没权限，子节点通常也不可见。
+      // 但既然用户要求“独立”，我们就只传用户明确勾选的（checked）。
+      // 如果用户需要父节点，他们应该手动勾选父节点。
     }
 
     await assignRolePermissions(currentRoleId.value, ids);
@@ -374,20 +320,24 @@ onMounted(() => {
   flex: 1;
   padding: 16px;
 }
+
 .dept-card {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
+
 :deep(.ant-card-body) {
   flex: 1;
   overflow: hidden;
 }
+
 .content-card {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
+
 .text-danger {
   color: #ff4d4f;
 }

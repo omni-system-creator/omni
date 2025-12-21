@@ -1,5 +1,5 @@
 <template>
-  <div class="split-layout" ref="containerRef">
+  <div class="split-layout">
     <div class="split-pane-left" :style="{ width: leftWidth + 'px' }">
       <slot name="left"></slot>
     </div>
@@ -36,7 +36,6 @@ const props = defineProps({
 
 const leftWidth = ref(props.initialLeftWidth);
 const isDragging = ref(false);
-const containerRef = ref<HTMLElement | null>(null);
 let startX = 0;
 let startWidth = 0;
 

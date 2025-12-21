@@ -118,7 +118,7 @@ import {
   getPostList, createPost, updatePost, deletePost, 
   type Post
 } from '@/api/post';
-import { getDeptList, type Dept } from '@/api/dept';
+import { type Dept } from '@/api/dept';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
 
