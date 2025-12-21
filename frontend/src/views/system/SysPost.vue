@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="sys-post-container">
     <a-row :gutter="16">
       <a-col :span="6">
         <a-card :bordered="false" title="组织机构" :body-style="{ padding: '10px' }">
@@ -267,3 +267,8 @@ onMounted(() => {
   fetchPosts();
 });
 </script>
+<style lang="scss" scoped>
+  .sys-post-container {
+    padding: 16px;
+  }
+</style>

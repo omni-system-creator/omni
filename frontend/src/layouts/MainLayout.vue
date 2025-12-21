@@ -15,7 +15,7 @@
         >
           <template v-for="item in menuData" :key="item.key">
             <!-- If item has children, render SubMenu -->
-            <a-sub-menu v-if="item.children && item.children.length > 0" :key="item.key" popupClassName="sider-popup-menu">
+            <a-sub-menu v-if="item.children && item.children.length > 0" :key="item.key + '_sub'" popupClassName="sider-popup-menu">
               <template #title>
                 <span>
                   <DynamicIcon :icon="item.icon" v-if="item.icon" />

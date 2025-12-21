@@ -83,28 +83,28 @@ const loadIconifyCollection = async (prefix: string) => {
   loading.value = true;
   try {
     let iconsJson: any;
+    // 直接使用静态导入的 JSON，无需动态 import
     switch (prefix) {
       case 'ant-design':
-        iconsJson = await import('@iconify-json/ant-design/icons.json');
+        iconsJson = (await import('@iconify-json/ant-design/icons.json')).default;
         break;
       case 'mdi':
-        iconsJson = await import('@iconify-json/mdi/icons.json');
+        iconsJson = (await import('@iconify-json/mdi/icons.json')).default;
         break;
       case 'fa':
-        iconsJson = await import('@iconify-json/fa/icons.json');
+        iconsJson = (await import('@iconify-json/fa/icons.json')).default;
         break;
       case 'ri':
-        iconsJson = await import('@iconify-json/ri/icons.json');
+        iconsJson = (await import('@iconify-json/ri/icons.json')).default;
         break;
       case 'carbon':
-        iconsJson = await import('@iconify-json/carbon/icons.json');
+        iconsJson = (await import('@iconify-json/carbon/icons.json')).default;
         break;
     }
 
     if (iconsJson) {
-      const data = iconsJson.default || iconsJson;
       // 解析 Iconify JSON 结构
-      const iconNames = Object.keys(data.icons || {});
+      const iconNames = Object.keys(iconsJson.icons || {});
       // 加上前缀
       const fullNames = iconNames.map(name => `${prefix}:${name}`);
       

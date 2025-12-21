@@ -1,5 +1,7 @@
 <template>
-  <Icon v-if="icon" :icon="icon" class="anticon" />
+  <span class="anticon">
+    <Icon v-if="icon" :icon="icon" />
+  </span>
 </template>
 
 <script setup lang="ts">
