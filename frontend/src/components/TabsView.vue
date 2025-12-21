@@ -122,6 +122,17 @@ function initTags() {
       } as any);
     }
   }
+
+  // 强制初始化首页 Tab (如果它不在 affixTags 中)
+  // 因为现在首页可能是动态路由，meta.affix 可能没生效，或者 router.getRoutes() 还没拿到最新的
+  if (!tabsStore.visitedViews.some(v => v.path === '/')) {
+    tabsStore.addView({
+      path: '/',
+      name: 'HomeView',
+      meta: { title: '首页', affix: true },
+      fullPath: '/'
+    } as any);
+  }
 }
 
 function addTags() {

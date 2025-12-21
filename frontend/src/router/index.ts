@@ -1,32 +1,6 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
+import { usePermissionStore } from '@/stores/permission'
 import MainLayout from '../layouts/MainLayout.vue'
-import menuData from '../assets/menu.json'
-
-// Import all Vue components from the views directory
-const modules = import.meta.glob('../views/**/*.vue')
-
-// Recursive function to generate routes from menu data
-function generateRoutes(items: any[]): RouteRecordRaw[] {
-  const routes: RouteRecordRaw[] = []
-
-  for (const item of items) {
-    if (item.children) {
-      routes.push(...generateRoutes(item.children))
-    } else if (item.path && item.component) {
-      const componentPath = `../${item.component}`
-      routes.push({
-        path: item.path.startsWith('/') ? item.path.substring(1) : item.path, // Remove leading slash for child routes
-        name: item.key,
-        component: modules[componentPath],
-        meta: { title: item.title, affix: item.key === 'HomeView' }
-      })
-    }
-  }
-
-  return routes
-}
-
-const dynamicRoutes = generateRoutes(menuData)
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -37,22 +11,29 @@ const router = createRouter({
       component: () => import('../views/Login.vue'),
       meta: { title: '登录' }
     },
+    // 基础路由，不需要权限
     {
-      path: '/',
+      path: '/basic', // 避免和动态路由的 / 冲突
       component: MainLayout,
       children: [
-        ...dynamicRoutes,
         {
           path: '/redirect/:path(.*)',
           component: () => import('../views/redirect/index.vue')
         }
       ]
+    },
+    // 404 页面
+    {
+      path: '/:pathMatch(.*)*',
+      component: () => import('../views/error/404.vue')
     }
   ]
 })
 
+let isRoutesLoaded = false;
+
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   let token = '';
   try {
     const authData = JSON.parse(localStorage.getItem('oms.auth') || '{}');
@@ -69,11 +50,41 @@ router.beforeEach((to, from, next) => {
     }
   } else {
     if (token) {
-      next();
+      // 检查是否已经加载过动态路由
+      if (!isRoutesLoaded) {
+        const permissionStore = usePermissionStore();
+        // 1. 获取动态路由
+        const accessRoutes = await permissionStore.generateRoutes();
+        // 2. 加载权限点
+        await permissionStore.loadPermissions();
+        
+        // 3. 动态添加路由
+        // 注意：这里我们假设后端返回的路由结构是完整的树，
+        // 顶级路由通常是 Layout，或者我们需要把它们挂载到 MainLayout 下
+        // 简化起见，我们将后端返回的路由都作为 MainLayout 的 children
+        // 但后端返回的结构如果包含了 Layout，则直接 addRoute
+        
+        accessRoutes.forEach(route => {
+          router.addRoute(route);
+        });
+        
+        // 必须加上这行，确保 addRoute 完整生效
+        isRoutesLoaded = true;
+        next({ ...to, replace: true });
+      } else {
+        next();
+      }
     } else {
       next('/login');
     }
   }
 });
+
+export function resetRouter() {
+  isRoutesLoaded = false;
+  // 这里其实无法完全“移除”已添加的路由，但重置标志位后，
+  // 下次进入路由守卫时会重新获取并 addRoute。
+  // Vue Router 的 addRoute 会覆盖同名路由，所以是安全的。
+}
 
 export default router

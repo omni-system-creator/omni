@@ -4,6 +4,6 @@ namespace omsapi.Services.Interfaces
 {
     public interface IAuditLogService
     {
-        Task LogAsync(AuditLog log);
+        Task LogAsync(SystemAuditLog log);
     }
 }

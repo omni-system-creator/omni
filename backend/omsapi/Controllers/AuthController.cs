@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using omsapi.Models.Common;
 using omsapi.Models.Dtos;
@@ -27,6 +28,36 @@ namespace omsapi.Controllers
             }
 
             return ApiResponse<object>.Success(data);
+        }
+
+        [HttpGet("routes")]
+        [Authorize]
+        public async Task<ApiResponse<List<MenuItemDto>>> GetRoutes()
+        {
+            var userIdClaim = User.FindFirst("id");
+            if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out long userId))
+            {
+                return ApiResponse<List<MenuItemDto>>.Error("无法获取用户信息", 401);
+            }
+
+            var (success, message, data) = await _authService.GetUserRoutesAsync(userId);
+            if (!success) return ApiResponse<List<MenuItemDto>>.Error(message);
+            return ApiResponse<List<MenuItemDto>>.Success(data!);
+        }
+
+        [HttpGet("permissions")]
+        [Authorize]
+        public async Task<ApiResponse<List<string>>> GetPermissions()
+        {
+            var userIdClaim = User.FindFirst("id");
+            if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out long userId))
+            {
+                return ApiResponse<List<string>>.Error("无法获取用户信息", 401);
+            }
+
+            var (success, message, data) = await _authService.GetUserPermissionsAsync(userId);
+            if (!success) return ApiResponse<List<string>>.Error(message);
+            return ApiResponse<List<string>>.Success(data!);
         }
     }
 }

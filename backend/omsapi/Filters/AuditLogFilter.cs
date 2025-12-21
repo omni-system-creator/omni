@@ -57,11 +57,18 @@ namespace omsapi.Filters
                 username = user.Identity.Name;
             }
 
-            var log = new AuditLog
+            var actionName = context.ActionDescriptor.DisplayName ?? "Unknown Action";
+            // 截断 Action 字段，防止超过数据库长度
+            if (actionName.Length > 200)
+            {
+                actionName = actionName.Substring(0, 197) + "...";
+            }
+
+            var log = new SystemAuditLog
             {
                 UserId = userId,
                 UserName = username,
-                Action = context.ActionDescriptor.DisplayName ?? "Unknown Action",
+                Action = actionName,
                 Route = request.Path,
                 Method = method,
                 IpAddress = context.HttpContext.Connection.RemoteIpAddress?.ToString(),

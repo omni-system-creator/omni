@@ -131,7 +131,10 @@
         <tabs-view />
         
         <div class="site-layout-content">
-          <router-view v-slot="{ Component }">
+          <div v-if="isHome">
+            <router-view :key="route.fullPath" />
+          </div>
+          <router-view v-else v-slot="{ Component }">
             <transition :name="transitionName" mode="out-in">
               <keep-alive :include="tabsStore.cachedViews">
                 <component :is="Component" :key="route.fullPath" />
@@ -165,7 +168,7 @@ import { UserOutlined } from '@ant-design/icons-vue';
 import TabsView from '../components/TabsView.vue';
 import { useTabsStore } from '../stores/tabs';
 import { useUserStore } from '@/stores/user';
-import menuDataJson from '@/assets/menu.json';
+import { usePermissionStore } from '@/stores/permission';
 import DynamicIcon from '@/components/DynamicIcon.vue';
 
 const getSettings = () => {
@@ -182,6 +185,14 @@ const saveSettings = (key: string, value: any) => {
   localStorage.setItem('oms.settings', JSON.stringify(settings));
 };
 
+const userStore = useUserStore(); // 提前声明 userStore
+
+// 辅助函数：根据用户 ID 获取唯一的 key
+const getUserSettingKey = (key: string) => {
+  const userId = userStore.username || 'guest'; // 最好用 userId，但 username 也行
+  return `${userId}_${key}`;
+};
+
 const collapsed = ref<boolean>(getSettings().menuCollapsed === true);
 
 watch(collapsed, (val) => {
@@ -191,7 +202,7 @@ watch(collapsed, (val) => {
 const router = useRouter();
 const route = useRoute();
 const tabsStore = useTabsStore();
-const userStore = useUserStore();
+const permissionStore = usePermissionStore();
 
 const transitionName = ref('fade');
 
@@ -217,7 +228,36 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
-const menuData = ref<MenuItem[]>(menuDataJson);
+// 使用 Store 中的动态路由数据，并转换为菜单所需的格式
+const menuData = computed<MenuItem[]>(() => {
+  const transformRouteToMenu = (routes: any[]): MenuItem[] => {
+    return routes.map(route => {
+      // 检查是否为只有一个子节点且需要提升显示的路由
+      // 如果路由是 Layout (path: '/') 且只有一个子节点 (path: '')，则直接展示该子节点
+      if (route.path === '/' && route.children && route.children.length === 1 && route.children[0].path === '') {
+        const child = route.children[0];
+        return {
+          key: child.name as string,
+          title: child.meta?.title as string || child.name as string,
+          icon: child.meta?.icon,
+          path: '/', // 使用父级路径或者 child.path 拼合（如果是 / 则直接用 /）
+          component: child.component,
+          children: undefined // 扁平化，不再包含 children
+        };
+      }
+
+      return {
+        key: route.name as string,
+        title: route.meta?.title as string || route.name as string,
+        icon: route.meta?.icon,
+        path: route.path,
+        component: route.component,
+        children: route.children ? transformRouteToMenu(route.children) : undefined
+      };
+    });
+  };
+  return transformRouteToMenu(permissionStore.routes);
+});
 
 const handleMenuClick = (item: MenuItem) => {
   if (item.path) {
@@ -232,19 +272,40 @@ const showAbout = () => {
   aboutVisible.value = true;
 };
 
-// Handle menu selection based on current route
-const selectedKeys = computed(() => [route.name as string]);
+const selectedKeys = computed({
+  get: () => {
+    // 优先匹配当前路由
+    if (route.name) return [route.name as string];
+    // 如果没有 name，尝试用 path 匹配
+    const currentPath = route.path;
+    // 遍历菜单寻找匹配项
+    const findKeyByPath = (items: MenuItem[]): string | undefined => {
+      for (const item of items) {
+        if (item.path === currentPath) return item.key;
+        if (item.children) {
+          const key = findKeyByPath(item.children);
+          if (key) return key;
+        }
+      }
+    };
+    const key = findKeyByPath(menuData.value);
+    return key ? [key] : [];
+  },
+  set: (val) => {
+    // 这里不需要做什么，因为点击菜单会触发路由跳转，进而触发 get
+  }
+});
 
 // Initialize openKeys from localStorage or default to empty
 const getSavedOpenKeys = () => {
-  return getSettings().menuOpenKeys || [];
+  return getSettings()[getUserSettingKey('menuOpenKeys')] || [];
 };
 
 const openKeys = ref<string[]>(getSavedOpenKeys());
 
 const onOpenChange = (keys: string[]) => {
   openKeys.value = keys;
-  saveSettings('menuOpenKeys', keys);
+  saveSettings(getUserSettingKey('menuOpenKeys'), keys);
 };
 
 const isHome = computed(() => route.path === '/' || route.name === 'HomeView');

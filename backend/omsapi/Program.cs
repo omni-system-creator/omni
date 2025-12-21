@@ -69,4 +69,25 @@ app.UseMiddleware<omsapi.Middleware.JwtSlidingExpirationMiddleware>();
 
 app.MapControllers();
 
+// 初始化数据库
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<omsapi.Data.OmsContext>();
+        // 自动应用迁移（可选，建议开发环境开启）
+        context.Database.Migrate();
+        // 初始化种子数据
+        await omsapi.Data.DbInitializer.InitializeAsync(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred creating the DB.");
+    }
+}
+
+Console.WriteLine("OMS 后端服务启动成功！");
+
 app.Run();

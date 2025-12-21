@@ -15,6 +15,20 @@ export const useTabsStore = defineStore('tabs', () => {
   const cachedViews = ref<string[]>([]);
 
   function addView(view: RouteLocationNormalized) {
+    // 确保首页总是被添加
+    if (view.path === '/' || view.name === 'HomeView') {
+      const homeTab = {
+        title: '首页',
+        path: '/',
+        name: 'HomeView',
+        fullPath: '/',
+        meta: { title: '首页', affix: true }
+      };
+      if (!visitedViews.value.some(v => v.path === '/')) {
+        visitedViews.value.unshift(homeTab);
+      }
+    }
+
     if (view.meta.keepAlive !== false) {
       const name = view.name as string;
       if (name && !cachedViews.value.includes(name)) {
@@ -26,6 +40,9 @@ export const useTabsStore = defineStore('tabs', () => {
     
     // Don't add to tabs if hidden or no title
     if (!view.meta.title && !view.name) return;
+
+    // 如果是首页，已经在上面处理过了，这里跳过
+    if (view.path === '/') return;
 
     visitedViews.value.push({
       title: (view.meta.title as string) || (view.name as string),

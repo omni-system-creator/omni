@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace omsapi.Models.Entities
 {
     [Table("sys_user")]
-    public class User
+    public class SystemUser
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -34,5 +34,7 @@ namespace omsapi.Models.Entities
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime? LastLoginAt { get; set; }
+
+        public virtual ICollection<SystemUserRole> UserRoles { get; set; } = new List<SystemUserRole>();
     }
 }

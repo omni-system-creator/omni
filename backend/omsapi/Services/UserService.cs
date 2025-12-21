@@ -12,11 +12,13 @@ namespace omsapi.Services
     {
         private readonly OmsContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<UserService> _logger;
 
-        public UserService(OmsContext context, IWebHostEnvironment environment)
+        public UserService(OmsContext context, IWebHostEnvironment environment, ILogger<UserService> logger)
         {
             _context = context;
             _environment = environment;
+            _logger = logger;
         }
 
         public async Task<(bool Success, string Message, string? AvatarUrl)> UploadAvatarAsync(long userId, IFormFile file)
@@ -83,7 +85,7 @@ namespace omsapi.Services
                         catch (Exception deleteEx)
                         {
                             // 删除失败不影响上传流程，仅记录日志或忽略
-                            // Console.WriteLine($"删除旧头像失败: {deleteEx.Message}");
+                            _logger.LogWarning(deleteEx, "删除旧头像失败");
                         }
                     }
                 }
@@ -97,6 +99,7 @@ namespace omsapi.Services
             catch (Exception ex)
             {
                 // 记录日志
+                _logger.LogError(ex, "上传头像失败");
                 return (false, $"上传失败: {ex.Message}", null);
             }
         }
@@ -133,6 +136,190 @@ namespace omsapi.Services
                 }
                 return builder.ToString();
             }
+        }
+
+        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync()
+        {
+            var users = await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .Select(u => new UserListDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Nickname = u.Nickname,
+                    Email = u.Email,
+                    Phone = u.Phone,
+                    Avatar = u.Avatar,
+                    IsActive = u.IsActive,
+                    CreatedAt = u.CreatedAt,
+                    LastLoginAt = u.LastLoginAt,
+                    Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
+                })
+                .ToListAsync();
+
+            return (true, "获取成功", users);
+        }
+
+        public async Task<(bool Success, string Message, UserListDto? Data)> GetUserByIdAsync(long id)
+        {
+            var user = await _context.Users
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user == null)
+            {
+                return (false, "用户不存在", null);
+            }
+
+            var dto = new UserListDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Nickname = user.Nickname,
+                Email = user.Email,
+                Phone = user.Phone,
+                Avatar = user.Avatar,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt,
+                LastLoginAt = user.LastLoginAt,
+                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
+            };
+
+            return (true, "获取成功", dto);
+        }
+
+        public async Task<(bool Success, string Message)> CreateUserAsync(CreateUserDto dto)
+        {
+            if (await _context.Users.AnyAsync(u => u.Username == dto.Username))
+            {
+                return (false, "用户名已存在");
+            }
+
+            var user = new omsapi.Models.Entities.SystemUser
+            {
+                Username = dto.Username,
+                Password = ComputeSha256Hash(dto.Password),
+                Nickname = dto.Nickname,
+                CreatedAt = DateTime.Now,
+                IsActive = true
+            };
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                if (dto.RoleIds != null && dto.RoleIds.Any())
+                {
+                    foreach (var roleId in dto.RoleIds)
+                    {
+                        _context.UserRoles.Add(new omsapi.Models.Entities.SystemUserRole
+                        {
+                            UserId = user.Id,
+                            RoleId = roleId
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
+                return (true, "创建成功");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "CreateUserAsync failed");
+                return (false, "创建失败: " + ex.Message);
+            }
+        }
+
+        public async Task<(bool Success, string Message)> UpdateUserAsync(long id, UpdateUserDto dto)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return (false, "用户不存在");
+            }
+
+            if (user.Username == "admin" && dto.IsActive == false)
+            {
+                return (false, "不能禁用超级管理员");
+            }
+
+            if (dto.Nickname != null) user.Nickname = dto.Nickname;
+            if (dto.Email != null) user.Email = dto.Email;
+            if (dto.Phone != null) user.Phone = dto.Phone;
+            if (dto.IsActive.HasValue) user.IsActive = dto.IsActive.Value;
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                if (dto.RoleIds != null)
+                {
+                    // 移除旧角色
+                    var oldRoles = await _context.UserRoles.Where(ur => ur.UserId == id).ToListAsync();
+                    _context.UserRoles.RemoveRange(oldRoles);
+
+                    // 添加新角色
+                    foreach (var roleId in dto.RoleIds)
+                    {
+                        _context.UserRoles.Add(new omsapi.Models.Entities.SystemUserRole
+                        {
+                            UserId = id,
+                            RoleId = roleId
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return (true, "更新成功");
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "UpdateUserAsync failed");
+                return (false, "更新失败: " + ex.Message);
+            }
+        }
+
+        public async Task<(bool Success, string Message)> DeleteUserAsync(long id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return (false, "用户不存在");
+            }
+
+            if (user.Username == "admin")
+            {
+                return (false, "不能删除超级管理员");
+            }
+
+            // 软删除或硬删除，这里演示硬删除，实际项目建议软删除 (IsDeleted)
+            // 先删除关联的角色
+            var roles = await _context.UserRoles.Where(ur => ur.UserId == id).ToListAsync();
+            _context.UserRoles.RemoveRange(roles);
+            
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return (true, "删除成功");
+        }
+
+        public async Task<(bool Success, string Message)> ResetPasswordAsync(long id, string newPassword)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return (false, "用户不存在");
+            }
+
+            user.Password = ComputeSha256Hash(newPassword);
+            await _context.SaveChangesAsync();
+            return (true, "重置密码成功");
         }
 
         public async Task<(bool Success, string Message)> UpdateProfileAsync(long userId, UpdateProfileDto dto)

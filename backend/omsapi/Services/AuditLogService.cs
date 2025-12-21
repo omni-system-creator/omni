@@ -10,26 +10,16 @@ namespace omsapi.Services
     public class AuditLogService : IAuditLogService
     {
         private readonly OmsContext _context;
-        private readonly ILogger<AuditLogService> _logger;
 
-        public AuditLogService(OmsContext context, ILogger<AuditLogService> logger)
+        public AuditLogService(OmsContext context)
         {
             _context = context;
-            _logger = logger;
         }
 
-        public async Task LogAsync(AuditLog log)
+        public async Task LogAsync(SystemAuditLog log)
         {
-            try
-            {
-                _context.AuditLogs.Add(log);
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                // 审计日志记录失败不应影响主业务，记录到系统日志即可
-                _logger.LogError(ex, "Failed to write audit log");
-            }
+            _context.AuditLogs.Add(log);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -82,10 +82,75 @@ namespace omsapi.Services
             return (true, "登录成功", result);
         }
 
+        public async Task<(bool Success, string Message, List<MenuItemDto>? Data)> GetUserRoutesAsync(long userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return (false, "用户不存在", null);
+
+            // 获取用户所有角色的所有权限
+            var permissionIds = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Join(_context.RolePermissions,
+                    ur => ur.RoleId,
+                    rp => rp.RoleId,
+                    (ur, rp) => rp.PermissionId)
+                .Distinct()
+                .ToListAsync();
+
+            // 查询菜单类型的权限
+            var menus = await _context.Permissions
+                .Where(p => permissionIds.Contains(p.Id) && p.Type == "MENU" && p.IsVisible)
+                .OrderBy(p => p.SortOrder)
+                .ToListAsync();
+
+            // 构建树形结构
+            var menuTree = BuildMenuTree(menus, null);
+
+            return (true, "获取成功", menuTree);
+        }
+
+        public async Task<(bool Success, string Message, List<string>? Data)> GetUserPermissionsAsync(long userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return (false, "用户不存在", null);
+
+            // 获取用户所有角色的所有权限编码 (包括按钮)
+            var permissions = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Join(_context.RolePermissions,
+                    ur => ur.RoleId,
+                    rp => rp.RoleId,
+                    (ur, rp) => rp.PermissionId)
+                .Join(_context.Permissions,
+                    pid => pid,
+                    p => p.Id,
+                    (pid, p) => p.Code)
+                .Distinct()
+                .ToListAsync();
+
+            return (true, "获取成功", permissions);
+        }
+
+        private List<MenuItemDto> BuildMenuTree(List<omsapi.Models.Entities.SystemPermission> allMenus, long? parentId)
+        {
+            return allMenus
+                .Where(m => m.ParentId == parentId)
+                .Select(m => new MenuItemDto
+                {
+                    Key = m.Code,
+                    Title = m.Name,
+                    Icon = m.Icon,
+                    Path = m.Path,
+                    Component = m.Component,
+                    Children = BuildMenuTree(allMenus, m.Id)
+                })
+                .ToList();
+        }
+
         private async Task LogLoginAsync(long? userId, string? username, bool isSuccess, string message, DateTime startTime, string? ipAddress, string? userAgent)
         {
             var duration = (long)(DateTime.Now - startTime).TotalMilliseconds;
-            var log = new omsapi.Models.Entities.AuditLog
+            var log = new omsapi.Models.Entities.SystemAuditLog
             {
                 UserId = userId,
                 UserName = username,

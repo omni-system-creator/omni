@@ -329,8 +329,26 @@
     "icon": "ant-design:setting-outlined",
     "children": [
       {
+        "key": "SysUser",
+        "title": "用户管理",
+        "path": "/system/user",
+        "component": "views/system/SysUser.vue"
+      },
+      {
+        "key": "SysRole",
+        "title": "角色管理",
+        "path": "/system/role",
+        "component": "views/system/SysRole.vue"
+      },
+      {
+        "key": "SysPermission",
+        "title": "权限管理",
+        "path": "/system/permission",
+        "component": "views/system/SysPermission.vue"
+      },
+      {
         "key": "SysOrg",
-        "title": "组织权限",
+        "title": "组织架构",
         "path": "/system/org",
         "component": "views/system/SysOrg.vue"
       },

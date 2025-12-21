@@ -139,7 +139,9 @@ const handleLogin = async (values: any) => {
       }
       
       message.success('登录成功');
-      router.push('/');
+      // 使用 replace 替换当前历史记录，避免返回登录页
+      // 这里的 '/' 会被路由守卫拦截，触发动态路由加载
+      router.replace('/');
     } else {
         // 如果后端没有返回 token，但也没报错（理论上不应该发生，因为有 request 拦截器）
         message.error('登录失败：未获取到 Token');

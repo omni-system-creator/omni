@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { usePermissionStore } from './permission';
+import { resetRouter } from '@/router';
+import { useTabsStore } from './tabs';
 
 export const useUserStore = defineStore('user', () => {
   // Helper to get initial state safely
@@ -54,6 +57,15 @@ export const useUserStore = defineStore('user', () => {
     
     localStorage.removeItem('oms.auth');
     localStorage.removeItem('oms.user');
+    
+    // 清理权限和路由
+    const permissionStore = usePermissionStore();
+    permissionStore.resetPermission();
+    resetRouter();
+    
+    // 清理标签页
+    const tabsStore = useTabsStore();
+    tabsStore.delAllViews();
     
     // router.push('/login'); // 这里不直接跳转，由调用处或拦截器处理
   }

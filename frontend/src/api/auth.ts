@@ -7,3 +7,11 @@ export const login = (data: any) => {
     data,
   });
 };
+
+export const getRoutes = () => {
+  return request.get('/auth/routes');
+};
+
+export const getPermissions = () => {
+  return request.get('/auth/permissions');
+};
