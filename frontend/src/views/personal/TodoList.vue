@@ -209,6 +209,20 @@ import type { FormInstance } from 'ant-design-vue';
 import dayjs, { Dayjs } from 'dayjs';
 import { useRoute } from 'vue-router';
 
+interface TaskItem {
+  id: string;
+  title: string;
+  type: string;
+  priority: string;
+  creator: string;
+  createTime: string;
+  deadline: string;
+  finishTime?: string;
+  assigneeId?: string;
+  assigneeName?: string;
+  status?: string;
+}
+
 const route = useRoute();
 const activeTab = ref('pending');
 const searchText = ref('');
@@ -302,7 +316,7 @@ const resetCreateForm = () => {
 };
 
 // 模拟数据 - 改为 ref 以支持动态添加
-const pendingData = ref([
+const pendingData = ref<TaskItem[]>([
   {
     id: '1',
     title: '销售合同审批 - HT20231201001',
@@ -354,7 +368,7 @@ const filteredPendingData = computed(() => {
   return data;
 });
 
-const completedData = ref([
+const completedData = ref<TaskItem[]>([
   {
     id: '101',
     title: '采购合同审批 - CG20231125002',
@@ -363,6 +377,7 @@ const completedData = ref([
     creator: '王五',
     createTime: '2023-11-25 11:00:00',
     finishTime: '2023-11-26 09:15:00',
+    deadline: '-' // Added to satisfy interface
   },
   {
     id: '102',
@@ -372,10 +387,11 @@ const completedData = ref([
     creator: '赵六',
     createTime: '2023-11-28 15:00:00',
     finishTime: '2023-11-28 17:30:00',
+    deadline: '2023-11-28 18:00:00' // Added
   },
 ]);
 
-const subordinateData = ref([
+const subordinateData = ref<TaskItem[]>([
   {
     id: '201',
     title: '客户拜访记录整理',

@@ -150,12 +150,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import {
   CloudUploadOutlined,
   FolderOutlined,
   FolderAddOutlined,
-  FileOutlined,
   FileImageOutlined,
   FilePdfOutlined,
   FileWordOutlined,
@@ -377,8 +376,10 @@ const updateBreadcrumbs = (key: string) => {
 const handleTreeSelect = (keys: string[]) => {
   if (keys.length > 0) {
     const key = keys[0];
-    updateBreadcrumbs(key);
-    loadFiles(undefined, key);
+    if (key) {
+      updateBreadcrumbs(key);
+      loadFiles(undefined, key);
+    }
   }
 };
 
@@ -440,7 +441,7 @@ const customRow = (record: FileItem) => {
 };
 
 // 右键菜单 (暂未实现完整右键菜单，仅阻止默认)
-const handleContextMenu = (e: MouseEvent, file: FileItem) => {
+const handleContextMenu = (_e: MouseEvent, file: FileItem) => {
   // 实际项目中这里会弹出自定义右键菜单
   // 这里暂时只做选中
   if (!selectedFiles.value.includes(file.id)) {
@@ -461,16 +462,16 @@ const handleNewFolder = () => {
     updatedAt: new Date().toLocaleString(),
     owner: 'me',
     permission: { read: true, write: true, delete: true },
-    parentId: breadcrumbs.value.length > 1 ? breadcrumbs.value[breadcrumbs.value.length - 1].key : undefined
+    parentId: breadcrumbs.value.length > 1 ? breadcrumbs.value[breadcrumbs.value.length - 1]?.key : undefined
   };
   fileList.value.unshift(newFolder);
 };
 
 const refreshList = () => {
   const currentFolder = breadcrumbs.value[breadcrumbs.value.length - 1];
-  if (currentFolder.key === 'root') {
+  if (currentFolder?.key === 'root') {
     loadFiles(undefined, selectedKeys.value[0]);
-  } else {
+  } else if (currentFolder) {
     loadFiles(currentFolder.key);
   }
   message.success('刷新成功');

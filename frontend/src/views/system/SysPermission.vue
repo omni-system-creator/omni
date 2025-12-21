@@ -375,7 +375,7 @@ const handleSort = () => {
 const onDrop = (info: AntTreeNodeDropEvent) => {
   const dropKey = info.node.key as number;
   const dragKey = info.dragNode.key as number;
-  const dropPos = info.node.pos.split('-');
+  const dropPos = (info.node.pos || '').split('-');
   const dropPosition = info.dropPosition - Number(dropPos[dropPos.length - 1]);
 
   const loop = (data: PermissionTreeDto[], key: number, callback: any) => {
@@ -419,7 +419,7 @@ const onDrop = (info: AntTreeNodeDropEvent) => {
     // Drop on the gap (insert before or after)
     let ar: PermissionTreeDto[] = [];
     let i = 0;
-    loop(data, dropKey, (item: PermissionTreeDto, index: number, arr: PermissionTreeDto[]) => {
+    loop(data, dropKey, (_item: PermissionTreeDto, index: number, arr: PermissionTreeDto[]) => {
       ar = arr;
       i = index;
     });

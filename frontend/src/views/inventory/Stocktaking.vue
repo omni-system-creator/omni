@@ -33,7 +33,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 
 const columns = [
   { title: '盘点单号', dataIndex: 'id', key: 'id' },

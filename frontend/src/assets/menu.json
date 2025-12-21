@@ -341,6 +341,12 @@
         "component": "views/system/SysRole.vue"
       },
       {
+        "key": "SysPost",
+        "title": "岗位管理",
+        "path": "/system/post",
+        "component": "views/system/SysPost.vue"
+      },
+      {
         "key": "SysPermission",
         "title": "权限管理",
         "path": "/system/permission",

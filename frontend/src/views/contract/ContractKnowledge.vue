@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { ref } from 'vue';
 import {
   FolderOutlined,
   FilePdfOutlined,

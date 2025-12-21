@@ -1,75 +1,123 @@
 <template>
   <div class="sys-user-container">
-    <a-card :bordered="false">
-      <template #title>
-        <a-space>
-          <a-input-search
-            v-model:value="searchText"
-            placeholder="搜索用户名/昵称"
-            style="width: 250px"
-            @search="handleSearch"
-          />
-        </a-space>
-      </template>
-      <template #extra>
-        <a-button type="primary" @click="handleAdd">
-          <template #icon><PlusOutlined /></template>
-          新增用户
-        </a-button>
-      </template>
+    <a-row :gutter="24">
+      <!-- Left: Dept Tree -->
+      <a-col :span="6">
+        <a-card :bordered="false" class="dept-card">
+          <template #title>
+            <span><ApartmentOutlined /> 部门结构</span>
+          </template>
+          <a-tree
+            v-if="deptTreeData.length"
+            :tree-data="deptTreeData"
+            :field-names="{ title: 'name', key: 'id', children: 'children' }"
+            default-expand-all
+            v-model:selectedKeys="selectedDeptKeys"
+            @select="onDeptSelect"
+            block-node
+          >
+            <template #title="{ name, type }">
+              <span v-if="type === DeptType.Group">
+                <BankOutlined style="color: #faad14; margin-right: 4px" />
+              </span>
+              <span v-else-if="type === DeptType.Company">
+                <ApartmentOutlined style="color: #1890ff; margin-right: 4px" />
+              </span>
+              <span v-else>
+                <ClusterOutlined style="color: #8c8c8c; margin-right: 4px" />
+              </span>
+              <span>{{ name }}</span>
+            </template>
+          </a-tree>
+          <a-empty v-else description="暂无部门数据" />
+        </a-card>
+      </a-col>
 
-      <a-table
-        :columns="columns"
-        :data-source="filteredUsers"
-        :loading="loading"
-        row-key="id"
-        :pagination="{ pageSize: 10 }"
-      >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'avatar'">
-            <a-avatar :src="record.avatar">
-              <template #icon><UserOutlined /></template>
-            </a-avatar>
-          </template>
-          
-          <template v-else-if="column.key === 'isActive'">
-            <a-tag :color="record.isActive ? 'success' : 'error'">
-              {{ record.isActive ? '启用' : '禁用' }}
-            </a-tag>
-          </template>
-          
-          <template v-else-if="column.key === 'roles'">
-            <a-tag v-for="role in record.roles" :key="role" color="blue">{{ role }}</a-tag>
-          </template>
-
-          <template v-else-if="column.key === 'createdAt'">
-            {{ formatDate(record.createdAt) }}
-          </template>
-
-          <template v-else-if="column.key === 'action'">
-            <a-space divider type="vertical">
-              <a @click="handleEdit(record)">编辑</a>
-              <a-popconfirm
-                title="确定要重置该用户的密码吗？"
-                @confirm="handleResetPwd(record)"
-              >
-                <a>重置密码</a>
-              </a-popconfirm>
-              <a-popconfirm
-                title="确定要删除该用户吗？此操作不可恢复"
-                ok-text="删除"
-                cancel-text="取消"
-                ok-type="danger"
-                @confirm="handleDelete(record)"
-                v-if="record.username !== 'admin'"
-              >
-                <a class="text-danger">删除</a>
-              </a-popconfirm>
+      <!-- Right: User Table -->
+      <a-col :span="18">
+        <a-card :bordered="false">
+          <template #title>
+            <a-space>
+              <a-input-search
+                v-model:value="searchText"
+                placeholder="搜索用户名/昵称"
+                style="width: 250px"
+                @search="handleSearch"
+              />
             </a-space>
           </template>
-        </template>
-      </a-table>
-    </a-card>
+          <template #extra>
+            <a-button type="primary" @click="handleAdd">
+              <template #icon><PlusOutlined /></template>
+              新增用户
+            </a-button>
+          </template>
+
+          <a-table
+            :columns="columns"
+            :data-source="filteredUsers"
+            :loading="loading"
+            row-key="id"
+            :pagination="{ pageSize: 10 }"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'avatar'">
+                <a-avatar :src="record.avatar">
+                  <template #icon><UserOutlined /></template>
+                </a-avatar>
+              </template>
+              
+              <template v-else-if="column.key === 'dept'">
+                <a-tag v-if="record.dept" color="cyan">{{ record.dept.name }}</a-tag>
+                <span v-else>-</span>
+              </template>
+
+              <template v-else-if="column.key === 'isActive'">
+                <a-tag :color="record.isActive ? 'success' : 'error'">
+                  {{ record.isActive ? '启用' : '禁用' }}
+                </a-tag>
+              </template>
+              
+              <template v-else-if="column.key === 'roles'">
+                <a-tag v-for="role in record.roles" :key="role" color="blue">{{ role }}</a-tag>
+              </template>
+
+              <template v-else-if="column.key === 'posts'">
+                <a-tag v-for="(post, index) in record.posts" :key="index" color="purple">
+                  {{ post.deptName }} - {{ post.postName }}
+                </a-tag>
+              </template>
+
+              <template v-else-if="column.key === 'createdAt'">
+                {{ formatDate(record.createdAt) }}
+              </template>
+
+              <template v-else-if="column.key === 'action'">
+                <a-space divider type="vertical">
+                  <a @click="handleEdit(record)">编辑</a>
+                  <a-popconfirm
+                    title="确定要重置该用户的密码吗？"
+                    @confirm="handleResetPwd(record)"
+                  >
+                    <a>重置密码</a>
+                  </a-popconfirm>
+                  <a-popconfirm
+                    title="确定要删除该用户吗？此操作不可恢复"
+                    ok-text="删除"
+                    cancel-text="取消"
+                    ok-type="danger"
+                    @confirm="handleDelete(record)"
+                    v-if="record.username !== 'admin'"
+                  >
+                    <a class="text-danger">删除</a>
+                  </a-popconfirm>
+                </a-space>
+              </template>
+            </template>
+          </a-table>
+        </a-card>
+      </a-col>
+    </a-row>
 
     <!-- 用户表单弹窗 -->
     <a-modal
@@ -108,20 +156,36 @@
 
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item label="邮箱" name="email">
-              <a-input v-model:value="formState.email" placeholder="请输入邮箱" />
+            <a-form-item label="所属部门" name="deptId">
+              <a-tree-select
+                v-model:value="formState.deptId"
+                :tree-data="deptTreeData"
+                :field-names="{ label: 'name', value: 'id', children: 'children' }"
+                placeholder="请选择部门"
+                allow-clear
+                tree-default-expand-all
+              />
             </a-form-item>
           </a-col>
-          <a-col :span="12">
+           <a-col :span="12">
             <a-form-item label="手机号" name="phone">
               <a-input v-model:value="formState.phone" placeholder="请输入手机号" />
             </a-form-item>
           </a-col>
         </a-row>
 
-        <a-form-item label="状态" name="isActive" v-if="currentId && formState.username !== 'admin'">
-          <a-switch v-model:checked="formState.isActive" checked-children="启用" un-checked-children="禁用" />
-        </a-form-item>
+        <a-row :gutter="16">
+          <a-col :span="12">
+            <a-form-item label="邮箱" name="email">
+              <a-input v-model:value="formState.email" placeholder="请输入邮箱" />
+            </a-form-item>
+          </a-col>
+          <a-col :span="12">
+             <a-form-item label="状态" name="isActive" v-if="currentId && formState.username !== 'admin'">
+                <a-switch v-model:checked="formState.isActive" checked-children="启用" un-checked-children="禁用" />
+              </a-form-item>
+          </a-col>
+        </a-row>
 
         <a-form-item label="角色" name="roleIds">
           <a-select
@@ -132,6 +196,31 @@
             :field-names="{ label: 'name', value: 'id' }"
           />
         </a-form-item>
+
+        <a-form-item label="关联岗位">
+          <div v-for="(item, index) in formState.postRelations" :key="index" style="display: flex; margin-bottom: 8px;">
+            <a-tree-select
+              v-model:value="item.deptId"
+              :tree-data="deptTreeData"
+              :field-names="{ label: 'name', value: 'id', children: 'children' }"
+              placeholder="选择部门"
+              style="width: 200px; margin-right: 8px;"
+              tree-default-expand-all
+              @change="handlePostDeptChange(index)"
+            />
+            <a-select
+              v-model:value="item.postId"
+              :options="getPostOptions(item.deptId)"
+              :field-names="{ label: 'name', value: 'id' }"
+              placeholder="选择岗位"
+              style="flex: 1; margin-right: 8px;"
+            />
+            <MinusCircleOutlined @click="removePostRelation(index)" style="font-size: 20px; color: #ff4d4f; line-height: 32px; cursor: pointer;" />
+          </div>
+          <a-button type="dashed" block @click="addPostRelation">
+            <PlusOutlined /> 添加关联岗位
+          </a-button>
+        </a-form-item>
       </a-form>
     </a-modal>
   </div>
@@ -140,34 +229,86 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed, reactive } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { PlusOutlined, UserOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined, BankOutlined, ClusterOutlined } from '@ant-design/icons-vue';
 import { getUserList, createUser, updateUser, deleteUser, resetUserPassword, type UserListDto } from '@/api/user';
 import { getRoleList, type RoleDto } from '@/api/role';
+import { getDeptTree, type Dept, DeptType } from '@/api/dept';
+import { getPostList, type Post } from '@/api/post';
 import dayjs from 'dayjs';
 
 const loading = ref(false);
 const users = ref<UserListDto[]>([]);
 const searchText = ref('');
 const roleOptions = ref<RoleDto[]>([]);
+const postOptions = ref<Post[]>([]);
+const deptTreeData = ref<Dept[]>([]);
+const selectedDeptKeys = ref<number[]>([]);
 
 const columns = [
-  { title: '头像', key: 'avatar', width: 80, align: 'center' },
+  { title: '头像', key: 'avatar', width: 60, align: 'center' },
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '昵称', dataIndex: 'nickname', key: 'nickname' },
+  { title: '部门', key: 'dept' },
   { title: '角色', key: 'roles' },
-  { title: '状态', key: 'isActive', width: 100 },
-  { title: '创建时间', key: 'createdAt', width: 180 },
-  { title: '操作', key: 'action', width: 200, align: 'center' },
+  { title: '岗位', key: 'posts' },
+  { title: '状态', key: 'isActive', width: 80 },
+  { title: '创建时间', key: 'createdAt', width: 160 },
+  { title: '操作', key: 'action', width: 180, align: 'center' },
 ];
 
 const filteredUsers = computed(() => {
-  if (!searchText.value) return users.value;
-  const lower = searchText.value.toLowerCase();
-  return users.value.filter(u => 
-    u.username.toLowerCase().includes(lower) || 
-    (u.nickname && u.nickname.toLowerCase().includes(lower))
-  );
+  let result = users.value;
+  
+  // 1. Dept Filter
+  if (selectedDeptKeys.value.length > 0) {
+      const deptId = selectedDeptKeys.value[0];
+      if (typeof deptId === 'number') {
+        // Need to find all sub-dept IDs if we want recursive filter?
+        // For simplicity, just filter exact match or check if backend returns dept hierarchy path
+        // Here we do simple exact match first, or recursive if we had helper
+        const deptIds = getSubDeptIds(deptId, deptTreeData.value);
+        result = result.filter(u => u.dept && deptIds.includes(u.dept.id));
+      }
+  }
+
+  // 2. Search Text
+  if (searchText.value) {
+    const lower = searchText.value.toLowerCase();
+    result = result.filter(u => 
+      u.username.toLowerCase().includes(lower) || 
+      (u.nickname && u.nickname.toLowerCase().includes(lower))
+    );
+  }
+  return result;
 });
+
+const getSubDeptIds = (rootId: number, tree: Dept[]): number[] => {
+    let ids: number[] = [rootId];
+    const findNode = (nodes: Dept[]): Dept | undefined => {
+        for (const node of nodes) {
+            if (node.id === rootId) return node;
+            if (node.children) {
+                const found = findNode(node.children);
+                if (found) return found;
+            }
+        }
+        return undefined;
+    };
+    
+    const rootNode = findNode(tree);
+    if (rootNode) {
+        const collectIds = (node: Dept) => {
+            if (node.children) {
+                node.children.forEach(child => {
+                    ids.push(child.id);
+                    collectIds(child);
+                });
+            }
+        };
+        collectIds(rootNode);
+    }
+    return ids;
+};
 
 const formatDate = (date: string) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm:ss');
@@ -194,6 +335,24 @@ const loadRoles = async () => {
   }
 };
 
+const loadDepts = async () => {
+    try {
+        const res = await getDeptTree();
+        deptTreeData.value = res;
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+const loadPosts = async () => {
+  try {
+    const res = await getPostList();
+    postOptions.value = res;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 // --- Modal Logic ---
 const modalVisible = ref(false);
 const confirmLoading = ref(false);
@@ -208,7 +367,9 @@ const formState = reactive({
   email: '',
   phone: '',
   isActive: true,
-  roleIds: [] as number[]
+  roleIds: [] as number[],
+  deptId: undefined as number | undefined,
+  postRelations: [] as { deptId: number | undefined, postId: number | undefined }[]
 });
 
 const rules = {
@@ -226,6 +387,12 @@ const handleAdd = () => {
   formState.phone = '';
   formState.isActive = true;
   formState.roleIds = [];
+  formState.deptId = undefined;
+  formState.postRelations = [];
+  // If a dept is selected in tree, default to it
+  if (selectedDeptKeys.value.length > 0) {
+      formState.deptId = selectedDeptKeys.value[0];
+  }
   modalVisible.value = true;
 };
 
@@ -238,13 +405,40 @@ const handleEdit = (record: UserListDto) => {
   formState.email = record.email || '';
   formState.phone = record.phone || '';
   formState.isActive = record.isActive;
+  formState.deptId = record.dept?.id;
+  
   // 匹配角色名称到ID
   formState.roleIds = record.roles.map(roleName => {
     const role = roleOptions.value.find(r => r.name === roleName);
     return role ? role.id : 0;
   }).filter(id => id !== 0);
+
+  // 岗位关联
+  formState.postRelations = record.posts.map(p => ({
+    deptId: p.deptId,
+    postId: p.postId
+  }));
   
   modalVisible.value = true;
+};
+
+const getPostOptions = (deptId: number | undefined) => {
+  if (!deptId) return [];
+  return postOptions.value.filter(p => p.deptId === deptId);
+};
+
+const handlePostDeptChange = (index: number) => {
+  if (formState.postRelations[index]) {
+    formState.postRelations[index].postId = undefined;
+  }
+};
+
+const addPostRelation = () => {
+  formState.postRelations.push({ deptId: undefined, postId: undefined });
+};
+
+const removePostRelation = (index: number) => {
+  formState.postRelations.splice(index, 1);
 };
 
 const handleModalOk = async () => {
@@ -254,21 +448,33 @@ const handleModalOk = async () => {
     
     if (currentId.value) {
       // Update
+      const postRelations = formState.postRelations
+        .filter(p => p.deptId && p.postId)
+        .map(p => ({ deptId: p.deptId as number, postId: p.postId as number }));
+
       await updateUser(currentId.value, {
         nickname: formState.nickname,
         email: formState.email,
         phone: formState.phone,
         isActive: formState.isActive,
-        roleIds: formState.roleIds
+        roleIds: formState.roleIds,
+        deptId: formState.deptId,
+        postRelations: postRelations
       });
       message.success('更新成功');
     } else {
       // Create
+      const postRelations = formState.postRelations
+        .filter(p => p.deptId && p.postId)
+        .map(p => ({ deptId: p.deptId as number, postId: p.postId as number }));
+
       await createUser({
         username: formState.username,
         password: formState.password,
         nickname: formState.nickname,
-        roleIds: formState.roleIds
+        roleIds: formState.roleIds,
+        deptId: formState.deptId,
+        postRelations: postRelations
       });
       message.success('创建成功');
     }
@@ -309,6 +515,11 @@ const handleResetPwd = async (record: UserListDto) => {
   });
 };
 
+const onDeptSelect = (keys: number[]) => {
+    // Selection handled by v-model:selectedKeys and computed filteredUsers
+    console.log('Selected dept keys:', keys);
+};
+
 const handleSearch = () => {
   // 搜索逻辑已在 computed 中实现
 };
@@ -316,12 +527,17 @@ const handleSearch = () => {
 onMounted(() => {
   loadData();
   loadRoles();
+  loadDepts();
+  loadPosts();
 });
 </script>
 
 <style scoped>
 .sys-user-container {
-  padding: 24px;
+  padding: 16px;
+}
+.dept-card {
+    height: 100%;
 }
 .text-danger {
   color: #ff4d4f;

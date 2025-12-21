@@ -35,6 +35,12 @@ namespace omsapi.Models.Entities
 
         public DateTime? LastLoginAt { get; set; }
 
+        public long? DeptId { get; set; }
+
+        [ForeignKey("DeptId")]
+        public virtual SystemDept? Dept { get; set; }
+
         public virtual ICollection<SystemUserRole> UserRoles { get; set; } = new List<SystemUserRole>();
+        public virtual ICollection<SystemUserPost> UserPosts { get; set; } = new List<SystemUserPost>();
     }
 }

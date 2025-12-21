@@ -23,6 +23,18 @@ namespace omsapi.Models.Entities
 
         public bool IsSystem { get; set; } = false; // 是否为系统内置角色 (不可删除)
 
+        // 部门ID (如果不为空，则是部门级角色)
+        public long? DeptId { get; set; }
+
+        [ForeignKey("DeptId")]
+        public virtual SystemDept? Dept { get; set; }
+
+        [InverseProperty("ParentRole")]
+        public virtual ICollection<SystemRoleInheritance> ChildRoleRelations { get; set; } = new List<SystemRoleInheritance>();
+
+        [InverseProperty("ChildRole")]
+        public virtual ICollection<SystemRoleInheritance> ParentRoleRelations { get; set; } = new List<SystemRoleInheritance>();
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
     }

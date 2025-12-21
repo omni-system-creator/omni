@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue';
+// import { defineProps } from 'vue'; // defineProps is a compiler macro and doesn't need to be imported
 
 defineProps<{
   formState: {

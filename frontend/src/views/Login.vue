@@ -112,13 +112,13 @@ const formState = reactive({
   remember: true,
 });
 
-const handleLogin = async (values: any) => {
+const handleLogin = async (_values: any) => {
   loading.value = true;
   try {
     const res = await login({
       username: formState.username,
       password: formState.password
-    });
+    }) as any;
     
     // 登录成功
     if (res.token) {

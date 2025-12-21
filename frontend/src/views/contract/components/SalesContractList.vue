@@ -15,22 +15,22 @@
                 :value="selectedKeys[0]"
                 placeholder="Min"
                 style="width: 100px; text-align: center"
-                @change="val => setSelectedKeys([val, selectedKeys[1]])"
-              />
-              <span style="padding: 0 4px">~</span>
-              <a-input-number
-                :value="selectedKeys[1]"
-                placeholder="Max"
-                style="width: 100px; text-align: center"
-                @change="val => setSelectedKeys([selectedKeys[0], val])"
-              />
+                @change="(val: any) => setSelectedKeys([val, selectedKeys[1]])"
+            />
+            <span style="padding: 0 4px">~</span>
+            <a-input-number
+              :value="selectedKeys[1]"
+              placeholder="Max"
+              style="width: 100px; text-align: center"
+              @change="(val: any) => setSelectedKeys([selectedKeys[0], val])"
+            />
             </div>
           </template>
           <template v-else-if="column.key === 'signDate' || column.key === 'latestCollectionDate'">
             <a-range-picker
               :value="selectedKeys"
               style="margin-bottom: 8px; display: block; width: 250px"
-              @change="(dates, dateStrings) => setSelectedKeys(dateStrings)"
+              @change="(_dates: any, dateStrings: any) => setSelectedKeys(dateStrings)"
             />
           </template>
           <template v-else>
@@ -39,7 +39,7 @@
               :placeholder="`搜索 ${column.title}`"
               :value="selectedKeys[0]"
               style="width: 188px; margin-bottom: 8px; display: block"
-              @change="e => setSelectedKeys(e.target.value ? [e.target.value] : [])"
+              @change="(e: any) => setSelectedKeys(e.target.value ? [e.target.value] : [])"
               @pressEnter="handleSearch(selectedKeys, confirm, column.dataIndex)"
             />
           </template>
@@ -74,8 +74,8 @@
               <template #icon><MoreOutlined style="font-size: 16px; font-weight: bold; transform: rotate(90deg);" /></template>
             </a-button>
             <template #overlay>
-              <a-menu @click="({ key }) => handleMenuClick(key as string, record)">
-                <a-menu-item key="view">查看</a-menu-item>
+            <a-menu @click="({ key }: { key: any }) => handleMenuClick(key as string, record)">
+              <a-menu-item key="view">查看</a-menu-item>
                 <a-menu-item key="edit">变更</a-menu-item>
                 <a-menu-item key="collection">收款</a-menu-item>
                 <a-menu-divider />
@@ -137,11 +137,11 @@ const getStatusText = (status: string) => {
   }
 };
 
-const handleSearch = (selectedKeys: string[], confirm: () => void, dataIndex: string) => {
+const handleSearch = (_selectedKeys: string[], confirm: () => void, _dataIndex: string) => {
   confirm();
 };
 
-const handleReset = (clearFilters: () => void) => {
+const handleReset = (clearFilters: (config?: any) => void) => {
   if (clearFilters) {
     clearFilters({ confirm: true });
   }

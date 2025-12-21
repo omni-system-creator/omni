@@ -173,6 +173,60 @@ namespace omsapi.Migrations
                         });
                 });
 
+            modelBuilder.Entity("omsapi.Models.Entities.SystemDept", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Leader")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<long?>("ParentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.ToTable("sys_dept");
+                });
+
             modelBuilder.Entity("omsapi.Models.Entities.SystemPermission", b =>
                 {
                     b.Property<long>("Id")
@@ -231,6 +285,53 @@ namespace omsapi.Migrations
                     b.ToTable("sys_permission");
                 });
 
+            modelBuilder.Entity("omsapi.Models.Entities.SystemPost", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long?>("DeptId")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Remark")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("DeptId");
+
+                    b.ToTable("sys_post");
+                });
+
             modelBuilder.Entity("omsapi.Models.Entities.SystemRole", b =>
                 {
                     b.Property<long>("Id")
@@ -246,6 +347,9 @@ namespace omsapi.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<long?>("DeptId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Description")
                         .HasMaxLength(200)
@@ -267,6 +371,8 @@ namespace omsapi.Migrations
                     b.HasIndex("Code")
                         .IsUnique();
 
+                    b.HasIndex("DeptId");
+
                     b.ToTable("sys_role");
 
                     b.HasData(
@@ -281,27 +387,33 @@ namespace omsapi.Migrations
                         });
                 });
 
-            modelBuilder.Entity("omsapi.Models.Entities.SystemRolePermission", b =>
+            modelBuilder.Entity("omsapi.Models.Entities.SystemRoleInheritance", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<long>("ParentRoleId")
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+                    b.Property<long>("ChildRoleId")
+                        .HasColumnType("bigint");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                    b.HasKey("ParentRoleId", "ChildRoleId");
+
+                    b.HasIndex("ChildRoleId");
+
+                    b.ToTable("sys_role_inheritance");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.SystemRolePermission", b =>
+                {
+                    b.Property<long>("RoleId")
+                        .HasColumnType("bigint");
 
                     b.Property<long>("PermissionId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("RoleId")
-                        .HasColumnType("bigint");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId", "PermissionId")
-                        .IsUnique();
+                    b.HasKey("RoleId", "PermissionId");
 
                     b.ToTable("sys_role_permission");
                 });
@@ -319,6 +431,9 @@ namespace omsapi.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<long?>("DeptId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Email")
                         .HasMaxLength(100)
@@ -350,6 +465,8 @@ namespace omsapi.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DeptId");
+
                     b.HasIndex("Username")
                         .IsUnique();
 
@@ -367,40 +484,132 @@ namespace omsapi.Migrations
                         });
                 });
 
-            modelBuilder.Entity("omsapi.Models.Entities.SystemUserRole", b =>
+            modelBuilder.Entity("omsapi.Models.Entities.SystemUserPost", b =>
                 {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<long>("UserId")
                         .HasColumnType("bigint");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+                    b.Property<long>("PostId")
+                        .HasColumnType("bigint");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                    b.Property<long>("DeptId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("UserId", "PostId", "DeptId");
+
+                    b.HasIndex("DeptId");
+
+                    b.HasIndex("PostId");
+
+                    b.ToTable("sys_user_post");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.SystemUserRole", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
 
                     b.Property<long>("RoleId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId", "RoleId");
 
                     b.HasIndex("RoleId");
-
-                    b.HasIndex("UserId", "RoleId")
-                        .IsUnique();
 
                     b.ToTable("sys_user_role");
 
                     b.HasData(
                         new
                         {
-                            Id = 1L,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            UserId = 1L,
                             RoleId = 1L,
-                            UserId = 1L
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
                         });
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.SystemDept", b =>
+                {
+                    b.HasOne("omsapi.Models.Entities.SystemDept", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId");
+
+                    b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.SystemPost", b =>
+                {
+                    b.HasOne("omsapi.Models.Entities.SystemDept", "Dept")
+                        .WithMany()
+                        .HasForeignKey("DeptId");
+
+                    b.Navigation("Dept");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.SystemRole", b =>
+                {
+                    b.HasOne("omsapi.Models.Entities.SystemDept", "Dept")
+                        .WithMany()
+                        .HasForeignKey("DeptId");
+
+                    b.Navigation("Dept");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.SystemRoleInheritance", b =>
+                {
+                    b.HasOne("omsapi.Models.Entities.SystemRole", "ChildRole")
+                        .WithMany("ParentRoleRelations")
+                        .HasForeignKey("ChildRoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("omsapi.Models.Entities.SystemRole", "ParentRole")
+                        .WithMany("ChildRoleRelations")
+                        .HasForeignKey("ParentRoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChildRole");
+
+                    b.Navigation("ParentRole");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.SystemUser", b =>
+                {
+                    b.HasOne("omsapi.Models.Entities.SystemDept", "Dept")
+                        .WithMany("Users")
+                        .HasForeignKey("DeptId");
+
+                    b.Navigation("Dept");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.SystemUserPost", b =>
+                {
+                    b.HasOne("omsapi.Models.Entities.SystemDept", "Dept")
+                        .WithMany()
+                        .HasForeignKey("DeptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("omsapi.Models.Entities.SystemPost", "Post")
+                        .WithMany()
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("omsapi.Models.Entities.SystemUser", "User")
+                        .WithMany("UserPosts")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Dept");
+
+                    b.Navigation("Post");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.SystemUserRole", b =>
@@ -422,8 +631,24 @@ namespace omsapi.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("omsapi.Models.Entities.SystemDept", b =>
+                {
+                    b.Navigation("Children");
+
+                    b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.SystemRole", b =>
+                {
+                    b.Navigation("ChildRoleRelations");
+
+                    b.Navigation("ParentRoleRelations");
+                });
+
             modelBuilder.Entity("omsapi.Models.Entities.SystemUser", b =>
                 {
+                    b.Navigation("UserPosts");
+
                     b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618

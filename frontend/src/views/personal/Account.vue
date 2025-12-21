@@ -98,7 +98,7 @@ import {
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
-import { getUserInfo, updateProfile, changePassword, uploadAvatar } from '@/api/user';
+import { getCurrentUser, updateProfile, changePassword, uploadAvatar } from '@/api/user';
 
 // --- 状态 ---
 const route = useRoute();
@@ -128,12 +128,12 @@ const passwordForm = reactive({
 // 初始化加载用户信息
 const loadUserInfo = async () => {
   try {
-    const res = await getUserInfo();
+    const res = await getCurrentUser() as any;
     if (res) {
        userInfo.id = res.id;
        userInfo.username = res.username;
-       userInfo.avatar = res.avatar;
-       userInfo.nickname = res.nickname;
+       userInfo.avatar = res.avatar || '';
+       userInfo.nickname = res.nickname || '';
        // 后端如果没有返回 email 和 phone，这里会是 undefined，需要处理一下
        userInfo.email = res.email || '';
        userInfo.phone = res.phone || '';
@@ -141,8 +141,8 @@ const loadUserInfo = async () => {
        // 同时更新 store，确保头像同步
        userStore.setUserInfo({
          username: res.username,
-         nickname: res.nickname,
-         avatar: res.avatar
+         nickname: res.nickname || '',
+         avatar: res.avatar || ''
        });
     }
   } catch (error) {
@@ -167,7 +167,10 @@ const handleAvatarChange = async (event: Event) => {
   }
 
   try {
-    const res = await uploadAvatar(file);
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await uploadAvatar(formData) as any;
+    
     if (res && res.avatarUrl) {
       userInfo.avatar = res.avatarUrl;
       userStore.setUserInfo({
@@ -238,11 +241,6 @@ const handleUpdatePassword = async () => {
   } finally {
     saving.value = false;
   }
-};
-
-const desensitizePhone = (phone: string) => {
-  if (!phone) return '未绑定';
-  return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
 };
 
 onMounted(() => {

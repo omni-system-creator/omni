@@ -64,8 +64,8 @@
         <a-form-item label="合同金额" name="amount">
           <a-input-number
             v-model:value="formState.amount"
-            :formatter="value => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
-            :parser="value => value.replace(/\¥\s?|(,*)/g, '')"
+            :formatter="(value: any) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')"
+            :parser="(value: any) => value.replace(/\¥\s?|(,*)/g, '')"
             style="width: 100%"
           />
         </a-form-item>
@@ -129,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, defineExpose } from 'vue';
+import { reactive, ref } from 'vue';
 import { message } from 'ant-design-vue';
 import { InboxOutlined } from '@ant-design/icons-vue';
 import type { UploadChangeParam } from 'ant-design-vue';

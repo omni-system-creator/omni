@@ -41,6 +41,10 @@ namespace omsapi.Models.Dtos
         public string? Nickname { get; set; }
 
         public List<long> RoleIds { get; set; } = new();
+        
+        public long? DeptId { get; set; }
+
+        public List<UserPostRelationDto> PostRelations { get; set; } = new();
     }
 
     public class UpdateUserDto
@@ -59,6 +63,16 @@ namespace omsapi.Models.Dtos
         public bool? IsActive { get; set; }
 
         public List<long>? RoleIds { get; set; }
+
+        public long? DeptId { get; set; }
+
+        public List<UserPostRelationDto>? PostRelations { get; set; }
+    }
+
+    public class UserPostRelationDto
+    {
+        public long DeptId { get; set; }
+        public long PostId { get; set; }
     }
 
     public class UserListDto
@@ -73,5 +87,15 @@ namespace omsapi.Models.Dtos
         public DateTime CreatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public List<string> Roles { get; set; } = new();
+        public List<UserPostDto> Posts { get; set; } = new();
+        public DeptDto? Dept { get; set; }
+    }
+
+    public class UserPostDto
+    {
+        public long PostId { get; set; }
+        public string PostName { get; set; } = string.Empty;
+        public long DeptId { get; set; }
+        public string DeptName { get; set; } = string.Empty;
     }
 }

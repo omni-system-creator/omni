@@ -148,12 +148,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { 
   PlusOutlined, 
   InboxOutlined, 
   FileTextOutlined,
-  SearchOutlined
+  // SearchOutlined
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { UploadChangeParam, UploadProps } from 'ant-design-vue';
@@ -361,15 +361,18 @@ const handleModalOk = () => {
           // 编辑
           const index = dataSource.value.findIndex(item => item.id === formState.id);
           if (index !== -1) {
-            dataSource.value[index] = {
-              ...dataSource.value[index],
-              name: formState.name,
-              type: formState.type!,
-              description: formState.description,
-              status: formState.status as 'active' | 'inactive',
-              updatedAt: new Date().toLocaleString(),
-              fileName: formState.fileName || dataSource.value[index].fileName // 如果没上传新文件保持原样
-            };
+            const currentItem = dataSource.value[index];
+            if (currentItem) {
+              dataSource.value[index] = {
+                ...currentItem,
+                name: formState.name,
+                type: formState.type!,
+                description: formState.description,
+                status: formState.status as 'active' | 'inactive',
+                updatedAt: new Date().toLocaleString(),
+                fileName: formState.fileName || currentItem.fileName // 如果没上传新文件保持原样
+              };
+            }
           }
           message.success('模板更新成功');
         } else {

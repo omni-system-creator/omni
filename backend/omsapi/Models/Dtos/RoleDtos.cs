@@ -10,6 +10,8 @@ namespace omsapi.Models.Dtos
         public string? Description { get; set; }
         public bool IsSystem { get; set; }
         public DateTime CreatedAt { get; set; }
+        public long? DeptId { get; set; }
+        public List<long> ChildRoleIds { get; set; } = new();
     }
 
     public class CreateRoleDto
@@ -24,6 +26,9 @@ namespace omsapi.Models.Dtos
 
         [MaxLength(200)]
         public string? Description { get; set; }
+
+        public long? DeptId { get; set; }
+        public List<long> ChildRoleIds { get; set; } = new();
     }
 
     public class UpdateRoleDto
@@ -33,6 +38,9 @@ namespace omsapi.Models.Dtos
 
         [MaxLength(200)]
         public string? Description { get; set; }
+
+        public long? DeptId { get; set; }
+        public List<long> ChildRoleIds { get; set; } = new();
     }
 
     public class AssignPermissionDto

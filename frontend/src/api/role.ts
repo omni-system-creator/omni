@@ -7,17 +7,23 @@ export interface RoleDto {
   description?: string;
   isSystem: boolean;
   createdAt: string;
+  deptId?: number;
+  childRoleIds?: number[];
 }
 
 export interface CreateRoleDto {
   name: string;
   code: string;
   description?: string;
+  deptId?: number;
+  childRoleIds?: number[];
 }
 
 export interface UpdateRoleDto {
   name?: string;
   description?: string;
+  deptId?: number;
+  childRoleIds?: number[];
 }
 
 export interface PermissionTreeDto {
@@ -29,8 +35,8 @@ export interface PermissionTreeDto {
   children?: PermissionTreeDto[];
 }
 
-export const getRoleList = () => {
-  return request.get<any, RoleDto[]>('/role');
+export const getRoleList = (deptId?: number) => {
+  return request.get<any, RoleDto[]>('/role', { params: { deptId } });
 };
 
 export const getRoleById = (id: number) => {

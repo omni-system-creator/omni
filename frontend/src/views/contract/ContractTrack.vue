@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, shallowRef } from 'vue';
+import { ref, computed } from 'vue';
 import { ExportOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import ContractForm from './ContractForm.vue';

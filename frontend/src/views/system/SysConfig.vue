@@ -113,7 +113,7 @@ const loadConfigs = async () => {
     const res = await getAllConfigs();
     configs.value = res;
     if (configs.value.length > 0 && !activeTab.value) {
-      activeTab.value = configs.value[0].category;
+      activeTab.value = configs.value[0]?.category || '';
     }
   } catch (error) {
     console.error(error);

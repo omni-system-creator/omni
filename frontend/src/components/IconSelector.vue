@@ -48,7 +48,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import * as AntdIcons from '@ant-design/icons-vue';
+// import * as AntdIcons from '@ant-design/icons-vue';
 import DynamicIcon from './DynamicIcon.vue';
 
 const props = defineProps<{
@@ -68,32 +68,10 @@ const pageSize = 36;
 const iconCache: Record<string, string[]> = {};
 
 // 加载 Ant Design 图标 (本地同步)
-const loadAntdIcons = () => {
-  if (iconCache['ant-design']) {
-    allIcons.value = iconCache['ant-design'];
-    return;
-  }
-  
-  const keys = Object.keys(AntdIcons).filter(key => {
-    return (
-      key !== 'default' &&
-      key !== 'createFromIconfontCN' &&
-      key !== 'getTwoToneColor' &&
-      key !== 'setTwoToneColor' &&
-      (key.endsWith('Outlined') || key.endsWith('Filled')) // 暂不展示 TwoTone 以保持简洁
-    );
-  });
-  // 转换为 kebab-case 格式，如 StepBackwardOutlined -> step-backward-outlined
-  // 但为了兼容 Iconify 的 ant-design:xxx 格式，我们这里直接使用 Iconify 的命名规范会更好
-  // 不过 Ant Design Vue 组件库自带的图标可以直接用组件名
-  // 这里为了统一，我们构造为 ant-design:xxx 风格或者直接用组件名
-  // 由于 DynamicIcon 支持 Iconify，我们可以尝试映射到 ant-design 的 Iconify 集合，
-  // 或者直接保留组件名格式（前提是 DynamicIcon 做了兼容）。
-  // 现在的 DynamicIcon 纯粹是 Iconify，所以我们需要加载 @iconify-json/ant-design
-  
-  // 修正策略：既然用户安装了 @iconify-json/ant-design，我们统一从 JSON 加载，保持一致性
-  loadIconifyCollection('ant-design');
-};
+// const loadAntdIcons = () => {
+//   // ... (removed unused code)
+//   loadIconifyCollection('ant-design');
+// };
 
 // 动态加载 Iconify JSON
 const loadIconifyCollection = async (prefix: string) => {
@@ -124,8 +102,9 @@ const loadIconifyCollection = async (prefix: string) => {
     }
 
     if (iconsJson) {
+      const data = iconsJson.default || iconsJson;
       // 解析 Iconify JSON 结构
-      const iconNames = Object.keys(iconsJson.icons || {});
+      const iconNames = Object.keys(data.icons || {});
       // 加上前缀
       const fullNames = iconNames.map(name => `${prefix}:${name}`);
       

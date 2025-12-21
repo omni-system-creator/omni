@@ -23,5 +23,17 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  build: {
+    chunkSizeWarningLimit: 3000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'ant-design-vue': ['ant-design-vue', '@ant-design/icons-vue'],
+          'echarts': ['echarts'],
+          'leafer-ui': ['leafer-ui', '@leafer-in/find', '@leafer-in/arrow'],
+        }
+      }
+    }
   }
 })

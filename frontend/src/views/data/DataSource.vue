@@ -14,7 +14,7 @@
           :tree-data="treeData"
           @select="onSelect"
         >
-          <template #title="{ title, key, type }">
+          <template #title="{ title, type }">
             <span v-if="type === 'connection'"><DatabaseOutlined /> {{ title }}</span>
             <span v-else-if="type === 'database'"><FolderOutlined /> {{ title }}</span>
             <span v-else-if="type === 'table'"><TableOutlined /> {{ title }}</span>
@@ -204,7 +204,7 @@ const previewData = ref([
   { id: 2, username: 'user01', status: 1, created_at: '2025-01-02 11:30:00' },
 ]);
 
-const onSelect = (keys: string[], info: any) => {
+const onSelect = (_keys: string[], info: any) => {
   if (info.node.type === 'table') {
     selectedNode.value = { ...info.node };
   } else {

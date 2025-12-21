@@ -166,7 +166,6 @@
 <script lang="ts" setup>
 import { ref, computed, reactive, nextTick, watch } from 'vue';
 import { 
-  UserOutlined, 
   TeamOutlined, 
   BellOutlined, 
   AppstoreOutlined, 
@@ -330,7 +329,8 @@ const formatTime = (timeStr: string) => {
   const date = new Date(timeStr);
   const now = new Date();
   if (date.toDateString() === now.toDateString()) {
-    return timeStr.split(' ')[1].substring(0, 5); // HH:mm
+    const parts = timeStr.split(' ');
+    return parts.length > 1 ? (parts[1] || '').substring(0, 5) : timeStr; // HH:mm
   }
   return timeStr.split(' ')[0]; // YYYY-MM-DD
 };
@@ -339,7 +339,7 @@ const selectConversation = (item: Conversation) => {
   currentConversation.value = item;
   // 清除未读
   const idx = conversations.value.findIndex(c => c.id === item.id);
-  if (idx !== -1) {
+  if (idx !== -1 && conversations.value[idx]) {
     conversations.value[idx].unreadCount = 0;
   }
   scrollToBottom();
@@ -372,10 +372,11 @@ const handleSend = (e?: KeyboardEvent) => {
     showTime: false
   };
 
-  if (!messagesMap[currentConversation.value.id]) {
-    messagesMap[currentConversation.value.id] = [];
+  const cid = currentConversation.value.id;
+  if (!messagesMap[cid]) {
+    messagesMap[cid] = [];
   }
-  messagesMap[currentConversation.value.id].push(newMsg);
+  messagesMap[cid]?.push(newMsg);
   
   // 更新列表最后一条消息
   const conv = conversations.value.find(c => c.id === currentConversation.value?.id);
@@ -399,7 +400,7 @@ const handleSend = (e?: KeyboardEvent) => {
         timestamp: new Date().toLocaleString(),
         isSelf: false
       };
-      messagesMap[currentConversation.value!.id].push(replyMsg);
+      messagesMap[currentConversation.value!.id]?.push(replyMsg);
       if (conv) {
         conv.lastMessage = replyMsg.content;
         conv.lastTime = replyMsg.timestamp;
@@ -417,6 +418,7 @@ const handleImageUpload = (e: Event) => {
   
   // 模拟上传
   setTimeout(() => {
+    if (!currentConversation.value) return;
     message.success({ content: '发送成功', key: 'upload' });
     const newMsg: Message = {
       id: Date.now().toString(),
@@ -426,7 +428,10 @@ const handleImageUpload = (e: Event) => {
       timestamp: new Date().toLocaleString(),
       isSelf: true
     };
-    messagesMap[currentConversation.value!.id].push(newMsg);
+    if (!messagesMap[currentConversation.value.id]) {
+      messagesMap[currentConversation.value.id] = [];
+    }
+    messagesMap[currentConversation.value.id]?.push(newMsg);
     scrollToBottom();
   }, 1000);
 };
@@ -449,7 +454,7 @@ const handleFileUpload = (e: Event) => {
       timestamp: new Date().toLocaleString(),
       isSelf: true
     };
-    messagesMap[currentConversation.value!.id].push(newMsg);
+    messagesMap[currentConversation.value!.id]?.push(newMsg);
     scrollToBottom();
   }, 1000);
 };

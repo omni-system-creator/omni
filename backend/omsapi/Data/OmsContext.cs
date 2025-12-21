@@ -16,6 +16,10 @@ namespace omsapi.Data
         public DbSet<SystemRolePermission> RolePermissions { get; set; }
         public DbSet<SystemAuditLog> AuditLogs { get; set; }
         public DbSet<SystemConfig> SystemConfigs { get; set; }
+        public DbSet<SystemDept> Depts { get; set; }
+        public DbSet<SystemPost> Posts { get; set; }
+        public DbSet<SystemUserPost> UserPosts { get; set; }
+        public DbSet<SystemRoleInheritance> RoleInheritances { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -48,13 +52,47 @@ namespace omsapi.Data
             // 配置 UserRole 关联
             modelBuilder.Entity<SystemUserRole>(entity =>
             {
-                entity.HasIndex(ur => new { ur.UserId, ur.RoleId }).IsUnique();
+                entity.HasKey(ur => new { ur.UserId, ur.RoleId });
             });
 
             // 配置 RolePermission 关联
             modelBuilder.Entity<SystemRolePermission>(entity =>
             {
-                entity.HasIndex(rp => new { rp.RoleId, rp.PermissionId }).IsUnique();
+                entity.HasKey(rp => new { rp.RoleId, rp.PermissionId });
+            });
+
+            // 配置 SystemDept
+            modelBuilder.Entity<SystemDept>(entity =>
+            {
+                entity.HasIndex(d => d.ParentId);
+            });
+
+            // 配置 SystemPost
+            modelBuilder.Entity<SystemPost>(entity =>
+            {
+                entity.HasIndex(p => p.Code).IsUnique();
+            });
+
+            // 配置 SystemUserPost
+            modelBuilder.Entity<SystemUserPost>(entity =>
+            {
+                entity.HasKey(up => new { up.UserId, up.PostId, up.DeptId });
+            });
+
+            // 配置 SystemRoleInheritance
+            modelBuilder.Entity<SystemRoleInheritance>(entity =>
+            {
+                entity.HasKey(ri => new { ri.ParentRoleId, ri.ChildRoleId });
+                
+                entity.HasOne(ri => ri.ParentRole)
+                    .WithMany(r => r.ChildRoleRelations)
+                    .HasForeignKey(ri => ri.ParentRoleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(ri => ri.ChildRole)
+                    .WithMany(r => r.ParentRoleRelations)
+                    .HasForeignKey(ri => ri.ChildRoleId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // 初始化超级管理员
@@ -84,7 +122,6 @@ namespace omsapi.Data
             // 关联超级管理员用户和角色
             modelBuilder.Entity<SystemUserRole>().HasData(new SystemUserRole
             {
-                Id = 1,
                 UserId = 1,
                 RoleId = 1,
                 CreatedAt = new DateTime(2024, 1, 1)

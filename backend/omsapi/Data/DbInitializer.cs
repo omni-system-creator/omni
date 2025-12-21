@@ -136,11 +136,12 @@ namespace omsapi.Data
             AddMenu("系统管理", "system", "/system", "Layout", "ant-design:setting-outlined", null, 130, out long systemId);
             AddMenu("用户管理", "SysUser", "/system/user", "views/system/SysUser.vue", null, systemId, 131, out long sysUserId);
             AddMenu("角色管理", "SysRole", "/system/role", "views/system/SysRole.vue", null, systemId, 132, out long sysRoleId);
-            AddMenu("权限管理", "SysPermission", "/system/permission", "views/system/SysPermission.vue", null, systemId, 133, out _);
-            AddMenu("组织架构", "SysOrg", "/system/org", "views/system/SysOrg.vue", null, systemId, 134, out _);
-            AddMenu("系统配置", "SysConfig", "/system/config", "views/system/SysConfig.vue", null, systemId, 135, out _);
-            AddMenu("数据安全", "SysSecurity", "/system/security", "views/system/SysSecurity.vue", null, systemId, 136, out _);
-            AddMenu("系统集成", "SysIntegration", "/system/integration", "views/system/SysIntegration.vue", null, systemId, 137, out _);
+            AddMenu("岗位管理", "SysPost", "/system/post", "views/system/SysPost.vue", null, systemId, 133, out long sysPostId);
+            AddMenu("权限管理", "SysPermission", "/system/permission", "views/system/SysPermission.vue", null, systemId, 134, out _);
+            AddMenu("组织架构", "SysOrg", "/system/org", "views/system/SysOrg.vue", null, systemId, 135, out _);
+            AddMenu("系统配置", "SysConfig", "/system/config", "views/system/SysConfig.vue", null, systemId, 136, out _);
+            AddMenu("数据安全", "SysSecurity", "/system/security", "views/system/SysSecurity.vue", null, systemId, 137, out _);
+            AddMenu("系统集成", "SysIntegration", "/system/integration", "views/system/SysIntegration.vue", null, systemId, 138, out _);
 
             // --- 示例：为用户管理添加功能点权限 ---
             AddButton("新增用户", "system:user:add", sysUserId);
@@ -154,18 +155,39 @@ namespace omsapi.Data
             AddButton("删除角色", "system:role:delete", sysRoleId);
             AddButton("分配权限", "system:role:assign_perm", sysRoleId);
 
+            // --- 示例：为岗位管理添加功能点权限 ---
+            AddButton("新增岗位", "system:post:add", sysPostId);
+            AddButton("编辑岗位", "system:post:edit", sysPostId);
+            AddButton("删除岗位", "system:post:delete", sysPostId);
+
             await context.SaveChangesAsync();
 
             // 默认给管理员角色分配所有权限
+            // 获取管理员已有的权限ID
+            var existingRolePermIds = await context.RolePermissions
+                .Where(rp => rp.RoleId == 1)
+                .Select(rp => rp.PermissionId)
+                .ToListAsync();
+            var existingRolePermIdsSet = new HashSet<long>(existingRolePermIds);
+
+            // 获取所有权限（包括新添加的）
             var allPerms = await context.Permissions.ToListAsync();
-            var adminRolePerms = allPerms.Select(p => new SystemRolePermission
+            
+            // 找出尚未分配给管理员的权限
+            var newRolePerms = allPerms
+                .Where(p => !existingRolePermIdsSet.Contains(p.Id))
+                .Select(p => new SystemRolePermission
+                {
+                    RoleId = 1, // Admin Role ID
+                    PermissionId = p.Id,
+                    CreatedAt = now
+                });
+            
+            if (newRolePerms.Any())
             {
-                RoleId = 1, // Admin Role ID
-                PermissionId = p.Id,
-                CreatedAt = now
-            });
-            context.RolePermissions.AddRange(adminRolePerms);
-            await context.SaveChangesAsync();
+                context.RolePermissions.AddRange(newRolePerms);
+                await context.SaveChangesAsync();
+            }
         }
     }
 }

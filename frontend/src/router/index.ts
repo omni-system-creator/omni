@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { usePermissionStore } from '@/stores/permission'
-import MainLayout from '../layouts/MainLayout.vue'
+// import MainLayout from '../layouts/MainLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -14,7 +14,7 @@ const router = createRouter({
     // 基础路由，不需要权限
     {
       path: '/basic', // 避免和动态路由的 / 冲突
-      component: MainLayout,
+      component: () => import('../layouts/MainLayout.vue'),
       children: [
         {
           path: '/redirect/:path(.*)',
@@ -23,6 +23,24 @@ const router = createRouter({
       ]
     },
     // 404 页面
+    {
+      path: '/help',
+      component: () => import('../layouts/MainLayout.vue'),
+      children: [
+        {
+          path: 'manual',
+          name: 'HelpManual',
+          component: () => import('../views/help/HelpManual.vue'),
+          meta: { title: '使用文档' }
+        },
+        {
+          path: 'admin-manual',
+          name: 'AdminManual',
+          component: () => import('../views/help/AdminManual.vue'),
+          meta: { title: '运维手册', roles: ['admin'] }
+        }
+      ]
+    },
     {
       path: '/:pathMatch(.*)*',
       component: () => import('../views/error/404.vue')
@@ -33,7 +51,7 @@ const router = createRouter({
 let isRoutesLoaded = false;
 
 // 路由守卫
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   let token = '';
   try {
     const authData = JSON.parse(localStorage.getItem('oms.auth') || '{}');

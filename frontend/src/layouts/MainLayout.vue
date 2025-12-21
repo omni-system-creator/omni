@@ -66,14 +66,14 @@
         <div class="header-right">
           <a-space size="middle">
             <a-tooltip title="使用文档">
-              <a-button type="text" shape="circle">
+              <a-button type="text" shape="circle" @click="router.push('/help/manual')">
                 <template #icon><DynamicIcon icon="ant-design:question-circle-outlined" /></template>
               </a-button>
             </a-tooltip>
             
             <a-tooltip title="消息通知">
               <a-badge count="5" dot>
-                <a-button type="text" shape="circle">
+                <a-button type="text" shape="circle" @click="router.push('/personal/messages')">
                   <template #icon><DynamicIcon icon="ant-design:bell-outlined" /></template>
                 </a-button>
               </a-badge>
@@ -161,7 +161,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, reactive } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { UserOutlined } from '@ant-design/icons-vue';
@@ -291,7 +291,7 @@ const selectedKeys = computed({
     const key = findKeyByPath(menuData.value);
     return key ? [key] : [];
   },
-  set: (val) => {
+  set: (_val) => {
     // 这里不需要做什么，因为点击菜单会触发路由跳转，进而触发 get
   }
 });

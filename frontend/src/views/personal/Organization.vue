@@ -17,7 +17,16 @@
           block-node
           @select="handleSelect"
         >
-          <template #title="{ name }">
+          <template #title="{ name, type }">
+            <span v-if="type === DeptType.Group">
+               <BankOutlined style="color: #faad14; margin-right: 4px" />
+            </span>
+            <span v-else-if="type === DeptType.Company">
+               <ApartmentOutlined style="color: #1890ff; margin-right: 4px" />
+            </span>
+            <span v-else>
+               <ClusterOutlined style="color: #8c8c8c; margin-right: 4px" />
+            </span>
             <span v-if="name.indexOf(deptSearch) > -1">
               {{ name.substr(0, name.indexOf(deptSearch)) }}
               <span style="color: #f50">{{ deptSearch }}</span>
@@ -62,24 +71,26 @@
           <a-card v-for="member in filteredMembers" :key="member.id" hoverable class="member-card">
             <div class="member-info">
               <a-avatar :size="64" :src="member.avatar" :style="{ backgroundColor: member.avatar ? 'transparent' : '#1890ff' }">
-                {{ member.name.charAt(0) }}
+                {{ getAvatarText(member) }}
               </a-avatar>
               <div class="info-text">
                 <div class="name">
-                  {{ member.name }} 
-                  <a-tag v-if="member.isLeader" color="blue">负责人</a-tag>
-                  <a-tag :color="statusMap[member.status]?.color" style="margin-left: 8px;">{{ statusMap[member.status]?.text }}</a-tag>
+                  {{ getDisplayName(member) }}
+                  <!-- <a-tag v-if="member.isLeader" color="blue">负责人</a-tag> -->
+                  <a-tag :color="member.isActive ? statusMap['online']?.color : statusMap['leave']?.color" style="margin-left: 8px;">
+                    {{ member.isActive ? '在岗' : '离职/休假' }}
+                  </a-tag>
                 </div>
-                <div class="position">{{ member.position }}</div>
-                <div class="dept">{{ member.deptName }}</div>
+                <div class="position">{{ member.posts?.[0]?.postName || '未分配职位' }}</div>
+                <div class="dept" :title="getDeptPath(member.dept?.id)">{{ getDeptPath(member.dept?.id) }}</div>
               </div>
             </div>
             <div class="contact-info">
               <div class="contact-item">
-                <MailOutlined /> {{ member.email }}
+                <MailOutlined /> {{ member.email || '无邮箱' }}
               </div>
               <div class="contact-item">
-                <PhoneOutlined /> {{ member.phone }}
+                <PhoneOutlined /> {{ member.phone || '无电话' }}
               </div>
             </div>
             <template #actions>
@@ -102,14 +113,20 @@
             <template v-if="column.key === 'name'">
               <a-space>
                 <a-avatar :size="32" :src="record.avatar" :style="{ backgroundColor: record.avatar ? 'transparent' : '#1890ff' }">
-                  {{ record.name.charAt(0) }}
+                  {{ getAvatarText(record) }}
                 </a-avatar>
-                {{ record.name }}
-                <a-tag v-if="record.isLeader" color="blue">负责人</a-tag>
+                {{ getDisplayName(record) }}
+                <!-- <a-tag v-if="record.isLeader" color="blue">负责人</a-tag> -->
               </a-space>
             </template>
+            <template v-else-if="column.key === 'position'">
+               {{ record.posts?.[0]?.postName }}
+            </template>
+            <template v-else-if="column.key === 'deptName'">
+               <span :title="getDeptPath(record.dept?.id)">{{ record.dept?.name }}</span>
+            </template>
             <template v-else-if="column.key === 'status'">
-              <a-badge :status="statusMap[record.status]?.status" :text="statusMap[record.status]?.text" />
+              <a-badge :status="record.isActive ? 'success' : 'error'" :text="record.isActive ? '在岗' : '离职/休假'" />
             </template>
             <template v-else-if="column.key === 'action'">
               <a-space>
@@ -125,72 +142,29 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { 
   AppstoreOutlined, 
   BarsOutlined, 
-  UserOutlined, 
   MailOutlined, 
   PhoneOutlined,
   MessageOutlined,
-  ProfileOutlined
+  ProfileOutlined,
+  BankOutlined,
+  ApartmentOutlined,
+  ClusterOutlined
 } from '@ant-design/icons-vue';
+import { getDeptTree, type Dept, DeptType } from '@/api/dept';
+import { getUserList, type UserListDto } from '@/api/user';
+import { useUserStore } from '@/stores/user';
 
-// Mock Data
-const deptTree = [
-  {
-    id: '1',
-    name: '总经办',
-    children: []
-  },
-  {
-    id: '2',
-    name: '研发中心',
-    children: [
-      { id: '2-1', name: '前端开发组' },
-      { id: '2-2', name: '后端开发组' },
-      { id: '2-3', name: 'UI设计组' },
-      { id: '2-4', name: '测试组' }
-    ]
-  },
-  {
-    id: '3',
-    name: '营销中心',
-    children: [
-      { id: '3-1', name: '销售一部' },
-      { id: '3-2', name: '销售二部' },
-      { id: '3-3', name: '市场部' }
-    ]
-  },
-  {
-    id: '4',
-    name: '财务中心',
-    children: [
-      { id: '4-1', name: '会计部' },
-      { id: '4-2', name: '出纳部' }
-    ]
-  },
-  {
-    id: '5',
-    name: '人力资源中心',
-    children: [
-      { id: '5-1', name: '招聘组' },
-      { id: '5-2', name: '薪酬绩效组' }
-    ]
-  }
-];
-
-const allMembers = [
-  { id: '101', name: '张三', position: '总经理', deptId: '1', deptName: '总经办', email: 'zhangsan@example.com', phone: '13800138001', avatar: '', isLeader: true, status: 'online' },
-  { id: '201', name: '李四', position: '研发总监', deptId: '2', deptName: '研发中心', email: 'lisi@example.com', phone: '13800138002', avatar: '', isLeader: true, status: 'business' },
-  { id: '211', name: '王五', position: '前端主管', deptId: '2-1', deptName: '前端开发组', email: 'wangwu@example.com', phone: '13800138003', avatar: '', isLeader: true, status: 'online' },
-  { id: '212', name: '赵六', position: '高级前端工程师', deptId: '2-1', deptName: '前端开发组', email: 'zhaoliu@example.com', phone: '13800138004', avatar: '', isLeader: false, status: 'leave' },
-  { id: '213', name: '钱七', position: '前端工程师', deptId: '2-1', deptName: '前端开发组', email: 'qianqi@example.com', phone: '13800138005', avatar: '', isLeader: false, status: 'online' },
-  { id: '221', name: '孙八', position: '后端主管', deptId: '2-2', deptName: '后端开发组', email: 'sunba@example.com', phone: '13800138006', avatar: '', isLeader: true, status: 'out' },
-  { id: '301', name: '周九', position: '营销总监', deptId: '3', deptName: '营销中心', email: 'zhoujiu@example.com', phone: '13800138007', avatar: '', isLeader: true, status: 'online' },
-  { id: '311', name: '吴十', position: '销售经理', deptId: '3-1', deptName: '销售一部', email: 'wushi@example.com', phone: '13800138008', avatar: '', isLeader: true, status: 'business' },
-  { id: '312', name: '郑十一', position: '销售专员', deptId: '3-1', deptName: '销售一部', email: 'zhengshiyi@example.com', phone: '13800138009', avatar: '', isLeader: false, status: 'online' },
-];
+// Data
+const deptTree = ref<Dept[]>([]);
+const allMembers = ref<UserListDto[]>([]);
+const loading = ref(false);
+const userStore = useUserStore();
+const STORAGE_VIEW_KEY = `oms_org_view_mode_${userStore.username}`;
+const STORAGE_EXPAND_KEY = `oms_org_expanded_keys_${userStore.username}`;
 
 const statusMap: Record<string, { text: string; status: string; color: string }> = {
   online: { text: '在岗', status: 'success', color: '#52c41a' },
@@ -202,17 +176,55 @@ const statusMap: Record<string, { text: string; status: string; color: string }>
 // State
 const deptSearch = ref('');
 const memberSearch = ref('');
-const expandedKeys = ref<string[]>(['2', '3']);
-const selectedKeys = ref<string[]>([]);
-const currentDept = ref<any>(null);
-const viewMode = ref('card');
+const expandedKeys = ref<number[]>([]);
+const selectedKeys = ref<number[]>([]);
+const currentDept = ref<Dept | null>(null);
+const viewMode = ref(localStorage.getItem(STORAGE_VIEW_KEY) || 'card');
+
+watch(viewMode, (newVal) => {
+  localStorage.setItem(STORAGE_VIEW_KEY, newVal);
+});
+
+watch(expandedKeys, (newVal) => {
+  localStorage.setItem(STORAGE_EXPAND_KEY, JSON.stringify(newVal));
+}, { deep: true });
+
+// Helper functions
+const getDisplayName = (member: UserListDto) => {
+  return member.nickname || member.username || '未知用户';
+};
+
+const getAvatarText = (member: UserListDto) => {
+  const name = member.nickname || member.username;
+  return name ? name.charAt(0).toUpperCase() : '?';
+};
+
+const getDeptPath = (deptId: number | undefined): string => {
+  if (!deptId) return '未分配部门';
+  
+  const findPath = (nodes: Dept[], targetId: number, currentPath: string[]): string[] | null => {
+    for (const node of nodes) {
+      if (node.id === targetId) {
+        return [...currentPath, node.name];
+      }
+      if (node.children) {
+        const childResult = findPath(node.children, targetId, [...currentPath, node.name]);
+        if (childResult) return childResult;
+      }
+    }
+    return null;
+  };
+
+  const path = findPath(deptTree.value, deptId, []);
+  return path ? path.join(' / ') : '未知部门';
+};
 
 // Table Columns
 const columns = [
   { title: '姓名', key: 'name', width: 200 },
   { title: '工号', dataIndex: 'id', width: 100 },
-  { title: '职位', dataIndex: 'position', width: 150 },
-  { title: '部门', dataIndex: 'deptName', width: 150 },
+  { title: '职位', key: 'position', width: 150 },
+  { title: '部门', key: 'deptName', width: 150 },
   { title: '手机', dataIndex: 'phone', width: 150 },
   { title: '邮箱', dataIndex: 'email' },
   { title: '状态', key: 'status', width: 130 },
@@ -220,12 +232,9 @@ const columns = [
 ];
 
 // Methods
-const handleSelect = (keys: string[], info: any) => {
-  if (keys.length > 0) {
-    // Find dept info
-    // For simplicity, we just use the node data from tree select
-    // In a real app, you might traverse or have a flat map
-    const findDept = (nodes: any[], key: string): any => {
+const handleSelect = (keys: number[]) => {
+  if (keys.length > 0 && keys[0]) {
+    const findDept = (nodes: Dept[], key: number): Dept | null => {
       for (const node of nodes) {
         if (node.id === key) return node;
         if (node.children) {
@@ -235,21 +244,20 @@ const handleSelect = (keys: string[], info: any) => {
       }
       return null;
     };
-    currentDept.value = findDept(deptTree, keys[0]);
+    currentDept.value = findDept(deptTree.value, keys[0]);
   } else {
     currentDept.value = null;
   }
 };
 
-const getAllDeptIds = (deptId: string): string[] => {
+const getAllDeptIds = (deptId: number): number[] => {
   const ids = [deptId];
-  const findChildren = (nodes: any[]) => {
+  const findChildren = (nodes: Dept[]) => {
     for (const node of nodes) {
       if (node.id === deptId) {
-        // found the node, now collect all children
-        const collect = (n: any) => {
+        const collect = (n: Dept) => {
           if (n.children) {
-            n.children.forEach((c: any) => {
+            n.children.forEach((c: Dept) => {
               ids.push(c.id);
               collect(c);
             });
@@ -264,38 +272,69 @@ const getAllDeptIds = (deptId: string): string[] => {
     }
     return false;
   };
-  findChildren(deptTree);
+  findChildren(deptTree.value);
   return ids;
 };
 
 // Computed
 const filteredMembers = computed(() => {
-  let data = allMembers;
+  let data = allMembers.value;
 
   // Filter by department
-  if (selectedKeys.value.length > 0) {
+  if (selectedKeys.value.length > 0 && selectedKeys.value[0]) {
     const selectedId = selectedKeys.value[0];
-    // Simple logic: if selecting a parent dept, show all children?
-    // Let's implement recursive check or just direct match.
-    // Usually org chart shows all under the subtree.
-    // For now, let's just match exact deptId or basic subtree logic if we had parent references.
-    // To keep it simple and robust without parent refs, let's helper function to find all child IDs
-    
     const targetIds = getAllDeptIds(selectedId);
-    data = data.filter(m => targetIds.includes(m.deptId));
+    // UserListDto has dept: { id, name }
+    data = data.filter(m => m.dept && targetIds.includes(m.dept.id));
   }
 
   // Filter by search text
   if (memberSearch.value) {
     const lowerSearch = memberSearch.value.toLowerCase();
     data = data.filter(m => 
-      m.name.toLowerCase().includes(lowerSearch) || 
-      m.position.toLowerCase().includes(lowerSearch) ||
-      m.phone.includes(lowerSearch)
+      (m.nickname && m.nickname.toLowerCase().includes(lowerSearch)) || 
+      (m.username && m.username.toLowerCase().includes(lowerSearch)) ||
+      (m.phone && m.phone.includes(lowerSearch)) ||
+      (m.posts && m.posts.some(p => p.postName.toLowerCase().includes(lowerSearch)))
     );
   }
 
   return data;
+});
+
+const fetchData = async () => {
+  loading.value = true;
+  try {
+    const [deptRes, userRes] = await Promise.all([
+      getDeptTree(),
+      getUserList()
+    ]);
+    deptTree.value = deptRes || [];
+    allMembers.value = userRes || [];
+    
+    // Restore expanded keys or default to root
+    const storedExpandedKeys = localStorage.getItem(STORAGE_EXPAND_KEY);
+    if (storedExpandedKeys) {
+      try {
+        expandedKeys.value = JSON.parse(storedExpandedKeys);
+      } catch (e) {
+        // Fallback if JSON parse fails
+        if (deptTree.value.length > 0) {
+          expandedKeys.value = deptTree.value.map(d => d.id);
+        }
+      }
+    } else if (deptTree.value.length > 0) {
+      expandedKeys.value = deptTree.value.map(d => d.id);
+    }
+  } catch (error) {
+    console.error('Failed to fetch data:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchData();
 });
 
 </script>

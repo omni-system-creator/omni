@@ -19,9 +19,9 @@ namespace omsapi.Controllers
         }
 
         [HttpGet]
-        public async Task<ApiResponse<List<RoleDto>>> GetAll()
+        public async Task<ApiResponse<List<RoleDto>>> GetAll([FromQuery] long? deptId = null)
         {
-            var (success, message, data) = await _roleService.GetAllRolesAsync();
+            var (success, message, data) = await _roleService.GetAllRolesAsync(deptId);
             if (!success) return ApiResponse<List<RoleDto>>.Error(message);
             return ApiResponse<List<RoleDto>>.Success(data!);
         }

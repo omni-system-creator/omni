@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+// import { useRouter } from 'vue-router';
 import { usePermissionStore } from './permission';
 import { resetRouter } from '@/router';
 import { useTabsStore } from './tabs';
@@ -29,7 +29,7 @@ export const useUserStore = defineStore('user', () => {
   const username = ref<string>(state.username);
   const nickname = ref<string>(state.nickname);
   const avatar = ref<string>(state.avatar);
-  const router = useRouter();
+  // const router = useRouter();
 
   function setToken(newToken: string) {
     token.value = newToken;

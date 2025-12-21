@@ -141,8 +141,13 @@ namespace omsapi.Services
         public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync()
         {
             var users = await _context.Users
+                .Include(u => u.Dept)
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
+                .Include(u => u.UserPosts)
+                .ThenInclude(up => up.Post)
+                .Include(u => u.UserPosts)
+                .ThenInclude(up => up.Dept)
                 .Select(u => new UserListDto
                 {
                     Id = u.Id,
@@ -154,7 +159,24 @@ namespace omsapi.Services
                     IsActive = u.IsActive,
                     CreatedAt = u.CreatedAt,
                     LastLoginAt = u.LastLoginAt,
-                    Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList()
+                    Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList(),
+                    Posts = u.UserPosts.Select(up => new UserPostDto 
+                    { 
+                        PostId = up.PostId, 
+                        PostName = up.Post.Name,
+                        DeptId = up.DeptId,
+                        DeptName = up.Dept.Name
+                    }).ToList(),
+                    Dept = u.Dept != null ? new DeptDto 
+                    { 
+                        Id = u.Dept.Id, 
+                        Name = u.Dept.Name,
+                        Code = u.Dept.Code,
+                        ParentId = u.Dept.ParentId,
+                        SortOrder = u.Dept.SortOrder,
+                        IsActive = u.Dept.IsActive,
+                        CreatedAt = u.Dept.CreatedAt
+                    } : null
                 })
                 .ToListAsync();
 
@@ -164,8 +186,13 @@ namespace omsapi.Services
         public async Task<(bool Success, string Message, UserListDto? Data)> GetUserByIdAsync(long id)
         {
             var user = await _context.Users
+                .Include(u => u.Dept)
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
+                .Include(u => u.UserPosts)
+                .ThenInclude(up => up.Post)
+                .Include(u => u.UserPosts)
+                .ThenInclude(up => up.Dept)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
             if (user == null)
@@ -184,7 +211,24 @@ namespace omsapi.Services
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
                 LastLoginAt = user.LastLoginAt,
-                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList()
+                Roles = user.UserRoles.Select(ur => ur.Role.Name).ToList(),
+                Posts = user.UserPosts.Select(up => new UserPostDto
+                {
+                    PostId = up.PostId,
+                    PostName = up.Post.Name,
+                    DeptId = up.DeptId,
+                    DeptName = up.Dept.Name
+                }).ToList(),
+                Dept = user.Dept != null ? new DeptDto
+                {
+                    Id = user.Dept.Id,
+                    Name = user.Dept.Name,
+                    Code = user.Dept.Code,
+                    ParentId = user.Dept.ParentId,
+                    SortOrder = user.Dept.SortOrder,
+                    IsActive = user.Dept.IsActive,
+                    CreatedAt = user.Dept.CreatedAt
+                } : null
             };
 
             return (true, "获取成功", dto);
@@ -202,6 +246,7 @@ namespace omsapi.Services
                 Username = dto.Username,
                 Password = ComputeSha256Hash(dto.Password),
                 Nickname = dto.Nickname,
+                DeptId = dto.DeptId,
                 CreatedAt = DateTime.Now,
                 IsActive = true
             };
@@ -222,9 +267,22 @@ namespace omsapi.Services
                             RoleId = roleId
                         });
                     }
-                    await _context.SaveChangesAsync();
                 }
 
+                if (dto.PostRelations != null && dto.PostRelations.Any())
+                {
+                    foreach (var rel in dto.PostRelations)
+                    {
+                        _context.UserPosts.Add(new omsapi.Models.Entities.SystemUserPost
+                        {
+                            UserId = user.Id,
+                            PostId = rel.PostId,
+                            DeptId = rel.DeptId
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
                 return (true, "创建成功");
             }
@@ -253,6 +311,7 @@ namespace omsapi.Services
             if (dto.Email != null) user.Email = dto.Email;
             if (dto.Phone != null) user.Phone = dto.Phone;
             if (dto.IsActive.HasValue) user.IsActive = dto.IsActive.Value;
+            if (dto.DeptId.HasValue) user.DeptId = dto.DeptId.Value;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -270,6 +329,24 @@ namespace omsapi.Services
                         {
                             UserId = id,
                             RoleId = roleId
+                        });
+                    }
+                }
+
+                if (dto.PostRelations != null)
+                {
+                    // 移除旧岗位关联
+                    var oldPosts = await _context.UserPosts.Where(up => up.UserId == id).ToListAsync();
+                    _context.UserPosts.RemoveRange(oldPosts);
+
+                    // 添加新岗位关联
+                    foreach (var rel in dto.PostRelations)
+                    {
+                        _context.UserPosts.Add(new omsapi.Models.Entities.SystemUserPost
+                        {
+                            UserId = id,
+                            PostId = rel.PostId,
+                            DeptId = rel.DeptId
                         });
                     }
                 }
@@ -303,6 +380,10 @@ namespace omsapi.Services
             // 先删除关联的角色
             var roles = await _context.UserRoles.Where(ur => ur.UserId == id).ToListAsync();
             _context.UserRoles.RemoveRange(roles);
+
+            // 删除关联的岗位
+            var posts = await _context.UserPosts.Where(up => up.UserId == id).ToListAsync();
+            _context.UserPosts.RemoveRange(posts);
             
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();

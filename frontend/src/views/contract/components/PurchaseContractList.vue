@@ -15,22 +15,22 @@
                 :value="selectedKeys[0]"
                 placeholder="Min"
                 style="width: 100px; text-align: center"
-                @change="val => setSelectedKeys([val, selectedKeys[1]])"
-              />
-              <span style="padding: 0 4px">~</span>
-              <a-input-number
-                :value="selectedKeys[1]"
-                placeholder="Max"
-                style="width: 100px; text-align: center"
-                @change="val => setSelectedKeys([selectedKeys[0], val])"
-              />
+                @change="(val: any) => setSelectedKeys([val, selectedKeys[1]])"
+            />
+            <span style="padding: 0 4px">~</span>
+            <a-input-number
+              :value="selectedKeys[1]"
+              placeholder="Max"
+              style="width: 100px; text-align: center"
+              @change="(val: any) => setSelectedKeys([selectedKeys[0], val])"
+            />
             </div>
           </template>
           <template v-else-if="column.key === 'signDate' || column.key === 'latestPaymentDate'">
             <a-range-picker
               :value="selectedKeys"
               style="margin-bottom: 8px; display: block; width: 250px"
-              @change="(dates, dateStrings) => setSelectedKeys(dateStrings)"
+              @change="(_dates: any, dateStrings: any) => setSelectedKeys(dateStrings)"
             />
           </template>
           <template v-else>
@@ -39,7 +39,7 @@
               :placeholder="`搜索 ${column.title}`"
               :value="selectedKeys[0]"
               style="width: 188px; margin-bottom: 8px; display: block"
-              @change="e => setSelectedKeys(e.target.value ? [e.target.value] : [])"
+              @change="(e: any) => setSelectedKeys(e.target.value ? [e.target.value] : [])"
               @pressEnter="handleSearch(selectedKeys, confirm, column.dataIndex)"
             />
           </template>
@@ -90,7 +90,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+// import { ref } from 'vue';
 import { SearchOutlined, FilterFilled, MoreOutlined } from '@ant-design/icons-vue';
 
 // Types
@@ -130,13 +130,13 @@ const getStatusText = (status: string) => {
   }
 };
 
-const handleSearch = (selectedKeys: string[], confirm: () => void, dataIndex: string) => {
+const handleSearch = (_selectedKeys: string[], confirm: () => void, _dataIndex: string) => {
   confirm();
 };
 
-const handleReset = (clearFilters: () => void) => {
+const handleReset = (clearFilters: any) => {
   if (clearFilters) {
-    clearFilters({ confirm: true });
+    clearFilters();
   }
 };
 

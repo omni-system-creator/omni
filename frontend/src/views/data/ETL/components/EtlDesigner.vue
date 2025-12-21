@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, defineProps, watch } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { 
   DatabaseOutlined, 
   FunctionOutlined, 
@@ -179,7 +179,7 @@ const initLeafer = () => {
             selectEdge(target.id);
             return;
         }
-        target = target.parent;
+        target = target.parent as any;
     }
     // Clicked on background
     deselectNode();
@@ -314,12 +314,12 @@ const createNodeVisual = (node: NodeData) => {
         const n = props.nodes.find(item => item.id === node.id);
         if (n) {
             // Check alignment
-            const snapped = checkAlignment(node.id, group.x, group.y);
+            const snapped = checkAlignment(node.id, group.x || 0, group.y || 0);
             if (snapped.x !== undefined) group.x = snapped.x;
             if (snapped.y !== undefined) group.y = snapped.y;
 
-            n.x = group.x;
-            n.y = group.y;
+            n.x = group.x || 0;
+            n.y = group.y || 0;
             updateConnectedLines(node.id);
         }
     });
@@ -484,8 +484,8 @@ const startConnection = (nodeGroup: Group) => {
         strokeWidth: 2,
         dashPattern: [5, 5],
         path: getCurvePath(
-            nodeGroup.x + 180, nodeGroup.y + 35, 
-            nodeGroup.x + 180, nodeGroup.y + 35
+            (nodeGroup.x || 0) + 180, (nodeGroup.y || 0) + 35, 
+            (nodeGroup.x || 0) + 180, (nodeGroup.y || 0) + 35
         ),
         endArrow: 'arrow',
         pointerEvents: 'none'
@@ -504,8 +504,8 @@ const onConnectionMove = (e: PointerEvent) => {
         const localY = (e.y - (graphGroup.y || 0)) / scale;
 
         activeConnectionLine.path = getCurvePath(
-            connectionStartNode.x + 180, 
-            connectionStartNode.y + 35, 
+            (connectionStartNode.x || 0) + 180, 
+            (connectionStartNode.y || 0) + 35, 
             localX, 
             localY
         );
@@ -653,7 +653,7 @@ const setupInteractions = () => {
 
     // Pan (Start)
     leaferApp.on(PointerEvent.DOWN, (e: PointerEvent) => {
-        const originEvent = e.origin || e.event;
+        const originEvent = (e.origin || (e as any).event) as PointerEvent;
         if (!originEvent) return;
 
         // Check if target is interactive (Node, Port, etc.)
@@ -665,11 +665,11 @@ const setupInteractions = () => {
                 isInteractive = true;
                 break;
             }
-            curr = curr.parent;
+            curr = curr.parent as any;
         }
 
-        const isMiddleBtn = originEvent.button === 1;
-        const isLeftBtn = originEvent.button === 0;
+        const isMiddleBtn = (originEvent as any).button === 1 || (originEvent as any).buttons === 4;
+        const isLeftBtn = (originEvent as any).button === 0 || (originEvent as any).buttons === 1;
         
         const shouldPan = isSpacePressed.value || isMiddleBtn || (isLeftBtn && !isInteractive);
 
@@ -681,8 +681,8 @@ const setupInteractions = () => {
 
             isPanning = true;
             // Use native event client coordinates
-            const clientX = (originEvent as MouseEvent).clientX;
-            const clientY = (originEvent as MouseEvent).clientY;
+            const clientX = (originEvent as any).clientX;
+            const clientY = (originEvent as any).clientY;
             
             if (typeof clientX === 'number') {
                 lastPanX = clientX;
@@ -732,6 +732,7 @@ const setupInteractions = () => {
     canvasContainer.value.addEventListener('touchstart', (e: TouchEvent) => {
         if (e.touches.length === 2 && graphGroup) {
             e.preventDefault();
+            if (!e.touches[0] || !e.touches[1]) return;
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
             initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
@@ -753,6 +754,7 @@ const setupInteractions = () => {
         if (e.touches.length === 2 && initialPinchDistance && graphGroup && initialCenterPoint) {
             e.preventDefault();
             
+            if (!e.touches[0] || !e.touches[1]) return;
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
             const currentDistance = Math.sqrt(dx * dx + dy * dy);
@@ -766,6 +768,7 @@ const setupInteractions = () => {
             const localY = (initialCenterPoint.y - initialGraphY) / initialScale;
             
             const rect = canvasContainer.value!.getBoundingClientRect();
+            if (!e.touches[0] || !e.touches[1]) return;
             const currentCenterClientX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
             const currentCenterClientY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
             const currentCenterX = currentCenterClientX - rect.left;
@@ -787,7 +790,7 @@ const setupInteractions = () => {
         }
     });
 
-    canvasContainer.value.addEventListener('touchcancel', (e: TouchEvent) => {
+    canvasContainer.value.addEventListener('touchcancel', (_e: TouchEvent) => {
         initialPinchDistance = null;
         initialCenterPoint = null;
         onGlobalUp();

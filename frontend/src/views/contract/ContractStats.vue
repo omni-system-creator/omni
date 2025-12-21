@@ -141,7 +141,7 @@ import * as echarts from 'echarts';
 // --- 状态 ---
 const timeRange = ref('year');
 const trendMetric = ref('amount');
-const currentDate = new Date().toLocaleDateString();
+// const currentDate = new Date().toLocaleDateString();
 
 const trendChartRef = ref<HTMLElement | null>(null);
 const typeChartRef = ref<HTMLElement | null>(null);

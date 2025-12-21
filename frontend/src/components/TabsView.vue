@@ -8,7 +8,7 @@
       @change="onChange"
       class="tabs-view"
     >
-      <template #renderTabBar="{ DefaultTabBar, ...props }">
+      <template #renderTabBar>
         <draggable
           :list="visitedViews"
           item-key="fullPath"
@@ -149,7 +149,8 @@ function hasLeftClosable(index: number) {
   const views = visitedViews.value;
   if (!views || index <= 0) return false;
   for (let i = 0; i < index; i++) {
-    if (!isAffix(views[i])) {
+    const view = views[i];
+    if (view && !isAffix(view)) {
       return true;
     }
   }
@@ -160,7 +161,8 @@ function hasRightClosable(index: number) {
   const views = visitedViews.value;
   if (!views || index >= views.length - 1) return false;
   for (let i = index + 1; i < views.length; i++) {
-    if (!isAffix(views[i])) {
+    const view = views[i];
+    if (view && !isAffix(view)) {
       return true;
     }
   }
@@ -302,16 +304,16 @@ onMounted(() => {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  justify-content: center;
+  padding: 0 12px;
+  min-width: 80px;
   height: 34px;
   line-height: 34px;
-  margin: 0 -15px 0 0 !important; /* 强制覆盖所有 margin，并设置负右边距 */
+  margin: 0 -1px 0 0 !important; /* 强制覆盖所有 margin，并设置负右边距 */
   cursor: pointer;
   background: #e8e8e8;
   border: 1px solid #d9d9d9;
   border-bottom: none;
-  border-radius: 8px 8px 0 0;
-  transform: skewX(20deg); /* 整体倾斜 */
   transition: all 0.3s;
   z-index: 1;
   user-select: none;
@@ -319,7 +321,6 @@ onMounted(() => {
 
 /* 内容反向倾斜，保持文字端正 */
 .ant-tabs-tab-btn {
-  transform: skewX(-20deg);
   display: flex;
   align-items: center;
   font-size: 13px;
@@ -330,6 +331,7 @@ onMounted(() => {
 .ant-tabs-tab-active {
   background: #fff;
   z-index: 10; /* 激活的层级最高 */
+  border-top: 2px solid #1890ff;
   border-bottom: 1px solid #fff; /* 遮住底部的线，看起来和内容连在一起 */
   box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
 }
@@ -337,18 +339,6 @@ onMounted(() => {
 /* 激活的前一个兄弟元素 */
 .ant-tabs-tab-active + .ant-tabs-tab {
   z-index: 1;
-}
-
-/* 修正左侧第一个 tab 的左边距，并去除倾斜 */
-.ant-tabs-tab:first-child {
-  margin: 0 -15px 0 -15px !important; /* 左侧负边距隐藏倾斜角 */
-  padding-left: 32px !important; /* 补偿左侧偏移 */
-  transform: skewX(20deg) !important; /* 恢复倾斜 */
-  border-radius: 0 8px 0 0 !important; /* 左上角直角 */
-}
-
-.ant-tabs-tab:first-child .ant-tabs-tab-btn {
-  transform: skewX(-20deg) !important; /* 内容反向倾斜 */
 }
 
 .ant-tabs-tab-active .ant-tabs-tab-btn {

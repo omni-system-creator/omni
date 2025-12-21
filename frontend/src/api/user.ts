@@ -1,5 +1,12 @@
 import request from '@/utils/request';
 
+export interface UserPostDto {
+  postId: number;
+  postName: string;
+  deptId: number;
+  deptName: string;
+}
+
 export interface UserListDto {
   id: number;
   username: string;
@@ -11,13 +18,22 @@ export interface UserListDto {
   createdAt: string;
   lastLoginAt?: string;
   roles: string[];
+  posts: UserPostDto[];
+  dept?: { id: number; name: string };
+}
+
+export interface UserPostRelationDto {
+  deptId: number;
+  postId: number;
 }
 
 export interface CreateUserDto {
   username: string;
-  password?: string; // 可选，若为空则后端设置默认密码
+  password?: string;
   nickname?: string;
   roleIds: number[];
+  postRelations?: UserPostRelationDto[];
+  deptId?: number;
 }
 
 export interface UpdateUserDto {
@@ -26,6 +42,8 @@ export interface UpdateUserDto {
   phone?: string;
   isActive?: boolean;
   roleIds?: number[];
+  postRelations?: UserPostRelationDto[];
+  deptId?: number;
 }
 
 export interface UpdateProfileDto {

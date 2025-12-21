@@ -87,13 +87,15 @@ namespace omsapi.Services
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return (false, "用户不存在", null);
 
-            // 获取用户所有角色的所有权限
-            var permissionIds = await _context.UserRoles
-                .Where(ur => ur.UserId == userId)
-                .Join(_context.RolePermissions,
-                    ur => ur.RoleId,
-                    rp => rp.RoleId,
-                    (ur, rp) => rp.PermissionId)
+            // 获取用户所有角色ID (包括继承的角色)
+            var roleIds = await GetEffectiveRoleIdsAsync(userId);
+
+            if (!roleIds.Any()) return (true, "获取成功", new List<MenuItemDto>());
+
+            // 获取所有权限ID
+            var permissionIds = await _context.RolePermissions
+                .Where(rp => roleIds.Contains(rp.RoleId))
+                .Select(rp => rp.PermissionId)
                 .Distinct()
                 .ToListAsync();
 
@@ -114,21 +116,60 @@ namespace omsapi.Services
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return (false, "用户不存在", null);
 
-            // 获取用户所有角色的所有权限编码 (包括按钮)
-            var permissions = await _context.UserRoles
-                .Where(ur => ur.UserId == userId)
-                .Join(_context.RolePermissions,
-                    ur => ur.RoleId,
-                    rp => rp.RoleId,
-                    (ur, rp) => rp.PermissionId)
+            // 获取用户所有角色ID (包括继承的角色)
+            var roleIds = await GetEffectiveRoleIdsAsync(userId);
+
+            if (!roleIds.Any()) return (true, "获取成功", new List<string>());
+
+            // 获取所有权限编码
+            var permissions = await _context.RolePermissions
+                .Where(rp => roleIds.Contains(rp.RoleId))
                 .Join(_context.Permissions,
-                    pid => pid,
+                    rp => rp.PermissionId,
                     p => p.Id,
-                    (pid, p) => p.Code)
+                    (rp, p) => p.Code)
                 .Distinct()
                 .ToListAsync();
 
             return (true, "获取成功", permissions);
+        }
+
+        private async Task<List<long>> GetEffectiveRoleIdsAsync(long userId)
+        {
+            // 1. Get direct roles
+            var userRoleIds = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Select(ur => ur.RoleId)
+                .ToListAsync();
+
+            if (!userRoleIds.Any()) return new List<long>();
+
+            // 2. Get all inheritance relationships
+            // Note: In a large system, this should be cached or optimized. 
+            // For now, assuming role hierarchy is small enough.
+            var allInheritances = await _context.RoleInheritances.ToListAsync();
+
+            // 3. Expand roles
+            var effectiveRoleIds = new HashSet<long>(userRoleIds);
+            bool changed = true;
+            while (changed)
+            {
+                changed = false;
+                // Find children of current roles that are not yet in the set
+                // Logic: If I have Role A (Parent), and A includes B (Child), then I have B.
+                var newChildren = allInheritances
+                    .Where(ri => effectiveRoleIds.Contains(ri.ParentRoleId) && !effectiveRoleIds.Contains(ri.ChildRoleId))
+                    .Select(ri => ri.ChildRoleId)
+                    .ToList();
+
+                if (newChildren.Any())
+                {
+                    foreach (var id in newChildren) effectiveRoleIds.Add(id);
+                    changed = true;
+                }
+            }
+
+            return effectiveRoleIds.ToList();
         }
 
         private List<MenuItemDto> BuildMenuTree(List<omsapi.Models.Entities.SystemPermission> allMenus, long? parentId)
