@@ -1,32 +1,21 @@
 <template>
   <div class="sys-role-container">
-    <a-row :gutter="16">
-      <a-col :span="6">
-        <a-card :bordered="false" title="组织机构" :body-style="{ padding: '10px' }">
-          <a-tree
-            v-if="depts.length > 0"
-            :tree-data="depts"
-            :field-names="{ children: 'children', title: 'name', key: 'id' }"
-            defaultExpandAll
-            @select="onSelectDept"
-          >
-            <template #title="{ name, type }">
-              <span v-if="type === DeptType.Group">
-                 <BankOutlined style="color: #faad14; margin-right: 4px" />
-              </span>
-              <span v-else-if="type === DeptType.Company">
-                 <ApartmentOutlined style="color: #1890ff; margin-right: 4px" />
-              </span>
-              <span v-else>
-                 <ClusterOutlined style="color: #8c8c8c; margin-right: 4px" />
-              </span>
-              <span>{{ name }}</span>
-            </template>
-          </a-tree>
+    <SplitLayout>
+      <template #left>
+        <a-card :bordered="false" class="dept-card" :body-style="{ padding: '10px', height: 'calc(100% - 40px)', overflow: 'hidden' }">
+          <template #title>
+            <span><ApartmentOutlined /> 组织结构</span>
+          </template>
+          <DeptTree
+            v-model:selectedKeys="selectedDeptKeys"
+            @loaded="(data) => depts = data"
+            @select="loadData"
+          />
         </a-card>
-      </a-col>
-      <a-col :span="18">
-        <a-card :bordered="false">
+      </template>
+
+      <template #right>
+        <a-card :bordered="false" class="content-card">
           <template #title>
             角色列表
           </template>
@@ -74,8 +63,8 @@
             </template>
           </a-table>
         </a-card>
-      </a-col>
-    </a-row>
+      </template>
+    </SplitLayout>
 
     <!-- 角色表单弹窗 -->
     <a-modal
@@ -164,6 +153,8 @@ import {
   type RoleDto, type PermissionTreeDto 
 } from '@/api/role';
 import { getDeptTree, type Dept, DeptType } from '@/api/dept';
+import DeptTree from '@/components/DeptTree/index.vue';
+import SplitLayout from '@/components/SplitLayout/index.vue';
 import dayjs from 'dayjs';
 
 const loading = ref(false);
@@ -204,8 +195,7 @@ const onSelectDept = (keys: number[]) => {
 
 const initData = async () => {
   try {
-    const deptsRes = await getDeptTree();
-    depts.value = deptsRes;
+    // DeptTree loads depts automatically
     await loadData();
   } catch (error) {
     console.error(error);
@@ -381,7 +371,22 @@ onMounted(() => {
 
 <style scoped>
 .sys-role-container {
+  flex: 1;
   padding: 16px;
+}
+.dept-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+:deep(.ant-card-body) {
+  flex: 1;
+  overflow: hidden;
+}
+.content-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .text-danger {
   color: #ff4d4f;

@@ -29,6 +29,9 @@ namespace omsapi.Models.Entities
 
         public string? Avatar { get; set; }
 
+        [MaxLength(20)]
+        public string? Status { get; set; } = "online";
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;

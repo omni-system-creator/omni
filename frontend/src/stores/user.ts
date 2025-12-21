@@ -15,11 +15,12 @@ export const useUserStore = defineStore('user', () => {
         token: authData.token || '',
         username: userData.username || '',
         nickname: userData.nickname || '',
-        avatar: userData.avatar || ''
+        avatar: userData.avatar || '',
+        status: userData.status || 'online'
       };
     } catch (e) {
       console.error('Error parsing user store data', e);
-      return { token: '', username: '', nickname: '', avatar: '' };
+      return { token: '', username: '', nickname: '', avatar: '', status: 'online' };
     }
   };
 
@@ -29,6 +30,7 @@ export const useUserStore = defineStore('user', () => {
   const username = ref<string>(state.username);
   const nickname = ref<string>(state.nickname);
   const avatar = ref<string>(state.avatar);
+  const status = ref<string>(state.status);
   // const router = useRouter();
 
   function setToken(newToken: string) {
@@ -36,15 +38,17 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('oms.auth', JSON.stringify({ token: newToken }));
   }
 
-  function setUserInfo(info: { username: string; nickname?: string; avatar?: string }) {
+  function setUserInfo(info: { username: string; nickname?: string; avatar?: string; status?: string }) {
     username.value = info.username;
     nickname.value = info.nickname || '';
     avatar.value = info.avatar || '';
+    status.value = info.status || 'online';
     
     const userData = {
       username: username.value,
       nickname: nickname.value,
-      avatar: avatar.value
+      avatar: avatar.value,
+      status: status.value
     };
     localStorage.setItem('oms.user', JSON.stringify(userData));
   }
@@ -54,6 +58,7 @@ export const useUserStore = defineStore('user', () => {
     username.value = '';
     nickname.value = '';
     avatar.value = '';
+    status.value = 'online';
     
     localStorage.removeItem('oms.auth');
     localStorage.removeItem('oms.user');
@@ -79,6 +84,7 @@ export const useUserStore = defineStore('user', () => {
     username,
     nickname,
     avatar,
+    status,
     setToken,
     setUserInfo,
     logout,

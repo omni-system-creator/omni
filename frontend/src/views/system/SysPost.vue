@@ -1,35 +1,21 @@
 <template>
   <div class="sys-post-container">
-    <a-row :gutter="16">
-      <a-col :span="6">
-        <a-card :bordered="false" title="组织机构" :body-style="{ padding: '10px' }">
-          <a-tree
-            v-if="deptTree.length > 0"
-            :tree-data="deptTree"
-            :field-names="{ children: 'children', title: 'name', key: 'id' }"
-            defaultExpandAll
+    <SplitLayout>
+      <template #left>
+        <a-card :bordered="false" class="dept-card" :body-style="{ padding: '10px', height: 'calc(100% - 40px)', overflow: 'hidden' }">
+          <template #title>
+            <span><ApartmentOutlined /> 组织结构</span>
+          </template>
+          <DeptTree
+            v-model:selectedKeys="selectedDeptKeys"
+            @loaded="(data) => deptTree = data"
             @select="onSelectDept"
-          >
-            <template #title="{ name, type }">
-              <span v-if="type === DeptType.Group">
-                 <BankOutlined style="color: #faad14; margin-right: 4px" />
-              </span>
-              <span v-else-if="type === DeptType.Company">
-                 <ApartmentOutlined style="color: #1890ff; margin-right: 4px" />
-              </span>
-              <span v-else>
-                 <ClusterOutlined style="color: #8c8c8c; margin-right: 4px" />
-              </span>
-              <span>{{ name }}</span>
-            </template>
-          </a-tree>
-          <div v-else style="text-align: center; margin-top: 20px; color: #999;">
-            暂无数据
-          </div>
+          />
         </a-card>
-      </a-col>
-      <a-col :span="18">
-        <a-card :bordered="false">
+      </template>
+
+      <template #right>
+        <a-card :bordered="false" class="content-card">
           <template #title>
             <a-space>
               <a-button type="primary" @click="handleAdd()">
@@ -74,8 +60,8 @@
             </template>
           </a-table>
         </a-card>
-      </a-col>
-    </a-row>
+      </template>
+    </SplitLayout>
 
     <a-modal
       v-model:open="modalVisible"
@@ -126,20 +112,21 @@ import { ref, onMounted, reactive } from 'vue';
 import { message } from 'ant-design-vue';
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined,
-  BankOutlined,
-  ApartmentOutlined,
-  ClusterOutlined
+  ApartmentOutlined
 } from '@ant-design/icons-vue';
 import { 
   getPostList, createPost, updatePost, deletePost, 
   type Post
 } from '@/api/post';
-import { getDeptList, type DeptDto, DeptType } from '@/api/dept';
+import { getDeptList, type Dept } from '@/api/dept';
+import DeptTree from '@/components/DeptTree/index.vue';
+import SplitLayout from '@/components/SplitLayout/index.vue';
 
 const loading = ref(false);
 const postList = ref<Post[]>([]);
-const deptTree = ref<DeptDto[]>([]);
+const deptTree = ref<Dept[]>([]);
 const selectedDeptId = ref<number | undefined>(undefined);
+const selectedDeptKeys = ref<number[]>([]);
 
 const columns = [
   { title: '岗位名称', dataIndex: 'name', key: 'name' },
@@ -151,15 +138,6 @@ const columns = [
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
   { title: '操作', key: 'action', width: '150px', fixed: 'right' }
 ];
-
-const fetchDeptTree = async () => {
-  try {
-    const res = await getDeptList();
-    deptTree.value = res || [];
-  } catch (error) {
-    console.error(error);
-  }
-};
 
 const fetchPosts = async () => {
   loading.value = true;
@@ -263,12 +241,26 @@ const handleModalOk = async () => {
 };
 
 onMounted(() => {
-  fetchDeptTree();
   fetchPosts();
 });
 </script>
 <style lang="scss" scoped>
   .sys-post-container {
+    flex: 1;
     padding: 16px;
+  }
+  .dept-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  :deep(.ant-card-body) {
+    flex: 1;
+    overflow: hidden;
+  }
+  .content-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 </style>

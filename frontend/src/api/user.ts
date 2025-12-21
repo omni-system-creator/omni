@@ -14,6 +14,7 @@ export interface UserListDto {
   email?: string;
   phone?: string;
   avatar?: string;
+  status?: string;
   isActive: boolean;
   createdAt: string;
   lastLoginAt?: string;
@@ -50,6 +51,7 @@ export interface UpdateProfileDto {
   nickname?: string;
   email?: string;
   phone?: string;
+  status?: string;
 }
 
 export interface ChangePasswordDto {

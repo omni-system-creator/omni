@@ -1,143 +1,125 @@
 <template>
   <div class="organization-container">
-    <div class="left-sider">
-      <div class="sider-header">
-        <a-input-search
-          v-model:value="deptSearch"
-          placeholder="搜索部门"
-          style="margin-bottom: 8px"
-        />
-      </div>
-      <div class="tree-wrapper">
-        <a-tree
-          v-model:expandedKeys="expandedKeys"
-          v-model:selectedKeys="selectedKeys"
-          :tree-data="deptTree"
-          :field-names="{ title: 'name', key: 'id' }"
-          block-node
-          @select="handleSelect"
-        >
-          <template #title="{ name, type }">
-            <span v-if="type === DeptType.Group">
-               <BankOutlined style="color: #faad14; margin-right: 4px" />
-            </span>
-            <span v-else-if="type === DeptType.Company">
-               <ApartmentOutlined style="color: #1890ff; margin-right: 4px" />
-            </span>
-            <span v-else>
-               <ClusterOutlined style="color: #8c8c8c; margin-right: 4px" />
-            </span>
-            <span v-if="name.indexOf(deptSearch) > -1">
-              {{ name.substr(0, name.indexOf(deptSearch)) }}
-              <span style="color: #f50">{{ deptSearch }}</span>
-              {{ name.substr(name.indexOf(deptSearch) + deptSearch.length) }}
-            </span>
-            <span v-else>{{ name }}</span>
+    <SplitLayout>
+      <template #left>
+        <a-card :bordered="false" class="dept-card" :body-style="{ padding: '10px', height: 'calc(100% - 40px)', overflow: 'hidden' }">
+          <template #title>
+            <span><ApartmentOutlined /> 组织结构</span>
           </template>
-        </a-tree>
-      </div>
-    </div>
-    <div class="right-content">
-      <div class="content-header">
-        <div class="header-left">
-          <h2>{{ currentDept ? currentDept.name : '全部成员' }}</h2>
-          <span class="member-count">共 {{ filteredMembers.length }} 人</span>
-        </div>
-        <div class="header-right">
-          <a-input-search
-            v-model:value="memberSearch"
-            placeholder="搜索姓名/职位/手机号"
-            style="width: 300px"
-            enter-button
+          <DeptTree
+            v-model:selectedKeys="selectedKeys"
+            @loaded="onDeptLoaded"
+            @select="handleSelect"
           />
-          <a-radio-group v-model:value="viewMode" style="margin-left: 16px">
-            <a-radio-button value="card">
-              <template #icon><AppstoreOutlined /></template>
-              卡片
-            </a-radio-button>
-            <a-radio-button value="list">
-              <template #icon><BarsOutlined /></template>
-              列表
-            </a-radio-button>
-          </a-radio-group>
-        </div>
-      </div>
-      
-      <div class="content-body">
-        <a-empty v-if="filteredMembers.length === 0" description="暂无成员" />
-        
-        <!-- Card View -->
-        <div v-else-if="viewMode === 'card'" class="card-grid">
-          <a-card v-for="member in filteredMembers" :key="member.id" hoverable class="member-card">
-            <div class="member-info">
-              <a-avatar :size="64" :src="member.avatar" :style="{ backgroundColor: member.avatar ? 'transparent' : '#1890ff' }">
-                {{ getAvatarText(member) }}
-              </a-avatar>
-              <div class="info-text">
-                <div class="name">
-                  {{ getDisplayName(member) }}
-                  <!-- <a-tag v-if="member.isLeader" color="blue">负责人</a-tag> -->
-                  <a-tag :color="member.isActive ? statusMap['online']?.color : statusMap['leave']?.color" style="margin-left: 8px;">
-                    {{ member.isActive ? '在岗' : '离职/休假' }}
-                  </a-tag>
+        </a-card>
+      </template>
+      <template #right>
+        <div class="right-content">
+          <div class="content-header">
+            <div class="header-left">
+              <h2>{{ currentDept ? currentDept.name : '全部成员' }}</h2>
+              <span class="member-count">共 {{ filteredMembers.length }} 人</span>
+            </div>
+            <div class="header-right">
+              <a-input-search
+                v-model:value="memberSearch"
+                placeholder="搜索姓名/职位/手机号"
+                style="width: 300px"
+                enter-button
+              />
+              <a-radio-group v-model:value="viewMode" style="margin-left: 16px">
+                <a-radio-button value="card">
+                  <template #icon><AppstoreOutlined /></template>
+                  卡片
+                </a-radio-button>
+                <a-radio-button value="list">
+                  <template #icon><BarsOutlined /></template>
+                  列表
+                </a-radio-button>
+              </a-radio-group>
+            </div>
+          </div>
+          
+          <div class="content-body">
+            <a-empty v-if="filteredMembers.length === 0" description="暂无成员" />
+            
+            <!-- Card View -->
+            <div v-else-if="viewMode === 'card'" class="card-grid">
+              <a-card v-for="member in filteredMembers" :key="member.id" hoverable class="member-card">
+                <div class="member-info">
+                  <a-avatar :size="64" :src="member.avatar" :style="{ backgroundColor: member.avatar ? 'transparent' : '#1890ff' }">
+                    {{ getAvatarText(member) }}
+                  </a-avatar>
+                  <div class="info-text">
+                    <div class="name">
+                      {{ getDisplayName(member) }}
+                      <!-- <a-tag v-if="member.isLeader" color="blue">负责人</a-tag> -->
+                      <a-tag :color="!member.isActive ? '#d9d9d9' : (statusMap[member.status || 'online']?.color)" style="margin-left: 8px;">
+                        {{ !member.isActive ? '已停用' : (statusMap[member.status || 'online']?.text || '在岗') }}
+                      </a-tag>
+                    </div>
+                    <div class="position">{{ member.posts?.[0]?.postName || '未分配职位' }}</div>
+                    <div class="dept" :title="getDeptPath(member.dept?.id)">{{ getDeptPath(member.dept?.id) }}</div>
+                  </div>
                 </div>
-                <div class="position">{{ member.posts?.[0]?.postName || '未分配职位' }}</div>
-                <div class="dept" :title="getDeptPath(member.dept?.id)">{{ getDeptPath(member.dept?.id) }}</div>
-              </div>
+                <div class="contact-info">
+                  <div class="contact-item">
+                    <MailOutlined /> {{ member.email || '无邮箱' }}
+                  </div>
+                  <div class="contact-item">
+                    <PhoneOutlined /> {{ member.phone || '无电话' }}
+                  </div>
+                </div>
+                <template #actions>
+                  <MessageOutlined key="message" />
+                  <MailOutlined key="mail" />
+                  <ProfileOutlined key="profile" />
+                </template>
+              </a-card>
             </div>
-            <div class="contact-info">
-              <div class="contact-item">
-                <MailOutlined /> {{ member.email || '无邮箱' }}
-              </div>
-              <div class="contact-item">
-                <PhoneOutlined /> {{ member.phone || '无电话' }}
-              </div>
-            </div>
-            <template #actions>
-              <MessageOutlined key="message" />
-              <MailOutlined key="mail" />
-              <ProfileOutlined key="profile" />
-            </template>
-          </a-card>
-        </div>
 
-        <!-- List View -->
-        <a-table
-          v-else
-          :columns="columns"
-          :data-source="filteredMembers"
-          row-key="id"
-          :pagination="{ pageSize: 10 }"
-        >
-          <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'name'">
-              <a-space>
-                <a-avatar :size="32" :src="record.avatar" :style="{ backgroundColor: record.avatar ? 'transparent' : '#1890ff' }">
-                  {{ getAvatarText(record) }}
-                </a-avatar>
-                {{ getDisplayName(record) }}
-                <!-- <a-tag v-if="record.isLeader" color="blue">负责人</a-tag> -->
-              </a-space>
-            </template>
-            <template v-else-if="column.key === 'position'">
-               {{ record.posts?.[0]?.postName }}
-            </template>
-            <template v-else-if="column.key === 'deptName'">
-               <span :title="getDeptPath(record.dept?.id)">{{ record.dept?.name }}</span>
-            </template>
-            <template v-else-if="column.key === 'status'">
-              <a-badge :status="record.isActive ? 'success' : 'error'" :text="record.isActive ? '在岗' : '离职/休假'" />
-            </template>
-            <template v-else-if="column.key === 'action'">
-              <a-space>
-                <a>查看</a>
-                <a>发消息</a>
-              </a-space>
-            </template>
-          </template>
-        </a-table>
-      </div>
-    </div>
+            <!-- List View -->
+            <a-table
+              v-else
+              :columns="columns"
+              :data-source="filteredMembers"
+              row-key="id"
+              :pagination="{ pageSize: 10 }"
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'name'">
+                  <a-space>
+                    <a-avatar :size="32" :src="record.avatar" :style="{ backgroundColor: record.avatar ? 'transparent' : '#1890ff' }">
+                      {{ getAvatarText(record) }}
+                    </a-avatar>
+                    {{ getDisplayName(record) }}
+                    <!-- <a-tag v-if="record.isLeader" color="blue">负责人</a-tag> -->
+                  </a-space>
+                </template>
+                <template v-else-if="column.key === 'position'">
+                  {{ record.posts?.[0]?.postName }}
+                </template>
+                <template v-else-if="column.key === 'deptName'">
+                  <span :title="getDeptPath(record.dept?.id)">{{ record.dept?.name }}</span>
+                </template>
+                <template v-else-if="column.key === 'status'">
+                  <a-badge 
+                    :status="!record.isActive ? 'default' : (statusMap[record.status || 'online']?.status || 'success')" 
+                    :text="!record.isActive ? '已停用' : (statusMap[record.status || 'online']?.text || '在岗')" 
+                  />
+                </template>
+                <template v-else-if="column.key === 'action'">
+                  <a-space>
+                    <a>查看</a>
+                    <a>发消息</a>
+                  </a-space>
+                </template>
+              </template>
+            </a-table>
+          </div>
+        </div>
+      </template>
+    </SplitLayout>
   </div>
 </template>
 
@@ -150,13 +132,13 @@ import {
   PhoneOutlined,
   MessageOutlined,
   ProfileOutlined,
-  BankOutlined,
-  ApartmentOutlined,
-  ClusterOutlined
+  ApartmentOutlined
 } from '@ant-design/icons-vue';
-import { getDeptTree, type Dept, DeptType } from '@/api/dept';
+import { type Dept } from '@/api/dept';
 import { getUserList, type UserListDto } from '@/api/user';
 import { useUserStore } from '@/stores/user';
+import DeptTree from '@/components/DeptTree/index.vue';
+import SplitLayout from '@/components/SplitLayout/index.vue';
 
 // Data
 const deptTree = ref<Dept[]>([]);
@@ -164,7 +146,6 @@ const allMembers = ref<UserListDto[]>([]);
 const loading = ref(false);
 const userStore = useUserStore();
 const STORAGE_VIEW_KEY = `oms_org_view_mode_${userStore.username}`;
-const STORAGE_EXPAND_KEY = `oms_org_expanded_keys_${userStore.username}`;
 
 const statusMap: Record<string, { text: string; status: string; color: string }> = {
   online: { text: '在岗', status: 'success', color: '#52c41a' },
@@ -174,9 +155,7 @@ const statusMap: Record<string, { text: string; status: string; color: string }>
 };
 
 // State
-const deptSearch = ref('');
 const memberSearch = ref('');
-const expandedKeys = ref<number[]>([]);
 const selectedKeys = ref<number[]>([]);
 const currentDept = ref<Dept | null>(null);
 const viewMode = ref(localStorage.getItem(STORAGE_VIEW_KEY) || 'card');
@@ -185,11 +164,11 @@ watch(viewMode, (newVal) => {
   localStorage.setItem(STORAGE_VIEW_KEY, newVal);
 });
 
-watch(expandedKeys, (newVal) => {
-  localStorage.setItem(STORAGE_EXPAND_KEY, JSON.stringify(newVal));
-}, { deep: true });
-
 // Helper functions
+const onDeptLoaded = (data: Dept[]) => {
+  deptTree.value = data;
+};
+
 const getDisplayName = (member: UserListDto) => {
   return member.nickname || member.username || '未知用户';
 };
@@ -305,27 +284,8 @@ const filteredMembers = computed(() => {
 const fetchData = async () => {
   loading.value = true;
   try {
-    const [deptRes, userRes] = await Promise.all([
-      getDeptTree(),
-      getUserList()
-    ]);
-    deptTree.value = deptRes || [];
+    const userRes = await getUserList();
     allMembers.value = userRes || [];
-    
-    // Restore expanded keys or default to root
-    const storedExpandedKeys = localStorage.getItem(STORAGE_EXPAND_KEY);
-    if (storedExpandedKeys) {
-      try {
-        expandedKeys.value = JSON.parse(storedExpandedKeys);
-      } catch (e) {
-        // Fallback if JSON parse fails
-        if (deptTree.value.length > 0) {
-          expandedKeys.value = deptTree.value.map(d => d.id);
-        }
-      }
-    } else if (deptTree.value.length > 0) {
-      expandedKeys.value = deptTree.value.map(d => d.id);
-    }
   } catch (error) {
     console.error('Failed to fetch data:', error);
   } finally {
@@ -341,27 +301,8 @@ onMounted(() => {
 
 <style scoped>
 .organization-container {
-  display: flex;
-  height: 100%;
-  background-color: #f0f2f5;
-  gap: 16px;
-  padding: 16px;
-}
-
-.left-sider {
-  width: 280px;
-  background: #fff;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  flex-shrink: 0;
-}
-
-.tree-wrapper {
   flex: 1;
-  overflow-y: auto;
-  margin-top: 8px;
+  padding: 16px;
 }
 
 .right-content {
@@ -371,6 +312,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100%;
 }
 
 .content-header {
@@ -461,7 +403,18 @@ onMounted(() => {
   margin-bottom: 4px;
 }
 
-:deep(.ant-tree-node-content-wrapper) {
-  padding: 4px 0;
+.dept-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+:deep(.ant-card-body) {
+  flex: 1;
+  overflow: hidden;
+}
+.content-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 </style>

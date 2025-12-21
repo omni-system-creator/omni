@@ -1,41 +1,20 @@
 <template>
   <div class="sys-user-container">
-    <a-row :gutter="24">
-      <!-- Left: Dept Tree -->
-      <a-col :span="6">
-        <a-card :bordered="false" class="dept-card">
+    <SplitLayout>
+      <template #left>
+        <a-card :bordered="false" class="dept-card" :body-style="{ padding: '10px', height: 'calc(100% - 40px)', overflow: 'hidden' }">
           <template #title>
-            <span><ApartmentOutlined /> 部门结构</span>
+            <span><ApartmentOutlined /> 组织结构</span>
           </template>
-          <a-tree
-            v-if="deptTreeData.length"
-            :tree-data="deptTreeData"
-            :field-names="{ title: 'name', key: 'id', children: 'children' }"
-            default-expand-all
+          <DeptTree
             v-model:selectedKeys="selectedDeptKeys"
-            @select="onDeptSelect"
-            block-node
-          >
-            <template #title="{ name, type }">
-              <span v-if="type === DeptType.Group">
-                <BankOutlined style="color: #faad14; margin-right: 4px" />
-              </span>
-              <span v-else-if="type === DeptType.Company">
-                <ApartmentOutlined style="color: #1890ff; margin-right: 4px" />
-              </span>
-              <span v-else>
-                <ClusterOutlined style="color: #8c8c8c; margin-right: 4px" />
-              </span>
-              <span>{{ name }}</span>
-            </template>
-          </a-tree>
-          <a-empty v-else description="暂无部门数据" />
+            @loaded="(data) => deptTreeData = data"
+          />
         </a-card>
-      </a-col>
+      </template>
 
-      <!-- Right: User Table -->
-      <a-col :span="18">
-        <a-card :bordered="false">
+      <template #right>
+        <a-card :bordered="false" class="content-card">
           <template #title>
             <a-space>
               <a-input-search
@@ -59,6 +38,7 @@
             :loading="loading"
             row-key="id"
             :pagination="{ pageSize: 10 }"
+            :scroll="{ x: 1000 }"
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'avatar'">
@@ -116,8 +96,8 @@
             </template>
           </a-table>
         </a-card>
-      </a-col>
-    </a-row>
+      </template>
+    </SplitLayout>
 
     <!-- 用户表单弹窗 -->
     <a-modal
@@ -229,12 +209,14 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed, reactive } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined, BankOutlined, ClusterOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined } from '@ant-design/icons-vue';
 import { getUserList, createUser, updateUser, deleteUser, resetUserPassword, type UserListDto } from '@/api/user';
 import { getRoleList, type RoleDto } from '@/api/role';
-import { getDeptTree, type Dept, DeptType } from '@/api/dept';
+import { type Dept } from '@/api/dept';
 import { getPostList, type Post } from '@/api/post';
 import dayjs from 'dayjs';
+import DeptTree from '@/components/DeptTree/index.vue';
+import SplitLayout from '@/components/SplitLayout/index.vue';
 
 const loading = ref(false);
 const users = ref<UserListDto[]>([]);
@@ -333,15 +315,6 @@ const loadRoles = async () => {
   } catch (error) {
     console.error(error);
   }
-};
-
-const loadDepts = async () => {
-    try {
-        const res = await getDeptTree();
-        deptTreeData.value = res;
-    } catch (error) {
-        console.error(error);
-    }
 };
 
 const loadPosts = async () => {
@@ -515,10 +488,7 @@ const handleResetPwd = async (record: UserListDto) => {
   });
 };
 
-const onDeptSelect = (keys: number[]) => {
-    // Selection handled by v-model:selectedKeys and computed filteredUsers
-    console.log('Selected dept keys:', keys);
-};
+
 
 const handleSearch = () => {
   // 搜索逻辑已在 computed 中实现
@@ -527,17 +497,28 @@ const handleSearch = () => {
 onMounted(() => {
   loadData();
   loadRoles();
-  loadDepts();
   loadPosts();
 });
 </script>
 
 <style scoped>
 .sys-user-container {
+  flex: 1;
   padding: 16px;
 }
 .dept-card {
-    height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+:deep(.ant-card-body) {
+  flex: 1;
+  overflow: hidden;
+}
+.content-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 .text-danger {
   color: #ff4d4f;

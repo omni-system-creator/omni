@@ -119,7 +119,8 @@ namespace omsapi.Services
                 Nickname = user.Nickname,
                 Email = user.Email,
                 Phone = user.Phone,
-                Avatar = user.Avatar
+                Avatar = user.Avatar,
+                Status = user.Status
             };
 
             return (true, "获取成功", userDto);
@@ -156,6 +157,7 @@ namespace omsapi.Services
                     Email = u.Email,
                     Phone = u.Phone,
                     Avatar = u.Avatar,
+                    Status = u.Status,
                     IsActive = u.IsActive,
                     CreatedAt = u.CreatedAt,
                     LastLoginAt = u.LastLoginAt,
@@ -208,6 +210,7 @@ namespace omsapi.Services
                 Email = user.Email,
                 Phone = user.Phone,
                 Avatar = user.Avatar,
+                Status = user.Status,
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
                 LastLoginAt = user.LastLoginAt,
@@ -414,6 +417,7 @@ namespace omsapi.Services
             user.Nickname = dto.Nickname;
             user.Email = dto.Email;
             user.Phone = dto.Phone;
+            if (dto.Status != null) user.Status = dto.Status;
 
             await _context.SaveChangesAsync();
             return (true, "资料更新成功");
