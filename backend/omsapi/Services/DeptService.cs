@@ -59,6 +59,8 @@ namespace omsapi.Services
                 Email = dto.Email,
                 SortOrder = dto.SortOrder,
                 IsActive = dto.IsActive,
+                X = dto.X,
+                Y = dto.Y,
                 CreatedAt = DateTime.Now
             };
 
@@ -90,6 +92,9 @@ namespace omsapi.Services
             if (dto.Email != null) dept.Email = dto.Email;
             if (dto.SortOrder != null) dept.SortOrder = dto.SortOrder.Value;
             if (dto.IsActive != null) dept.IsActive = dto.IsActive.Value;
+            
+            if (dto.X != null) dept.X = dto.X.Value;
+            if (dto.Y != null) dept.Y = dto.Y.Value;
 
             dept.UpdatedAt = DateTime.Now;
             
@@ -161,6 +166,8 @@ namespace omsapi.Services
                 Email = dept.Email,
                 SortOrder = dept.SortOrder,
                 IsActive = dept.IsActive,
+                X = dept.X,
+                Y = dept.Y,
                 CreatedAt = dept.CreatedAt
             };
         }

@@ -35,6 +35,10 @@ namespace omsapi.Models.Entities
 
         public bool IsActive { get; set; } = true;
 
+        // Coordinates for visual layout
+        public double? X { get; set; }
+        public double? Y { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 

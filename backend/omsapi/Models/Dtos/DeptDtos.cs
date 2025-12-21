@@ -27,6 +27,9 @@ namespace omsapi.Models.Dtos
 
         public int SortOrder { get; set; } = 0;
         public bool IsActive { get; set; } = true;
+        
+        public double? X { get; set; }
+        public double? Y { get; set; }
     }
 
     public class UpdateDeptDto
@@ -52,6 +55,9 @@ namespace omsapi.Models.Dtos
 
         public int? SortOrder { get; set; }
         public bool? IsActive { get; set; }
+        
+        public double? X { get; set; }
+        public double? Y { get; set; }
     }
 
     public class DeptDto
@@ -63,6 +69,8 @@ namespace omsapi.Models.Dtos
         public long? ParentId { get; set; }
         public int SortOrder { get; set; }
         public bool IsActive { get; set; }
+        public double? X { get; set; }
+        public double? Y { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 
@@ -78,6 +86,8 @@ namespace omsapi.Models.Dtos
         public string? Email { get; set; }
         public int SortOrder { get; set; }
         public bool IsActive { get; set; }
+        public double? X { get; set; }
+        public double? Y { get; set; }
         public DateTime CreatedAt { get; set; }
         public List<DeptTreeDto>? Children { get; set; }
     }

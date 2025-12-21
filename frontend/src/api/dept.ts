@@ -19,6 +19,8 @@ export interface Dept {
   email?: string;
   sortOrder: number;
   isActive: boolean;
+  x?: number;
+  y?: number;
   children?: Dept[];
   createdAt: string;
 }
@@ -35,6 +37,8 @@ export interface CreateDeptParams {
   email?: string;
   sortOrder: number;
   isActive: boolean;
+  x?: number;
+  y?: number;
 }
 
 export interface UpdateDeptParams {
@@ -47,6 +51,8 @@ export interface UpdateDeptParams {
   email?: string;
   sortOrder?: number;
   isActive?: boolean;
+  x?: number;
+  y?: number;
 }
 
 export interface UpdateDeptStructureParams {
