@@ -101,6 +101,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-Console.WriteLine("OMS 后端服务启动成功！");
+Console.WriteLine("后端服务启动成功！");
 
 app.Run();
