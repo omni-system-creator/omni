@@ -1,5 +1,6 @@
 <template>
   <div class="drive-container">
+    <input type="file" ref="fileInput" style="display: none" @change="onFileSelected" />
     <!-- 左侧导航栏 -->
     <div class="drive-sider">
       <div class="nav-menu">
@@ -10,9 +11,9 @@
           block-node
           @select="handleTreeSelect"
         >
-          <template #title="{ title, icon }">
+          <template #title="{ title, icon, color }">
             <span class="tree-node-title">
-              <component :is="icon" v-if="icon" style="margin-right: 8px" />
+              <component :is="icon" v-if="icon" :style="{ marginRight: '8px', color: color }" />
               {{ title }}
             </span>
           </template>
@@ -82,9 +83,12 @@
             @contextmenu.prevent="handleContextMenu($event, file)"
           >
             <div class="file-icon">
-              <component :is="getFileIcon(file.type)" :style="{ color: getFileColor(file.type) }" />
+              <component :is="getFileIcon(getFileType(file))" :style="{ color: getFileColor(getFileType(file)) }" />
             </div>
-            <div class="file-name" :title="file.name">{{ file.name }}</div>
+            <div class="file-name" :title="file.name">
+                {{ file.name }}
+                <span v-if="file.isPublic" style="color: #1890ff; font-size: 12px;">(公)</span>
+            </div>
             <div class="file-meta">{{ formatSize(file.size) }}</div>
           </div>
         </div>
@@ -99,17 +103,40 @@
             :row-selection="{ selectedRowKeys: selectedFiles, onChange: onSelectChange }"
             @customRow="customRow"
           >
-            <template #bodyCell="{ column, record }">
+            <template #bodyCell="{ column, record, text }">
               <template v-if="column.key === 'name'">
-                <div class="list-name-cell">
-                  <component :is="getFileIcon(record.type)" :style="{ color: getFileColor(record.type), marginRight: '8px', fontSize: '18px' }" />
-                  <span>{{ record.name }}</span>
+                <div class="list-name-cell" @dblclick="openFile(record)">
+                  <component :is="getFileIcon(getFileType(record))" :style="{ color: getFileColor(getFileType(record)), marginRight: '8px', fontSize: '18px', flexShrink: 0 }" />
+                  <a-tooltip :title="record.name" placement="topLeft">
+                    <span class="file-name-text">{{ record.name }}</span>
+                  </a-tooltip>
+                  <a-tag v-if="record.isPublic" color="blue" style="margin-left: 8px; transform: scale(0.8); flex-shrink: 0;">公开</a-tag>
                 </div>
               </template>
-              <template v-if="column.key === 'action'">
+              <template v-else-if="column.key === 'deptName'">
+                <a-tooltip :title="text" placement="topLeft">
+                  <span>{{ text || '-' }}</span>
+                </a-tooltip>
+              </template>
+              <template v-else-if="column.key === 'size'">
+                <a-tooltip :title="formatSize(text)" placement="topLeft">
+                  <span>{{ formatSize(text) }}</span>
+                </a-tooltip>
+              </template>
+              <template v-else-if="column.key === 'updatedAt'">
+                <a-tooltip :title="formatDate(text)" placement="topLeft">
+                  <span>{{ formatDate(text) }}</span>
+                </a-tooltip>
+              </template>
+              <template v-else-if="column.key === 'owner'">
+                <a-tooltip :title="text" placement="topLeft">
+                  <span>{{ text }}</span>
+                </a-tooltip>
+              </template>
+              <template v-else-if="column.key === 'action'">
                 <a-space>
-                  <a-tooltip title="下载" v-if="record.type !== 'folder'">
-                    <a-button type="text" size="small"><DownloadOutlined /></a-button>
+                  <a-tooltip title="下载" v-if="!record.isFolder">
+                    <a-button type="text" size="small" @click="handleDownload(record)"><DownloadOutlined /></a-button>
                   </a-tooltip>
                   <a-tooltip title="更多">
                     <a-dropdown trigger="click">
@@ -117,10 +144,10 @@
                       <template #overlay>
                         <a-menu>
                           <a-menu-item key="open" @click="openFile(record)">打开</a-menu-item>
-                          <a-menu-item key="share">分享</a-menu-item>
-                          <a-menu-item key="rename" :disabled="!record.permission.write">重命名</a-menu-item>
+                          <a-menu-item key="share" @click="handleShare(record)" v-if="record.ownerId === userStore.id">分享</a-menu-item>
+                          <a-menu-item key="rename" @click="handleRename(record)" v-if="record.ownerId === userStore.id">属性</a-menu-item>
                           <a-menu-divider />
-                          <a-menu-item key="delete" danger :disabled="!record.permission.delete">删除</a-menu-item>
+                          <a-menu-item key="delete" danger @click="handleDelete(record)" v-if="record.ownerId === userStore.id">删除</a-menu-item>
                         </a-menu>
                       </template>
                     </a-dropdown>
@@ -146,11 +173,85 @@
         </div>
       </div>
     </a-modal>
+
+    <!-- 分享弹窗 -->
+    <a-modal v-model:open="shareVisible" title="分享文件" @ok="handleShareSubmit" :confirmLoading="shareLoading" :okText="shareForm.shareType === 'public' && shareLink ? '复制链接' : '确认'">
+      <div v-if="shareLink" style="padding: 20px 0; text-align: center;">
+        <p>公开分享链接已生成：</p>
+        <a-input v-model:value="shareLink" readonly>
+            <template #addonAfter>
+                <a-tooltip title="复制">
+                    <CopyOutlined style="cursor: pointer;" @click="copyShareLink" />
+                </a-tooltip>
+            </template>
+        </a-input>
+      </div>
+      <a-form v-else :model="shareForm" layout="vertical">
+        <a-form-item label="分享方式">
+            <a-radio-group v-model:value="shareForm.shareType">
+                <a-radio-button value="user">指定用户</a-radio-button>
+                <a-radio-button value="public">公开链接</a-radio-button>
+            </a-radio-group>
+        </a-form-item>
+        
+        <a-form-item label="选择用户" v-if="shareForm.shareType === 'user'">
+            <a-select
+                v-model:value="shareForm.targetUserIds"
+                mode="multiple"
+                placeholder="请选择用户"
+                style="width: 100%"
+                :options="userList.map(u => ({ label: u.nickname || u.username, value: u.id }))"
+            />
+        </a-form-item>
+
+        <a-form-item label="过期时间">
+            <a-date-picker 
+                v-model:value="shareForm.expirationTime" 
+                show-time 
+                placeholder="选择过期时间 (留空表示永久有效)" 
+                style="width: 100%" 
+                valueFormat="YYYY-MM-DD HH:mm:ss"
+            />
+        </a-form-item>
+
+        <a-form-item label="权限">
+          <a-radio-group v-model:value="shareForm.permission">
+            <a-radio value="read">只读</a-radio>
+            <a-radio value="write">读写</a-radio>
+          </a-radio-group>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 新建文件夹 Modal -->
+    <a-modal v-model:open="newFolderVisible" title="新建文件夹" @ok="handleNewFolderSubmit" :confirmLoading="newFolderLoading">
+      <a-form :model="newFolderForm" layout="vertical">
+        <a-form-item label="文件夹名称">
+          <a-input v-model:value="newFolderForm.name" placeholder="请输入文件夹名称" />
+        </a-form-item>
+        <a-form-item label="公开性" v-if="getCurrentDeptId()">
+          <a-checkbox v-model:checked="newFolderForm.isPublic">公开 (部门所有人可见)</a-checkbox>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
+    <!-- 编辑文件/文件夹 Modal -->
+    <a-modal v-model:open="editFileVisible" title="编辑属性" @ok="handleEditFileSubmit" :confirmLoading="editFileLoading">
+      <a-form :model="editFileForm" layout="vertical">
+        <a-form-item label="名称">
+          <a-input v-model:value="editFileForm.name" />
+        </a-form-item>
+        <a-form-item label="公开性" v-if="getCurrentDeptId() || editFileForm.isPublic !== undefined">
+           <!-- Only show if it's a dept file or already public/private tracked -->
+          <a-checkbox v-model:checked="editFileForm.isPublic">公开 (部门所有人可见)</a-checkbox>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, createVNode } from 'vue';
 import {
   CloudUploadOutlined,
   FolderOutlined,
@@ -171,31 +272,28 @@ import {
   UserOutlined,
   TeamOutlined,
   BankOutlined,
+  ApartmentOutlined,
+  ClusterOutlined,
   ShareAltOutlined,
-  HddOutlined
+  HddOutlined,
+  CopyOutlined
 } from '@ant-design/icons-vue';
-import { message } from 'ant-design-vue';
+import { message, Modal } from 'ant-design-vue';
+import * as FileApi from '@/api/file';
+import type { FileItem } from '@/api/file';
+import * as UserApi from '@/api/user';
+import type { UserListDto } from '@/api/user';
+import { useUserStore } from '@/stores/user';
+import { getDeptTree, type Dept, DeptType } from '@/api/dept';
 
 // --- 类型定义 ---
 type FileType = 'folder' | 'image' | 'pdf' | 'word' | 'excel' | 'ppt' | 'text' | 'zip' | 'unknown';
-type Permission = { read: boolean; write: boolean; delete: boolean };
-
-interface FileItem {
-  id: string;
-  name: string;
-  type: FileType;
-  size?: number; // bytes
-  updatedAt: string;
-  owner: string;
-  permission: Permission;
-  url?: string;
-  parentId?: string;
-}
 
 interface BreadcrumbItem {
   key: string;
   title: string;
-  parentId?: string;
+  parentId?: number | null;
+  deptId?: number | null;
 }
 
 // --- 状态 ---
@@ -205,13 +303,45 @@ const viewMode = ref<'grid' | 'list'>('grid');
 const loading = ref(false);
 const fileList = ref<FileItem[]>([]);
 const breadcrumbs = ref<BreadcrumbItem[]>([{ key: 'root', title: '我的网盘' }]);
-const selectedFiles = ref<string[]>([]);
+const selectedFiles = ref<number[]>([]);
 const previewVisible = ref(false);
 const currentFile = ref<FileItem | null>(null);
+const fileInput = ref<HTMLInputElement | null>(null);
+const userStore = useUserStore();
 
-// --- Mock 数据 ---
+// New Folder State
+const newFolderVisible = ref(false);
+const newFolderForm = ref({
+    name: '新建文件夹',
+    isPublic: false
+});
+const newFolderLoading = ref(false);
+
+// Edit File State
+const editFileVisible = ref(false);
+const editFileForm = ref({
+    id: 0,
+    name: '',
+    isPublic: false
+});
+const editFileLoading = ref(false);
+
+// Share State
+const shareVisible = ref(false);
+const shareForm = ref({
+    fileId: 0,
+    targetUserIds: [] as number[],
+    permission: 'read',
+    shareType: 'user', // user | public
+    expirationTime: null as string | null
+});
+const shareLink = ref('');
+const userList = ref<UserListDto[]>([]);
+const shareLoading = ref(false);
+
+// --- Mock 数据 (Tree) ---
 // 左侧树形结构
-const treeData = [
+const treeData = ref<any[]>([
   {
     title: '个人网盘',
     key: 'personal',
@@ -223,61 +353,86 @@ const treeData = [
     ],
   },
   {
+    title: '公共网盘',
+    key: 'org',
+    icon: BankOutlined,
+    children: []
+  },
+  {
     title: '群组网盘',
     key: 'groups',
     icon: TeamOutlined,
     children: [
       { title: '前端开发组', key: 'group-frontend', icon: FolderOutlined },
-      { title: '项目攻坚组', key: 'group-project', icon: FolderOutlined },
-      { title: '羽毛球兴趣组', key: 'group-badminton', icon: FolderOutlined },
     ],
   },
-  {
-    title: '组织网盘',
-    key: 'org',
-    icon: BankOutlined,
-    children: [
-      { title: '全公司共享', key: 'org-company', icon: HddOutlined },
-      { title: '研发部', key: 'org-rd', icon: FolderOutlined },
-      { title: '产品部', key: 'org-product', icon: FolderOutlined },
-    ],
-  },
-];
+]);
 
-// 模拟文件数据库
-const mockFiles: FileItem[] = [
-  // 个人网盘 - 根目录
-  { id: 'f1', name: '工作文档', type: 'folder', size: 0, updatedAt: '2023-10-20 10:00', owner: 'me', permission: { read: true, write: true, delete: true } },
-  { id: 'f2', name: '个人照片', type: 'folder', size: 0, updatedAt: '2023-10-21 14:30', owner: 'me', permission: { read: true, write: true, delete: true } },
-  { id: 'fi1', name: '2023年度总结.docx', type: 'word', size: 25600, updatedAt: '2023-10-25 09:15', owner: 'me', permission: { read: true, write: true, delete: true } },
-  { id: 'fi2', name: '项目架构图.png', type: 'image', size: 1048576, updatedAt: '2023-10-24 16:20', owner: 'me', permission: { read: true, write: true, delete: true }, url: 'https://picsum.photos/800/600' },
-  
-  // 我共享的文件
-  { id: 'sfi1', name: '公开技术分享.pptx', type: 'ppt', size: 5242880, updatedAt: '2023-10-26 10:00', owner: 'me', permission: { read: true, write: true, delete: true } },
-  { id: 'sfi2', name: '常用工具集合.zip', type: 'zip', size: 104857600, updatedAt: '2023-10-26 11:30', owner: 'me', permission: { read: true, write: true, delete: true } },
+const loadDeptTree = async () => {
+  try {
+    const depts = await getDeptTree();
+    
+    const getDeptIcon = (type: DeptType) => {
+      if (type === DeptType.Group) return { icon: BankOutlined, color: '#faad14' };
+      if (type === DeptType.Company) return { icon: ApartmentOutlined, color: '#1890ff' };
+      return { icon: ClusterOutlined, color: '#8c8c8c' };
+    };
 
-  // 工作文档 文件夹内
-  { id: 'fi3', name: '需求规格说明书.pdf', type: 'pdf', size: 5242880, updatedAt: '2023-10-18 11:00', owner: 'me', permission: { read: true, write: true, delete: true }, parentId: 'f1' },
-  
-  // 群组网盘 - 前端开发组
-  { id: 'gf1', name: '组件库规范', type: 'folder', size: 0, updatedAt: '2023-09-01 10:00', owner: 'admin', permission: { read: true, write: false, delete: false } },
-  { id: 'gfi1', name: 'Vue3最佳实践.md', type: 'text', size: 5120, updatedAt: '2023-10-20 15:00', owner: 'zhangsan', permission: { read: true, write: true, delete: false } },
-  
-  // 组织网盘 - 全公司
-  { id: 'ofi1', name: '员工手册2023版.pdf', type: 'pdf', size: 10485760, updatedAt: '2023-01-01 09:00', owner: 'hr', permission: { read: true, write: false, delete: false } },
-  { id: 'ofi2', name: '公司Logo.ai', type: 'unknown', size: 2097152, updatedAt: '2023-01-01 09:00', owner: 'design', permission: { read: true, write: false, delete: false } },
-];
+    const mapDeptToNode = (dept: Dept): any => {
+      const { icon, color } = getDeptIcon(dept.type);
+      return {
+        title: dept.name,
+        key: `dept_${dept.id}`,
+        icon,
+        color,
+        children: dept.children ? dept.children.map(mapDeptToNode) : [],
+        isDept: true,
+        deptId: dept.id
+      };
+    };
+    
+    const orgNode = treeData.value.find(n => n.key === 'org');
+    if (orgNode) {
+      orgNode.children = depts.map(mapDeptToNode);
+    }
+  } catch (error) {
+    console.error('Failed to load dept tree', error);
+  }
+};
+
+// 格式化日期
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+};
 
 // --- 表格列定义 ---
 const columns = [
-  { title: '文件名', dataIndex: 'name', key: 'name', sorter: (a: FileItem, b: FileItem) => a.name.localeCompare(b.name) },
-  { title: '大小', dataIndex: 'size', key: 'size', customRender: ({ text }: { text: number }) => formatSize(text), width: 120 },
-  { title: '修改时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180 },
-  { title: '所有者', dataIndex: 'owner', key: 'owner', width: 100 },
+  { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: (a: FileItem, b: FileItem) => a.name.localeCompare(b.name) },
+  { title: '所属组织', dataIndex: 'deptName', key: 'deptName', ellipsis: true, width: 150 },
+  { title: '大小', dataIndex: 'size', key: 'size', ellipsis: true, width: 120 },
+  { title: '修改时间', dataIndex: 'updatedAt', key: 'updatedAt', ellipsis: true, width: 180 },
+  { title: '所有者', dataIndex: 'ownerName', key: 'owner', ellipsis: true, width: 100 },
   { title: '操作', key: 'action', width: 100, align: 'center' },
 ];
 
 // --- 方法 ---
+
+// 获取文件类型
+const getFileType = (file: FileItem): FileType => {
+  if (file.isFolder) return 'folder';
+  const ext = file.extension?.toLowerCase() || '';
+  if (['.jpg', '.jpeg', '.png', '.gif', '.bmp'].includes(ext)) return 'image';
+  if (['.pdf'].includes(ext)) return 'pdf';
+  if (['.doc', '.docx'].includes(ext)) return 'word';
+  if (['.xls', '.xlsx'].includes(ext)) return 'excel';
+  if (['.ppt', '.pptx'].includes(ext)) return 'ppt';
+  if (['.txt', '.md', '.json', '.xml'].includes(ext)) return 'text';
+  if (['.zip', '.rar', '.7z', '.tar', '.gz'].includes(ext)) return 'zip';
+  return 'unknown';
+};
 
 // 获取文件图标
 const getFileIcon = (type: FileType) => {
@@ -318,32 +473,81 @@ const formatSize = (bytes?: number) => {
 };
 
 // 加载文件列表
-const loadFiles = (parentId?: string, driveKey?: string) => {
+const loadFiles = async (parentId?: number | null, driveKey?: string, deptId?: number) => {
+  const currentKey = driveKey || selectedKeys.value[0];
   loading.value = true;
   selectedFiles.value = [];
   
-  setTimeout(() => {
-    // 简单的 Mock 逻辑
-    if (driveKey) {
-      // 切换网盘根目录
-      if (driveKey === 'personal-my') {
-        fileList.value = mockFiles.filter(f => !f.parentId && (f.owner === 'me' || f.owner === 'system') && !['sfi1', 'sfi2'].includes(f.id));
-      } else if (driveKey === 'personal-my-shares') {
-        fileList.value = mockFiles.filter(f => ['sfi1', 'sfi2'].includes(f.id));
-      } else if (driveKey === 'group-frontend') {
-        fileList.value = mockFiles.filter(f => !f.parentId && (f.owner === 'admin' || f.owner === 'zhangsan'));
-      } else if (driveKey === 'org-company') {
-        fileList.value = mockFiles.filter(f => f.owner === 'hr' || f.owner === 'design');
-      } else {
-        fileList.value = []; // 其他暂为空
-      }
-    } else if (parentId) {
-      // 进入文件夹
-      fileList.value = mockFiles.filter(f => f.parentId === parentId);
+  try {
+    if (currentKey === 'personal-shared') {
+        const shares = await FileApi.getSharedWithMe();
+        fileList.value = shares.map(s => ({
+            id: s.fileId, // Use fileId to allow operations like download/preview
+            name: s.fileName,
+            extension: s.fileName.includes('.') ? '.' + s.fileName.split('.').pop() : '',
+            size: 0, // Not provided in share DTO
+            isFolder: s.isFolder,
+            ownerId: s.sharedByUserId,
+            ownerName: s.sharedByUserName,
+            createdAt: s.createdAt,
+            updatedAt: s.createdAt,
+            hasChildren: false,
+            isPublic: false
+        })) as unknown as FileItem[];
+        return;
     }
+
+    if (currentKey === 'personal-my-shares') {
+        const shares = await FileApi.getMySharedFiles();
+        fileList.value = shares.map(s => ({
+            id: s.fileId,
+            name: s.fileName,
+            extension: s.fileName.includes('.') ? '.' + s.fileName.split('.').pop() : '',
+            size: 0,
+            isFolder: s.isFolder,
+            ownerId: s.sharedByUserId, // Me
+            ownerName: '我',
+            deptId: null, // Add missing property
+            createdAt: s.createdAt,
+            updatedAt: s.createdAt,
+            hasChildren: false,
+            isPublic: false
+        })) as unknown as FileItem[];
+        return;
+    }
+
+    const params: FileApi.FileQueryParams = {};
     
+    // 如果指定了 parentId，则优先使用 parentId (进入文件夹)
+    if (parentId !== undefined) {
+      params.parentId = parentId;
+    } else {
+      // 否则根据左侧导航 key 加载根目录
+      // 暂时只支持个人网盘根目录
+      params.parentId = null; 
+      // 这里可以扩展 driveKey 逻辑，比如 params.deptId = ...
+    }
+
+    if (currentKey === 'org') {
+      params.isPublic = true;
+    }
+
+    if (deptId !== undefined) {
+        params.deptId = deptId;
+    }
+
+    if (searchText.value) {
+      params.name = searchText.value;
+    }
+
+    const data = await FileApi.getFileList(params);
+    fileList.value = data;
+  } catch (error) {
+    message.error('加载文件列表失败');
+    console.error(error);
+  } finally {
     loading.value = false;
-  }, 300);
+  }
 };
 
 // 获取树路径
@@ -363,23 +567,55 @@ const getTreePath = (data: any[], targetKey: string): any[] => {
 };
 
 const updateBreadcrumbs = (key: string) => {
-  const path = getTreePath(treeData, key);
+  const path = getTreePath(treeData.value, key);
   breadcrumbs.value = path.map((item, index) => {
     if (index === path.length - 1) {
-      return { key: 'root', title: item.title };
+      return { key: 'root', title: item.title, deptId: item.deptId };
     }
-    return { key: 'nav_' + item.key, title: item.title };
+    return { key: 'nav_' + item.key, title: item.title, deptId: item.deptId };
   });
 };
 
-// 树节点选择
-const handleTreeSelect = (keys: string[]) => {
-  if (keys.length > 0) {
-    const key = keys[0];
-    if (key) {
-      updateBreadcrumbs(key);
-      loadFiles(undefined, key);
+// 获取当前上下文的 DeptId
+const getCurrentDeptId = () => {
+    // Check if any breadcrumb has deptId
+    // Usually it's carried over from the root dept node
+    for (let i = breadcrumbs.value.length - 1; i >= 0; i--) {
+        if (breadcrumbs.value[i].deptId) {
+            return breadcrumbs.value[i].deptId;
+        }
     }
+    return undefined;
+};
+
+// 树节点选择
+const handleTreeSelect = (keys: string[], info: any) => {
+  if (!keys.length) return;
+  const key = keys[0];
+  
+  // 更新面包屑（统一使用树路径）
+  updateBreadcrumbs(key);
+  
+  // Handle dept node
+  if (info.node.isDept) {
+    loadFiles(undefined, undefined, info.node.deptId);
+    return;
+  }
+  
+  if (key === 'personal-my') {
+    loadFiles();
+  } else if (key === 'personal-shared') {
+    loadFiles(undefined, 'personal-shared');
+  } else if (key === 'personal-my-shares') {
+    loadFiles(undefined, 'personal-my-shares');
+  } else if (key === 'groups') {
+      // expand
+  } else if (key === 'org') {
+      // expand
+      loadFiles(undefined, 'org');
+  } else {
+      // default
+      loadFiles();
   }
 };
 
@@ -392,23 +628,34 @@ const handleBreadcrumbClick = (item: BreadcrumbItem, index: number) => {
   breadcrumbs.value = breadcrumbs.value.slice(0, index + 1);
   
   if (item.key === 'root') {
-    // 回到根目录，重新根据 selectedKeys 加载
+    // 回到根目录
     loadFiles(undefined, selectedKeys.value[0]);
+  } else if (item.key.startsWith('dept_')) {
+      // Back to dept root
+      loadFiles(undefined, undefined, item.deptId || undefined);
   } else {
     // 加载对应文件夹 ID
-    loadFiles(item.key);
+    const deptId = getCurrentDeptId();
+    loadFiles(Number(item.key), undefined, deptId);
   }
 };
 
 // 打开文件/进入文件夹
 const openFile = (file: FileItem) => {
-  if (file.type === 'folder') {
+  if (file.isFolder) {
     // 进入文件夹
-    breadcrumbs.value.push({ key: file.id, title: file.name, parentId: file.parentId });
-    loadFiles(file.id);
+    const deptId = getCurrentDeptId() || file.deptId; // If file has deptId, use it (e.g. from list)
+    breadcrumbs.value.push({ 
+        key: file.id.toString(), 
+        title: file.name, 
+        parentId: file.parentId,
+        deptId: deptId
+    });
+    loadFiles(file.id, undefined, deptId || undefined);
   } else {
     // 预览文件
     currentFile.value = file;
+    // 暂时对于图片直接显示，其他显示不支持
     previewVisible.value = true;
   }
 };
@@ -428,7 +675,7 @@ const selectFile = (file: FileItem, event: MouseEvent) => {
 };
 
 // 表格选中变更
-const onSelectChange = (keys: string[]) => {
+const onSelectChange = (keys: number[]) => {
   selectedFiles.value = keys;
 };
 
@@ -440,54 +687,281 @@ const customRow = (record: FileItem) => {
   };
 };
 
-// 右键菜单 (暂未实现完整右键菜单，仅阻止默认)
+// 右键菜单
 const handleContextMenu = (_e: MouseEvent, file: FileItem) => {
-  // 实际项目中这里会弹出自定义右键菜单
-  // 这里暂时只做选中
   if (!selectedFiles.value.includes(file.id)) {
     selectedFiles.value = [file.id];
   }
 };
 
 const handleSearch = () => {
-  message.info('搜索功能开发中...');
+  const currentFolder = breadcrumbs.value[breadcrumbs.value.length - 1];
+  let parentId: number | null = null;
+  if (currentFolder && currentFolder.key !== 'root' && !currentFolder.key.startsWith('dept_')) {
+      parentId = Number(currentFolder.key);
+  }
+  const deptId = getCurrentDeptId();
+  loadFiles(parentId, undefined, deptId);
 };
 
 const handleNewFolder = () => {
-  message.success('已新建文件夹：新建文件夹');
-  const newFolder: FileItem = {
-    id: Date.now().toString(),
-    name: '新建文件夹',
-    type: 'folder',
-    updatedAt: new Date().toLocaleString(),
-    owner: 'me',
-    permission: { read: true, write: true, delete: true },
-    parentId: breadcrumbs.value.length > 1 ? breadcrumbs.value[breadcrumbs.value.length - 1]?.key : undefined
-  };
-  fileList.value.unshift(newFolder);
+    newFolderForm.value = {
+        name: '新建文件夹',
+        isPublic: false
+    };
+    newFolderVisible.value = true;
+};
+
+const handleNewFolderSubmit = async () => {
+    if (!newFolderForm.value.name) {
+        message.warning('请输入文件夹名称');
+        return;
+    }
+
+    newFolderLoading.value = true;
+    try {
+        const currentFolder = breadcrumbs.value[breadcrumbs.value.length - 1];
+        let parentId: number | null = null;
+        if (currentFolder && currentFolder.key !== 'root' && !currentFolder.key.startsWith('dept_')) {
+            parentId = Number(currentFolder.key);
+        }
+        
+        const deptId = getCurrentDeptId();
+
+        await FileApi.createFolder({ 
+            name: newFolderForm.value.name, 
+            parentId,
+            deptId: deptId || undefined,
+            isPublic: newFolderForm.value.isPublic
+        });
+        message.success('创建成功');
+        newFolderVisible.value = false;
+        refreshList();
+    } catch (error) {
+        console.error(error);
+        message.error('创建失败');
+    } finally {
+        newFolderLoading.value = false;
+    }
 };
 
 const refreshList = () => {
   const currentFolder = breadcrumbs.value[breadcrumbs.value.length - 1];
+  const deptId = getCurrentDeptId();
+  
   if (currentFolder?.key === 'root') {
     loadFiles(undefined, selectedKeys.value[0]);
+  } else if (currentFolder?.key.startsWith('dept_')) {
+      loadFiles(undefined, undefined, deptId);
   } else if (currentFolder) {
-    loadFiles(currentFolder.key);
+    loadFiles(Number(currentFolder.key), undefined, deptId);
   }
-  message.success('刷新成功');
 };
 
 const handleUpload = () => {
-  message.info('点击了上传按钮');
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
 };
 
-const downloadFile = (file: FileItem | null) => {
-  if (!file) return;
-  message.success(`开始下载：${file.name}`);
+const onFileSelected = async (e: Event) => {
+    const files = (e.target as HTMLInputElement).files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const currentFolder = breadcrumbs.value[breadcrumbs.value.length - 1];
+    let parentId: number | null = null;
+    if (currentFolder && currentFolder.key !== 'root' && !currentFolder.key.startsWith('dept_')) {
+        parentId = Number(currentFolder.key);
+    }
+    const deptId = getCurrentDeptId();
+
+    try {
+        message.loading({ content: '上传中...', key: 'upload' });
+        // Default isPublic to false for now, or could check if in a public folder?
+        // For now, let's keep it simple.
+        await FileApi.uploadFile(file, parentId, deptId || undefined, false);
+        message.success({ content: '上传成功', key: 'upload' });
+        refreshList();
+    } catch (error) {
+        message.error({ content: '上传失败', key: 'upload' });
+    } finally {
+        // Reset input
+        (e.target as HTMLInputElement).value = '';
+    }
+};
+
+const handleDownload = async (file: FileItem | null) => {
+  if (!file || file.isFolder) return;
+  try {
+      message.loading({ content: '准备下载...', key: 'download' });
+      const blob = await FileApi.downloadFile(file.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.name; // Backend sets filename, but we can set it here too
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      message.success({ content: '开始下载', key: 'download' });
+  } catch (error) {
+      message.error({ content: '下载失败', key: 'download' });
+  }
+};
+
+const handleDelete = async (file: FileItem) => {
+    Modal.confirm({
+        title: '确认删除',
+        content: `确定要删除 ${file.name} 吗？`,
+        onOk: async () => {
+            try {
+                await FileApi.deleteFile(file.id);
+                message.success('删除成功');
+                refreshList();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    });
+};
+
+const handleRename = (file: FileItem) => {
+    editFileForm.value = {
+        id: file.id,
+        name: file.name,
+        isPublic: file.isPublic || false
+    };
+    editFileVisible.value = true;
+};
+
+const handleEditFileSubmit = async () => {
+    if (!editFileForm.value.name) {
+        message.warning('请输入名称');
+        return;
+    }
+    
+    editFileLoading.value = true;
+    try {
+        await FileApi.updateFile(editFileForm.value.id, {
+            name: editFileForm.value.name,
+            isPublic: editFileForm.value.isPublic
+        });
+        message.success('更新成功');
+        editFileVisible.value = false;
+        refreshList();
+    } catch (error) {
+        console.error(error);
+        message.error('更新失败');
+    } finally {
+        editFileLoading.value = false;
+    }
+};
+
+const handleShare = async (file: FileItem) => {
+    shareForm.value = {
+        fileId: file.id,
+        targetUserIds: [],
+        permission: 'read',
+        shareType: 'user',
+        expirationTime: null
+    };
+    shareLink.value = '';
+    shareVisible.value = true;
+    
+    // Load users if not loaded
+    if (userList.value.length === 0) {
+        try {
+            const users = await UserApi.getUserList();
+            userList.value = users;
+        } catch (error) {
+            console.error('Failed to load users', error);
+        }
+    }
+};
+
+const copyShareLink = () => {
+    if (!shareLink.value) return;
+    navigator.clipboard.writeText(shareLink.value).then(() => {
+        message.success('复制成功');
+    }).catch(() => {
+        message.error('复制失败');
+    });
+};
+
+const handleShareSubmit = async () => {
+    if (shareLink.value) {
+        copyShareLink();
+        shareVisible.value = false;
+        return;
+    }
+
+    if (shareForm.value.shareType === 'user' && shareForm.value.targetUserIds.length === 0) {
+        message.warning('请选择要分享的用户');
+        return;
+    }
+    
+    shareLoading.value = true;
+    try {
+        const result = await FileApi.shareFile({
+            fileId: shareForm.value.fileId,
+            targetUserIds: shareForm.value.shareType === 'user' ? shareForm.value.targetUserIds : undefined,
+            permission: shareForm.value.permission,
+            isPublicLink: shareForm.value.shareType === 'public',
+            expirationTime: shareForm.value.expirationTime
+        }) as unknown as any; 
+
+        if (shareForm.value.shareType === 'public') {
+             // Assuming result structure matches backend response
+             // Backend: ApiResponse<object>.Success({ Token: ... }, message)
+             // Frontend request wrapper: returns data.data (payload) or just data?
+             // Need to verify request util. Assuming standard interceptor returning response.data
+             // If ApiResponse is standard { code, message, data }, and axios returns data part.
+             // If interceptor unwraps 'data' field:
+             // Let's assume result is the 'data' field of ApiResponse.
+             
+             // Wait, I need to know how request.post behaves.
+             // Usually in these templates, it returns the payload.
+             // If so, result should be { token: '...' }
+             
+             const token = result?.token; 
+             if (token) {
+                 // Construct link. Assuming frontend route /s/:token
+                 const origin = window.location.origin;
+                 shareLink.value = `${origin}/s/${token}`;
+                 message.success('链接生成成功');
+             } else {
+                 // Fallback if token is in message or direct
+                 // But based on my controller change: new { Token = message }
+                 // Wait, controller: Success(new { Token = message }, "...")
+                 // So data is { Token: "..." } (PascalCase in C# -> camelCase in JSON usually?)
+                 // Default JSON serializer usually camelCase?
+                 // Let's assume token or Token.
+                 
+                 const t = result?.token || result?.Token;
+                 if (t) {
+                     const origin = window.location.origin;
+                     shareLink.value = `${origin}/s/${t}`;
+                     message.success('链接生成成功');
+                 } else {
+                     message.warning('未获取到分享链接');
+                 }
+             }
+        } else {
+            message.success('分享成功');
+            shareVisible.value = false;
+        }
+    } catch (error) {
+        console.error(error);
+        message.error('分享失败');
+    } finally {
+        shareLoading.value = false;
+    }
 };
 
 // 初始化
 onMounted(() => {
+  loadDeptTree();
   const initialKey = 'personal-my';
   selectedKeys.value = [initialKey];
   updateBreadcrumbs(initialKey);
@@ -632,6 +1106,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   cursor: pointer;
+  max-width: 100%;
+}
+
+.file-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 /* 预览 */

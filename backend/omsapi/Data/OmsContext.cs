@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using omsapi.Models.Entities;
+using omsapi.Models.Entities.Archive;
 
 namespace omsapi.Data
 {
@@ -20,6 +21,15 @@ namespace omsapi.Data
         public DbSet<SystemPost> Posts { get; set; }
         public DbSet<SystemUserPost> UserPosts { get; set; }
         public DbSet<SystemRoleInheritance> RoleInheritances { get; set; }
+        public DbSet<SystemFile> Files { get; set; }
+        public DbSet<SystemFileShare> FileShares { get; set; }
+        
+        // Archive Entities
+        public DbSet<ArchFond> ArchFonds { get; set; }
+        public DbSet<ArchType> ArchTypes { get; set; }
+        public DbSet<ArchFile> ArchFiles { get; set; }
+        public DbSet<ArchAttachment> ArchAttachments { get; set; }
+        public DbSet<ArchBox> ArchBoxes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -95,6 +105,20 @@ namespace omsapi.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+            // Archive Configs
+            modelBuilder.Entity<ArchFond>(entity => {
+                entity.HasIndex(e => e.Code).IsUnique();
+            });
+            modelBuilder.Entity<ArchType>(entity => {
+                entity.HasIndex(e => e.Code).IsUnique();
+            });
+            modelBuilder.Entity<ArchFile>(entity => {
+                entity.HasIndex(e => e.ArchCode).IsUnique();
+            });
+            modelBuilder.Entity<ArchBox>(entity => {
+                entity.HasIndex(e => e.BoxCode).IsUnique();
+            });
+
             // 初始化超级管理员
             // 密码为 admin123 的 SHA256 哈希值
             // 这里为了简单演示，直接硬编码哈希值。实际项目中应使用更安全的密码哈希算法（如 BCrypt, PBKDF2）
@@ -134,6 +158,45 @@ namespace omsapi.Data
                 new SystemConfig { Id = 3, Category = "Basic", Key = "Copyright", Value = "©2025 Created by jinlan.info", Description = "底部版权信息", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1) },
                 new SystemConfig { Id = 4, Category = "Security", Key = "PasswordMinLength", Value = "6", Description = "密码最小长度", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1) },
                 new SystemConfig { Id = 5, Category = "Security", Key = "SessionTimeout", Value = "30", Description = "会话超时时间(分钟)", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1) }
+            );
+
+            // Seed Archive Permissions
+            // 注意：档案模块菜单（Id: 46, 47, 74）由历史数据脚本初始化（见 oms.sql），
+            // 这里仅新增按钮级权限（Id: 102–113），避免与现有主键/唯一键冲突。
+            var fixedDate = new DateTime(2025, 12, 22, 12, 0, 0);
+            modelBuilder.Entity<SystemPermission>().HasData(
+                // Buttons for Manage
+                new SystemPermission { Id = 102, ParentId = 47, Name = "全宗查看", Code = "archive:fond:view", Type = "BUTTON", SortOrder = 1, IsVisible = false, CreatedAt = fixedDate },
+                new SystemPermission { Id = 103, ParentId = 47, Name = "全宗新增", Code = "archive:fond:add", Type = "BUTTON", SortOrder = 2, IsVisible = false, CreatedAt = fixedDate },
+                new SystemPermission { Id = 104, ParentId = 47, Name = "全宗编辑", Code = "archive:fond:edit", Type = "BUTTON", SortOrder = 3, IsVisible = false, CreatedAt = fixedDate },
+                new SystemPermission { Id = 105, ParentId = 47, Name = "全宗删除", Code = "archive:fond:delete", Type = "BUTTON", SortOrder = 4, IsVisible = false, CreatedAt = fixedDate },
+                
+                new SystemPermission { Id = 108, ParentId = 47, Name = "档案查看", Code = "archive:file:view", Type = "BUTTON", SortOrder = 5, IsVisible = false, CreatedAt = fixedDate },
+                new SystemPermission { Id = 109, ParentId = 47, Name = "档案新增", Code = "archive:file:add", Type = "BUTTON", SortOrder = 6, IsVisible = false, CreatedAt = fixedDate },
+                new SystemPermission { Id = 110, ParentId = 47, Name = "档案编辑", Code = "archive:file:edit", Type = "BUTTON", SortOrder = 7, IsVisible = false, CreatedAt = fixedDate },
+                new SystemPermission { Id = 111, ParentId = 47, Name = "档案删除", Code = "archive:file:delete", Type = "BUTTON", SortOrder = 8, IsVisible = false, CreatedAt = fixedDate },
+
+                // Buttons for Category
+                new SystemPermission { Id = 106, ParentId = 74, Name = "分类查看", Code = "archive:type:view", Type = "BUTTON", SortOrder = 1, IsVisible = false, CreatedAt = fixedDate },
+                new SystemPermission { Id = 107, ParentId = 74, Name = "分类新增", Code = "archive:type:add", Type = "BUTTON", SortOrder = 2, IsVisible = false, CreatedAt = fixedDate },
+                new SystemPermission { Id = 112, ParentId = 74, Name = "分类编辑", Code = "archive:type:edit", Type = "BUTTON", SortOrder = 3, IsVisible = false, CreatedAt = fixedDate },
+                new SystemPermission { Id = 113, ParentId = 74, Name = "分类删除", Code = "archive:type:delete", Type = "BUTTON", SortOrder = 4, IsVisible = false, CreatedAt = fixedDate }
+            );
+
+            // Assign new Archive button permissions to Admin Role (Id=1)
+            modelBuilder.Entity<SystemRolePermission>().HasData(
+                new SystemRolePermission { RoleId = 1, PermissionId = 102, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 103, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 104, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 105, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 106, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 107, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 112, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 113, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 108, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 109, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 110, CreatedAt = fixedDate },
+                new SystemRolePermission { RoleId = 1, PermissionId = 111, CreatedAt = fixedDate }
             );
         }
     }

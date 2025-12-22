@@ -11,6 +11,12 @@ const router = createRouter({
       component: () => import('../views/Login.vue'),
       meta: { title: '登录' }
     },
+    {
+      path: '/s/:token',
+      name: 'ShareAccess',
+      component: () => import('../views/share/ShareAccess.vue'),
+      meta: { title: '文件分享', public: true }
+    },
     // 基础路由，不需要权限
     {
       path: '/basic', // 避免和动态路由的 / 冲突
@@ -60,8 +66,8 @@ router.beforeEach(async (to, _from, next) => {
     console.error('Error parsing auth data', e);
   }
   
-  if (to.path === '/login') {
-    if (token) {
+  if (to.path === '/login' || to.meta.public) {
+    if (token && to.path === '/login') {
       next('/');
     } else {
       next();

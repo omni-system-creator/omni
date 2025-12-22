@@ -127,6 +127,7 @@ const handleLogin = async (_values: any) => {
       // 保存用户信息
       if (res.user) {
         userStore.setUserInfo({
+          id: res.user.id,
           username: res.user.username,
           nickname: res.user.nickname,
           avatar: res.user.avatar
@@ -134,6 +135,7 @@ const handleLogin = async (_values: any) => {
       } else {
         // 如果后端没有返回 user 对象，使用用户名作为 fallback
         userStore.setUserInfo({
+            id: 0,
             username: formState.username
         });
       }

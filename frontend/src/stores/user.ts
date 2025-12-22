@@ -13,6 +13,7 @@ export const useUserStore = defineStore('user', () => {
       const userData = JSON.parse(localStorage.getItem('oms.user') || '{}');
       return {
         token: authData.token || '',
+        id: userData.id || 0,
         username: userData.username || '',
         nickname: userData.nickname || '',
         avatar: userData.avatar || '',
@@ -20,13 +21,14 @@ export const useUserStore = defineStore('user', () => {
       };
     } catch (e) {
       console.error('Error parsing user store data', e);
-      return { token: '', username: '', nickname: '', avatar: '', status: 'online' };
+      return { token: '', id: 0, username: '', nickname: '', avatar: '', status: 'online' };
     }
   };
 
   const state = getInitialState();
 
   const token = ref<string>(state.token);
+  const id = ref<number>(state.id);
   const username = ref<string>(state.username);
   const nickname = ref<string>(state.nickname);
   const avatar = ref<string>(state.avatar);
@@ -38,13 +40,15 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('oms.auth', JSON.stringify({ token: newToken }));
   }
 
-  function setUserInfo(info: { username: string; nickname?: string; avatar?: string; status?: string }) {
+  function setUserInfo(info: { id: number; username: string; nickname?: string; avatar?: string; status?: string }) {
+    id.value = info.id;
     username.value = info.username;
     nickname.value = info.nickname || '';
     avatar.value = info.avatar || '';
     status.value = info.status || 'online';
     
     const userData = {
+      id: id.value,
       username: username.value,
       nickname: nickname.value,
       avatar: avatar.value,
@@ -55,6 +59,7 @@ export const useUserStore = defineStore('user', () => {
 
   function logout() {
     token.value = '';
+    id.value = 0;
     username.value = '';
     nickname.value = '';
     avatar.value = '';
@@ -81,6 +86,7 @@ export const useUserStore = defineStore('user', () => {
 
   return {
     token,
+    id,
     username,
     nickname,
     avatar,

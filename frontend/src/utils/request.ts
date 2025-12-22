@@ -54,7 +54,7 @@ service.interceptors.response.use(
     const res = response.data;
     
     // 如果是二进制数据，直接返回
-    if (response.request.responseType === 'blob' || response.request.responseType === 'arraybuffer') {
+    if (response.config.responseType === 'blob' || response.config.responseType === 'arraybuffer') {
         return response.data;
     }
 
