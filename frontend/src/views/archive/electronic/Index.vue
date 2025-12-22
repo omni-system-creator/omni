@@ -54,7 +54,7 @@
           <a-card :bordered="false" class="table-card" style="margin-top: 16px">
             <template #extra>
               <a-space>
-                <a-button type="primary">
+                <a-button type="primary" @click="handleAdd">
                   <template #icon><UploadOutlined /></template>
                   上传文件
                 </a-button>
@@ -189,7 +189,7 @@ const treeData = [
   }
 ];
 
-const onSelectTree = (selectedKeys: any, info: any) => {
+const onSelectTree = (_selectedKeys: any, info: any) => {
   message.info(`选择了分类: ${info.node.title}`);
 };
 

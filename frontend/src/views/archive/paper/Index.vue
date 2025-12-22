@@ -159,7 +159,7 @@ const treeData = [
   }
 ];
 
-const onSelectTree = (selectedKeys: any, info: any) => {
+const onSelectTree = (_selectedKeys: any, info: any) => {
   message.info(`选择了分类: ${info.node.title}`);
 };
 

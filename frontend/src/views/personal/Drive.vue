@@ -163,13 +163,13 @@
     <!-- 文件预览弹窗 -->
     <a-modal v-model:open="previewVisible" :title="currentFile?.name" width="800px" :footer="null">
       <div class="preview-content">
-        <div v-if="currentFile?.type === 'image'" class="preview-image">
-          <img :src="currentFile.url || 'https://via.placeholder.com/600x400'" alt="preview" />
+        <div v-if="currentFile && getFileType(currentFile) === 'image'" class="preview-image">
+          <img :src="'https://via.placeholder.com/600x400'" alt="preview" />
         </div>
         <div v-else class="preview-unknown">
           <FileUnknownOutlined style="font-size: 64px; color: #999; margin-bottom: 16px" />
           <p>该文件暂不支持在线预览</p>
-          <a-button type="primary" @click="downloadFile(currentFile)">下载查看</a-button>
+          <a-button type="primary" @click="handleDownload(currentFile)">下载查看</a-button>
         </div>
       </div>
     </a-modal>
@@ -251,7 +251,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed, createVNode } from 'vue';
+import { ref, onMounted } from 'vue';
 import {
   CloudUploadOutlined,
   FolderOutlined,
@@ -581,8 +581,9 @@ const getCurrentDeptId = () => {
     // Check if any breadcrumb has deptId
     // Usually it's carried over from the root dept node
     for (let i = breadcrumbs.value.length - 1; i >= 0; i--) {
-        if (breadcrumbs.value[i].deptId) {
-            return breadcrumbs.value[i].deptId;
+        const item = breadcrumbs.value[i];
+        if (item && item.deptId) {
+            return item.deptId;
         }
     }
     return undefined;
@@ -594,7 +595,7 @@ const handleTreeSelect = (keys: string[], info: any) => {
   const key = keys[0];
   
   // 更新面包屑（统一使用树路径）
-  updateBreadcrumbs(key);
+  updateBreadcrumbs(key!);
   
   // Handle dept node
   if (info.node.isDept) {
@@ -636,7 +637,7 @@ const handleBreadcrumbClick = (item: BreadcrumbItem, index: number) => {
   } else {
     // 加载对应文件夹 ID
     const deptId = getCurrentDeptId();
-    loadFiles(Number(item.key), undefined, deptId);
+    loadFiles(Number(item.key), undefined, deptId || undefined);
   }
 };
 
@@ -769,6 +770,7 @@ const onFileSelected = async (e: Event) => {
     if (!files || files.length === 0) return;
 
     const file = files[0];
+    if (!file) return;
     const currentFolder = breadcrumbs.value[breadcrumbs.value.length - 1];
     let parentId: number | null = null;
     if (currentFolder && currentFolder.key !== 'root' && !currentFolder.key.startsWith('dept_')) {

@@ -49,7 +49,6 @@ import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import request from '@/utils/request';
 import { 
-  FileOutlined, 
   FileImageOutlined, 
   FilePdfOutlined, 
   FileWordOutlined, 

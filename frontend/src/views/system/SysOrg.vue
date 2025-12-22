@@ -677,7 +677,7 @@ const drawNodeRecursive = (node: LayoutNode) => {
       // Recalculate sort order for siblings
       // 1. Find siblings
       let siblings: Dept[] = [];
-      let parentId: number | null = null;
+
       
       const findParent = (nodes: Dept[], targetId: number): Dept | null => {
           for (const n of nodes) {
@@ -695,12 +695,10 @@ const drawNodeRecursive = (node: LayoutNode) => {
       const parent = findParent(deptList.value, node.id);
       if (parent) {
           siblings = parent.children || [];
-          parentId = parent.id;
       } else {
           // Check if it is a root node
           if (deptList.value.some(n => n.id === node.id)) {
               siblings = deptList.value;
-              parentId = null;
           }
       }
 

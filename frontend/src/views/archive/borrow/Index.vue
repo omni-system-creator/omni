@@ -118,7 +118,7 @@ const deptTreeData = [
   }
 ];
 
-const onSelectTree = (selectedKeys: any, info: any) => {
+const onSelectTree = (_selectedKeys: any, info: any) => {
   message.info(`选择了部门: ${info.node.title}`);
 };
 
@@ -139,8 +139,8 @@ const applyData = ref([
 ]);
 
 const handleApply = () => message.info('填写申请单');
-const handleViewApply = (record: any) => message.info('查看申请详情');
-const handleRevoke = (record: any) => message.success('撤回成功');
+const handleViewApply = (_record: any) => message.info('查看申请详情');
+const handleRevoke = (_record: any) => message.success('撤回成功');
 
 // Tab 2: Approve
 const approveColumns = [
@@ -156,7 +156,7 @@ const approveData = ref([
   { key: '1', applyNo: 'SQ-20241222-008', applicant: '李四', dept: '财务部', applyTime: '2024-12-22 11:00', content: '2023年财务凭证...' },
 ]);
 
-const handleAudit = (record: any) => message.info('打开审批窗口');
+const handleAudit = (_record: any) => message.info('打开审批窗口');
 
 // Tab 3: Record
 const recordColumns = [

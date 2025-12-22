@@ -36,6 +36,7 @@ const handleStatusChange = async (status: string) => {
     await updateProfile({ status });
     userStatus.value = status;
     userStore.setUserInfo({
+      id: userStore.id,
       username: userStore.username,
       nickname: userStore.nickname,
       avatar: userStore.avatar,

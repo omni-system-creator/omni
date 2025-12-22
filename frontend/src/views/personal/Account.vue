@@ -140,6 +140,7 @@ const loadUserInfo = async () => {
        
        // 同时更新 store，确保头像同步
        userStore.setUserInfo({
+         id: res.id,
          username: res.username,
          nickname: res.nickname || '',
          avatar: res.avatar || ''
@@ -174,6 +175,7 @@ const handleAvatarChange = async (event: Event) => {
     if (res && res.avatarUrl) {
       userInfo.avatar = res.avatarUrl;
       userStore.setUserInfo({
+         id: userInfo.id,
          username: userInfo.username,
          nickname: userInfo.nickname,
          avatar: res.avatarUrl
@@ -199,6 +201,7 @@ const handleSaveProfile = async () => {
     message.success('个人资料已更新');
     // 更新 store
     userStore.setUserInfo({
+       id: userInfo.id,
        username: userInfo.username,
        nickname: userInfo.nickname,
        avatar: userInfo.avatar

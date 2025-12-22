@@ -51,7 +51,6 @@
 import { reactive, ref } from 'vue';
 import { InboxOutlined } from '@ant-design/icons-vue';
 import type { UploadChangeParam } from 'ant-design-vue';
-import { message } from 'ant-design-vue';
 
 const formRef = ref();
 const formState = reactive({
@@ -72,7 +71,7 @@ const rules = {
   retentionPeriod: [{ required: true, message: '请选择存档年限', trigger: 'change' }],
 };
 
-const beforeUpload = (file: any) => {
+const beforeUpload = (_file: any) => {
   // Return false to prevent automatic upload
   return false;
 };

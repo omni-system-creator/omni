@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons-vue';
+import { ArrowUpOutlined } from '@ant-design/icons-vue';
 import * as echarts from 'echarts';
 
 const statusChartRef = ref();
