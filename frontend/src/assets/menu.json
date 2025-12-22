@@ -108,19 +108,19 @@
         "key": "FinanceApAr",
         "title": "应收应付",
         "path": "/finance/ap-ar",
-        "component": "views/finance/FinanceApAr.vue"
+        "component": "views/finance/apar/Index.vue"
       },
       {
         "key": "FinanceInvoice",
         "title": "发票管理",
         "path": "/finance/invoice",
-        "component": "views/finance/FinanceInvoice.vue"
+        "component": "views/finance/invoice/Index.vue"
       },
       {
         "key": "FinanceReport",
         "title": "财务报表",
         "path": "/finance/report",
-        "component": "views/finance/FinanceReport.vue"
+        "component": "views/finance/report/Index.vue"
       }
     ]
   },
