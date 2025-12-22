@@ -6,7 +6,7 @@ namespace omsapi.Models.Dtos
     public class CreateDeptDto
     {
         public long? ParentId { get; set; }
-        
+
         [Required]
         [MaxLength(50)]
         public string Name { get; set; } = string.Empty;
@@ -27,7 +27,7 @@ namespace omsapi.Models.Dtos
 
         public int SortOrder { get; set; } = 0;
         public bool IsActive { get; set; } = true;
-        
+
         public double? X { get; set; }
         public double? Y { get; set; }
     }
@@ -55,9 +55,14 @@ namespace omsapi.Models.Dtos
 
         public int? SortOrder { get; set; }
         public bool? IsActive { get; set; }
-        
+
         public double? X { get; set; }
         public double? Y { get; set; }
+
+        /// <summary>
+        /// Set to true to clear X/Y coordinates (auto layout)
+        /// </summary>
+        public bool? ResetPosition { get; set; }
     }
 
     public class DeptDto

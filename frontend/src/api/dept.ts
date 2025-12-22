@@ -53,6 +53,7 @@ export interface UpdateDeptParams {
   isActive?: boolean;
   x?: number;
   y?: number;
+  resetPosition?: boolean;
 }
 
 export interface UpdateDeptStructureParams {
