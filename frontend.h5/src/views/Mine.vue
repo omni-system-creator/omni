@@ -53,7 +53,7 @@ const handleClearCache = () => {
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key !== 'oms.auth') {
+        if (key && key !== 'oms.auth' && key !== 'oms.user') {
           keysToRemove.push(key);
         }
       }
@@ -80,7 +80,7 @@ const handleLogout = () => {
 
 <style scoped>
 .mine-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 50px);
   background-color: #f7f8fa;
 }
 .user-header {

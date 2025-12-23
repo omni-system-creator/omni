@@ -1,6 +1,6 @@
 <template>
   <div class="files-container">
-    <van-nav-bar title="文件" fixed placeholder>
+    <van-nav-bar title="文件">
       <template #right>
         <van-icon name="plus" size="18" @click="showActionSheet = true" />
       </template>
@@ -30,10 +30,10 @@
       </van-grid>
     </div>
 
-    <van-tabs v-model:active="activeTab" sticky offset-top="46px" background="#f7f8fa">
+    <van-tabs v-model:active="activeTab" background="#f7f8fa">
       <van-tab title="最近">
         <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-          <div class="file-list" style="min-height: 60vh">
+          <div class="file-list">
             <div class="date-group">今天</div>
             <van-cell-group inset>
               <van-cell v-for="file in recentFiles" :key="file.id" center is-link @click="onFileClick(file)">
@@ -79,7 +79,7 @@
       
       <van-tab title="企业空间">
         <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-          <div class="folder-list" style="min-height: 60vh">
+          <div class="folder-list">
              <van-cell-group inset>
               <van-cell v-for="folder in companyFolders" :key="folder.id" center is-link>
                 <template #icon>
@@ -101,7 +101,7 @@
       
       <van-tab title="个人空间">
         <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-          <div class="file-list" style="min-height: 60vh">
+          <div class="file-list">
             <div class="date-group">文件夹</div>
             <van-cell-group inset>
               <van-cell v-for="folder in personalFolders" :key="folder.id" center is-link>
@@ -273,9 +273,32 @@ const onSelectFileAction = (item: any) => {
 
 <style scoped>
 .files-container {
-  min-height: 100vh;
+  height: calc(100vh - 50px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background-color: #f7f8fa;
-  padding-bottom: 20px;
+}
+
+:deep(.van-tabs) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:deep(.van-tabs__wrap) {
+  flex-shrink: 0;
+}
+
+:deep(.van-tabs__content) {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+:deep(.van-pull-refresh) {
+  min-height: 100%;
 }
 
 .header-section {

@@ -28,64 +28,66 @@
     </div>
 
     <div class="contacts-content" :class="{ 'has-breadcrumb': breadcrumbs.length > 1 }">
-      <!-- Loading State -->
-      <van-loading v-if="loading" class="loading-state" vertical>加载中...</van-loading>
+      <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
+        <!-- Loading State -->
+        <van-loading v-if="loading" class="loading-state" vertical>加载中...</van-loading>
 
-      <template v-else>
-        <!-- Department List -->
-        <div class="group-title" v-if="currentDepartments.length > 0">部门</div>
-        <van-cell-group inset class="dept-group" v-if="currentDepartments.length > 0">
-          <van-cell 
-            v-for="dept in currentDepartments" 
-            :key="dept.id" 
-            :title="dept.name" 
-            is-link 
-            center
-            @click="enterDepartment(dept)"
-          >
-            <template #icon>
-              <div class="dept-icon">
-                <van-icon name="cluster" />
-              </div>
-            </template>
-            <template #value>
-              <span class="member-count">{{ dept.memberCount }}人</span>
-            </template>
-          </van-cell>
-        </van-cell-group>
+        <template v-else>
+          <!-- Department List -->
+          <div class="group-title" v-if="currentDepartments.length > 0">部门</div>
+          <van-cell-group inset class="dept-group" v-if="currentDepartments.length > 0">
+            <van-cell 
+              v-for="dept in currentDepartments" 
+              :key="dept.id" 
+              :title="dept.name" 
+              is-link 
+              center
+              @click="enterDepartment(dept)"
+            >
+              <template #icon>
+                <div class="dept-icon">
+                  <van-icon name="cluster" />
+                </div>
+              </template>
+              <template #value>
+                <span class="member-count">{{ dept.memberCount }}人</span>
+              </template>
+            </van-cell>
+          </van-cell-group>
 
-        <!-- Member List -->
-        <div class="group-title" v-if="currentMembers.length > 0">成员 ({{ currentMembers.length }})</div>
-        <div class="member-list" v-if="currentMembers.length > 0">
-          <div 
-            class="member-card" 
-            v-for="member in currentMembers" 
-            :key="member.id"
-            @click="showMemberDetail(member)"
-          >
-            <van-image
-              round
-              width="40px"
-              height="40px"
-              :src="member.avatar || 'https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg'"
-              class="avatar"
-            />
-            <div class="member-info">
-              <div class="name-row">
-                <span class="name">{{ member.name }}</span>
-                <van-tag type="primary" plain v-if="member.isLeader">负责人</van-tag>
+          <!-- Member List -->
+          <div class="group-title" v-if="currentMembers.length > 0">成员 ({{ currentMembers.length }})</div>
+          <div class="member-list" v-if="currentMembers.length > 0">
+            <div 
+              class="member-card" 
+              v-for="member in currentMembers" 
+              :key="member.id"
+              @click="showMemberDetail(member)"
+            >
+              <van-image
+                round
+                width="40px"
+                height="40px"
+                :src="member.avatar || 'https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg'"
+                class="avatar"
+              />
+              <div class="member-info">
+                <div class="name-row">
+                  <span class="name">{{ member.name }}</span>
+                  <van-tag type="primary" plain v-if="member.isLeader">负责人</van-tag>
+                </div>
+                <div class="position">{{ member.position }}</div>
               </div>
-              <div class="position">{{ member.position }}</div>
-            </div>
-            <div class="actions">
-              <van-button circle size="small" icon="phone-o" type="success" plain @click.stop="onCall(member)" />
-              <van-button circle size="small" icon="chat-o" type="primary" plain @click.stop="onMessage(member)" class="ml-2" />
+              <div class="actions">
+                <van-button circle size="small" icon="phone-o" type="success" plain @click.stop="onCall(member)" />
+                <van-button circle size="small" icon="chat-o" type="primary" plain @click.stop="onMessage(member)" class="ml-2" />
+              </div>
             </div>
           </div>
-        </div>
 
-        <van-empty v-if="currentDepartments.length === 0 && currentMembers.length === 0" description="暂无数据" />
-      </template>
+          <van-empty v-if="currentDepartments.length === 0 && currentMembers.length === 0" description="暂无数据" />
+        </template>
+      </van-pull-refresh>
     </div>
 
     <!-- Member Detail Popup -->
@@ -141,6 +143,7 @@ const searchText = ref('');
 const loading = ref(false);
 const showDetail = ref(false);
 const selectedMember = ref<any>(null);
+const refreshing = ref(false);
 
 // Mock Data
 const mockData = {
@@ -247,6 +250,13 @@ const onCall = (member: any) => {
 const onMessage = (member: any) => {
   showToast(`正在打开与 ${member?.name} 的会话`);
 };
+
+const onRefresh = () => {
+  setTimeout(() => {
+    showToast('刷新成功');
+    refreshing.value = false;
+  }, 1000);
+};
 </script>
 
 <style scoped>
@@ -294,10 +304,15 @@ const onMessage = (member: any) => {
 .contacts-content {
   padding-top: 100px; /* nav(46) + search(54) */
   padding-bottom: 20px;
+  min-height: calc(100vh - 120px);
 }
 
 .contacts-content.has-breadcrumb {
   padding-top: 132px; /* + breadcrumb(32) */
+}
+
+:deep(.van-pull-refresh) {
+  min-height: calc(100vh - 120px);
 }
 
 .group-title {

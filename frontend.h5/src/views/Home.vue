@@ -1,6 +1,10 @@
 <template>
   <div class="home-container">
-    <van-nav-bar title="工作台" fixed placeholder />
+    <van-nav-bar title="工作台" fixed placeholder>
+      <template #right>
+        <van-icon name="plus" size="18" @click="showActionSheet = true" />
+      </template>
+    </van-nav-bar>
     
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh" style="min-height: calc(100vh - 46px)">
       <div class="banner">
@@ -93,6 +97,14 @@
         </van-cell-group>
       </div>
     </van-pull-refresh>
+
+    <van-action-sheet
+      v-model:show="showActionSheet"
+      :actions="actions"
+      cancel-text="取消"
+      close-on-click-action
+      @select="onSelect"
+    />
   </div>
 </template>
 
@@ -103,6 +115,17 @@ import { useUserStore } from '@/stores/user';
 
 const userStore = useUserStore();
 const refreshing = ref(false);
+const showActionSheet = ref(false);
+
+const actions = [
+  { name: '扫一扫', icon: 'scan' },
+  { name: '新建待办', icon: 'todo-list-o' },
+  { name: '发起审批', icon: 'notes-o' },
+];
+
+const onSelect = (item: any) => {
+  showToast(item.name);
+};
 
 const onRefresh = () => {
   setTimeout(() => {
