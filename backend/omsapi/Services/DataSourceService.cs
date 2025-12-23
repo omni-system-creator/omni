@@ -54,7 +54,7 @@ namespace omsapi.Services
         public async Task<IEnumerable<DataSourceConnectionDto>> GetAllAsync()
         {
             var connections = await _context.DataSourceConnections
-                .OrderByDescending(c => c.CreatedAt)
+                .OrderBy(c => c.Name)
                 .ToListAsync();
 
             return connections.Select(c => new DataSourceConnectionDto
@@ -127,7 +127,7 @@ namespace omsapi.Services
             if (updateDto.Host != null) connection.Host = updateDto.Host;
             if (updateDto.Port != null) connection.Port = updateDto.Port;
             if (updateDto.User != null) connection.User = updateDto.User;
-            if (updateDto.Password != null) connection.Password = updateDto.Password;
+            if (!string.IsNullOrEmpty(updateDto.Password)) connection.Password = updateDto.Password;
             if (updateDto.Database != null) connection.Database = updateDto.Database;
 
             connection.UpdatedAt = DateTime.Now;
