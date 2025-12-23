@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using omsapi.Models.Entities;
 using omsapi.Models.Entities.Archive;
+using omsapi.Models.Entities.Data;
 
 namespace omsapi.Data
 {
@@ -30,6 +31,9 @@ namespace omsapi.Data
         public DbSet<ArchFile> ArchFiles { get; set; }
         public DbSet<ArchAttachment> ArchAttachments { get; set; }
         public DbSet<ArchBox> ArchBoxes { get; set; }
+
+        // Data Entities
+        public DbSet<DataSourceConnection> DataSourceConnections { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
