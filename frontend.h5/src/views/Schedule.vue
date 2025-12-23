@@ -408,7 +408,6 @@ const isPast = (time: Date) => {
 
 .schedule-content {
   padding-top: 430px; /* nav(46) + calendar(320) + header(64) */
-  padding-bottom: 20px;
 }
 
 .timeline-header-bar {
@@ -420,7 +419,7 @@ const isPast = (time: Date) => {
 
 .timeline-container {
   background: #fff;
-  min-height: calc(100vh - 430px);
+  min-height: calc(100vh - 450px);
   padding: 10px;
 }
 
