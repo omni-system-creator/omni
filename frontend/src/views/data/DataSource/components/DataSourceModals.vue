@@ -1,43 +1,43 @@
 <template>
   <div>
     <ConnectionModal
-      v-model:visible="connectionVisible"
+      v-model:open="connectionVisible"
       :edit-id="isEditMode ? currentDataSourceId : undefined"
       @success="emit('connectionSuccess')"
     />
 
     <CreateDatabaseModal
-      v-model:visible="createDbVisible"
+      v-model:open="createDbVisible"
       :connection-id="currentConnectionId"
       @success="emit('createDbSuccess', currentConnectionId)"
     />
 
     <CreateTableModal
-      v-model:visible="createTableVisible"
-      :connection-id="currentDatabaseNode?.connectionId"
-      :database-name="currentDatabaseNode?.name"
+      v-model:open="createTableVisible"
+      :connection-id="currentDatabaseNode?.connectionId || 0"
+      :database-name="currentDatabaseNode?.name || ''"
       @success="emit('createTableSuccess', currentDatabaseNode)"
     />
 
     <ColumnModal
-      v-model:visible="columnModal.visible"
+      v-model:open="columnModal.visible"
       :mode="columnModal.mode"
       :initial-data="columnModal.formData"
       :existing-columns="columnModal.existingColumns"
-      :connection-id="columnModal.pane?.data.connectionId"
-      :database-name="columnModal.pane?.data.databaseName"
-      :table-name="columnModal.pane?.data.tableName"
+      :connection-id="columnModal.pane?.data.connectionId || 0"
+      :database-name="columnModal.pane?.data.databaseName || ''"
+      :table-name="columnModal.pane?.data.tableName || ''"
       @success="emit('columnSuccess', columnModal.pane)"
     />
 
     <RowModal
-      v-model:visible="rowModal.visible"
+      v-model:open="rowModal.visible"
       :mode="rowModal.mode"
       :columns="rowModal.pane?.columnData || []"
       :initial-data="rowModal.formData"
-      :connection-id="rowModal.pane?.data.connectionId"
-      :database-name="rowModal.pane?.data.databaseName"
-      :table-name="rowModal.pane?.data.tableName"
+      :connection-id="rowModal.pane?.data.connectionId || 0"
+      :database-name="rowModal.pane?.data.databaseName || ''"
+      :table-name="rowModal.pane?.data.tableName || ''"
       @success="emit('rowSuccess', rowModal.pane)"
     />
   </div>

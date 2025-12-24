@@ -103,7 +103,6 @@ const onLoadData = (treeNode: any): Promise<void> => {
             name: db.name,
             isLeaf: false
           }));
-          treeData.value = [...treeData.value];
         }
       } else if (treeNode.type === 'database') {
         const res = await api.getTables(treeNode.connectionId, treeNode.name);
@@ -117,9 +116,10 @@ const onLoadData = (treeNode: any): Promise<void> => {
             tableName: tb.name,
             isLeaf: true
           }));
-          treeData.value = [...treeData.value];
         }
       }
+      
+      treeData.value = [...treeData.value];
     } catch (error) {
       message.error('加载子节点失败');
     }

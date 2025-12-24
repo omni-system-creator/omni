@@ -1,6 +1,6 @@
 <template>
   <a-modal
-    :visible="visible"
+    :open="open"
     :title="mode === 'insert' ? '新增数据' : '编辑数据'"
     :confirmLoading="loading"
     @ok="handleOk"
@@ -67,7 +67,7 @@ import { message } from 'ant-design-vue';
 import * as api from '@/api/dataSource';
 
 const props = defineProps<{
-  visible: boolean;
+  open: boolean;
   mode: 'insert' | 'edit';
   columns: any[];
   initialData?: any;
@@ -76,7 +76,7 @@ const props = defineProps<{
   tableName: string;
 }>();
 
-const emit = defineEmits(['update:visible', 'success']);
+const emit = defineEmits(['update:open', 'success']);
 
 const loading = ref(false);
 const formData = reactive<any>({});
@@ -91,7 +91,7 @@ const getFieldLabel = (col: any) => {
 };
 
 watch(
-  () => props.visible,
+  () => props.open,
   (val) => {
     if (val) {
       // Initialize form data
@@ -114,7 +114,7 @@ watch(
 );
 
 const handleCancel = () => {
-  emit('update:visible', false);
+  emit('update:open', false);
 };
 
 const handleOk = async () => {
@@ -142,7 +142,7 @@ const handleOk = async () => {
       await api.updateRow(props.connectionId, props.databaseName, props.tableName, keys, formData);
       message.success('更新成功');
     }
-    emit('update:visible', false);
+    emit('update:open', false);
     emit('success');
   } catch (error) {
     console.error(error);

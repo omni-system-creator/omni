@@ -146,12 +146,14 @@ const fetchNodeChildren = async (nodeData: any) => {
   return [];
 };
 
-const refreshPane = async (pane: Pane) => {
+const refreshPane = async (pane: Pane, showMessage = true) => {
   pane.loading = true;
   try {
     const children = await fetchNodeChildren(pane.data);
     pane.contentData = children;
-    message.success('刷新成功');
+    if (showMessage) {
+      message.success('刷新成功');
+    }
   } catch (error) {
     message.error('刷新失败');
   } finally {
@@ -163,7 +165,7 @@ const openTab = (node: any) => {
   const existingPane = panes.value.find(p => p.key === node.key);
   if (existingPane) {
     activeKey.value = existingPane.key;
-    refreshPane(existingPane); // Optional: auto-refresh on switch
+    refreshPane(existingPane, false); // Optional: auto-refresh on switch
     return;
   }
 
@@ -181,7 +183,7 @@ const openTab = (node: any) => {
   activeKey.value = newPane.key;
 
   if (node.type === 'connection' || node.type === 'database') {
-    refreshPane(newPane);
+    refreshPane(newPane, false);
   }
 };
 

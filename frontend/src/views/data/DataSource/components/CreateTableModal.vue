@@ -1,6 +1,6 @@
 <template>
   <a-modal
-    :visible="visible"
+    :open="open"
     title="新建表"
     width="900px"
     :confirmLoading="loading"
@@ -108,12 +108,12 @@ import * as api from '@/api/dataSource';
 import type { CreateTableDto, ColumnDefinitionDto } from '@/api/dataSource';
 
 const props = defineProps<{
-  visible: boolean;
+  open: boolean;
   connectionId: number;
   databaseName: string;
 }>();
 
-const emit = defineEmits(['update:visible', 'success']);
+const emit = defineEmits(['update:open', 'success']);
 
 const loading = ref(false);
 const formState = reactive<CreateTableDto>({
@@ -137,7 +137,7 @@ const newColumn = (): ColumnDefinitionDto => ({
 });
 
 watch(
-  () => props.visible,
+  () => props.open,
   (val) => {
     if (val) {
       formState.name = '';
@@ -162,7 +162,7 @@ const removeColumn = (index: number) => {
 };
 
 const handleCancel = () => {
-  emit('update:visible', false);
+  emit('update:open', false);
 };
 
 const handleOk = async () => {
@@ -185,7 +185,7 @@ const handleOk = async () => {
   try {
     await api.createTable(props.connectionId, props.databaseName, formState);
     message.success('表创建成功');
-    emit('update:visible', false);
+    emit('update:open', false);
     emit('success');
   } catch (error) {
     console.error(error);

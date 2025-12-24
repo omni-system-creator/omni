@@ -1,6 +1,6 @@
 <template>
   <a-modal
-    :visible="visible"
+    :open="open"
     :title="isEditMode ? '编辑数据源连接' : '新建数据源连接'"
     :confirmLoading="confirmLoading"
     @ok="handleOk"
@@ -49,11 +49,11 @@ import * as api from '@/api/dataSource';
 import type { CreateDataSourceDto } from '@/api/dataSource';
 
 const props = defineProps<{
-  visible: boolean;
+  open: boolean;
   editId?: number;
 }>();
 
-const emit = defineEmits(['update:visible', 'success']);
+const emit = defineEmits(['update:open', 'success']);
 
 const confirmLoading = ref(false);
 const testingConnection = ref(false);
@@ -70,7 +70,7 @@ const formState = reactive<CreateDataSourceDto>({
 });
 
 watch(
-  () => props.visible,
+  () => props.open,
   async (val) => {
     if (val) {
       if (props.editId) {
@@ -104,7 +104,7 @@ watch(
 );
 
 const handleCancel = () => {
-  emit('update:visible', false);
+  emit('update:open', false);
 };
 
 const handleTestConnection = async () => {
@@ -133,7 +133,7 @@ const handleOk = async () => {
       await api.createDataSource(formState);
       message.success('创建成功');
     }
-    emit('update:visible', false);
+    emit('update:open', false);
     emit('success');
   } catch (error) {
     message.error(isEditMode.value ? '更新失败' : '创建失败');

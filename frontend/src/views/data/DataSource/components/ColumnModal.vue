@@ -1,6 +1,6 @@
 <template>
   <a-modal
-    :visible="visible"
+    :open="open"
     :title="mode === 'add' ? '添加列' : '修改列'"
     :confirmLoading="loading"
     @ok="handleOk"
@@ -63,7 +63,7 @@ import * as api from '@/api/dataSource';
 import type { ColumnDefinitionDto } from '@/api/dataSource';
 
 const props = defineProps<{
-  visible: boolean;
+  open: boolean;
   mode: 'add' | 'edit';
   initialData?: ColumnDefinitionDto;
   existingColumns?: any[];
@@ -72,7 +72,7 @@ const props = defineProps<{
   tableName: string;
 }>();
 
-const emit = defineEmits(['update:visible', 'success']);
+const emit = defineEmits(['update:open', 'success']);
 
 const loading = ref(false);
 
@@ -95,7 +95,7 @@ const formState = reactive<ExtendedColumnForm>({
 });
 
 watch(
-  () => props.visible,
+  () => props.open,
   (val) => {
     if (val) {
       if (props.mode === 'edit' && props.initialData) {
@@ -120,7 +120,7 @@ watch(
 );
 
 const handleCancel = () => {
-  emit('update:visible', false);
+  emit('update:open', false);
 };
 
 const handleOk = async () => {
@@ -160,7 +160,7 @@ const handleOk = async () => {
       await api.modifyColumn(props.connectionId, props.databaseName, props.tableName, oldName, dto);
       message.success('修改成功');
     }
-    emit('update:visible', false);
+    emit('update:open', false);
     emit('success');
   } catch (error) {
     console.error(error);

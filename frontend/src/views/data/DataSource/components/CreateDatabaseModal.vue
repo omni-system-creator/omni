@@ -1,6 +1,6 @@
 <template>
   <a-modal
-    :visible="visible"
+    :open="open"
     title="新建数据库"
     :confirmLoading="loading"
     @ok="handleOk"
@@ -34,11 +34,11 @@ import { message } from 'ant-design-vue';
 import * as api from '@/api/dataSource';
 
 const props = defineProps<{
-  visible: boolean;
+  open: boolean;
   connectionId: number;
 }>();
 
-const emit = defineEmits(['update:visible', 'success']);
+const emit = defineEmits(['update:open', 'success']);
 
 const loading = ref(false);
 const formState = reactive({
@@ -48,7 +48,7 @@ const formState = reactive({
 });
 
 watch(
-  () => props.visible,
+  () => props.open,
   (val) => {
     if (val) {
       formState.name = '';
@@ -59,7 +59,7 @@ watch(
 );
 
 const handleCancel = () => {
-  emit('update:visible', false);
+  emit('update:open', false);
 };
 
 const handleOk = async () => {
@@ -71,7 +71,7 @@ const handleOk = async () => {
   try {
     await api.createDatabase(props.connectionId, formState);
     message.success('数据库创建成功');
-    emit('update:visible', false);
+    emit('update:open', false);
     emit('success');
   } catch (error) {
     console.error(error);
