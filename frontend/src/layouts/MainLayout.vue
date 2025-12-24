@@ -122,6 +122,7 @@ const menuData = computed<MenuItem[]>(() => {
           icon: child.meta?.icon,
           path: '/', // 使用父级路径或者 child.path 拼合（如果是 / 则直接用 /）
           component: child.component,
+          query: child.meta?.query as string,
           children: undefined // 扁平化，不再包含 children
         };
       }
@@ -132,6 +133,7 @@ const menuData = computed<MenuItem[]>(() => {
         icon: route.meta?.icon,
         path: route.path,
         component: route.component,
+        query: route.meta?.query as string,
         children: route.children ? transformRouteToMenu(route.children) : undefined
       };
     });

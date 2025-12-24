@@ -140,6 +140,11 @@
               <a-form-item label="组件路径" name="component">
                 <a-input v-model:value="formState.component" placeholder="如: views/system/SysUser.vue" />
               </a-form-item>
+            </a-col> 
+            <a-col :span="24">
+              <a-form-item label="组件参数" name="query">
+                <a-input v-model:value="formState.query" placeholder="如: url=/bigview" />
+              </a-form-item>
             </a-col>
           </a-row>
           <a-row :gutter="16">
@@ -277,6 +282,7 @@ const formState = reactive({
   parentId: undefined as number | undefined,
   path: '',
   component: '',
+  query: '',
   icon: '',
   sortOrder: 0,
   isVisible: true
@@ -296,6 +302,7 @@ const handleAdd = (parentId: number | null) => {
   formState.parentId = parentId || undefined;
   formState.path = '';
   formState.component = '';
+  formState.query = '';
   formState.icon = '';
   formState.sortOrder = 0;
   formState.isVisible = true;
@@ -311,6 +318,7 @@ const handleEdit = (record: PermissionTreeDto) => {
   formState.parentId = record.parentId || undefined;
   formState.path = record.path || '';
   formState.component = record.component || '';
+  formState.query = record.query || '';
   formState.icon = record.icon || '';
   formState.sortOrder = record.sortOrder;
   formState.isVisible = record.isVisible;
@@ -329,6 +337,7 @@ const handleModalOk = async () => {
       parentId: formState.parentId,
       path: formState.path,
       component: formState.component,
+      query: formState.query,
       icon: formState.icon,
       sortOrder: formState.sortOrder,
       isVisible: formState.isVisible

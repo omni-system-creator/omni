@@ -72,7 +72,8 @@ function filterAsyncRoutes(routes: any[]) {
             name: route.key,
             meta: {
               title: route.title,
-              icon: route.icon
+              icon: route.icon,
+              query: route.query
             }
           }
         ]
@@ -86,7 +87,8 @@ function filterAsyncRoutes(routes: any[]) {
         name: route.key,
         meta: {
           title: route.title,
-          icon: route.icon
+          icon: route.icon,
+          query: route.query
         }
       };
 

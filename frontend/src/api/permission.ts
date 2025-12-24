@@ -9,6 +9,7 @@ export interface PermissionTreeDto {
   icon?: string;
   path?: string;
   component?: string;
+  query?: string;
   sortOrder: number;
   isVisible: boolean;
   children?: PermissionTreeDto[];
@@ -21,6 +22,7 @@ export interface CreatePermissionDto {
   icon?: string;
   path?: string;
   component?: string;
+  query?: string;
   parentId?: number;
   sortOrder?: number;
   isVisible?: boolean;
@@ -33,6 +35,7 @@ export interface UpdatePermissionDto {
   icon?: string;
   path?: string;
   component?: string;
+  query?: string;
   parentId?: number;
   sortOrder?: number;
   isVisible?: boolean;

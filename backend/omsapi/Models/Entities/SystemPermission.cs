@@ -30,6 +30,9 @@ namespace omsapi.Models.Entities
         [MaxLength(200)]
         public string? Component { get; set; } // 前端组件路径 (仅菜单有效)
 
+        [MaxLength(1000)]
+        public string? Query { get; set; } // 传给组件的参数
+
         [MaxLength(50)]
         public string? Icon { get; set; } // 菜单图标
 

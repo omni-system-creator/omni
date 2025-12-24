@@ -183,6 +183,7 @@ namespace omsapi.Services
                     Icon = m.Icon,
                     Path = m.Path,
                     Component = m.Component,
+                    Query = m.Query,
                     Children = BuildMenuTree(allMenus, m.Id)
                 })
                 .ToList();

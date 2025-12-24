@@ -7,6 +7,7 @@ namespace omsapi.Models.Dtos
         public string? Icon { get; set; }
         public string? Path { get; set; }
         public string? Component { get; set; }
+        public string? Query { get; set; }
         public List<MenuItemDto>? Children { get; set; }
     }
 }

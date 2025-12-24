@@ -100,7 +100,16 @@ const getUserSettingKey = (key: string) => {
 // Menu Logic
 const handleMenuClick = (item: MenuItem) => {
   if (item.path) {
-    router.push(item.path);
+    if (item.query) {
+      const queryParams = new URLSearchParams(item.query);
+      const query: Record<string, string> = {};
+      queryParams.forEach((value, key) => {
+        query[key] = value;
+      });
+      router.push({ path: item.path, query });
+    } else {
+      router.push(item.path);
+    }
   }
 };
 

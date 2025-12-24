@@ -29,6 +29,7 @@ namespace omsapi.Services
                     Icon = p.Icon,
                     Path = p.Path,
                     Component = p.Component,
+                    Query = p.Query,
                     SortOrder = p.SortOrder,
                     IsVisible = p.IsVisible,
                     ParentId = p.ParentId
@@ -54,6 +55,7 @@ namespace omsapi.Services
                 Icon = dto.Icon,
                 Path = dto.Path,
                 Component = dto.Component,
+                Query = dto.Query,
                 ParentId = dto.ParentId,
                 SortOrder = dto.SortOrder,
                 IsVisible = dto.IsVisible,
@@ -84,6 +86,7 @@ namespace omsapi.Services
             if (dto.Icon != null) perm.Icon = dto.Icon;
             if (dto.Path != null) perm.Path = dto.Path;
             if (dto.Component != null) perm.Component = dto.Component;
+            if (dto.Query != null) perm.Query = dto.Query;
             if (dto.ParentId.HasValue) perm.ParentId = dto.ParentId;
             if (dto.SortOrder.HasValue) perm.SortOrder = dto.SortOrder.Value;
             if (dto.IsVisible.HasValue) perm.IsVisible = dto.IsVisible.Value;

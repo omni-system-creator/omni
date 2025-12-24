@@ -4,5 +4,6 @@ export interface MenuItem {
   icon?: string;
   path?: string;
   component?: string;
+  query?: string;
   children?: MenuItem[];
 }

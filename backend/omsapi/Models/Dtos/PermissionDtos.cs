@@ -18,6 +18,7 @@ namespace omsapi.Models.Dtos
         public string? Icon { get; set; }
         public string? Path { get; set; }
         public string? Component { get; set; }
+        public string? Query { get; set; }
         public long? ParentId { get; set; }
         public int SortOrder { get; set; } = 0;
         public bool IsVisible { get; set; } = true;
@@ -35,6 +36,7 @@ namespace omsapi.Models.Dtos
         public string? Icon { get; set; }
         public string? Path { get; set; }
         public string? Component { get; set; }
+        public string? Query { get; set; }
         public long? ParentId { get; set; }
         public int? SortOrder { get; set; }
         public bool? IsVisible { get; set; }

@@ -12,7 +12,7 @@
             "projectName": "200公里动力集中",
             "state": null,
             "isDelete": null,
-            "indexImage": "/1.png",
+            "indexImage": "./data/1.png",
             "content": null,
             "remarks": null
         },
