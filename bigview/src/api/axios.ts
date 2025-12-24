@@ -27,17 +27,17 @@ axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         // 白名单校验
         if (includes(fetchAllowList, config.url)) return config
-        // 获取 token
-        const info = getLocalStorage(StorageEnum.GO_SYSTEM_STORE)
-        console.log(info, 'infoinfoinfoinfoinfo')
-        // 重新登录
-        if (!info) {
-            // routerTurnByName(PageEnum.BASE_LOGIN_NAME)
-            window.location.href = '/login'
-            return config
-        }
-        const token = info[SystemStoreEnum.TOKEN]
-        config.headers['authorization'] = 'Bearer ' + token || ''
+        // // 获取 token
+        // const info = getLocalStorage(StorageEnum.GO_SYSTEM_STORE)
+        // console.log(info, 'infoinfoinfoinfoinfo')
+        // // TODO 重新登录
+        // if (!info) {
+        //     // routerTurnByName(PageEnum.BASE_LOGIN_NAME)
+        //     window.location.href = '/login'
+        //     return config
+        // }
+        // const token = info[SystemStoreEnum.TOKEN]
+        // config.headers['authorization'] = 'Bearer ' + token || ''
         return config
     },
     (err: AxiosError) => {
@@ -61,13 +61,13 @@ axiosInstance.interceptors.response.use(
             return Promise.resolve(res.data)
         }
 
-        // 登录过期
-        if (code === ResultEnum.TOKEN_OVERDUE) {
-            window['$message'].error(window['$t']('http.token_overdue_message'))
-            // routerTurnByName(PageEnum.BASE_LOGIN_NAME)
-            window.location.href = '/login' // 直接跳转到根目录
-            return Promise.resolve(res.data)
-        }
+        // // TODO 登录过期
+        // if (code === ResultEnum.TOKEN_OVERDUE) {
+        //     window['$message'].error(window['$t']('http.token_overdue_message'))
+        //     // routerTurnByName(PageEnum.BASE_LOGIN_NAME)
+        //     window.location.href = '/login' // 直接跳转到根目录
+        //     return Promise.resolve(res.data)
+        // }
 
         // 固定错误码重定向
         if (ErrorPageNameMap.get(code)) {

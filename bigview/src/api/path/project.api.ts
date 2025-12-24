@@ -7,7 +7,7 @@ import { ProjectItem, ProjectDetail } from './project'
 // * 项目列表
 export const projectListApi = async (data: object) => {
   try {
-    const res = await axios.get('/data/items.json')
+    const res = await axios.get('./data/items.json')
     return {
       ...res.data,
       data: res.data.rows
@@ -20,7 +20,7 @@ export const projectListApi = async (data: object) => {
 // * 新增项目
 export const createProjectApi = async (data: object) => {
   try {
-    const res = await axios.get('/data/create.json') 
+    const res = await axios.get('./data/create.json') 
     return {
       ...res.data,
       data: res.data.rows
@@ -33,7 +33,7 @@ export const createProjectApi = async (data: object) => {
 // * 获取项目
 export const fetchProjectApi = async (data: object) => {
   try {
-    const { data } = await axios.get('/data/item.json') 
+    const { data } = await axios.get('./data/item.json') 
     return data
   } catch {
     httpErrorHandle()
