@@ -1,24 +1,19 @@
 <template>
-  <div class="iframe-container">
-    <iframe :src="url" frameborder="0" width="100%" height="100%"></iframe>
+  <div class="iframe-placeholder">
+    <!-- 
+      This is a placeholder. The actual iframe is rendered in MainLayout.vue -> IframeView.vue
+      to support KeepAlive functionality without reloading on tab switch.
+    -->
   </div>
 </template>
 
 <script lang="ts" setup>
-import { useRouter } from "vue-router";
-
-const router = useRouter();
-const { currentRoute } = router;
-
-const url = currentRoute.value.query.url + "";
+// No logic needed here as it's handled globally
 </script>
-<style lang="scss" scoped>
-.iframe-container {
-  flex: 1;
-  display: flex;
-  
-  iframe {
-    flex: 1;
-  }
+
+<style scoped>
+.iframe-placeholder {
+  width: 100%;
+  height: 100%;
 }
 </style>

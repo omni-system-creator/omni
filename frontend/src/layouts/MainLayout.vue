@@ -36,15 +36,18 @@
         
         <div class="site-layout-content">
           <div v-if="isHome">
-            <router-view :key="route.fullPath" />
+            <router-view :key="tabsStore.getTabIdentity(route.fullPath)" />
           </div>
           <router-view v-else v-slot="{ Component }">
             <transition :name="transitionName" mode="out-in">
               <keep-alive :include="tabsStore.cachedViews">
-                <component :is="Component" :key="route.fullPath" />
+                <component :is="Component" :key="tabsStore.getTabIdentity(route.fullPath)" />
               </keep-alive>
             </transition>
           </router-view>
+          
+          <!-- Special handling for iframe KeepAlive -->
+          <iframe-view />
         </div>
       </a-layout-content>
     </a-layout>
@@ -63,6 +66,7 @@ import FullscreenButton from './components/FullscreenButton.vue';
 import NotificationBell from './components/NotificationBell.vue';
 import StatusDropdown from './components/StatusDropdown.vue';
 import UserDropdown from './components/UserDropdown.vue';
+import IframeView from './components/IframeView.vue';
 
 import SideMenu from './components/SideMenu.vue';
 import type { MenuItem } from '@/types/menu';
@@ -217,6 +221,7 @@ const breadcrumbs = computed(() => {
 
 
 .site-layout-content {
+  position: relative;
   background: #f0f2f5;
   flex: 1;
   overflow-y: auto;

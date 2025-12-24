@@ -59,6 +59,9 @@ function filterAsyncRoutes(routes: any[]) {
     const component = route.component;
     let tmp: any;
 
+    // Check if component is iframe
+    const isIframe = component && (component.includes('iframe/Index') || component.includes('iframe/index'));
+
     // 特殊处理首页或顶级非 Layout 路由
     if (route.path === '/' && component !== 'Layout') {
       tmp = {
@@ -73,7 +76,8 @@ function filterAsyncRoutes(routes: any[]) {
             meta: {
               title: route.title,
               icon: route.icon,
-              query: route.query
+              query: route.query,
+              isIframe
             }
           }
         ]
@@ -88,7 +92,8 @@ function filterAsyncRoutes(routes: any[]) {
         meta: {
           title: route.title,
           icon: route.icon,
-          query: route.query
+          query: route.query,
+          isIframe
         }
       };
 

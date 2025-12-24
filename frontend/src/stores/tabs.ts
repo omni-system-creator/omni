@@ -39,7 +39,6 @@ export const useTabsStore = defineStore('tabs', () => {
     if (view.path === '/' || view.name === 'HomeView') {
       const existingHome = visitedViews.value.find(v => v.path === '/');
       if (existingHome) {
-        // 如果首页已存在，更新其 fullPath 以匹配当前 URL (例如包含 query 参数)
         if (existingHome.fullPath !== view.fullPath) {
           existingHome.fullPath = view.fullPath;
         }
@@ -64,18 +63,16 @@ export const useTabsStore = defineStore('tabs', () => {
 
     const viewIdentity = getTabIdentity(view.fullPath);
     const existingView = visitedViews.value.find((v) => getTabIdentity(v.fullPath) === viewIdentity);
-    if (existingView) {
-      // 如果 View 已存在，更新 fullPath (为了处理 query 参数变化，如 webFull)
-      if (existingView.fullPath !== view.fullPath) {
-        existingView.fullPath = view.fullPath;
+      if (existingView) {
+        if (existingView.fullPath !== view.fullPath) {
+          existingView.fullPath = view.fullPath;
+        }
+        return;
       }
-      return;
-    }
     
     // Don't add to tabs if hidden or no title
     if (!view.meta.title && !view.name) return;
 
-    // 如果是首页，已经在上面处理过了，这里跳过
     if (view.path === '/') return;
 
     visitedViews.value.push({
@@ -158,5 +155,6 @@ export const useTabsStore = defineStore('tabs', () => {
     delAllViews,
     isWebFull,
     toggleWebFull,
+    getTabIdentity
   };
 });
