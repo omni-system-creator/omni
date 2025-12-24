@@ -1,0 +1,205 @@
+<template>
+  <div class="designer-container dark">
+    <!-- <div class="tool">
+      <el-switch
+          inline-prompt
+          :active-icon="Sunny"
+          :inactive-icon="Moon"
+          @change="handleToggleDark"
+          v-model="isDark"/>
+    </div> -->
+    <!--放大/缩小-->
+    <div class="zoom">
+      <el-button :icon="Plus" @click="zoom += 10" :disabled="zoom >= 170" circle></el-button>
+      <span>{{ zoom }}%</span>
+      <el-button :icon="Minus" @click="zoom -= 10" circle :disabled="zoom <= 50"></el-button>
+      <el-button @click="undo()" :disabled="!canUndo" :icon="TopLeft">撤销</el-button>
+      <el-button @click="redo()" :disabled="!canRedo" :icon="TopRight">重做</el-button>
+      <el-button @click="validate">校验</el-button>
+      <!-- <el-button @click="downloadJson" type="primary" :icon="Download">导出json</el-button>
+      <el-button @click="converterBpmn" type="primary" :icon="Download">转bpmn</el-button> -->
+    </div>
+    <!--流程树-->
+    <div class="node-container">
+      <NodeTree :node="process"/>
+    </div>
+    <!--属性面板-->
+    <NodePenal ref="nodePenalRef"/>
+  </div>
+
+</template>
+<script setup lang="ts" name="flowDesign">
+import NodeTree from './nodes/NodeTree.vue'
+import NodePenal from './penal/index.vue'
+import {FlowNode} from './nodes/Node/index'
+import useNode from './hooks/useNode'
+import {computed, onUnmounted, provide, ref} from "vue";
+import {Plus, Minus, Download, Sunny, Moon, TopRight, TopLeft} from "@element-plus/icons-vue";
+import {useVModels} from "@vueuse/core";
+import {Field} from "../../components/Render/interface";
+import {downloadXml} from "../..//api/modules/model";
+import {useRefHistory} from '@vueuse/core'
+import cloneDeep from 'lodash/cloneDeep'
+
+export interface FlowDesignProps {
+  process: FlowNode,
+  fields: Field[]
+}
+
+const $props = defineProps<FlowDesignProps>()
+const $emits = defineEmits(['update:process', 'update:fields'])
+const {fields} = useVModels($props, $emits)
+const process = ref<FlowNode>($props.process)
+const {undo, redo, canUndo, canRedo} = useRefHistory(process, {deep: true, clone: cloneDeep})
+const nodePenalRef = ref<InstanceType<typeof NodePenal>>()
+const zoom = ref(100)
+const getScale = computed(() => zoom.value / 100)
+const isDark = ref<boolean>(true)
+const handleToggleDark = () => {
+    const homeContainer = document.getElementsByClassName('designer-container')[0]
+    console.log(homeContainer)
+    if (homeContainer) {
+      if (isDark.value) {
+      homeContainer.classList.add('dark');
+    } else {
+      homeContainer.classList.remove('dark');
+    }
+  }
+}
+
+const openPenal = (node: FlowNode) => {
+  nodePenalRef.value?.open(node)
+}
+const {addNode, delNode, validateNodes, addNodeRef} = useNode(process, fields)
+provide('nodeHooks', {
+  readOnly: false,
+  fields: fields,
+  addNode,
+  delNode,
+  addNodeRef,
+  openPenal
+})
+const handleZoom = (e: WheelEvent) => {
+  if (e.shiftKey) {
+    if (e.deltaY > 0) {
+      if (zoom.value > 50) {
+        zoom.value -= 10
+      }
+    } else {
+      if (zoom.value < 170) {
+        zoom.value += 10
+      }
+    }
+  }
+}
+const validate = () => {
+  validateNodes()
+}
+const converterBpmn = () => {
+  const processModel = {
+    code: 'test',
+    name: '测试',
+    enable: true,
+    icon: {
+      name: 'el:HomeFilled',
+      color: '#409EFF',
+    },
+    process: process.value,
+    version: 1,
+    sort: 0,
+    groupId: '',
+    remark: '',
+  }
+  downloadXml(processModel)
+}
+const downloadJson = () => {
+  const processModel = {
+    code: 'test',
+    name: '测试',
+    icon: {
+      name: 'el:HomeFilled',
+      color: '#409EFF',
+    },
+    process: process.value,
+    form: {
+      fields: fields.value
+    },
+    version: 1,
+    sort: 0,
+    groupId: '',
+    remark: '',
+  }
+  const blob = new Blob([JSON.stringify(processModel, null, 2)], {type: 'application/json'})
+  const a = document.createElement('a')
+  a.download = 'process.json'
+  a.href = URL.createObjectURL(blob)
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+// 按住shift键滚动鼠标滚轮，可以放大/缩小
+window.addEventListener('wheel', handleZoom)
+// 离开页面时，销毁事件监听
+// onMounted(()=>{
+//   handleToggleDark()
+// })
+onUnmounted(() => {
+  window.removeEventListener('wheel', handleZoom)
+})
+</script>
+<style scoped lang="scss">
+.designer-container {
+  background-color: var(--el-bg-color);
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  min-height: 100%;
+  min-width: 100%;
+  // overflow: scroll;
+  &.dark {
+    background-color: rgb(32, 32, 32); // 暗色模式的背景颜色
+    color: #ffffff; // 暗色模式的文字颜色
+  }
+  .zoom {
+    position: fixed;
+    z-index: 999;
+    top: 20px;
+    right: 20px;
+
+    span {
+      margin: 0 10px;
+    }
+  }
+
+  .tool {
+    position: fixed;
+    z-index: 999;
+    top: 10px;
+    left: 20px;
+  }
+
+  .node-container {
+    margin: 0 auto;
+    transform: scale(v-bind(getScale));
+    transform-origin: 50% 0 0;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+  }
+  :deep(.el-card){
+    --el-card-border-color:none;
+  }
+  :deep(.el-card__body){
+   background-color: rgb(32, 32, 32); 
+  }
+  // :deep(.el-popper.is-light, .el-popper.is-light>.el-popper__arrow:before){
+  //   background-color: rgb(32, 32, 32);
+  //   display: none;
+  // }
+  :deep(.el-drawer){
+    background-color: rgb(32, 32, 32);
+  }
+}
+:deep(.el-popper){
+  background: black;
+}
+</style>

@@ -1,0 +1,27 @@
+[
+  {
+    "namespace": "逻辑函数",
+    "label": "IF",
+    "value": "IF",
+    "tag": "none",
+    "tagName": "无",
+    "explain": [
+      "函数示例: 表达式1 AND 表达式2",
+      "函数说明: 多个用AND连接的表达式,当所有表达式均为true时，表达式返回true，否则返回False"
+    ]
+  },
+  {
+    "namespace": "逻辑函数",
+    "label": "AND",
+    "value": "AND",
+    "tag": "none",
+    "tagName": "无"
+  },
+  {
+    "namespace": "数学函数",
+    "label": "SUM",
+    "value": "SUM",
+    "tag": "none",
+    "tagName": "无"
+  }
+]

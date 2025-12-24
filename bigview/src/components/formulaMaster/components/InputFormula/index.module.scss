@@ -1,0 +1,29 @@
+.modal-content{
+  height: 600px;
+
+  .modal-variable{
+    overflow: hidden;
+    border: 1px solid #E8E9EB;
+    border-radius: 10px 0 0 10px;
+    padding: 10px;
+  }
+  .modal-editor{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border-top: 1px solid #E8E9EB;
+    border-bottom: 1px solid #E8E9EB;
+    .editor{
+      height: calc(100% - 200px);
+    }
+    .explain{
+      height: 200px;
+      border-top: 1px solid #E8E9EB;
+    }
+  }
+  .modal-func{
+    border: 1px solid #E8E9EB;
+    border-radius: 0 10px 10px 0;
+    padding: 10px;
+  }
+}
