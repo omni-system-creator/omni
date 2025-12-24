@@ -6,9 +6,13 @@
         round
         width="64px"
         height="64px"
-        :src="userStore.avatar"
+        :src="getFileUrl(userStore.avatar)"
         class="avatar"
-      />
+      >
+        <template v-slot:error>
+          <van-icon name="user-o" size="32" color="#ccc" />
+        </template>
+      </van-image>
       <div v-else class="avatar-placeholder">
         <van-icon name="user-o" size="32" color="#fff" />
       </div>
@@ -39,6 +43,7 @@
 import { useUserStore } from '@/stores/user';
 import { useRouter } from 'vue-router';
 import { showDialog, showSuccessToast } from 'vant';
+import { getFileUrl } from '@/utils/file';
 
 const userStore = useUserStore();
 const router = useRouter();

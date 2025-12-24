@@ -1,0 +1,36 @@
+<svg width="2732" height="2732" viewBox="0 0 2732 2732" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 柔和的科技感背景渐变 -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e8f5e9"/>
+    </linearGradient>
+    
+    <!-- 装饰线条渐变 -->
+    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00aa01" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#00aa01" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#e4b801" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="2732" height="2732" fill="url(#bgGradient)"/>
+  
+  <!-- 背景装饰元素 -->
+  <g>
+    <!-- 大圆环装饰 -->
+    <circle cx="1366" cy="1366" r="900" fill="none" stroke="#00aa01" stroke-width="2" stroke-opacity="0.05" stroke-dasharray="40 20"/>
+    <circle cx="1366" cy="1366" r="1100" fill="none" stroke="#00aa01" stroke-width="40" stroke-opacity="0.02"/>
+    
+    <!-- 动态曲线 -->
+    <path d="M0 2000 Q 1366 2800 2732 1200" fill="none" stroke="url(#lineGradient)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M-100 1500 Q 1366 2400 2832 800" fill="none" stroke="url(#lineGradient)" stroke-width="15" stroke-linecap="round" opacity="0.6"/>
+    
+    <!-- 科技节点 -->
+    <circle cx="400" cy="400" r="20" fill="#00aa01" opacity="0.1"/>
+    <circle cx="2332" cy="2332" r="30" fill="#e4b801" opacity="0.1"/>
+    <circle cx="2400" cy="300" r="15" fill="#00aa01" opacity="0.1"/>
+    <circle cx="300" cy="2400" r="25" fill="#00aa01" opacity="0.1"/>
+  </g>
+</svg>

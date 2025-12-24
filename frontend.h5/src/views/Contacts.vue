@@ -68,9 +68,16 @@
                 round
                 width="40px"
                 height="40px"
-                :src="member.avatar || 'https://fastly.jsdelivr.net/npm/@vant/assets/cat.jpeg'"
+                :src="getFileUrl(member.avatar)"
                 class="avatar"
-              />
+              >
+                <template v-slot:error>
+                  <van-icon name="user-o" size="24" color="#ccc" />
+                </template>
+                <template v-slot:loading>
+                  <van-loading type="spinner" size="20" />
+                </template>
+              </van-image>
               <div class="member-info">
                 <div class="name-row">
                   <span class="name">{{ member.name }}</span>
@@ -137,6 +144,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { showToast } from 'vant';
+import { getFileUrl } from '@/utils/file';
 
 const router = useRouter();
 const searchText = ref('');
@@ -302,13 +310,13 @@ const onRefresh = () => {
 }
 
 .contacts-content {
-  padding-top: 100px; /* nav(46) + search(54) */
+  padding-top: calc(54px + var(--nav-bar-height)); /* nav(46) + search(54) + safe-area */
   padding-bottom: 20px;
   min-height: calc(100vh - 120px);
 }
 
 .contacts-content.has-breadcrumb {
-  padding-top: 132px; /* + breadcrumb(32) */
+  padding-top: calc(86px + var(--nav-bar-height)); /* + breadcrumb(32) */
 }
 
 :deep(.van-pull-refresh) {

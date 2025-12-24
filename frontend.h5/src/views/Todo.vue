@@ -130,9 +130,10 @@ const onRefresh = () => {
   right: 0;
   z-index: 999;
   background-color: #fff;
+  padding-top: var(--safe-area-top);
 }
 .header-placeholder {
-  height: 100px;
+  height: calc(54px + var(--nav-bar-height));
 }
 .todo-list {
   padding: 12px;
@@ -169,5 +170,10 @@ const onRefresh = () => {
 }
 .content {
   padding: 16px 0;
+}
+
+/* 覆盖 Vant Tabs 的 sticky 定位 */
+:deep(.van-tabs--sticky .van-tabs__wrap) {
+  top: calc(100px + env(safe-area-inset-top, 24px)) !important;
 }
 </style>

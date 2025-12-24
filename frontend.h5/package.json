@@ -6,9 +6,17 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "build:app": "vue-tsc -b && cross-env BUILD_TARGET=app vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0",
     "axios": "^1.7.7",
     "lunar-javascript": "^1.7.7",
     "pinia": "^2.2.6",
@@ -17,11 +25,14 @@
     "vue-router": "^4.4.5"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@tsconfig/node22": "^22.0.5",
     "@types/node": "^22.9.0",
     "@vitejs/plugin-vue": "^5.1.4",
     "@vue/tsconfig": "^0.8.1",
+    "cross-env": "^10.1.0",
     "less": "^4.2.0",
+    "sharp": "^0.34.5",
     "typescript": "~5.6.2",
     "unplugin-vue-components": "^0.27.4",
     "vite": "^5.4.10",

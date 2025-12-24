@@ -129,7 +129,7 @@ const onAppClick = (app: any) => {
 }
 
 .apps-content {
-  padding-top: 100px; /* nav-bar(46px) + search(54px) */
+  padding-top: calc(54px + var(--nav-bar-height)); /* nav-bar(46px) + search(54px) */
   padding-bottom: 20px;
 }
 

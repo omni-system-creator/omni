@@ -407,7 +407,7 @@ const isPast = (time: Date) => {
 }
 
 .schedule-content {
-  padding-top: 430px; /* nav(46) + calendar(320) + header(64) */
+  padding-top: calc(384px + var(--nav-bar-height)); /* nav(46) + calendar(320) + header(64) */
 }
 
 .timeline-header-bar {

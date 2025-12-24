@@ -1,74 +1,75 @@
 <template>
   <div class="message-container">
     <van-nav-bar title="消息中心" fixed placeholder />
-    
-    <van-tabs v-model:active="active" sticky offset-top="46px">
-      <van-tab title="全部">
-        <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
-          <van-list
-            v-model:loading="loading"
-            :finished="finished"
-            finished-text="没有更多了"
-            @load="onLoad"
-          >
-            <van-cell v-for="item in list" :key="item.id" :title="item.title" :label="item.desc" :value="item.time" center>
-              <template #icon>
-                <van-badge :dot="!item.read" style="margin-right: 10px">
-                  <div class="msg-icon" :class="item.type">
-                    <van-icon :name="getIcon(item.type)" />
-                  </div>
-                </van-badge>
-              </template>
-            </van-cell>
-          </van-list>
-        </van-pull-refresh>
-      </van-tab>
-      <van-tab title="审批">
-        <van-pull-refresh v-model="refreshingApproval" @refresh="onRefreshApproval">
-          <div class="approval-list">
-             <van-cell-group inset class="approval-item" v-for="i in 5" :key="i">
-              <van-cell center>
-                <template #title>
-                  <div class="approval-header">
-                    <span class="approval-title">请假申请 - 张三</span>
-                    <span class="approval-status warning">待审批</span>
-                  </div>
-                </template>
-                <template #label>
-                  <div class="approval-content">
-                    <p>申请类型：年假</p>
-                    <p>申请时间：2023-10-{{ 20 + i }}</p>
-                    <p>请假天数：3天</p>
-                  </div>
-                  <div class="approval-footer">
-                    <van-button size="small" type="primary" plain round>同意</van-button>
-                    <van-button size="small" type="danger" plain round style="margin-left: 8px">拒绝</van-button>
-                  </div>
+    <div class="message-content">
+      <van-tabs v-model:active="active" sticky>
+        <van-tab title="全部">
+          <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
+            <van-list
+              v-model:loading="loading"
+              :finished="finished"
+              finished-text="没有更多了"
+              @load="onLoad"
+            >
+              <van-cell v-for="item in list" :key="item.id" :title="item.title" :label="item.desc" :value="item.time" center>
+                <template #icon>
+                  <van-badge :dot="!item.read" style="margin-right: 10px">
+                    <div class="msg-icon" :class="item.type">
+                      <van-icon :name="getIcon(item.type)" />
+                    </div>
+                  </van-badge>
                 </template>
               </van-cell>
-            </van-cell-group>
-          </div>
-        </van-pull-refresh>
-      </van-tab>
-      <van-tab title="通知">
-        <van-pull-refresh v-model="refreshingNotice" @refresh="onRefreshNotice">
-          <div class="notice-list">
-            <van-cell-group inset class="notice-item" v-for="i in 3" :key="i">
-              <van-cell center>
-                <template #title>
-                  <span class="notice-title">系统维护通知</span>
-                  <van-tag type="danger" plain style="margin-left: 8px">重要</van-tag>
-                </template>
-                <template #label>
-                  <div class="notice-desc">为了提供更好的服务，系统将于本周六凌晨 02:00 进行例行维护，预计耗时 2 小时。</div>
-                  <div class="notice-time">2023-10-{{ 20 + i }} 10:00</div>
-                </template>
-              </van-cell>
-            </van-cell-group>
-          </div>
-        </van-pull-refresh>
-      </van-tab>
-    </van-tabs>
+            </van-list>
+          </van-pull-refresh>
+        </van-tab>
+        <van-tab title="审批">
+          <van-pull-refresh v-model="refreshingApproval" @refresh="onRefreshApproval">
+            <div class="approval-list">
+              <van-cell-group inset class="approval-item" v-for="i in 5" :key="i">
+                <van-cell center>
+                  <template #title>
+                    <div class="approval-header">
+                      <span class="approval-title">请假申请 - 张三</span>
+                      <span class="approval-status warning">待审批</span>
+                    </div>
+                  </template>
+                  <template #label>
+                    <div class="approval-content">
+                      <p>申请类型：年假</p>
+                      <p>申请时间：2023-10-{{ 20 + i }}</p>
+                      <p>请假天数：3天</p>
+                    </div>
+                    <div class="approval-footer">
+                      <van-button size="small" type="primary" plain round>同意</van-button>
+                      <van-button size="small" type="danger" plain round style="margin-left: 8px">拒绝</van-button>
+                    </div>
+                  </template>
+                </van-cell>
+              </van-cell-group>
+            </div>
+          </van-pull-refresh>
+        </van-tab>
+        <van-tab title="通知">
+          <van-pull-refresh v-model="refreshingNotice" @refresh="onRefreshNotice">
+            <div class="notice-list">
+              <van-cell-group inset class="notice-item" v-for="i in 3" :key="i">
+                <van-cell center>
+                  <template #title>
+                    <span class="notice-title">系统维护通知</span>
+                    <van-tag type="danger" plain style="margin-left: 8px">重要</van-tag>
+                  </template>
+                  <template #label>
+                    <div class="notice-desc">为了提供更好的服务，系统将于本周六凌晨 02:00 进行例行维护，预计耗时 2 小时。</div>
+                    <div class="notice-time">2023-10-{{ 20 + i }} 10:00</div>
+                  </template>
+                </van-cell>
+              </van-cell-group>
+            </div>
+          </van-pull-refresh>
+        </van-tab>
+      </van-tabs>
+  </div>
   </div>
 </template>
 
@@ -149,6 +150,41 @@ const onRefreshNotice = () => {
 </script>
 
 <style scoped>
+.message-container {
+  height: calc(100vh - 50px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.message-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+
+:deep(.van-tabs) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:deep(.van-tabs__wrap) {
+  flex-shrink: 0;
+}
+
+:deep(.van-tabs__content) {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+:deep(.van-pull-refresh) {
+  min-height: 100%;
+}
+
 .msg-icon {
   width: 40px;
   height: 40px;

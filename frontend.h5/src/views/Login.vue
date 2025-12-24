@@ -7,7 +7,7 @@
     </div>
     
     <div class="login-content">
-      <div class="login-card">
+      <div class="login-card" :class="{ 'is-app': isApp }">
         <div class="card-header">
           <div class="logo-wrapper">
             <svg class="logo" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0.00 0.00 512.00 512.00">
@@ -36,6 +36,19 @@
 
         <van-form @submit="onSubmit" class="login-form">
           <van-cell-group inset :border="false" class="form-group">
+            <van-field
+              v-if="isApp"
+              v-model="serverUrl"
+              name="serverUrl"
+              placeholder="服务器地址 (如 http://192.168.1.10:5016)"
+              :rules="[{ required: true, message: '请输入服务器地址' }]"
+              class="custom-input"
+            >
+              <template #left-icon>
+                <van-icon name="cluster-o" class="input-icon" />
+              </template>
+            </van-field>
+
             <van-field
               v-model="username"
               name="username"
@@ -80,32 +93,109 @@
             </van-button>
           </div>
         </van-form>
-        
-        <div class="card-footer">
-          <p>© 2025 jinlan.info All Rights Reserved.</p>
-        </div>
       </div>
+    </div>
+    
+    <div class="page-footer" v-show="showFooter">
+      <p>v1.0.0 © 2025 jinlan.info All Rights Reserved.</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { showToast } from 'vant';
 import { login } from '@/api/auth';
+import { Capacitor } from '@capacitor/core';
+import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 
 const username = ref('');
 const password = ref('');
-const remember = ref(true);
+const serverUrl = ref('');
+const remember = ref(false);
 const loading = ref(false);
 const router = useRouter();
 const userStore = useUserStore();
+const isApp = Capacitor.isNativePlatform();
+const showFooter = ref(true);
+
+const onKeyboardShow = () => {
+  showFooter.value = false;
+  // 确保当前聚焦的输入框滚动到可视区域
+  setTimeout(() => {
+    const activeElement = document.activeElement;
+    if (activeElement && activeElement.tagName === 'INPUT') {
+        activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 100);
+};
+
+const onKeyboardHide = () => {
+  showFooter.value = true;
+};
+
+onMounted(() => {
+  if (isApp) {
+    try {
+      StatusBar.setStyle({ style: Style.Dark });
+      StatusBar.setOverlaysWebView({ overlay: false });
+    } catch (e) {}
+    
+    window.addEventListener('keyboardWillShow', onKeyboardShow);
+    window.addEventListener('keyboardWillHide', onKeyboardHide);
+    
+    // 允许键盘调整 WebView 大小
+    Keyboard.setResizeMode({ mode: KeyboardResize.Native });
+  }
+});
+
+onUnmounted(() => {
+  if (isApp) {
+    window.removeEventListener('keyboardWillShow', onKeyboardShow);
+    window.removeEventListener('keyboardWillHide', onKeyboardHide);
+  }
+});
+
+if (isApp) {
+  const storedUrl = localStorage.getItem('oms.server.url');
+  if (storedUrl) {
+    serverUrl.value = storedUrl;
+  } else {
+    serverUrl.value = 'https://oms.jinlan.info';
+    // 立即保存默认值，确保 request 拦截器能读取到
+    localStorage.setItem('oms.server.url', serverUrl.value);
+  }
+  
+  watch(serverUrl, (val) => {
+    localStorage.setItem('oms.server.url', val);
+  });
+}
+
+// 初始化时从 localStorage 加载记住的用户名和密码
+const initRemembered = () => {
+  const remembered = localStorage.getItem('oms.remember');
+  if (remembered) {
+    try {
+      const { username: u, password: p, remember: r } = JSON.parse(remembered);
+      if (r) {
+        username.value = u;
+        password.value = p;
+        remember.value = true;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+};
+
+initRemembered();
 
 const onSubmit = async (values: any) => {
-  loading.value = true;
   try {
+    loading.value = true;
     const res = await login({
       username: values.username,
       password: values.password
@@ -152,18 +242,50 @@ const onSubmit = async (values: any) => {
 <style scoped>
 .login-container {
   position: relative;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   background-color: #0f172a;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* 适配刘海屏和沉浸式状态栏 */
+  padding-top: env(safe-area-inset-top, 24px);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.login-content {
+  position: relative;
+  z-index: 1;
+  padding: 20px;
+  width: 100%;
+  max-width: 420px;
+  margin: auto; /* 垂直居中，且允许滚动 */
+}
+
+/* 修复自动填充背景色和文本颜色 */
+:deep(input:-webkit-autofill),
+:deep(input:-webkit-autofill:hover),
+:deep(input:-webkit-autofill:focus),
+:deep(input:-webkit-autofill:active) {
+  transition: background-color 5000s ease-in-out 0s;
+  -webkit-text-fill-color: #fff !important;
+  caret-color: #fff;
+  background-color: transparent !important;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important; /* 尝试透明背景 */
+}
+
+/* 如果透明背景不起作用，可以使用暗色背景遮盖黄色 */
+:deep(.is-app input:-webkit-autofill) {
+   -webkit-box-shadow: 0 0 0 1000px #1e293b inset !important; /* 匹配深色主题背景 */
 }
 
 /* 动态背景图形 */
 .background-animation {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -234,14 +356,22 @@ const onSubmit = async (values: any) => {
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  padding: 30px 20px;
-  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5);
+  /* background: rgba(255, 255, 255, 0.1); */
+  /* backdrop-filter: blur(20px); */
+  /* -webkit-backdrop-filter: blur(20px); */
+  /* border: 1px solid rgba(255, 255, 255, 0.2); */
+  /* border-radius: 20px; */
+  padding: 0;
+  /* box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5); */
   color: #fff;
+}
+
+.login-card.is-app {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: none;
 }
 
 .card-header {
@@ -351,12 +481,16 @@ const onSubmit = async (values: any) => {
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-.card-footer {
+.page-footer {
+  position: absolute;
+  bottom: 24px;
+  left: 0;
+  width: 100%;
   text-align: center;
-  margin-top: 24px;
+  z-index: 10;
 }
 
-.card-footer p {
+.page-footer p {
   color: rgba(255, 255, 255, 0.4);
   font-size: 12px;
   margin: 0;

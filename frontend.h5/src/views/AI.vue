@@ -23,8 +23,12 @@
             round
             width="40px"
             height="40px"
-            :src="userStore.avatar"
-          />
+            :src="getFileUrl(userStore.avatar)"
+          >
+            <template v-slot:error>
+              <van-icon name="user-o" size="20" color="#ccc" />
+            </template>
+          </van-image>
           <div v-else class="avatar-placeholder">
             <van-icon name="user-o" size="20" color="#fff" />
           </div>
@@ -51,9 +55,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue';
-import { showToast } from 'vant';
+import { ref, nextTick, onMounted, watch } from 'vue';
 import { useUserStore } from '@/stores/user';
+import { getFileUrl } from '@/utils/file';
 
 const userStore = useUserStore();
 
