@@ -20,11 +20,8 @@ export const projectListApi = async (data: object) => {
 // * 新增项目
 export const createProjectApi = async (data: object) => {
   try {
-    const res = await axios.get('./data/create.json') 
-    return {
-      ...res.data,
-      data: res.data.rows
-    }
+    const { data } = await axios.get('./data/create.json') 
+    return data
   } catch {
     httpErrorHandle()
   }
