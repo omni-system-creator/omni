@@ -52,7 +52,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import TabsView from '../components/TabsView.vue';
 import { useTabsStore } from '../stores/tabs';
