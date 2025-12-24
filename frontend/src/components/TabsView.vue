@@ -1,83 +1,89 @@
 <template>
-  <div class="tabs-view-container">
-    <a-tabs
-      v-model:activeKey="activeKey"
-      type="editable-card"
-      hide-add
-      @edit="onEdit"
-      @change="onChange"
-      class="tabs-view"
-    >
-      <template #renderTabBar>
-        <draggable
-          :list="visitedViews"
-          item-key="fullPath"
-          class="ant-tabs-nav-list"
-          :component-data="{ style: 'display: flex; height: 100%;' }"
-          :move="checkMove"
-          @start="onDragStart"
-          @end="onDragEnd"
-        >
-          <template #item="{ element, index }">
-            <a-dropdown :trigger="['contextmenu']">
-              <div
-                class="ant-tabs-tab"
-                :class="{ 'ant-tabs-tab-active': activeKey === element.fullPath }"
-                @click="onChange(element.fullPath)"
-              >
-                <div class="ant-tabs-tab-btn">
-                  {{ element.title }}
-                  <span
-                    v-if="!isAffix(element)"
-                    class="ant-tabs-tab-remove"
-                    @click.stop="removeTab(element.fullPath)"
-                  >
-                    <DynamicIcon icon="ant-design:close-outlined" />
-                  </span>
+  <div class="tabs-view-container" :class="{ 'fullscreen-mode': tabsStore.isWebFull }">
+    <div v-if="tabsStore.isWebFull" class="fullscreen-trigger"></div>
+    <div class="tabs-wrapper">
+      <a-tabs
+        v-model:activeKey="activeKey"
+        type="editable-card"
+        hide-add
+        @edit="onEdit"
+        @change="onChange"
+        class="tabs-view"
+      >
+        <template #renderTabBar>
+          <draggable
+            :list="visitedViews"
+            item-key="fullPath"
+            class="ant-tabs-nav-list"
+            :component-data="{ style: 'display: flex; height: 100%;' }"
+            :move="checkMove"
+            @start="onDragStart"
+            @end="onDragEnd"
+          >
+            <template #item="{ element, index }">
+              <a-dropdown :trigger="['contextmenu']">
+                <div
+                  class="ant-tabs-tab"
+                  :class="{ 'ant-tabs-tab-active': activeKey === element.fullPath }"
+                  @click="onChange(element.fullPath)"
+                >
+                  <div class="ant-tabs-tab-btn">
+                    {{ element.title }}
+                    <span
+                      v-if="!isAffix(element)"
+                      class="ant-tabs-tab-remove"
+                      @click.stop="removeTab(element.fullPath)"
+                    >
+                      <DynamicIcon icon="ant-design:close-outlined" />
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <template #overlay>
-                <a-menu>
-                  <a-menu-item
-                    key="toggleEditMode"
-                    v-if="element.name === 'HomeView'"
-                    @click="toggleWorkbenchEditMode"
-                  >
-                    <DynamicIcon icon="ant-design:edit-outlined" /> {{ workbenchStore.isEditMode ? '退出编辑' : '进入编辑' }}
-                  </a-menu-item>
-                  <a-menu-divider v-if="element.name === 'HomeView'" />
-                  <a-menu-item
-                    key="refresh"
-                    v-if="activeKey === element.fullPath"
-                    @click="refreshSelectedTag(element)"
-                  >
-                    <DynamicIcon icon="ant-design:reload-outlined" /> 刷新当前
-                  </a-menu-item>
-                  <a-menu-item key="closeLeft" v-if="hasLeftClosable(index)" @click="closeLeftTags(element)">
-                    <DynamicIcon icon="ant-design:vertical-right-outlined" /> 关闭左边
-                  </a-menu-item>
-                  <a-menu-item key="closeRight" v-if="hasRightClosable(index)" @click="closeRightTags(element)">
-                    <DynamicIcon icon="ant-design:vertical-left-outlined" /> 关闭右边
-                  </a-menu-item>
-                  <a-menu-item key="closeOthers" v-if="hasOtherClosable(element)" @click="closeOthersTags(element)">
-                    <DynamicIcon icon="ant-design:close-square-outlined" /> 关闭其他
-                  </a-menu-item>
-                  <a-menu-item key="closeAll" v-if="hasAnyClosable()" @click="closeAllTags(element)">
-                    <DynamicIcon icon="ant-design:minus-square-outlined" /> 全部关闭
-                  </a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
-          </template>
-        </draggable>
-      </template>
-      <a-tab-pane
-        v-for="tag in visitedViews"
-        :key="tag.fullPath"
-        :tab="tag.title"
-        :closable="!isAffix(tag)"
-      />
-    </a-tabs>
+                <template #overlay>
+                  <a-menu>
+                    <a-menu-item
+                      key="toggleEditMode"
+                      v-if="element.name === 'HomeView'"
+                      @click="toggleWorkbenchEditMode"
+                    >
+                      <DynamicIcon icon="ant-design:edit-outlined" /> {{ workbenchStore.isEditMode ? '退出编辑' : '进入编辑' }}
+                    </a-menu-item>
+                    <a-menu-divider v-if="element.name === 'HomeView'" />
+                    <a-menu-item
+                      key="refresh"
+                      v-if="activeKey === element.fullPath"
+                      @click="refreshSelectedTag(element)"
+                    >
+                      <DynamicIcon icon="ant-design:reload-outlined" /> 刷新当前
+                    </a-menu-item>
+                    <a-menu-item key="closeLeft" v-if="hasLeftClosable(index)" @click="closeLeftTags(element)">
+                      <DynamicIcon icon="ant-design:vertical-right-outlined" /> 关闭左边
+                    </a-menu-item>
+                    <a-menu-item key="closeRight" v-if="hasRightClosable(index)" @click="closeRightTags(element)">
+                      <DynamicIcon icon="ant-design:vertical-left-outlined" /> 关闭右边
+                    </a-menu-item>
+                    <a-menu-item key="closeOthers" v-if="hasOtherClosable(element)" @click="closeOthersTags(element)">
+                      <DynamicIcon icon="ant-design:close-square-outlined" /> 关闭其他
+                    </a-menu-item>
+                    <a-menu-item key="closeAll" v-if="hasAnyClosable()" @click="closeAllTags(element)">
+                      <DynamicIcon icon="ant-design:minus-square-outlined" /> 全部关闭
+                    </a-menu-item>
+                  </a-menu>
+                </template>
+              </a-dropdown>
+            </template>
+          </draggable>
+        </template>
+        <a-tab-pane
+          v-for="tag in visitedViews"
+          :key="tag.fullPath"
+          :tab="tag.title"
+          :closable="!isAffix(tag)"
+        />
+      </a-tabs>
+      <div class="fullscreen-btn" @click="toggleFullScreen" title="网页全屏">
+        <DynamicIcon :icon="tabsStore.isWebFull ? 'ant-design:compress-outlined' : 'ant-design:expand-outlined'" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -93,6 +99,50 @@ const tabsStore = useTabsStore();
 const workbenchStore = useWorkbenchStore();
 const route = useRoute();
 const router = useRouter();
+
+function toggleFullScreen() {
+  tabsStore.toggleWebFull();
+  
+  // Update URL query param
+  const currentQuery = { ...route.query };
+  
+  if (tabsStore.isWebFull) {
+    currentQuery.webFull = '1';
+  } else {
+    delete currentQuery.webFull;
+  }
+  
+  router.replace({
+    path: route.path,
+    query: currentQuery
+  });
+}
+
+function getPathWithWebFull(path: string) {
+  // 1. Remove webFull param if it exists
+  let cleanPath = path;
+  if (path.includes('webFull=')) {
+     try {
+       // Handle relative paths by adding a dummy base
+       const dummyUrl = new URL(path, 'http://dummy.com');
+       const params = new URLSearchParams(dummyUrl.search);
+       params.delete('webFull');
+       const newSearch = params.toString();
+       // Reconstruct path: pathname + new query string
+       cleanPath = dummyUrl.pathname + (newSearch ? `?${newSearch}` : '');
+     } catch(e) {
+       // Fallback: simple string replacement if URL parsing fails
+       cleanPath = path.replace(/[\?&]webFull=[^&]+/, '').replace(/(\?|&)$/, '');
+     }
+  }
+
+  // 2. If not in webFull mode, return clean path
+  if (!tabsStore.isWebFull) return cleanPath;
+  
+  // 3. If in webFull mode, append the param
+  const separator = cleanPath.includes('?') ? '&' : '?';
+  return `${cleanPath}${separator}webFull=1`;
+}
 
 const visitedViews = computed({
   get: () => tabsStore.visitedViews,
@@ -178,7 +228,7 @@ function hasAnyClosable() {
 }
 
 function onChange(key: string) {
-  router.push(key);
+  router.push(getPathWithWebFull(key));
 }
 
 function toggleWorkbenchEditMode() {
@@ -205,12 +255,12 @@ function removeTab(key: string) {
 function toLastView(visitedViews: TabItem[], view: TabItem) {
   const latestView = visitedViews.slice(-1)[0];
   if (latestView) {
-    router.push(latestView.fullPath);
+    router.push(getPathWithWebFull(latestView.fullPath));
   } else {
     if (view.name === 'HomeView') {
-      router.replace({ path: '/redirect' + view.fullPath });
+      router.replace({ path: '/redirect' + getPathWithWebFull(view.fullPath) });
     } else {
-      router.push('/');
+      router.push(getPathWithWebFull('/'));
     }
   }
 }
@@ -220,7 +270,7 @@ function refreshSelectedTag(view: TabItem) {
   const { fullPath } = view;
   nextTick(() => {
     router.replace({
-      path: '/redirect' + fullPath,
+      path: '/redirect' + getPathWithWebFull(fullPath),
     });
   });
 }
@@ -228,19 +278,19 @@ function refreshSelectedTag(view: TabItem) {
 function closeLeftTags(view: TabItem) {
   tabsStore.delLeftViews(view);
   if (!visitedViews.value.find((v) => v.fullPath === route.fullPath)) {
-    router.push(view.fullPath);
+    router.push(getPathWithWebFull(view.fullPath));
   }
 }
 
 function closeRightTags(view: TabItem) {
   tabsStore.delRightViews(view);
   if (!visitedViews.value.find((v) => v.fullPath === route.fullPath)) {
-    router.push(view.fullPath);
+    router.push(getPathWithWebFull(view.fullPath));
   }
 }
 
 function closeOthersTags(view: TabItem) {
-  router.push(view);
+  router.push(getPathWithWebFull(view.fullPath));
   tabsStore.delOthersViews(view);
 }
 
@@ -279,11 +329,75 @@ onMounted(() => {
   padding: 6px 0 0;
   background: #f5f5f5;
   border-bottom: 1px solid #d9d9d9;
-  overflow: hidden; /* 确保左侧负边距被裁剪 */
+  overflow: hidden;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.tabs-wrapper {
+  display: flex;
+  align-items: flex-end; /* Align to bottom so tabs sit on line */
 }
 
 .tabs-view {
+  flex: 1;
+  width: 0; /* Allow shrinking */
   margin-top: 5px;
+}
+
+.fullscreen-btn {
+  height: 40px; /* Approximate tab height */
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.3s;
+  margin-bottom: 1px; /* Adjust for border */
+}
+
+.fullscreen-btn:hover {
+  background: rgba(0, 0, 0, 0.025);
+  color: #1890ff;
+}
+
+/* Fullscreen Mode */
+.tabs-view-container.fullscreen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1001;
+  padding: 0;
+  background: transparent;
+  border: none;
+  pointer-events: none;
+}
+
+.tabs-view-container.fullscreen-mode .tabs-wrapper {
+  background: #f5f5f5;
+  padding: 6px 0 0;
+  border-bottom: 1px solid #d9d9d9;
+  transform: translateY(-100%);
+  transition: transform 0.3s;
+  pointer-events: auto;
+  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); */
+}
+
+.tabs-view-container.fullscreen-mode:hover .tabs-wrapper,
+.tabs-view-container.fullscreen-mode:has(.fullscreen-trigger:hover) .tabs-wrapper {
+  transform: translateY(0);
+}
+
+.fullscreen-trigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  z-index: 1002;
+  pointer-events: auto;
 }
 
 /* 覆盖 Ant Design 默认样式，隐藏原有的 bar */

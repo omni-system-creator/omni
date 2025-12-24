@@ -1,9 +1,9 @@
 <template>
   <a-layout style="min-height: 100vh">
-    <SideMenu v-model:collapsed="collapsed" :menu-data="menuData" />
+    <SideMenu v-if="!tabsStore.isWebFull" v-model:collapsed="collapsed" :menu-data="menuData" />
     
-    <a-layout :style="{ marginLeft: collapsed ? '80px' : '240px', transition: 'all 0.2s', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
-      <a-layout-header class="header">
+    <a-layout :style="{ marginLeft: tabsStore.isWebFull ? '0' : (collapsed ? '80px' : '240px'), transition: 'all 0.2s', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
+      <a-layout-header class="header" v-if="!tabsStore.isWebFull">
         <div class="header-left">
           <div v-if="isHome" class="welcome-text">
             欢迎使用 金兰®综合信息管理系统 - 全面的一站式管理组织、合同、项目、财务、CRM、进销存、流程、数据分析、系统管理等。
@@ -20,6 +20,7 @@
         <div class="header-right">
           <a-space size="middle">
             <HelpButton />
+            <FullscreenButton />
             
             <NotificationBell />
             
@@ -51,13 +52,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import TabsView from '../components/TabsView.vue';
 import { useTabsStore } from '../stores/tabs';
 import { useSystemStore } from '@/stores/system';
 import { usePermissionStore } from '@/stores/permission';
 import HelpButton from './components/HelpButton.vue';
+import FullscreenButton from './components/FullscreenButton.vue';
 import NotificationBell from './components/NotificationBell.vue';
 import StatusDropdown from './components/StatusDropdown.vue';
 import UserDropdown from './components/UserDropdown.vue';
@@ -104,6 +106,21 @@ watch(
     }
   },
   { flush: 'pre' }
+);
+
+// 监听 URL 参数以控制全屏状态
+watch(
+  () => route.query,
+  (query) => {
+    // webFull: 隐藏左侧菜单和顶部导航 (1 或 true)
+    if (query.webFull === '1' || query.webFull === 'true') {
+      tabsStore.isWebFull = true;
+    } else {
+      // 只要不是明确的 1 或 true，都认为是 false (包括 undefined/null/0/false)
+      tabsStore.isWebFull = false;
+    }
+  },
+  { immediate: true }
 );
 
 // Define menu data type (Moved to types/menu.ts)

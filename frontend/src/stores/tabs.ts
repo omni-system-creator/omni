@@ -13,18 +13,44 @@ export interface TabItem {
 export const useTabsStore = defineStore('tabs', () => {
   const visitedViews = ref<TabItem[]>([]);
   const cachedViews = ref<string[]>([]);
+  const isWebFull = ref(false);
+
+  function toggleWebFull() {
+    isWebFull.value = !isWebFull.value;
+  }
+
+  // Helper to get identity string for tab matching (ignoring UI-only query params)
+  function getTabIdentity(fullPath: string) {
+    try {
+      const url = new URL(fullPath, 'http://dummy.com');
+      const params = new URLSearchParams(url.search);
+      // Remove UI state params that shouldn't create new tabs
+      params.delete('webFull');
+      params.delete('browserFull');
+      params.sort();
+      return url.pathname + '?' + params.toString();
+    } catch (e) {
+      return fullPath;
+    }
+  }
 
   function addView(view: RouteLocationNormalized) {
     // 确保首页总是被添加
     if (view.path === '/' || view.name === 'HomeView') {
-      const homeTab = {
-        title: '首页',
-        path: '/',
-        name: 'HomeView',
-        fullPath: '/',
-        meta: { title: '首页', affix: true }
-      };
-      if (!visitedViews.value.some(v => v.path === '/')) {
+      const existingHome = visitedViews.value.find(v => v.path === '/');
+      if (existingHome) {
+        // 如果首页已存在，更新其 fullPath 以匹配当前 URL (例如包含 query 参数)
+        if (existingHome.fullPath !== view.fullPath) {
+          existingHome.fullPath = view.fullPath;
+        }
+      } else {
+        const homeTab = {
+          title: '首页',
+          path: '/',
+          name: 'HomeView',
+          fullPath: view.fullPath,
+          meta: { title: '首页', affix: true }
+        };
         visitedViews.value.unshift(homeTab);
       }
     }
@@ -36,7 +62,15 @@ export const useTabsStore = defineStore('tabs', () => {
       }
     }
 
-    if (visitedViews.value.some((v) => v.path === view.path)) return;
+    const viewIdentity = getTabIdentity(view.fullPath);
+    const existingView = visitedViews.value.find((v) => getTabIdentity(v.fullPath) === viewIdentity);
+    if (existingView) {
+      // 如果 View 已存在，更新 fullPath (为了处理 query 参数变化，如 webFull)
+      if (existingView.fullPath !== view.fullPath) {
+        existingView.fullPath = view.fullPath;
+      }
+      return;
+    }
     
     // Don't add to tabs if hidden or no title
     if (!view.meta.title && !view.name) return;
@@ -54,7 +88,7 @@ export const useTabsStore = defineStore('tabs', () => {
   }
 
   function delView(view: TabItem) {
-    const index = visitedViews.value.findIndex((v) => v.path === view.path);
+    const index = visitedViews.value.findIndex((v) => v.fullPath === view.fullPath);
     if (index > -1) {
       visitedViews.value.splice(index, 1);
     }
@@ -66,7 +100,7 @@ export const useTabsStore = defineStore('tabs', () => {
 
   function delOthersViews(view: TabItem) {
     visitedViews.value = visitedViews.value.filter((v) => {
-      return v.meta.affix || v.path === view.path;
+      return v.meta.affix || v.fullPath === view.fullPath;
     });
     cachedViews.value = cachedViews.value.filter((name) => {
       const v = visitedViews.value.find((i) => i.name === name);
@@ -75,20 +109,20 @@ export const useTabsStore = defineStore('tabs', () => {
   }
 
   function delLeftViews(view: TabItem) {
-    const index = visitedViews.value.findIndex((v) => v.path === view.path);
+    const index = visitedViews.value.findIndex((v) => v.fullPath === view.fullPath);
     if (index > -1) {
       visitedViews.value = visitedViews.value.filter((v, i) => {
-        return v.meta.affix || v.path === view.path || i > index;
+        return v.meta.affix || v.fullPath === view.fullPath || i > index;
       });
       refreshCachedViews();
     }
   }
 
   function delRightViews(view: TabItem) {
-    const index = visitedViews.value.findIndex((v) => v.path === view.path);
+    const index = visitedViews.value.findIndex((v) => v.fullPath === view.fullPath);
     if (index > -1) {
       visitedViews.value = visitedViews.value.filter((v, i) => {
-        return v.meta.affix || v.path === view.path || i < index;
+        return v.meta.affix || v.fullPath === view.fullPath || i < index;
       });
       refreshCachedViews();
     }
@@ -122,5 +156,7 @@ export const useTabsStore = defineStore('tabs', () => {
     delLeftViews,
     delRightViews,
     delAllViews,
+    isWebFull,
+    toggleWebFull,
   };
 });

@@ -115,19 +115,50 @@ const handleMenuClick = (item: MenuItem) => {
 
 const selectedKeys = computed({
   get: () => {
-    if (route.name) return [route.name as string];
     const currentPath = route.path;
-    const findKeyByPath = (items: readonly MenuItem[]): string | undefined => {
+    const currentQuery = route.query;
+
+    let bestMatchKey: string | undefined;
+    let bestMatchScore = -1;
+
+    const traverse = (items: readonly MenuItem[]) => {
       for (const item of items) {
-        if (item.path === currentPath) return item.key;
+        if (item.path === currentPath) {
+          let match = true;
+          let score = 0;
+
+          if (item.query) {
+            const itemParams = new URLSearchParams(item.query);
+            for (const [key, val] of itemParams.entries()) {
+              // loose comparison for numbers/strings
+              if (String(currentQuery[key]) !== val) {
+                match = false;
+                break;
+              }
+              score++;
+            }
+          }
+
+          if (match) {
+            // Prioritize matches with more specific query params
+            if (score > bestMatchScore) {
+              bestMatchScore = score;
+              bestMatchKey = item.key;
+            }
+          }
+        }
+
         if (item.children) {
-          const key = findKeyByPath(item.children);
-          if (key) return key;
+          traverse(item.children);
         }
       }
     };
-    const key = findKeyByPath(props.menuData);
-    return key ? [key] : [];
+
+    traverse(props.menuData);
+
+    if (bestMatchKey) return [bestMatchKey];
+    if (route.name) return [route.name as string];
+    return [];
   },
   set: (_val) => {}
 });
