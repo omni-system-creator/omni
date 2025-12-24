@@ -76,8 +76,7 @@
           </van-cell-group>
 
           <div class="form-options">
-            <van-checkbox v-model="remember" shape="square" icon-size="16px">记住我</van-checkbox>
-            <span class="forgot-password">忘记密码？</span>
+            <!-- 占位保持间距 -->
           </div>
 
           <div style="margin-top: 24px;">
@@ -115,7 +114,7 @@ import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 const username = ref('');
 const password = ref('');
 const serverUrl = ref('');
-const remember = ref(false);
+// const remember = ref(false); // Removed
 const loading = ref(false);
 const router = useRouter();
 const userStore = useUserStore();
@@ -174,7 +173,8 @@ if (isApp) {
   });
 }
 
-// 初始化时从 localStorage 加载记住的用户名和密码
+// 初始化时从 localStorage 加载记住的用户名和密码 - Removed
+/*
 const initRemembered = () => {
   const remembered = localStorage.getItem('oms.remember');
   if (remembered) {
@@ -192,6 +192,7 @@ const initRemembered = () => {
 };
 
 initRemembered();
+*/
 
 const onSubmit = async (values: any) => {
   try {
@@ -280,7 +281,9 @@ const onSubmit = async (values: any) => {
 
 /* 如果透明背景不起作用，可以使用暗色背景遮盖黄色 */
 :deep(.is-app input:-webkit-autofill) {
-   -webkit-box-shadow: 0 0 0 1000px #1e293b inset !important; /* 匹配深色主题背景 */
+   -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+   background-color: transparent !important;
+   transition: background-color 5000s ease-in-out 0s;
 }
 
 /* 动态背景图形 */
@@ -451,6 +454,7 @@ const onSubmit = async (values: any) => {
   align-items: center;
   font-size: 14px;
   padding: 0 4px;
+  height: 24px; /* 保留高度占位 */
 }
 
 :deep(.van-checkbox__label) {

@@ -33,7 +33,7 @@
     <div class="background-decorations">
       <div class="circle c1"></div>
       <div class="circle c2"></div>
-      <div class="line l1"></div>
+      <div class="arc l1"></div>
     </div>
   </div>
 </template>
@@ -44,7 +44,7 @@ import { ref, onMounted } from 'vue';
 const props = defineProps({
   duration: {
     type: Number,
-    default: 2000
+    default: 5000
   }
 });
 
@@ -68,7 +68,7 @@ onMounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(to bottom, #ffffff 0%, #e8f5e9 100%);
+  background-color: #0f172a;
   z-index: 9999;
   display: flex;
   justify-content: center;
@@ -113,7 +113,7 @@ onMounted(() => {
 .logo-svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
 }
 
 .center-circle {
@@ -140,14 +140,14 @@ onMounted(() => {
 .app-title {
   font-size: 24px;
   font-weight: bold;
-  color: #333;
+  color: #fff;
   margin: 0 0 10px;
   letter-spacing: 2px;
 }
 
 .app-subtitle {
   font-size: 14px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
   letter-spacing: 1px;
 }
@@ -166,7 +166,7 @@ onMounted(() => {
 .circle {
   position: absolute;
   border-radius: 50%;
-  border: 2px solid rgba(0, 170, 1, 0.05);
+  border: 2px solid rgba(56, 189, 248, 0.1);
 }
 
 .c1 {
@@ -186,16 +186,26 @@ onMounted(() => {
   animation: rotate 30s linear infinite reverse;
 }
 
-.line {
+.arc {
   position: absolute;
-  background: linear-gradient(90deg, transparent, rgba(0, 170, 1, 0.1), transparent);
-  height: 1px;
-  width: 100%;
+  border-radius: 50%;
+  border-top: 1px solid rgba(56, 189, 248, 0.2);
+  background: transparent;
 }
 
 .l1 {
-  top: 30%;
-  animation: slide-right 5s linear infinite;
+  top: 40%;
+  left: -25%;
+  width: 150%;
+  height: 200px;
+  opacity: 0.6;
+  transform: rotate(-10deg);
+  animation: float-arc 8s ease-in-out infinite alternate;
+}
+
+@keyframes float-arc {
+  from { transform: rotate(-10deg) translateY(0); }
+  to { transform: rotate(-5deg) translateY(-20px); }
 }
 
 @keyframes rotate {

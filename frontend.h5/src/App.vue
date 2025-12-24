@@ -1,6 +1,6 @@
 <template>
   <SplashScreen v-if="showSplash" @finish="onSplashFinish" />
-  <router-view v-show="!showSplash"></router-view>
+  <router-view></router-view>
   
   <transition name="van-slide-up">
     <div v-if="showMobileTips" class="mobile-tips">

@@ -22,7 +22,7 @@
         <item name="android:background">@drawable/splash</item>
         <!-- Android 12+ Splash Screen Customization -->
         <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
-        <item name="android:windowSplashScreenBackground">#ffffff</item>
+        <item name="android:windowSplashScreenBackground">#0f172a</item>
         <item name="android:windowSplashScreenAnimationDuration">0</item>
     </style>
 </resources>
