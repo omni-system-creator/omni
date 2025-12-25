@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using omsapi.Models.Entities;
 using omsapi.Models.Entities.Archive;
+using omsapi.Models.Entities.BigView;
 using omsapi.Models.Entities.Data;
 
 namespace omsapi.Data
@@ -34,6 +35,9 @@ namespace omsapi.Data
 
         // Data Entities
         public DbSet<DataSourceConnection> DataSourceConnections { get; set; }
+
+        // BigView Entities
+        public DbSet<BigViewProject> BigViewProjects { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

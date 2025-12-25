@@ -1,73 +1,42 @@
-import axios from 'axios'
 import { http } from '@/api/http'
-import { httpErrorHandle } from '@/utils'
-import { ContentTypeEnum, RequestHttpEnum, ModuleTypeEnum } from '@/enums/httpEnum'
-import { ProjectItem, ProjectDetail } from './project'
+import { RequestHttpEnum, ContentTypeEnum } from '@/enums/httpEnum'
 
 // * 项目列表
-export const projectListApi = async (data: object) => {
-  try {
-    const res = await axios.get('./data/items.json')
-    return {
-      ...res.data,
-      data: res.data.rows
-    }
-  } catch {
-    httpErrorHandle()
-  }
+export const projectListApi = async (params: object) => {
+    return http(RequestHttpEnum.GET)('/bigview/project/list', params)
 }
 
 // * 新增项目
 export const createProjectApi = async (data: object) => {
-  try {
-    const { data } = await axios.get('./data/create.json') 
-    return data
-  } catch {
-    httpErrorHandle()
-  }
+    return http(RequestHttpEnum.POST)('/bigview/project/create', data)
 }
 
 // * 获取项目
-export const fetchProjectApi = async (data: object) => {
-  try {
-    const { data } = await axios.get('./data/item.json') 
-    return data
-  } catch {
-    httpErrorHandle()
-  }
+export const fetchProjectApi = async (params: object) => {
+    return http(RequestHttpEnum.GET)('/bigview/project/detail', params)
 }
 
-// * 保存项目
+// * 保存项目 (update content)
 export const saveProjectApi = async (data: object) => {
+    return http(RequestHttpEnum.POST)('/bigview/project/update', data)
 }
 
 // * 修改项目基础信息
 export const updateProjectApi = async (data: object) => {
+    return http(RequestHttpEnum.POST)('/bigview/project/update', data)
 }
 
 // * 删除项目
-export const deleteProjectApi = async (data: object) => {
+export const deleteProjectApi = async (params: object) => {
+    return http(RequestHttpEnum.DELETE)('/bigview/project/delete', params)
 }
 
 // * 修改发布状态 [-1未发布,1发布]
 export const changeProjectReleaseApi = async (data: object) => {
+    return http(RequestHttpEnum.POST)('/bigview/project/publish', data)
 }
 
 // * 上传文件
 export const uploadFile = async (data: object) => {
+    return http(RequestHttpEnum.POST)('/File/upload', data, ContentTypeEnum.FORM_DATA)
 }
-
-// 获取树形结构
-export const getDashboardApi = async () => {
-}
-
-// 查询图表id
-export const queryByChartIdApi = async (chartId: string) => {
-}
-
-export const buildSqlApi = async (data: any) => {
-}
-
-
-
-
