@@ -267,10 +267,11 @@ function toLastView(visitedViews: TabItem[], view: TabItem) {
 
 function refreshSelectedTag(view: TabItem) {
   tabsStore.delCachedView(view);
-  const { fullPath } = view;
+  const { path } = view;
   nextTick(() => {
     router.replace({
-      path: '/redirect' + getPathWithWebFull(fullPath),
+      path: '/redirect' + path,
+      query: route.query
     });
   });
 }

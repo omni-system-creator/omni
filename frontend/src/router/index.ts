@@ -99,7 +99,7 @@ router.beforeEach(async (to, _from, next) => {
         next();
       }
     } else {
-      next('/login');
+      next(`/login?redirect=${encodeURIComponent(to.fullPath)}`);
     }
   }
 });
