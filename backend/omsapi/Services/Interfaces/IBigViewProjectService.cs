@@ -10,7 +10,7 @@ namespace omsapi.Services.Interfaces
         Task<(bool Success, string Message, BigViewProjectDto? Data)> GetByIdAsync(long id);
         Task<(bool Success, string Message, long Id)> CreateAsync(CreateBigViewProjectDto dto, long userId);
         Task<(bool Success, string Message)> UpdateAsync(UpdateBigViewProjectDto dto);
-        Task<(bool Success, string Message)> DeleteAsync(long id);
+        Task<(bool Success, string Message)> DeleteAsync(string ids);
         Task<(bool Success, string Message)> ChangeReleaseStateAsync(long id, string state);
     }
 }

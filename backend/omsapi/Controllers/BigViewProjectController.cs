@@ -56,9 +56,19 @@ namespace omsapi.Controllers
         }
 
         [HttpDelete("delete")]
-        public async Task<ApiResponse<object>> Delete([FromQuery] long id)
+        public async Task<ApiResponse<object>> Delete([FromQuery] string? ids, [FromQuery] long? id)
         {
-            var (success, message) = await _service.DeleteAsync(id);
+            if (string.IsNullOrEmpty(ids) && id.HasValue)
+            {
+                ids = id.Value.ToString();
+            }
+
+            if (string.IsNullOrEmpty(ids))
+            {
+                return ApiResponse<object>.Error("IDs or ID required");
+            }
+
+            var (success, message) = await _service.DeleteAsync(ids);
             if (!success) return ApiResponse<object>.Error(message);
             return ApiResponse<object>.Success(null);
         }

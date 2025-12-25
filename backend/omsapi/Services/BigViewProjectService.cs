@@ -152,16 +152,41 @@ namespace omsapi.Services
             return (true, "Updated successfully");
         }
 
-        public async Task<(bool Success, string Message)> DeleteAsync(long id)
+        public async Task<(bool Success, string Message)> DeleteAsync(string ids)
         {
-            var entity = await _context.BigViewProjects.FindAsync(id);
-            if (entity == null)
+            if (string.IsNullOrEmpty(ids))
             {
-                return (false, "Project not found");
+                return (false, "IDs cannot be empty");
             }
 
-            // Soft delete
-            entity.IsDelete = "1";
+            var idList = new List<long>();
+            foreach (var idStr in ids.Split(','))
+            {
+                if (long.TryParse(idStr, out var id))
+                {
+                    idList.Add(id);
+                }
+            }
+
+            if (!idList.Any())
+            {
+                return (false, "No valid IDs provided");
+            }
+
+            var entities = await _context.BigViewProjects
+                                         .Where(p => idList.Contains(p.Id))
+                                         .ToListAsync();
+
+            if (!entities.Any())
+            {
+                return (false, "Projects not found");
+            }
+
+            foreach (var entity in entities)
+            {
+                entity.IsDelete = "1";
+            }
+
             await _context.SaveChangesAsync();
             return (true, "Deleted successfully");
         }
