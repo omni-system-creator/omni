@@ -144,7 +144,7 @@ importers:
         specifier: ^0.145.0
         version: 0.145.0
       vue:
-        specifier: ^3.3.11
+        specifier: ^3.4.18
         version: 3.5.12(typescript@5.3.3)
       vue-codemirror6:
         specifier: ^1.2.0
@@ -211,7 +211,7 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(vite@5.4.11(@types/node@18.19.67)(sass@1.80.2)(terser@5.36.0))(vue@3.5.12(typescript@5.3.3))
       '@vue/compiler-sfc':
-        specifier: ^3.2.31
+        specifier: ^3.4.18
         version: 3.5.12
       '@vue/tsconfig':
         specifier: ^0.5.0
@@ -2053,8 +2053,8 @@ packages:
   earcut@2.2.4:
     resolution: {integrity: sha512-/pjZsA1b4RPHbeWZQn66SWS8nZZWLQQ23oE3Eam7aroEFGEvwKAsJfZ9ytiEMycfzXWpca4FA9QIOehf7PocBQ==}
 
-  earcut@3.0.0:
-    resolution: {integrity: sha512-41Fs7Q/PLq1SDbqjsgcY7GA42T0jvaCNGXgGtsNdvg+Yv8eIu06bxv4/PoREkZ9nMDNwnUSG9OFB9+yv8eKhDg==}
+  earcut@3.0.2:
+    resolution: {integrity: sha512-X7hshQbLyMJ/3RPhyObLARM2sNxxmRALLKx1+NVFFnQ9gKzmCrxm9+uLIAdBcvc8FNLpctqlQ2V6AE92Ol9UDQ==}
 
   echarts-liquidfill@3.1.0:
     resolution: {integrity: sha512-5Dlqs/jTsdTUAsd+K5LPLLTgrbbNORUSBQyk8PSy1Mg2zgHDWm83FmvA4s0ooNepCJojFYRITTQ4GU1UUSKYLw==}
@@ -6356,7 +6356,7 @@ snapshots:
 
   earcut@2.2.4: {}
 
-  earcut@3.0.0: {}
+  earcut@3.0.2: {}
 
   echarts-liquidfill@3.1.0(echarts@5.4.3):
     dependencies:
@@ -7465,7 +7465,7 @@ snapshots:
       '@types/mapbox__vector-tile': 1.3.4
       '@types/pbf': 3.0.5
       '@types/supercluster': 7.1.3
-      earcut: 3.0.0
+      earcut: 3.0.2
       geojson-vt: 4.0.2
       gl-matrix: 3.4.3
       global-prefix: 4.0.0
