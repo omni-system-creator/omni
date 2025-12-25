@@ -111,9 +111,9 @@ import { login } from '@/api/auth';
 import { Capacitor } from '@capacitor/core';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 
-const username = ref('');
-const password = ref('');
-const serverUrl = ref('');
+const username = ref('admin');
+const password = ref('admin123');
+const serverUrl = ref('https://oms.jinlan.info');
 // const remember = ref(false); // Removed
 const loading = ref(false);
 const router = useRouter();
