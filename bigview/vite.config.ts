@@ -53,7 +53,7 @@ export default ({ mode }) => defineConfig({
         // target: 'http://192.168.2.222:90/prod-api',  // 公司局域网环境
         //  target: 'https://bd-back.kp.psy.cool/prod-api',    // 公司互联网环境
         //  target: 'https://crrcdev.dingzhi.info/prod-api',    // 新互联网环境
-        //  target: 'http://localhost:8080',
+         target: 'https://oms.jinlan.info',
         // target: 'http://192.168.2.109:8080',
         changeOrigin: true,
         ws: true,

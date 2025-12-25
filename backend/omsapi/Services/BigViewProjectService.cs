@@ -97,13 +97,24 @@ namespace omsapi.Services
             string? contentStr = null;
             if (dto.Content != null)
             {
-                contentStr = JsonSerializer.Serialize(dto.Content);
+                 if (dto.Content is string strContent)
+                 {
+                     contentStr = strContent;
+                 }
+                 else if (dto.Content is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.String)
+                 {
+                     contentStr = jsonElement.GetString();
+                 }
+                 else
+                 {
+                     contentStr = JsonSerializer.Serialize(dto.Content);
+                 }
             }
 
             var entity = new BigViewProject
             {
                 ProjectName = dto.ProjectName,
-                State = dto.State ?? "-1", // Default to unreleased
+                State = dto.State ?? "0", // Default to unreleased
                 CreateTime = DateTime.Now,
                 CreateBy = createBy,
                 IsDelete = "0",

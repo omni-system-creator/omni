@@ -36,7 +36,7 @@ export const useModalDataInit = () => {
 
   const copyHandle = async (cardData: Chartype, onRefresh?: () => void) => {
     if (!cardData) return
-    const srcRes: any = await fetchProjectApi({ projectId: cardData.id })
+    const srcRes: any = await fetchProjectApi({ id: cardData.id })
     if (!srcRes || srcRes.code !== ResultEnum.SUCCESS || !srcRes.data) return
     if (!srcRes.data.content) {
       goDialog({
@@ -52,10 +52,10 @@ export const useModalDataInit = () => {
     const createRes: any = await createProjectApi({ projectName: name, remarks: srcRes.data.remarks })
     if (!createRes || createRes.code !== ResultEnum.SUCCESS || !createRes.data) return
     const newId = createRes.data.id
-    const form = new FormData()
-    form.append('projectId', `${newId}`)
-    form.append('content', srcRes.data.content || '{}')
-    const saveRes = await saveProjectApi(form)
+    const saveRes = await saveProjectApi({
+      id: `${newId}`,
+      content: srcRes.data.content || '{}'
+    })
     if (!saveRes || saveRes.code !== ResultEnum.SUCCESS) return
     onRefresh && onRefresh()
     goDialog({

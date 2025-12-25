@@ -41,7 +41,7 @@ export const ossUrlApi = async (data: object) => {
        * bucket 地址
        */
       bucketURL?: string
-    }>(`${ModuleTypeEnum.SYSTEM}/getOssInfo`, data)
+    }>(`/bigview/getOssInfo`, data)
     return res
   } catch (err) {
     httpErrorHandle()

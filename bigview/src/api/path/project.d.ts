@@ -9,7 +9,7 @@ export type ProjectItem = {
   projectName: string
   /**
    * 项目状态:\
-   * -1: 未发布\
+   * 0: 未发布\
    * 1: 已发布
    */
   state: number

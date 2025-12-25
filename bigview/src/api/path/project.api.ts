@@ -38,5 +38,5 @@ export const changeProjectReleaseApi = async (data: object) => {
 
 // * 上传文件
 export const uploadFile = async (data: object) => {
-    return http(RequestHttpEnum.POST)('/File/upload', data, ContentTypeEnum.FORM_DATA)
+    return http(RequestHttpEnum.POST)('/bigview/upload', data, ContentTypeEnum.FORM_DATA)
 }

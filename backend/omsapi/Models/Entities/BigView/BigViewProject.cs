@@ -19,7 +19,7 @@ namespace omsapi.Models.Entities.BigView
         /// 状态 [-1未发布,1发布]
         /// </summary>
         [Column("state")]
-        [StringLength(1)]
+        [StringLength(20)]
         public string? State { get; set; }
 
         [Column("create_time")]

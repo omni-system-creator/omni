@@ -23,7 +23,7 @@ export const useDataListInit = () => {
   // 数据请求
   const fetchList = async () => {
     loading.value = true
-    const res = await projectListApi({
+    const { data: res } = await projectListApi({
       pageNum: paginat.page,
       pageSize: paginat.limit
     })
@@ -38,7 +38,7 @@ export const useDataListInit = () => {
           createId: createUserId,
           time: createTime,
           image: indexImage,
-          release: state !== -1,
+          release: state !== 0,
 
         }
       })
@@ -91,8 +91,8 @@ export const useDataListInit = () => {
     const { id, release } = cardData
     const res = await changeProjectReleaseApi({
       id: id,
-      // [-1未发布, 1发布]
-      state: !release ? 1 : -1
+      // [0未发布, 1发布]
+      state: !release ? 1 : 0
     })
     if (res && res.code === ResultEnum.SUCCESS) {
       list.value = []

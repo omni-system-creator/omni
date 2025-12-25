@@ -251,7 +251,7 @@ export const useSync = () => {
     chartEditStore.componentList = []
     chartEditStore.setEditCanvas(EditCanvasTypeEnum.SAVE_STATUS, SyncEnum.START)
     try {
-      const res = await fetchProjectApi({ projectId: fetchRouteParamsLocation() })
+      const res = await fetchProjectApi({ id: fetchRouteParamsLocation() })
       if (res && res.code === ResultEnum.SUCCESS) {
         if (res.data) {
           updateStoreInfo(res.data)
@@ -299,7 +299,7 @@ export const useSync = () => {
 
         // 上传预览图
         let uploadParams = new FormData()
-        uploadParams.append('object', base64toFile(canvasImage.toDataURL(), `${fetchRouteParamsLocation()}_index_preview.png`))
+        uploadParams.append('file', base64toFile(canvasImage.toDataURL(), `${fetchRouteParamsLocation()}_index_preview.png`))
         const uploadRes = await uploadFile(uploadParams)
         // 保存预览图
         if (uploadRes && uploadRes.code === ResultEnum.SUCCESS) {
@@ -321,9 +321,10 @@ export const useSync = () => {
     }
 
     // 保存数据
-    let params = new FormData()
-    params.append('projectId', projectId)
-    params.append('content', JSONStringify(chartEditStore.getStorageInfo() || {}))
+    const params = {
+      id: projectId,
+      content: JSONStringify(chartEditStore.getStorageInfo() || {})
+    }
     const res = await saveProjectApi(params)
 
     if (res && res.code === ResultEnum.SUCCESS) {
@@ -332,8 +333,6 @@ export const useSync = () => {
         const chartHistoryStore = useChartHistoryStore()
         //记录数据
         chartHistoryStore.updateUseChartHistoryList(chartHistoryStore.getBackStack)
-        console.log(chartHistoryStore.getBackStack,'bbbbbbbbbbbbb')
-        console.log(chartHistoryStore.useChartHistoryList,'aaaaaaaaa')
         chartEditStore.setEditCanvas(EditCanvasTypeEnum.SAVE_STATUS, SyncEnum.SUCCESS)
       }, 300)
       return
