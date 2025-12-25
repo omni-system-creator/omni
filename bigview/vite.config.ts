@@ -59,6 +59,13 @@ export default ({ mode }) => defineConfig({
         ws: true,
         // rewrite: (path) => path.replace(new RegExp(`^/api`), ''),
         // rewrite: (path) => path.replace(new RegExp(`^${axiosPre}`), ''),
+      },
+      '/uploads': {
+        target: 'https://oms.jinlan.info',
+        changeOrigin: true,
+        ws: true,
+        // rewrite: (path) => path.replace(new RegExp(`^/api`), ''),
+        // rewrite: (path) => path.replace(new RegExp(`^${axiosPre}`), ''),
       }
     }
   },

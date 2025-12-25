@@ -26,7 +26,7 @@ namespace omsapi.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<ApiResponse<object>> Upload([FromForm] IFormFile file)
+        public async Task<ApiResponse<object>> Upload([FromForm] IFormFile file, [FromForm] string? projectId)
         {
              if (file == null || file.Length == 0)
                  return ApiResponse<object>.Error("请选择文件");
@@ -40,7 +40,13 @@ namespace omsapi.Controllers
                      Directory.CreateDirectory(uploadFolder);
 
                  var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                 var fileName = $"{Guid.NewGuid()}{extension}";
+                 
+                 // If projectId is provided, use it as filename (overwriting existing file)
+                 // Otherwise, generate a new GUID
+                 var fileName = !string.IsNullOrEmpty(projectId) 
+                     ? $"{projectId}{extension}" 
+                     : $"{Guid.NewGuid()}{extension}";
+                     
                  var filePath = Path.Combine(uploadFolder, fileName);
 
                  using (var stream = new FileStream(filePath, FileMode.Create))
