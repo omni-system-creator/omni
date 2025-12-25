@@ -7,7 +7,7 @@ namespace omsapi.Models.Dtos.BigView
         public string? ProjectName { get; set; }
         public string? State { get; set; }
         public string? IndexImage { get; set; }
-        public string? Content { get; set; }
+        public object? Content { get; set; }
         public string? Remarks { get; set; }
     }
 
@@ -17,7 +17,7 @@ namespace omsapi.Models.Dtos.BigView
         public string? ProjectName { get; set; }
         public string? State { get; set; }
         public string? IndexImage { get; set; }
-        public string? Content { get; set; }
+        public object? Content { get; set; }
         public string? Remarks { get; set; }
     }
 
@@ -36,7 +36,7 @@ namespace omsapi.Models.Dtos.BigView
         public string? CreateBy { get; set; }
         public string? IsDelete { get; set; }
         public string? IndexImage { get; set; }
-        public string? Content { get; set; }
+        public object? Content { get; set; }
         public string? Remarks { get; set; }
     }
 }

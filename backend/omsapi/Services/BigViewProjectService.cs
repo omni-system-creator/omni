@@ -4,6 +4,7 @@ using omsapi.Infrastructure.Attributes;
 using omsapi.Models.Dtos.BigView;
 using omsapi.Models.Entities.BigView;
 using omsapi.Services.Interfaces;
+using System.Text.Json;
 
 namespace omsapi.Services
 {
@@ -26,28 +27,27 @@ namespace omsapi.Services
                 query = query.Where(p => p.ProjectName != null && p.ProjectName.Contains(keyword));
             }
             
-            // Filter out deleted items if needed. The SQL says `is_delete` varchar(1).
-            // Usually '1' means deleted, '0' or null means not deleted.
-            // Let's assume '1' is deleted.
             query = query.Where(p => p.IsDelete != "1");
 
             var total = await query.CountAsync();
-            var items = await query.OrderByDescending(p => p.CreateTime)
+            var entities = await query.OrderByDescending(p => p.CreateTime)
                                    .Skip((page - 1) * limit)
                                    .Take(limit)
-                                   .Select(p => new BigViewProjectDto
-                                   {
-                                       Id = p.Id,
-                                       ProjectName = p.ProjectName,
-                                       State = p.State,
-                                       CreateTime = p.CreateTime,
-                                       CreateBy = p.CreateBy,
-                                       IsDelete = p.IsDelete,
-                                       IndexImage = p.IndexImage,
-                                       Content = p.Content,
-                                       Remarks = p.Remarks
-                                   })
                                    .ToListAsync();
+
+            var items = entities.Select(p => new BigViewProjectDto
+            {
+                Id = p.Id,
+                ProjectName = p.ProjectName,
+                State = p.State,
+                CreateTime = p.CreateTime,
+                CreateBy = p.CreateBy,
+                IsDelete = p.IsDelete,
+                IndexImage = p.IndexImage,
+                // List view usually doesn't need full content, setting to null to save bandwidth
+                Content = null, 
+                Remarks = p.Remarks
+            }).ToList();
 
             return (true, "Success", items, total);
         }
@@ -60,6 +60,19 @@ namespace omsapi.Services
                 return (false, "Project not found", null);
             }
 
+            object? contentObj = null;
+            if (!string.IsNullOrEmpty(p.Content))
+            {
+                try
+                {
+                    contentObj = JsonSerializer.Deserialize<object>(p.Content);
+                }
+                catch
+                {
+                    contentObj = p.Content; // Fallback to string if not valid JSON
+                }
+            }
+
             var dto = new BigViewProjectDto
             {
                 Id = p.Id,
@@ -69,7 +82,7 @@ namespace omsapi.Services
                 CreateBy = p.CreateBy,
                 IsDelete = p.IsDelete,
                 IndexImage = p.IndexImage,
-                Content = p.Content,
+                Content = contentObj,
                 Remarks = p.Remarks
             };
 
@@ -78,10 +91,14 @@ namespace omsapi.Services
 
         public async Task<(bool Success, string Message, long Id)> CreateAsync(CreateBigViewProjectDto dto, long userId)
         {
-            // Fetch user name if possible, or just use userId as placeholder if we don't have user info handy
-            // For now, let's assume we can get user name from somewhere else or just store string
             var user = await _context.Users.FindAsync(userId);
             string createBy = user?.Nickname ?? user?.Username ?? userId.ToString();
+
+            string? contentStr = null;
+            if (dto.Content != null)
+            {
+                contentStr = JsonSerializer.Serialize(dto.Content);
+            }
 
             var entity = new BigViewProject
             {
@@ -91,7 +108,7 @@ namespace omsapi.Services
                 CreateBy = createBy,
                 IsDelete = "0",
                 IndexImage = dto.IndexImage,
-                Content = dto.Content,
+                Content = contentStr,
                 Remarks = dto.Remarks
             };
 
@@ -112,7 +129,12 @@ namespace omsapi.Services
             if (dto.ProjectName != null) entity.ProjectName = dto.ProjectName;
             if (dto.State != null) entity.State = dto.State;
             if (dto.IndexImage != null) entity.IndexImage = dto.IndexImage;
-            if (dto.Content != null) entity.Content = dto.Content;
+            
+            if (dto.Content != null)
+            {
+                 entity.Content = JsonSerializer.Serialize(dto.Content);
+            }
+            
             if (dto.Remarks != null) entity.Remarks = dto.Remarks;
 
             await _context.SaveChangesAsync();
