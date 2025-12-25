@@ -34,8 +34,8 @@ watchEffect(() => {
     if (props.users.length > 0) {
       console.log(props.users)
       debugger
-      const selectedUsers = userList.filter(item => props.users.includes(item.username));
-      content.value = selectedUsers.map(user => user.name).join('、');
+      const selectedUsers = userList.filter((item: any) => props.users.includes(item.username));
+      content.value = selectedUsers.map((user: any) => user.name).join('、');
     } else {
       content.value = '未指定控件'
     }

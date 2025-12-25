@@ -206,10 +206,10 @@ watch(
     @extend .go-background-filter;
   }
   .editor-data-show {
-    @include fetch-bg-color('filter-color');
     width: 420px;
     padding: 20px;
     border-radius: 5px;
+    @include fetch-bg-color('filter-color');
   }
 }
 </style>

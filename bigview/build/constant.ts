@@ -5,7 +5,7 @@ export const OUTPUT_DIR = 'dist'
 export const prefix = `monaco-editor/esm/vs`
 
 // chunk 警告大小
-export const chunkSizeWarningLimit = 2000
+export const chunkSizeWarningLimit = 4000
 
 // 禁用 brotliSize 压缩大小报告
 export const brotliSize = false

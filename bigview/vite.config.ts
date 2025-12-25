@@ -36,12 +36,14 @@ export default ({ mode }) => defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
+        api: 'modern-compiler',
         javascriptEnabled: true,
-        additionalData: `@import "src/styles/common/style.scss";`
+        additionalData: `@use "@/styles/common/style.scss" as *;`
       }
     }
   },
   // 开发服务器配置
+  logLevel: 'warn',
   server: {
     host: true,
     open: true,
@@ -95,7 +97,7 @@ export default ({ mode }) => defineConfig({
     }),
     // 压缩
     viteCompression({
-      verbose: true,
+      verbose: false,
       disable: false,
       threshold: 10240,
       algorithm: 'gzip',

@@ -88,6 +88,7 @@ const colorSelectHandle = (color: AppThemeColorType) => {
       @include hover-border-color("background-color5");
     }
     &::after {
+      @extend .go-background-filter-shallow;
       content: "";
       z-index: -1;
       position: absolute;
@@ -98,8 +99,7 @@ const colorSelectHandle = (color: AppThemeColorType) => {
       opacity: 0.7;
       overflow: hidden;
       border-radius: 5px;
-      @extend .go-background-filter-shallow;
-      backdrop-filter: none;
+      backdrop-filter: none !important;
     }
     &-color {
       width: 8px;

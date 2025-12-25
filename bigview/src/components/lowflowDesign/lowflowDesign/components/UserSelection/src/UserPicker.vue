@@ -103,7 +103,7 @@ const onOpen = () => {
     userIds.push(value.value)
   }
   if (userIds.length > 0) {
-    userOptions.value = userList.map(user => {
+    userOptions.value = userList.map((user: any) => {
           return {
             id: user.id,
             name: user.chartConfig.title,
@@ -112,19 +112,19 @@ const onOpen = () => {
             leaf: true
           } as Org
         })
-        userOptions.value.sort((a, b) => a.id.localeCompare(b.id))
+        userOptions.value.sort((a, b) => String(a.id).localeCompare(String(b.id)))
   } else {
     userOptions.value = []
   }
 }
 const handelConfirm = () => {
   if ($props.multiple) {
-    value.value = userOptions.value.map(e => e.id)
+    value.value = (userOptions.value as any[]).map((e: any) => e.id) as any
   } else {
     if (userOptions.value.length > 0) {
-      value.value = userOptions.value[0].id
+      value.value = userOptions.value[0].id as any
     } else {
-      value.value = null
+      value.value = null as any
     }
   }
   dialogVisible.value = false
@@ -189,8 +189,7 @@ defineExpose({
 </template>
 
 <style scoped lang="scss">
-:deep {
-  .el-tree {
+:deep(.el-tree) {
     --el-tree-node-content-height: 40px;
 
     .el-tree-node__content {
@@ -205,7 +204,6 @@ defineExpose({
       }
     }
   }
-}
 
 .el-card {
   background-color: transparent;

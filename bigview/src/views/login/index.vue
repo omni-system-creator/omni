@@ -170,8 +170,8 @@ const handleSubmit = async (e: Event) => {
         username,
         password
       })
-      if (res.token) {
-        const tokenValue = res.token
+      if (res && res.data && res.data.token) {
+        const tokenValue = res.data.token
         // 存储到 pinia
         systemStore.setItem(SystemStoreEnum.TOKEN, tokenValue)
 
@@ -179,7 +179,7 @@ const handleSubmit = async (e: Event) => {
         window['$message'].success(t('login.login_success'))
         routerTurnByName(PageEnum.BASE_HOME_NAME, true)
       } else {
-        window['$message'].error(res.msg)
+        window['$message'].error(res?.msg || '登录失败')
       }
       loading.value = false
     } else {
@@ -221,7 +221,7 @@ $carousel-image-height: 60vh;
     justify-content: space-between;
     align-items: center;
     padding: 0 40px;
-    height: $--header-height;
+    height: $header-height;
   }
   &-divider {
     margin: 0;
@@ -233,7 +233,7 @@ $carousel-image-height: 60vh;
     display: flex;
     justify-content: space-around;
     align-items: center;
-    margin-top: -$--header-height;
+    margin-top: -$header-height;
     height: $go-login-height;
     width: 100vw;
     &-carousel {
@@ -255,9 +255,9 @@ $carousel-image-height: 60vh;
       }
 
       &-card {
+        box-shadow: 0 0 20px 5px rgba(40, 40, 40, 0.3);
         @extend .go-background-filter;
         @include fetch-bg-color('filter-color');
-        box-shadow: 0 0 20px 5px rgba(40, 40, 40, 0.3);
       }
 
       &-top {
@@ -299,7 +299,7 @@ $carousel-image-height: 60vh;
           margin-right: 20px;
           margin-top: 20px;
           width: 230px;
-          border-radius: 2 * $--border-radius-base;
+          border-radius: 2 * $border-radius-base;
           opacity: 0.9;
         }
       }

@@ -1,3 +1,5 @@
+@use "@/styles/common/style.scss" as *;
+
 /* 外层也要使用 */
 .func-keyword {
   color: #b478cf;
@@ -19,33 +21,32 @@
     @extend .go-background-filter;
   }
 }
-@include deep() {
-  .n-layout,
-  .n-layout-sider {
-    background-color: transparent;
+
+:deep(.n-layout),
+:deep(.n-layout-sider) {
+  background-color: transparent;
+}
+:deep(.collapse-show-box) {
+  .n-card__content {
+    padding-left: 20px;
+    padding-right: 10px;
   }
-  .collapse-show-box {
-    .n-card__content {
-      padding-left: 20px;
-      padding-right: 10px;
+}
+:deep(.go-editor-area) {
+  max-height: 530px;
+}
+:deep(.checkbox--hidden:checked) {
+  & + label {
+    .n-icon {
+      transition: all 0.3s;
+      transform: rotate(180deg);
     }
   }
-  .go-editor-area {
-    max-height: 530px;
+  & ~ .go-editor-area {
+    display: none;
   }
-  .checkbox--hidden:checked {
-    & + label {
-      .n-icon {
-        transition: all 0.3s;
-        transform: rotate(180deg);
-      }
-    }
-    & ~ .go-editor-area {
-      display: none;
-    }
-  }
-  // 优化代码换行
-  .n-code > pre {
-    white-space: break-spaces;
-  }
+}
+// 优化代码换行
+:deep(.n-code > pre) {
+  white-space: break-spaces;
 }

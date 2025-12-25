@@ -29,7 +29,6 @@
 
 <script setup lang="ts">
 import { PropType, reactive, watch, ref, nextTick, toRefs } from 'vue'
-import config, { includes } from './config'
 import VChart from 'vue-echarts'
 import { icon } from '@/plugins'
 import { useCanvasInitOptions } from '@/hooks/useCanvasInitOptions.hook'
@@ -43,6 +42,9 @@ import { isPreview } from '@/utils'
 import mapJsonWithoutHainanIsLands from './mapWithoutHainanIsLands.json'
 import mapChinaJson from './mapGeojson/china.json'
 import { DatasetComponent, GridComponent, TooltipComponent, GeoComponent, VisualMapComponent } from 'echarts/components'
+import { CreateComponentType } from '@/packages/index.d'
+
+const includes = []
 
 const props = defineProps({
   themeSetting: {
@@ -54,7 +56,7 @@ const props = defineProps({
     required: true
   },
   chartConfig: {
-    type: Object as PropType<config>,
+    type: Object as PropType<CreateComponentType>,
     required: true
   }
 })

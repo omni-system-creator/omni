@@ -58,7 +58,7 @@ const isProject = computed(() => {
         justify-content: end;
       }
     }
-    height: $--header-height;
+    height: $header-height;
     padding: 0 20px 0 20px;
   }
 }

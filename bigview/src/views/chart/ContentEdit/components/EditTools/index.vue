@@ -245,13 +245,11 @@ $asideBottom: 70px;
       &:first-of-type {
         margin-bottom: 0;
       }
-      @include deep() {
-        .n-button__icon {
+      :deep(.n-button__icon) {
           margin-right: 0;
           margin-left: 0;
           margin-bottom: 12px;
         }
-      }
     }
     &.unMini {
       animation: aside-in 0.4s ease forwards;

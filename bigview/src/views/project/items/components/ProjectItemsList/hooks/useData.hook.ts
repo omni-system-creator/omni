@@ -30,7 +30,7 @@ export const useDataListInit = () => {
     if (res && res.rows) {
       const { total } = res as any // 这里的count与data平级，不在Response结构中
       paginat.count = total
-      list.value = res.rows.map(e => {
+      list.value = res.rows.map((e: any) => {
         const { id, projectName, state, createTime, indexImage, createUserId } = e
         return {
           id: id,

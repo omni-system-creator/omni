@@ -196,10 +196,8 @@ const comBtnList = computed(() => {
   min-width: 100px;
   max-width: 60vw;
   padding-bottom: 20px;
-  @include deep() {
-    .n-list-item:not(:last-child) {
-      border-bottom: 0;
-    }
+  :deep(.n-list-item:not(:last-child)) {
+    border-bottom: 0;
   }
 }
 </style>

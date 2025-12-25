@@ -56,7 +56,7 @@ export const option = {
     axisPointer: {
       animation: false
     },
-    formatter: function (params, ticket, callback) {
+    formatter: function (params: any, ticket: any, callback: any) {
       console.log(params); // 检查 params 的内容
 
       if (params.length === 0) {
@@ -66,7 +66,7 @@ export const option = {
       var res = '';
       var seen = new Set(); // 用于记录已经处理过的数据点
 
-      params.forEach(function (param) {
+      params.forEach(function (param: any) {
         if (param.value && param.value.distance !== undefined && param.value.noise !== undefined &&
           param.value.speed !== undefined && param.value.curve !== undefined) {
           // 使用 distance 作为唯一标识符，可以根据实际情况调整

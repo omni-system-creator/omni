@@ -39,7 +39,7 @@ const props = defineProps({
     required: true
   },
   chartConfig: {
-    type: Object as PropType<config>,
+    type: Object as PropType<any>,
     required: true
   }
 })
@@ -220,7 +220,8 @@ const option = computed(() => {
         var res = '<div style="line-height:25px;margin:-5px 0;">';
         if (params.length > 0) {
           var firstParam = params[0];
-          var xAxisName = firstParam.axisId ? firstParam.axisId.replace(/^\u0000/g, '').replace(/\u0000\d+$/g, '') : 'X轴';
+          // eslint-disable-next-line no-control-regex
+          var xAxisName = firstParam.axisId ? firstParam.axisId.replace(/^\x00/g, '').replace(/\x00\d+$/g, '') : 'X轴';
           
           // 正确显示X轴值
           var xValue = firstParam.axisValue;
@@ -253,9 +254,9 @@ const option = computed(() => {
     // 收集所有系列名称并去重
     const allSeriesNames = new Set<string>()
     
-    baseOption.containers.forEach((container, index) => {
+    baseOption.containers.forEach((container: any, index: number) => {
       if (container.series && Array.isArray(container.series)) {
-        container.series.forEach((series: any, seriesIndex) => {
+        container.series.forEach((series: any, seriesIndex: number) => {
           
           // 如果系列名称为空，使用数据字段名或默认名称
           let seriesName = series.name
@@ -456,7 +457,7 @@ const option = computed(() => {
         const datasource = baseOption.datasources[xAxis.datasourceIndex]
         if (datasource.data && Array.isArray(datasource.data) && datasource.data.length > 0) {
           const firstItem = datasource.data[0]
-          if (xAxis.dataField && firstItem && firstItem.hasOwnProperty(xAxis.dataField)) {
+          if (xAxis.dataField && firstItem && Object.prototype.hasOwnProperty.call(firstItem, xAxis.dataField)) {
             xAxisConfig.data = datasource.data.map((item: any) => item[xAxis.dataField])
             
             // 如果是数值轴且未配置min/max，自动计算数据的最小值和最大值
@@ -643,7 +644,7 @@ const option = computed(() => {
       
       if (!yAxis.name || yAxis.name.trim() === '') {
         const globalYAxisIndex = containerIndex > 0 ? 
-          baseOption.containers.slice(0, containerIndex).reduce((sum, c) => sum + (c.yAxis?.length || 0), 0) + yAxisIndex :
+          baseOption.containers.slice(0, containerIndex).reduce((sum: number, c: any) => sum + (c.yAxis?.length || 0), 0) + yAxisIndex :
           yAxisIndex
         
         const boundSeries = container.series?.find((series: any) => series.yAxisIndex === yAxisIndex)
@@ -722,7 +723,7 @@ const option = computed(() => {
           const gradientMatch = series.itemStyle.color.match(/linear-gradient\(([^)]+)\)/)
           if (gradientMatch) {
             const gradientStr = gradientMatch[1]
-            const parts = gradientStr.split(',').map(part => part.trim())
+            const parts = gradientStr.split(',').map((part: string) => part.trim())
             
             // 提取角度（如果有）
             let angle = 0
@@ -736,8 +737,8 @@ const option = computed(() => {
             }
             
             // 转换为ECharts渐变色格式
-            const colors = []
-            colorStops.forEach((stop, index) => {
+            const colors: any[] = []
+            colorStops.forEach((stop: string, index: number) => {
               const colorMatch = stop.match(/(#[0-9a-fA-F]{6}|rgb\([^)]+\))/g)
               const percentMatch = stop.match(/(\d+)%/)
               
@@ -787,7 +788,7 @@ const option = computed(() => {
           let rawData = []
           if (series.dataField && datasource.data.length > 0) {
             const firstItem = datasource.data[0]
-            if (firstItem && firstItem.hasOwnProperty(series.dataField)) {
+            if (firstItem && Object.prototype.hasOwnProperty.call(firstItem, series.dataField)) {
               rawData = datasource.data.map((item: any) => item[series.dataField])
             } else {
               rawData = []
@@ -813,24 +814,24 @@ const option = computed(() => {
                 if (xAxis.type === 'category') {
                   seriesConfig.data = rawData
                 } else {
-                  seriesConfig.data = rawData.map((yValue, index) => [xData[index], yValue])
+                  seriesConfig.data = rawData.map((yValue: any, index: number) => [xData[index], yValue])
                 }
               } else {
                 if (xAxis.type === 'category') {
                   seriesConfig.data = rawData
                 } else {
-                  seriesConfig.data = rawData.map((yValue, index) => [index, yValue])
+                  seriesConfig.data = rawData.map((yValue: any, index: number) => [index, yValue])
                 }
               }
             } else {
               if (xAxis.type === 'category') {
                 seriesConfig.data = rawData
               } else {
-                seriesConfig.data = rawData.map((yValue, index) => [index, yValue])
+                seriesConfig.data = rawData.map((yValue: any, index: number) => [index, yValue])
               }
             }
           } else {
-            seriesConfig.data = rawData.map((yValue, index) => [index, yValue])
+            seriesConfig.data = rawData.map((yValue: any, index: number) => [index, yValue])
           }
         }
       } else {
@@ -1038,7 +1039,7 @@ const onDataZoomChange = async (params: any) => {
           console.log('🧹 清理成功的请求控制器:', taskId)
         } catch (error) {
           // 区分取消错误和其他错误
-          if (error.name === 'AbortError') {
+          if ((error as any).name === 'AbortError') {
             console.log('⏹️ 请求已取消:', taskId)
           } else {
             console.error('❌ 重新获取工作流数据失败:', error)

@@ -17,7 +17,7 @@ withDefaults(defineProps<StartProps>(), {})
           :close="false"
           color="#8c7cf3"
           :node="node">
-      <Content :node="node"/>
+      <Content :node="node as any"/>
     </Node>
   </div>
 </template>

@@ -82,7 +82,7 @@ const props = defineProps({
 })
 
 const xAxis = computed(() => {
-  return props.optionData.xAxis
+  return props.optionData.xAxis as any
 })
 
 const seriesList = computed(() => {

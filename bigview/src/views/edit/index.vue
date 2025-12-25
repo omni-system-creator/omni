@@ -173,10 +173,8 @@ window.onbeforeunload = () => {
       font-weight: bold;
     }
   }
-  @include deep() {
-    .go-editor-area {
+  :deep(.go-editor-area) {
       height: calc(100vh - 60px) !important;
     }
-  }
 }
 </style>

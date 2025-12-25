@@ -251,19 +251,15 @@ $textSize: 10px;
   margin: 10px 5%;
   margin-bottom: 5px;
   @extend .go-transition-quick;
-  @include deep() {
-    .go-content-layers-list-item {
+  :deep(.go-content-layers-list-item) {
       margin-right: 0 !important;
       width: 95% !important;
     }
-  }
 
   &:hover > .root-item-content {
-    @include deep() {
-      .icon-item {
+    :deep(.icon-item) {
         opacity: 1;
       }
-    }
   }
 
   .ghost {

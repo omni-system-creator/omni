@@ -40,7 +40,7 @@ const themeColor = ref(designStore.getAppTheme)
 
 const statusDesc = ref('')
 const descType = ref('')
-let setTimeoutIns: NodeJS.Timeout = setTimeout(() => {})
+let setTimeoutIns: ReturnType<typeof setTimeout> = setTimeout(() => {})
 
 const statusDescObj = {
   [SyncEnum.PENDING]: {
@@ -81,12 +81,10 @@ watch(
 
 <style lang="scss" scoped>
 @include go('edit-data-sync') {
-  @include deep() {
-    .n-spin {
+  :deep(.n-spin) {
       width: 13px;
       height: 13px;
     }
-  }
   .status-desc {
     cursor: default;
     color: v-bind('themeColor');

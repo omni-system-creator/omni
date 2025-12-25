@@ -1,4 +1,6 @@
-$--colors: (
+// only scss variables
+
+$custom-colors: (
   "primary": (
     "base": #589ef8,
   ),
@@ -28,7 +30,7 @@ $--colors: (
 // comment next lines to use default color
 @forward "element-plus/theme-chalk/src/common/var.scss" with (
   // do not use same name, it will override.
-  $colors: $--colors,
+  $colors: $custom-colors,
   // $button-padding-horizontal: ("default": 50px)
 );
 
@@ -36,7 +38,7 @@ $--colors: (
 // @use "element-plus/theme-chalk/src/index.scss" as *;
 
 // You can comment it to hide debug info.
-// @debug $--colors;
+// @debug $custom-colors;
 
 // custom dark variables
 @use "./dark.scss";

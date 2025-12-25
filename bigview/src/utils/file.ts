@@ -86,7 +86,7 @@ export const readFile = (file: File) => {
  * @param filename 
  * @param fileSuffix 
  */
-export const downloadByA = (url: string, filename = new Date().getTime(), fileSuffix?: string) => {
+export const downloadByA = (url: string, filename: string | number = new Date().getTime(), fileSuffix?: string) => {
   const ele = document.createElement('a') // 创建下载链接
   ele.download = `${filename}.${fileSuffix}` //设置下载的名称
   ele.style.display = 'none' // 隐藏的可下载链接
@@ -100,82 +100,26 @@ export const downloadByA = (url: string, filename = new Date().getTime(), fileSu
 }
 
 /**
- * * 下载数据
- * @param { string } content 数据内容
- * @param { ?string } filename 文件名称（默认随机字符）
- * @param { ?string } fileSuffix 文件名称（默认随机字符）
+ * * 下载文本文件
+ * @param content 文本内容
+ * @param filename 文件名
+ * @param extension 文件扩展名
  */
-export const downloadTextFile = (
-  content: string,
-  filename = new Date().getTime(),
-  fileSuffix?: string
-) => {
-  // 字符内容转变成blob地址
-  const blob = new Blob([content])
-  downloadByA(URL.createObjectURL(blob), filename, fileSuffix)
+export const downloadTextFile = (content: string, filename: string | undefined, extension: string) => {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  downloadByA(url, filename, extension)
+  URL.revokeObjectURL(url)
 }
 
 /**
- * * 解析CSV数据的表头
- * @param { string } csvData CSV数据字符串
- * @returns { string[] } 表头字段数组
+ * * 解析CSV表头
+ * @param text CSV文本内容
+ * @returns 表头数组
  */
-export const parseCSVHeaders = (csvData: string): string[] => {
-  if (!csvData || typeof csvData !== 'string') {
-    return []
-  }
-  
-  // 获取第一行数据
-  const firstLine = csvData.split('\n')[0]
-  if (!firstLine) {
-    return []
-  }
-  
-  // 按逗号分割并去除空白字符
-  return firstLine.split(',').map(header => header.trim()).filter(header => header)
-}
-
-/**
- * * JSON验证状态检查
- * @param { string } jsonStr JSON字符串
- * @returns { 'success' | 'error' | undefined } 验证状态
- */
-export const getJsonValidationStatus = (jsonStr: string): 'success' | 'error' | undefined => {
-  if (!jsonStr) return undefined
-  try {
-    const data = JSON.parse(jsonStr)
-    if (!Array.isArray(data)) return 'error'
-    if (data.length === 0) return 'error'
-    if (!data.every(item => typeof item === 'object' && item !== null)) return 'error'
-    return 'success'
-  } catch {
-    return 'error'
-  }
-}
-
-/**
- * * JSON数据验证
- * @param { string } jsonStr JSON字符串
- * @returns { { isValid: boolean, error: string } } 验证结果
- */
-export const validateJsonData = (jsonStr: string): { isValid: boolean, error: string } => {
-  if (!jsonStr) {
-    return { isValid: true, error: '' }
-  }
-
-  try {
-    const data = JSON.parse(jsonStr)
-    if (!Array.isArray(data)) {
-      return { isValid: false, error: '数据必须是数组格式' }
-    }
-    if (data.length === 0) {
-      return { isValid: false, error: '数据数组不能为空' }
-    }
-    if (!data.every(item => typeof item === 'object' && item !== null)) {
-      return { isValid: false, error: '数组中的每个元素都必须是对象' }
-    }
-    return { isValid: true, error: '' }
-  } catch (error) {
-    return { isValid: false, error: 'JSON格式错误，请检查语法' }
-  }
+export const parseCSVHeaders = (text: string): string[] => {
+  if (!text) return []
+  const firstLine = text.split(/\r\n|\n|\r/)[0]
+  if (!firstLine) return []
+  return firstLine.split(',').map(h => h.trim().replace(/^\uFEFF/, ''))
 }

@@ -1,7 +1,9 @@
-@import "./var.scss";
-@import "./format.scss";
-@import "./animation.scss";
-@import "./mixins/mixins.scss";
+@forward "./var.scss";
+@use "./var.scss" as *;
+@use "./format.scss";
+@use "./animation.scss";
+@forward "./mixins/mixins.scss";
+@use "./mixins/mixins.scss" as *;
 
 // 过度
 .go-transition {
@@ -48,28 +50,28 @@
 
 // 毛玻璃
 .go-background-filter {
-  backdrop-filter: $--filter-blur-base;
+  backdrop-filter: $filter-blur-base;
+  box-shadow: $border-shadow;
   @include fetch-bg-color("filter-color");
-  box-shadow: $--border-shadow;
 }
 
 // 毛玻璃
 .go-background-filter-shallow {
-  backdrop-filter: $--filter-blur-base;
+  backdrop-filter: $filter-blur-base;
+  box-shadow: $border-shadow;
   @include fetch-bg-color("filter-color-shallow");
-  box-shadow: $--border-shadow;
 }
 
 // 边框圆角
 .go-border-radius {
-  border-radius: $--border-radius-base;
+  border-radius: $border-radius-base;
   overflow: hidden;
 }
 
 // 背景斑点需配合 @mixin background-image 使用
 .go-point-bg {
-  @include fetch-theme-custom("background-color", "background-color1");
   background-size: 15px 15px, 15px 15px;
+  @include fetch-theme-custom("background-color", "background-color1");
 }
 
 // 省略号

@@ -13,25 +13,29 @@ import { PropType, toRefs, shallowReactive, watch, computed, ref } from 'vue'
 import { CreateComponentType } from '@/packages/index.d'
 import { useChartDataFetch } from '@/hooks'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
-import { option as configOption } from './config'
-import { values } from 'lodash'
 
 const props = defineProps({
   chartConfig: {
-    type: Object as PropType<CreateComponentType & typeof option>,
+    type: Object as PropType<CreateComponentType>,
     required: true
   }
 })
 
 const { w } = toRefs(props.chartConfig.attr)
-
-const { fontColor, fontSize, letterSpacing, fontWeight, animationTime, animationSpeed, boxShadow } = toRefs(
-  props.chartConfig.option
-)
+const {
+  fontColor,
+  fontSize,
+  letterSpacing,
+  fontWeight,
+  animationTime,
+  animationSpeed
+} = toRefs(props.chartConfig.option)
 
 const option = shallowReactive({
-  dataset: configOption.dataset
+  dataset: '让数字化看得见'
 })
+
+const boxShadow = ref('none')
 
 // 手动更新
 watch(

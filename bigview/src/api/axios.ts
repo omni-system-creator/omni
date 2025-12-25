@@ -1,4 +1,4 @@
-import axios, { AxiosResponse, AxiosRequestConfig, Axios, AxiosError, InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosResponse, AxiosRequestConfig, Axios, AxiosError } from 'axios'
 import { RequestHttpHeaderEnum, ResultEnum, ModuleTypeEnum } from '@/enums/httpEnum'
 import { PageEnum, ErrorPageNameMap } from '@/enums/pageEnum'
 import { StorageEnum } from '@/enums/storageEnum'
@@ -10,8 +10,10 @@ import includes from 'lodash/includes'
 
 export interface MyResponseType<T> {
     code: ResultEnum
-    rows: T
-    message: string
+    data: T
+    msg: string
+    rows: T // 兼容旧代码，但在标准 ApiResponse 中应使用 data
+    message: string // 兼容旧代码，但在标准 ApiResponse 中应使用 msg
 }
 
 export interface MyRequestInstance extends Axios {
@@ -24,7 +26,7 @@ const axiosInstance = axios.create({
 }) as unknown as MyRequestInstance
 
 axiosInstance.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
+    (config: AxiosRequestConfig) => {
         // 白名单校验
         if (includes(fetchAllowList, config.url)) return config
         // // 获取 token

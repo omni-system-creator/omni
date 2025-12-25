@@ -21,7 +21,6 @@ import { PropType, toRefs, shallowReactive, watch, ref } from 'vue'
 import { useChartDataFetch } from '@/hooks'
 import { CreateComponentType } from '@/packages/index.d'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
-import { option as configOption } from './config'
 
 const props = defineProps({
   chartConfig: {
@@ -31,7 +30,7 @@ const props = defineProps({
 })
 
 const { w, h } = toRefs(props.chartConfig.attr)
-let option = shallowReactive({ ...configOption })
+let option = shallowReactive({ ...props.chartConfig.option })
 
 // 预览更新
 const vVideoRef = ref(null)

@@ -135,7 +135,7 @@ const open = () => {
   dialogVisible.value = true
 }
 const onOpen = () => {
-  roleOrgOptions.value = userList.map(e => {
+  roleOrgOptions.value = userList.map((e: any) => {
         return {
           id: e.id,
           name: e.name
@@ -150,25 +150,25 @@ const onOpen = () => {
     roleIds.push(value.value)
   }
   if (roleIds.length > 0) {
-    roleOptions.value =userList.map(role => {
+    roleOptions.value = userList.map((role: any) => {
           return {
             id: role.id,
             name: role.name
           }
         })
-        roleOptions.value.sort((a, b) => a.id.localeCompare(b.id))
+        roleOptions.value.sort((a, b) => String(a.id).localeCompare(String(b.id)))
   } else {
     roleOptions.value = []
   }
 }
 const handelConfirm = () => {
   if ($props.multiple) {
-    value.value = roleOptions.value.map(e => e.id)
+    value.value = (roleOptions.value as any[]).map((e: any) => e.id) as any
   } else {
     if (roleOptions.value.length > 0) {
-      value.value = roleOptions.value[0].id
+      value.value = roleOptions.value[0].id as any
     } else {
-      value.value = null
+      value.value = null as any
     }
   }
   dialogVisible.value = false
@@ -230,8 +230,9 @@ defineExpose({
 </template>
 
 <style scoped lang="scss">
-:deep {
-  .el-tree {
+@use "@/styles/common/style.scss" as *;
+
+:deep(.el-tree) {
     --el-tree-node-content-height: 40px;
 
     .el-tree-node__content {
@@ -247,7 +248,6 @@ defineExpose({
       }
     }
   }
-}
 
 .el-card {
   background-color: transparent;

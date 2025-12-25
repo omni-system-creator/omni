@@ -19,7 +19,7 @@ export const getSessionStorageInfo = async () => {
   // 是否本地预览
   if (!storageList || storageList.findIndex(e => e.id === id.toString()) === -1) {
     // 接口调用
-    const res = await fetchProjectApi({ projectId: id })
+    const res = await fetchProjectApi({ id })
     if (res && res.code === ResultEnum.SUCCESS) {
       const { content, state } = res.data
       if (state === -1) {

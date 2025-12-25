@@ -106,9 +106,9 @@ $itemRadius: 6px;
     cursor: pointer;
     margin-top: 15px;
     padding: 0;
-    @include fetch-bg-color('background-color4-shallow');
     border-radius: $radius;
     overflow: hidden;
+    @include fetch-bg-color('background-color4-shallow');
 
     &.selected {
       border: 2px solid v-bind('themeColor');

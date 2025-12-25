@@ -3,7 +3,8 @@
     <template #header> 
       <n-button type="primary" size="small"  title="添加X轴" @click="addYaxis">添加Y轴</n-button>
     </template>
-  <collapse-item v-if="yAxisList.length" :name="`Y轴 ${yAxis.name}`" v-for="yAxis in yAxisList">
+    <template v-if="yAxisList.length">
+    <collapse-item :key="i" :name="`Y轴 ${yAxis.name}`" v-for="(yAxis, i) in yAxisList">
     <template #header>
       <n-switch v-model:value="yAxis.show" size="small"></n-switch>
     </template>
@@ -107,7 +108,8 @@
       </setting-item>
     </setting-item-box> -->
   </collapse-item>
-</collapse-item>
+  </template>
+  </collapse-item>
 </template>
 
 <script setup lang="ts">

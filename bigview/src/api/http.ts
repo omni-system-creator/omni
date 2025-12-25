@@ -207,7 +207,7 @@ export const customizeHttp = (targetParams: RequestConfigType, globalParams: Req
   // sql 处理
   if (requestContentType === RequestContentTypeEnum.SQL) {
     headers['Content-Type'] = ContentTypeEnum.JSON
-    data = requestSQLContent
+    data = (window as any).requestSQLContent || (global as any).requestSQLContent || ''
   }
 
   try {

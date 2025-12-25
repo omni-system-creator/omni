@@ -23,15 +23,14 @@ import { PropType, toRefs, shallowReactive, watch, ref, computed, onMounted, onB
 import { CreateComponentType } from '@/packages/index.d'
 import { useChartDataFetch } from '@/hooks'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
-import { option as configOption } from './config'
 
 const option = shallowReactive({
-  value: configOption.value,
-  maxValue: configOption.maxValue,
-  minValue: configOption.minValue,
-  maxValueColor: configOption.maxValueColor,
-  midValueColor: configOption.midValueColor,
-  minValueColor: configOption.minValueColor,
+  value: 0,
+  maxValue: 30,
+  minValue: 25,
+  maxValueColor: '#ff0000ff',
+  midValueColor: '#ffff00ff',
+  minValueColor: '#00ff00ff',
 })
 const props = defineProps({
   chartConfig: {
@@ -41,13 +40,13 @@ const props = defineProps({
 })
 
 const color = computed(() => {
-  const maxValue = option.maxValue
-  const minValue = option.minValue
+  const maxValue = props.chartConfig.option.maxValue
+  const minValue = props.chartConfig.option.minValue
   const midValue = (minValue + maxValue) / 2
-  const value = option.value
-  const maxValueColor = option.maxValueColor
-  const midValueColor = option.midValueColor
-  const minValueColor = option.minValueColor
+  const value = props.chartConfig.option.value
+  const maxValueColor = props.chartConfig.option.maxValueColor
+  const midValueColor = props.chartConfig.option.midValueColor
+  const minValueColor = props.chartConfig.option.minValueColor
   console.log(minValue, midValue, maxValue, value, 'xxx')
   // 边界检查
   if (value >= maxValue) return maxValueColor

@@ -64,9 +64,7 @@ const onClose = () => {
 </template>
 
 <style scoped lang="scss">
-:deep {
-  .el-tag__content:only-child {
+:deep(.el-tag__content:only-child) {
     margin-right: 4px;
   }
-}
 </style>

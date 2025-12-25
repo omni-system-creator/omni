@@ -102,11 +102,9 @@ $textSize: 10px;
     @include fetch-bg-color('background-color4');
   }
   &:hover {
-    @include deep() {
-      .icon-item {
+    :deep(.icon-item) {
         opacity: 1;
       }
-    }
   }
 
   .select-modal,

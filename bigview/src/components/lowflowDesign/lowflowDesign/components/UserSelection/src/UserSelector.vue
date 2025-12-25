@@ -41,7 +41,7 @@ const onClose = (username: string) => {
   if ($props.multiple && Array.isArray(value.value)) {
     value.value.splice(value.value.indexOf(username), 1)
   } else {
-    value.value = null
+    value.value = null as any
   }
 }
 </script>

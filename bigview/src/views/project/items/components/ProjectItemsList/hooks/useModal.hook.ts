@@ -51,9 +51,10 @@ export const useModalDataInit = () => {
     const name = `${srcRes.data.projectName} 副本`
     const createRes: any = await createProjectApi({ projectName: name, remarks: srcRes.data.remarks })
     if (!createRes || createRes.code !== ResultEnum.SUCCESS || !createRes.data) return
-    const newId = createRes.data.id
+    const newId = createRes.data
     const saveRes = await saveProjectApi({
       id: `${newId}`,
+      indexImage: srcRes.data.indexImage,
       content: srcRes.data.content || '{}'
     })
     if (!saveRes || saveRes.code !== ResultEnum.SUCCESS) return

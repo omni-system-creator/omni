@@ -59,7 +59,7 @@ export const getWorkflowInstanceList = async (params: any) => {
 
 export const getWorkflowInstanceData = async (params: any, signal?: AbortSignal) => {
   try {
-    const res = await http(RequestHttpEnum.GET)<any>(`instance/data`, params, { signal })
+    const res = await http(RequestHttpEnum.GET)<any>(`instance/data`, params, { signal } as any)
     return res
   } catch (err) {
     httpErrorHandle()
@@ -83,7 +83,7 @@ export const uploadDatasourceFileApi = async (file: File, fileType: 'json' | 'cs
       headers: {
         'Content-Type': 'multipart/form-data'
       }
-    })
+    } as any)
     return res
   } catch (err) {
     httpErrorHandle()

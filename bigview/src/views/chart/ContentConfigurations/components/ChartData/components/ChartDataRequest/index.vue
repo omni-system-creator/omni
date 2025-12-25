@@ -99,13 +99,9 @@ const onEsc = () => {
   .n-card-shallow {
     background-color: rgba(0, 0, 0, 0) !important;
   }
-  @include deep() {
-    & > .n-card__content {
+  :deep(.n-card__content) {
       padding-right: 0;
-    }
-    .n-card__content {
       padding-bottom: 5px;
     }
-  }
 }
 </style>

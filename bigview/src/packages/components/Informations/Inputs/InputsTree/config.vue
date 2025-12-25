@@ -87,5 +87,5 @@ defineProps({
 })
 </script>
 <style scoped lang="scss">
-@import '../../../../../views/chart/ContentConfigurations/components/ChartEvent/components/index.scss';
+@use '../../../../../views/chart/ContentConfigurations/components/ChartEvent/components/index.scss';
 </style>

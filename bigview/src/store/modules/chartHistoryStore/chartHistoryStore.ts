@@ -51,8 +51,9 @@ export const useChartHistoryStore = defineStore({
           [HistoryStackItemEnum.ID]: new Date().getTime().toString(),
           [HistoryStackItemEnum.HISTORY_DATA]: item,
           [HistoryStackItemEnum.ACTION_TYPE]: actionType,
-          [HistoryStackItemEnum.TARGET_TYPE]: targetType
-        } as const)
+          [HistoryStackItemEnum.TARGET_TYPE]: targetType,
+          useChartHistoryList: []
+        })
       )
     },
     // * 画布初始化

@@ -32,7 +32,6 @@ import { CreateComponentType } from '@/packages/index.d'
 import { requireErrorImg } from '@/utils'
 import { useChartDataFetch } from '@/hooks'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
-import { option as configOption } from './config'
 
 const props = defineProps({
   chartConfig: {
@@ -42,7 +41,7 @@ const props = defineProps({
 })
 
 const option = shallowReactive({
-  dataset: configOption.dataset
+  dataset: props.chartConfig.option.dataset
 })
 
 const { w, h } = toRefs(props.chartConfig.attr)

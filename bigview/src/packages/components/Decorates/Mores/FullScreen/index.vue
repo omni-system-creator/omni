@@ -16,11 +16,10 @@
 <script setup lang="ts">
 import { PropType, toRefs, ref, onMounted, onUnmounted } from 'vue'
 import { CreateComponentType } from '@/packages/index.d'
-import { option } from './config'
 
 const props = defineProps({
   chartConfig: {
-    type: Object as PropType<CreateComponentType & typeof option>,
+    type: Object as PropType<CreateComponentType>,
     required: true
   }
 })

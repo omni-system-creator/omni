@@ -189,13 +189,13 @@ const showModal = computed({
   set: (value) => emit('update:show', value)
 })
 
-const containerData = ref({})
+const containerData = ref<any>({})
 const xAxisDialogVisible = ref(false)
 const yAxisDialogVisible = ref(false)
 const seriesDialogVisible = ref(false)
-const currentXAxis = ref({})
-const currentYAxis = ref({})
-const currentSeries = ref({})
+const currentXAxis = ref<any>({})
+const currentYAxis = ref<any>({})
+const currentSeries = ref<any>({})
 const currentEditIndex = ref(-1)
 
 // 计算属性

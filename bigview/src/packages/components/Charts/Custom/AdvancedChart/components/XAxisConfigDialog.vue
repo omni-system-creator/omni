@@ -292,8 +292,11 @@ const axisData = ref({
   type: 'value',
   position: 'bottom',
   offset: 0,
+  min: undefined as number | undefined,
+  max: undefined as number | undefined,
   datasourceIndex: 0,
   dataField: '',
+  logBase: 10,
   customLabels: {
     enabled: false,
     textValue: '',

@@ -3,7 +3,8 @@
     <template #header> 
       <n-button type="primary" size="small"  title="添加X轴" @click="addXaxis">添加X轴</n-button>
     </template>
-  <collapse-item v-if="xAxisList.length > 0 " :name="`X轴 ${xAxis.name}`" v-for="(xAxis, i) in xAxisList">
+  <template v-if="xAxisList.length > 0">
+  <collapse-item :key="i" :name="`X轴 ${xAxis.name}`" v-for="(xAxis, i) in xAxisList">
     <template #header>
       <n-switch v-model:value="xAxis.show" size="small"></n-switch>
     </template>
@@ -113,6 +114,7 @@
       </setting-item>
     </setting-item-box> -->
   </collapse-item> 
+  </template>
   </collapse-item>
 </template>
 

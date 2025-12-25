@@ -68,7 +68,7 @@ export interface HistoryItemType {
   [HistoryStackItemEnum.ACTION_TYPE]: HistoryActionTypeEnum
   [HistoryStackItemEnum.HISTORY_DATA]: CreateComponentType[] | CreateComponentGroupType[] | EditCanvasType[]
   // 新增保存数据字段
-  useChartHistoryList: any
+  useChartHistoryList?: any
 }
 
 // 历史 Store 类型

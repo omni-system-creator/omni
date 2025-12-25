@@ -234,6 +234,14 @@ import SettingItem from '@/components/Pages/ChartItemSetting/SettingItem.vue'
 import ColorPicker from './ColorPicker.vue'
 import { getBestTextColor } from '@/utils/colorUtils'
 import { TrashOutline } from '@vicons/ionicons5'
+import { readFile, downloadTextFile } from '@/utils'
+
+// 简单的CSV头解析
+const parseCSVHeaders = (text: string) => {
+  const firstLine = text.split(/\r?\n/)[0]
+  if (!firstLine) return []
+  return firstLine.split(',').map(h => h.trim())
+}
 
 interface Props {
   show: boolean
@@ -330,7 +338,6 @@ const zeroHandlingOptions = [
   { label: '替换为指定值', value: 'replace' },
   { label: '使用绝对值', value: 'absolute' }
 ]
-import { parseCSVHeaders, downloadTextFile, readFile } from '@/utils/file'
 
 // 计算字段选项
 const fieldOptions = computed(() => {
@@ -478,7 +485,7 @@ const downloadMarkAreaCsvTemplate = () => {
   const header = 'name,start_xAxis,end_xAxis,color\n'
   const example = '区域1,07:30,10:00,#d0e3ff\n'
   downloadTextFile(header + example, 'markArea_template', 'csv')
-  window['$message'].success('CSV模板已下载')
+  ;(window as any).$message.success('CSV模板已下载')
 }
 
 const downloadMarkAreaJsonTemplate = () => {
@@ -486,7 +493,7 @@ const downloadMarkAreaJsonTemplate = () => {
     { name: '区域1', start_xAxis: '07:30', end_xAxis: '10:00', color: '#d0e3ff' }
   ]
   downloadTextFile(JSON.stringify(tpl, null, 2), 'markArea_template', 'json')
-  window['$message'].success('JSON模板已下载')
+  ;(window as any).$message.success('JSON模板已下载')
 }
 
 const triggerImport = (type: 'csv' | 'json') => {

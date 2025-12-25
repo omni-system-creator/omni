@@ -68,10 +68,10 @@ keyRecordHandle()
 
 <style lang="scss" scoped>
 .light{
-  background-image: linear-gradient(120deg, $--color-light-bg 0%, $--color-light-bg 100%) !important;
+  background-image: linear-gradient(120deg, $color-light-bg 0%, $color-light-bg 100%) !important;
 }
 .dark{
-  background-image: linear-gradient(120deg, $--color-dark-bg-1 0%, $--color-dark-bg-1 100%) !important;
+  background-image: linear-gradient(120deg, $color-dark-bg-1 0%, $color-dark-bg-1 100%) !important;
 }
 
 @include go('preview') {

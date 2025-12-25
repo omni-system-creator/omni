@@ -42,7 +42,7 @@ const props = defineProps({
   }
 })
 //关键字
-let keywords = props.formulaFunctions.map((item:any) => item?.label)
+let keywords = (props.formulaFunctions as any[]).map((item: { label: string }) => item?.label)
 const mirrorRef = ref();
 const editor = ref<EditorView>();
 //匹配规则
@@ -120,9 +120,9 @@ class PlaceholderWidget extends WidgetType {
 
 //标签元素匹配器
 const placeholderMatcher = new MatchDecorator({
-  regexp: /\{(\w+)\}/g,
-  decoration: (match) => {
-    let res = props.entityFields.find((item:any) => item?.value == match[1]);
+  regexp: /\{([^{}]+)\}/g,
+  decoration: (match: RegExpExecArray) => {
+    let res = (props.entityFields as any[]).find((item: { value: string, label: string }) => item?.value == match[1]);
     let label = !res ? match[1] : res.label;
     return Decoration.replace({
       widget: new PlaceholderWidget(label),

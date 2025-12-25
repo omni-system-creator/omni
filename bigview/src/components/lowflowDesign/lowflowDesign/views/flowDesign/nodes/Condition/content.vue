@@ -1,21 +1,21 @@
-<script setup lang="tsx">
+<script setup lang="ts">
 import {ConditionNode} from './index'
-import {ref, VNode, watchEffect} from "vue";
+import {computed} from "vue";
 
 export interface ConditionContentProps {
   node: ConditionNode
 }
 
-const $props = withDefaults(defineProps<ConditionContentProps>(), {})
-const showContent = ref<VNode>((<span></span>))
-watchEffect(() => {
-  if ($props.node.def) {
-    return showContent.value = <span>不满足条件时，进入默认条件</span>
-  } else if ($props.node.conditions.conditions.length > 0 || $props.node.conditions.groups.length > 0) {
-    const count = $props.node.conditions.conditions.length + $props.node.conditions.groups.length
-    showContent.value = <span>{`已设置（${count}）个条件`}</span>
+const props = withDefaults(defineProps<ConditionContentProps>(), {})
+
+const contentText = computed(() => {
+  if (props.node.def) {
+    return '不满足条件时，进入默认条件'
+  } else if (props.node.conditions.conditions.length > 0 || props.node.conditions.groups.length > 0) {
+    const count = props.node.conditions.conditions.length + props.node.conditions.groups.length
+    return `已设置（${count}）个条件`
   } else {
-    showContent.value = <span>未设置条件</span>
+    return '未设置条件'
   }
 })
 
@@ -23,7 +23,7 @@ watchEffect(() => {
 
 <template>
   <el-text>
-    <showContent></showContent>
+    {{ contentText }}
   </el-text>
 </template>
 

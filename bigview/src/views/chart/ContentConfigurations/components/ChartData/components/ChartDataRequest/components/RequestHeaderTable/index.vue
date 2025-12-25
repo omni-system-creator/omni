@@ -144,17 +144,15 @@ watch(
 <style lang="scss">
 @include go('request-header-table-box') {
   background-color: rgba(0, 0, 0, 0);
-  @include deep() {
-    .n-data-table .n-data-table-td {
-      background-color: rgba(0, 0, 0, 0);
-    }
-    .add-btn-box {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      .add-btn {
-        width: 300px;
-      }
+  :deep(.n-data-table .n-data-table-td) {
+    background-color: rgba(0, 0, 0, 0);
+  }
+  .add-btn-box {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    .add-btn {
+      width: 300px;
     }
   }
 }

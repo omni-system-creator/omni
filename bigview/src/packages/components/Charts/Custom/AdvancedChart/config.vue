@@ -331,7 +331,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, PropType } from 'vue'
 import cloneDeep from 'lodash/cloneDeep'
 import { CollapseItem, SettingItemBox, SettingItem } from '@/components/Pages/ChartItemSetting'
 import { NInput, NInputNumber, NSelect, NButton, NModal, NCard, NIcon } from 'naive-ui'
@@ -343,9 +343,19 @@ import SeriesConfigDialog from './components/SeriesConfigDialog.vue'
 import DatasourceConfigDialog from './components/DatasourceConfigDialog.vue'
 import { GlobalThemeJsonType } from '@/settings/chartThemes'
 
+type AdvancedChartOptionType = GlobalThemeJsonType & {
+  legend: any
+  tooltip: any
+  dataZoom: any
+  showLegend: boolean
+  multiDatasource: boolean
+  containers: any[]
+  datasources: any[]
+}
+
 const props = defineProps({
   optionData: {
-    type: Object as PropType<GlobalThemeJsonType>,
+    type: Object as PropType<AdvancedChartOptionType>,
     required: true
   }
 })
@@ -550,7 +560,7 @@ const getXAxisOptions = (containerIndex: number) => {
   if (!container || !container.xAxis || !Array.isArray(container.xAxis)) {
     return []
   }
-  return container.xAxis.map((axis, index) => ({
+  return container.xAxis.map((axis: any, index: number) => ({
     label: axis.name || `X轴${index + 1}`,
     value: index
   }))
@@ -562,7 +572,7 @@ const getYAxisOptions = (containerIndex: number) => {
   if (!container || !container.yAxis || !Array.isArray(container.yAxis)) {
     return []
   }
-  return container.yAxis.map((axis, index) => ({
+  return container.yAxis.map((axis: any, index: number) => ({
     label: axis.name || `Y轴${index + 1}`,
     value: index
   }))

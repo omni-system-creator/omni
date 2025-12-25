@@ -1,0 +1,2 @@
+检查错误
+npx vue-tsc --noEmit

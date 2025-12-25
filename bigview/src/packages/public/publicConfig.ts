@@ -31,7 +31,8 @@ export const requestConfig: RequestConfigType = {
     sql: 'select * from  where',
     id: '',
     key: '',
-    aux: {}
+    aux: {},
+    fileds: []
   },
   requestParams: {
     Body: {

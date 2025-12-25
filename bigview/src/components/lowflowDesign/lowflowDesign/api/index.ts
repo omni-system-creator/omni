@@ -2,9 +2,8 @@ import axios, {
     AxiosInstance,
     AxiosError,
     AxiosRequestConfig,
-    InternalAxiosRequestConfig,
     AxiosResponse
-} from 'axios'
+} from 'axios';
 import {ElNotification} from "element-plus";
 
 export interface Result {
@@ -47,7 +46,7 @@ class RequestHttp {
         this.service = axios.create(config)
         // 请求拦截
         this.service.interceptors.request.use(
-            (config: InternalAxiosRequestConfig) => {
+            (config: AxiosRequestConfig) => {
                 // config.headers['Authorization'] = "Bearer 87779e5a-3342-4df6-865d-d8828800d6fb"
                 return config
             },
@@ -150,7 +149,7 @@ class RequestHttp {
      * @param data
      * @param config
      */
-    download(url: string, data?: object, config = {}): Promise<BlobPart> {
+    download(url: string, data?: object, config = {}): Promise<Blob> {
         return this.service.post(url, data, { ...config, responseType: 'blob' })
     }
 }

@@ -1,5 +1,5 @@
 import {MockMethod} from "vite-plugin-mock";
-import {ResultData} from "../src/api";
+import {ResultData} from "../lowflowDesign/api";
 
 const roleList = [
     {

@@ -407,7 +407,7 @@ const title = computed(() => {
 })
 
 const xAxis = computed(() => {
-  return props.optionData.xAxis
+  return props.optionData.xAxis as any
 })
 
 const yAxis = computed(() => {

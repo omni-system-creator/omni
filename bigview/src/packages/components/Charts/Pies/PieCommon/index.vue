@@ -19,12 +19,14 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { PieChart } from 'echarts/charts'
 import { mergeTheme } from '@/packages/public/chart'
-import config, { includes } from './config'
 import { useChartDataFetch } from '@/hooks'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
 import { isPreview } from '@/utils'
 import { DatasetComponent, GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
+import { CreateComponentType } from '@/packages/index.d'
 import dataJson from './data.json'
+
+const includes = ['legend']
 
 const props = defineProps({
   themeSetting: {
@@ -36,7 +38,7 @@ const props = defineProps({
     required: true
   },
   chartConfig: {
-    type: Object as PropType<config>,
+    type: Object as PropType<CreateComponentType>,
     required: true
   }
 })

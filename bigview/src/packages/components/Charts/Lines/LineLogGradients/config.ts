@@ -21,7 +21,7 @@ const option = {
     type: 'log',
     max: 1000,
     axisLabel: {
-      formatter: function (v) {
+      formatter: function (v: any) {
         return '{base|10}{power|' + Math.log10(v) + '}';
       },
       rich: {
@@ -39,7 +39,7 @@ const option = {
     show: true,
     type: 'log',
     axisLabel: {
-      formatter: function (v) {
+      formatter: function (v: any) {
         return '{base|10}{power|' + Math.log10(v) + '}';
         // return v;
       },

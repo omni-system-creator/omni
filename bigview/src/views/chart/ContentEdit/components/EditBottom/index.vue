@@ -171,10 +171,8 @@ $max-width: 670px;
     .scale-btn {
       width: 90px;
       font-size: 12px;
-      @include deep() {
-        .n-base-selection-label {
-          padding: 3px;
-        }
+      :deep(.n-base-selection-label) {
+        padding: 3px;
       }
     }
     .scale-slider {

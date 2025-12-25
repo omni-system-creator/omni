@@ -7,13 +7,12 @@ import { onMounted, PropType, ref, toRefs, watch } from 'vue'
 import { CreateComponentType } from '@/packages/index.d'
 import { useChartDataFetch } from '@/hooks'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
-import { option } from './config'
 import World from './code/world/Word'
 import throttle from 'lodash/throttle'
 
 const props = defineProps({
   chartConfig: {
-    type: Object as PropType<CreateComponentType & typeof option>,
+    type: Object as PropType<CreateComponentType>,
     required: true
   }
 })

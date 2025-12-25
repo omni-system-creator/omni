@@ -168,7 +168,8 @@ import {
   NInput, 
   NDatePicker, 
   NDivider, 
-  NPagination 
+  NPagination,
+  DataTableColumns
 } from 'naive-ui'
 import { getWorkflowInstanceList, getWorkflowInstanceData } from '@/api/path/system.api'
 
@@ -196,7 +197,7 @@ interface Emits {
 interface FilterForm {
   name: string
   defineName: string
-  createTimeRange: [string, string] | null
+  createTimeRange: any
 }
 
 // 分页接口
@@ -272,10 +273,9 @@ const formatDateTime = (dateTime: string | Date): string => {
 }
 
 // 工作流实例表格列配置
-const workflowInstanceColumns = [
+const workflowInstanceColumns: DataTableColumns<WorkflowInstance> = [
   {
     type: 'selection',
-    multiple: false
   },
   {
     title: '实例名称',
@@ -361,8 +361,10 @@ const loadWorkflowInstanceList = async () => {
     }
     
     const res = await getWorkflowInstanceList(params)
-    workflowInstanceList.value = res.rows || []
-    totalCount.value = res.total || 0
+    if (res) {
+      workflowInstanceList.value = (res as any).rows || []
+      totalCount.value = (res as any).total || 0
+    }
   } catch (error) {
     console.error('加载工作流实例列表失败:', error)
     workflowInstanceList.value = []
@@ -373,8 +375,8 @@ const loadWorkflowInstanceList = async () => {
 }
 
 // 处理工作流实例选择
-const handleSelect = (keys: string[]) => {
-  selectedKeys.value = keys
+const handleSelect = (keys: (string | number)[]) => {
+  selectedKeys.value = keys as string[]
 }
 
 // 处理行点击选中
@@ -391,8 +393,8 @@ const handleRowClick = async (row: WorkflowInstance) => {
       dataLoading.value = true
       const res = await getWorkflowInstanceData({ taskId, format: props.format, size: 5})
       console.log('+++', res)
-      if(res && (props.format === 'csv' && res.data) || (props.format === 'json' && res.data.length > 0)) {
-        sampleData.value = res.data;
+      if(res && (props.format === 'csv' && (res as any).data) || (props.format === 'json' && (res as any).data && (res as any).data.length > 0)) {
+        sampleData.value = (res as any).data;
         selectedKeys.value = [taskId]
       } else {
         // 没有数据时显示提示信息
@@ -473,7 +475,7 @@ const handleCancel = () => {
 // 处理确认
 const handleConfirm = () => {
   if (selectedKeys.value.length === 0) {
-    window.$message?.warning('请选择一个工作流实例')
+    (window as any).$message?.warning('请选择一个工作流实例')
     return
   }
   

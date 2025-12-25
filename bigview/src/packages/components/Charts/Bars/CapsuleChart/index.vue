@@ -55,8 +55,20 @@
 import { onMounted, watch, reactive, PropType } from 'vue'
 import { useChartDataFetch } from '@/hooks'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
-import config, { option } from './config'
 import cloneDeep from 'lodash/cloneDeep'
+import { CreateComponentType } from '@/packages/index.d'
+import dataJson from './data.json'
+
+const option = {
+  dataset: dataJson,
+  colors: ['#c4ebad', '#6be6c1', '#a0a7e6', '#96dee8', '#3fb1e3' ],
+  unit: '',
+  itemHeight: 10,
+  valueFontSize: 16,
+  paddingRight: 50,
+  paddingLeft: 50,
+  showValue: true
+}
 
 type DataProps = {
   name: string | number
@@ -87,7 +99,7 @@ interface StateProps {
 
 const props = defineProps({
   chartConfig: {
-    type: Object as PropType<config>,
+    type: Object as PropType<CreateComponentType>,
     default: () => ({})
   }
 })

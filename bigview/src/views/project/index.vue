@@ -42,7 +42,7 @@ import { goDialog } from '@/utils'
 <style lang="scss" scoped>
 @include go(project) {
   .content-top {
-    top: $--header-height;
+    top: $header-height;
     margin-top: 1px;
   }
 }

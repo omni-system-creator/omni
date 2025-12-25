@@ -1,6 +1,10 @@
-@import './config.scss';
-@import './function.scss';
-@import '../theme.scss';
+@use "sass:map";
+@use './config.scss' as *;
+@use '../theme.scss' as *;
+
+@function themed($key) {
+  @return map.get($theme-map, $key);
+}
 
 @mixin go($block) {
   $B: $namespace + '-' + $block;

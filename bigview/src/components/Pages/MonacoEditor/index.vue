@@ -59,7 +59,7 @@ const insertCode = (val: string = `console.log('插入的代码');`) => {
     ])
     monacoEditor.setPosition({
       lineNumber: position.lineNumber + 1,
-      column: codeToInsert.split('\n').pop().length + 1
+      column: (codeToInsert.split('\n').pop()?.length || 0) + 1
     })
   }
 }

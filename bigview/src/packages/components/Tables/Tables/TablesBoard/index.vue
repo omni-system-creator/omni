@@ -24,7 +24,7 @@
         border-style: ${option.style.borderStyle}
       `"
       :bordered="option.style.border === 'on'"
-      :row-key="record => record.key"
+      :row-key="(record: any) => record.key"
       :columns="option.dataset.dimensions"
       :data-source="filterData"
       :pagination="false"
@@ -94,7 +94,7 @@ const tableRef = ref(null)
 let intervalId: any = null
 
 const startCarousel = () => {
-  const tableBody = tableRef.value.$el.querySelector('.ant-table-body')
+  const tableBody = (tableRef.value as any).$el.querySelector('.ant-table-body')
   let scrollLeft = 0
   // 计算滚动条的实际长度
   const scrollbarWidth = tableBody.scrollWidth - tableBody.clientWidth

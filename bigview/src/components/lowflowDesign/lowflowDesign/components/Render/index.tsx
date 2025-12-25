@@ -1,4 +1,5 @@
 import {defineAsyncComponent, defineComponent, h, PropType, resolveComponent} from "vue";
+import { ElOption, ElRadio, ElCheckbox } from 'element-plus'
 import cloneDeep from 'lodash/cloneDeep'
 import {Field} from "./interface";
 
@@ -55,17 +56,17 @@ export default defineComponent({
             const slotFunctions: Record<string, any> = {
                 Select: (conf: Field) => {
                     return conf.props.options.map((item: any) => {
-                        return <el-option label={item.label} value={item.value}></el-option>
+                        return <ElOption label={item.label} value={item.value}></ElOption>
                     })
                 },
                 Radio: (conf: Field) => {
                     return conf.props.options.map((item: any) => {
-                        return <el-radio label={item.value}>{item.label}</el-radio>
+                        return <ElRadio label={item.value}>{item.label}</ElRadio>
                     })
                 },
                 Checkbox: (conf: Field) => {
                     return conf.props.options.map((item: any) => {
-                        return <el-checkbox label={item.value}>{item.label}</el-checkbox>
+                        return <ElCheckbox label={item.value}>{item.label}</ElCheckbox>
                     })
                 }
             }

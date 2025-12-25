@@ -102,7 +102,7 @@ const showToolTip = (e: any) => {
         :autoExpandParent="autoExpandParent"
         show-line
         v-if="showTree.length > 0"
-        :tree-data="showTree"
+        :tree-data="showTree as any"
         :fieldNames="props.fieldNames"
         :style="{
         height:props.isSearch?'calc(100% - 60px) !important':'calc(100% - 20px)!important',

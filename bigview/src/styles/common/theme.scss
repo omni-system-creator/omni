@@ -1,6 +1,6 @@
-@import './mixins/config.scss';
-@import './_dark.scss';
-@import './_light.scss';
+@use './mixins/config.scss' as *;
+@use './_dark.scss' as *;
+@use './_light.scss' as *;
 
 $themes: (
   // 亮白

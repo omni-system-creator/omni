@@ -342,6 +342,7 @@ $color-item-radius: 4px;
             border-radius: $color-radius;
             border: 2px solid rgba(0, 0, 0, 0);
             border-bottom: 1px solid rgba(0, 0, 0, 0);
+            @extend .go-background-filter;
             @include fetch-bg-color('background-color4-shallow');
 
             @include deep() {
@@ -378,16 +379,14 @@ $color-item-radius: 4px;
     }
   }
   &.n-card.n-modal,
-  .n-card {
-    @extend .go-background-filter;
-  }
+    .n-card {
+      @extend .go-background-filter;
+    }
   .n-card-shallow {
     background-color: rgba(0, 0, 0, 0) !important;
   }
-  @include deep() {
-    & > .n-card__content {
+  :deep(.n-card__content) {
       padding-right: 0;
     }
-  }
 }
 </style>

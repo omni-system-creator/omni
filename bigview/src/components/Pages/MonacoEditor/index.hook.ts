@@ -58,7 +58,7 @@ export const useMonacoEditor = (language = 'javascript') => {
       automaticLayout: true,
       ...editorOption
     })
-    if (!window.firstInit) {
+    if (!(window as any).firstInit) {
       monaco.languages.registerCompletionItemProvider('javascript', {
         provideCompletionItems:
           (): languages.ProviderResult<languages.CompletionList> => {
@@ -101,7 +101,7 @@ export const useMonacoEditor = (language = 'javascript') => {
           },
       });
     }
-    window.firstInit = true
+    (window as any).firstInit = true
 
     return monacoEditor
   }

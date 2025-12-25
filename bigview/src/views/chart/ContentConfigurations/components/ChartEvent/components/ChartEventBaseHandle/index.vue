@@ -608,7 +608,7 @@ const renderSingleSelectTag: SelectRenderTag = ({ option }) => {
           marginRight: '12px'
         }
       }),
-      option.chartConfig.title as string
+      (option as any).chartConfig.title as string
     ]
   )
 }
@@ -623,7 +623,7 @@ const renderLabel: SelectRenderLabel = option => {
     },
     [
       h(NAvatar, {
-        src: getImgSrc(option.chartConfig),
+        src: getImgSrc((option as any).chartConfig),
         round: false,
         size: 'small'
       }),
@@ -636,12 +636,12 @@ const renderLabel: SelectRenderLabel = option => {
           }
         },
         [
-          h('div', null, [option.chartConfig.title as string]),
+          h('div', null, [(option as any).chartConfig.title as string]),
           h(
             NText,
             { depth: 3, tag: 'div' },
             {
-              default: () => `id: ${option.id}${option.status.hide ? '  【隐藏】' : ''}`
+              default: () => `id: ${option.id}${(option as any).status.hide ? '  【隐藏】' : ''}`
             }
           )
         ]
@@ -674,7 +674,7 @@ const handleClear2 = () => {
 const canInsert = computed(() => {
   if (valueOperate.value === 'set') {
     return (
-      valueComponent.value !== null && propOperate.value !== '' && valueOperate.value !== '' && varOperate.value !== ''
+      valueComponent.value !== null && propOperate.value !== '' && varOperate.value !== ''
     )
   } else {
     return valueComponent.value !== null && propOperate.value !== '' && valueOperate.value !== ''
@@ -769,7 +769,7 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-@import '../index.scss';
+@use '../index.scss';
 
 :deep(.n-layout-sider-scroll-container) {
   overflow: none;

@@ -20,7 +20,6 @@ import { useCanvasInitOptions } from '@/hooks/useCanvasInitOptions.hook'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
-import config, { includes, seriesItem } from './config'
 import { mergeTheme } from '@/packages/public/chart'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
 import { useChartDataFetch } from '@/hooks'
@@ -28,6 +27,28 @@ import { isPreview } from '@/utils'
 import { DatasetComponent, GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import isObject from 'lodash/isObject'
 import { json } from 'stream/consumers'
+import { CreateComponentType } from '@/packages/index.d'
+
+const includes = ['legend', 'xAxis', 'yAxis', 'grid']
+const seriesItem = {
+  type: 'line',
+  label: {
+    show: true,
+    position: 'top',
+    color: '#fff',
+    fontSize: 12
+  },
+  symbolSize: 5, //设定实心点的大小
+  itemStyle: {
+    color: null,
+    borderRadius: 0
+  },
+  lineStyle: {
+    type: 'solid',
+    width: 3,
+    color: null
+  }
+}
 
 const props = defineProps({
   themeSetting: {
@@ -39,7 +60,7 @@ const props = defineProps({
     required: true
   },
   chartConfig: {
-    type: Object as PropType<config>,
+    type: Object as PropType<CreateComponentType>,
     required: true
   }
 })
@@ -51,7 +72,7 @@ use([DatasetComponent, CanvasRenderer, LineChart, GridComponent, TooltipComponen
 const replaceMergeArr = ref<string[]>()
 
 const option = computed(() => {
-  const a = mergeTheme(props.chartConfig.option, props.themeSetting, includes).series.map(series  =>({
+  const a = mergeTheme(props.chartConfig.option, props.themeSetting, includes).series.map((series: any)  =>({
     ...series,
     smooth: true, // 添加平滑处理
   }))
@@ -59,15 +80,15 @@ const option = computed(() => {
   b.series= a
   const X =b.dataset.dimensions[0]
   const seen = new Set();
-  const uniqueItems = [];
-  b.dataset.source.forEach(item => {
+  const uniqueItems: any[] = [];
+  b.dataset.source.forEach((item: any) => {
     if (!seen.has(item[X])) {
     seen.add(item[X]);
     uniqueItems.push(item);
   }
   })
   // 对 uniqueItems 按照 x 轴数据进行排序
-  uniqueItems.sort((item1, item2) => {
+  uniqueItems.sort((item1: any, item2: any) => {
     // 假设 x 轴数据是数值类型，如果是字符串类型请使用合适的比较方法
     return item1[X] - item2[X];
   });

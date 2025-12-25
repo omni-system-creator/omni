@@ -109,31 +109,31 @@ export default defineComponent({
   },
   emits: ['confirm'],
   setup(props, { emit, slots }) {
-    const { modalOptions, formOptions, editorOptions, funcOptions, explainOptions } = props;
+    // const { modalOptions, formOptions, editorOptions, funcOptions, explainOptions } = props;
 
     // Modal 弹窗配置
     const modalParams = reactive({
       open: false,
-      ...modalOptions,
+      ...props.modalOptions,
     });
 
     // 左侧变量树配置
-    const { treeData: formTreeData, showParentByNameSpace } = formOptions as any;
+    const { treeData: formTreeData, showParentByNameSpace } = props.formOptions as any;
     const formParams = reactive({
-      ...formOptions,
+      ...props.formOptions,
       treeData: groupByNamespace(formTreeData),
     });
 
     // 右侧函数树配置
-    const { treeData: funcTreeData } = funcOptions as any;
+    const { treeData: funcTreeData } = props.funcOptions as any;
     const funcParams = reactive({
-      ...funcOptions,
+      ...props.funcOptions,
       treeData: groupByNamespace(funcTreeData),
     });
 
     // 解释器配置
     const explainParams = reactive({
-      ...explainOptions,
+      ...props.explainOptions,
     });
 
     // 编辑器配置
@@ -170,7 +170,7 @@ export default defineComponent({
     const handleDialog = () => {
       modalParams.open = true;
       nextTick(() => {
-        codeEditorRef.value.setEditorValue((editorOptions as any)['docs']);
+        codeEditorRef.value.setEditorValue((props.editorOptions as any)['docs']);
       });
     };
 

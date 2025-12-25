@@ -146,7 +146,7 @@ import { GlobalSetting, CollapseItem, SettingItemBox, SettingItem } from '@/comp
 
 const props = defineProps({
   optionData: {
-    type: Object as PropType<GlobalThemeJsonType>,
+    type: Object as PropType<any>,
     required: true
   }
 })

@@ -18,7 +18,6 @@ import { useCanvasInitOptions } from '@/hooks/useCanvasInitOptions.hook'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
-import config, { includes, seriesItem } from './config'
 import { mergeTheme } from '@/packages/public/chart'
 import { useChartDataFetch } from '@/hooks'
 import { CreateComponentType } from '@/packages/index.d'
@@ -27,6 +26,22 @@ import { isPreview } from '@/utils'
 import { DatasetComponent, GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
 import isObject from 'lodash/isObject'
 import cloneDeep from 'lodash/cloneDeep'
+
+const includes = ['legend', 'xAxis', 'yAxis', 'grid']
+const seriesItem = {
+  type: 'bar',
+  barWidth: 15,
+  label: {
+    show: true,
+    position: 'top',
+    color: '#fff',
+    fontSize: 12
+  },
+  itemStyle: {
+    color: null,
+    borderRadius: 2
+  }
+}
 
 const props = defineProps({
   themeSetting: {
@@ -38,7 +53,7 @@ const props = defineProps({
     required: true
   },
   chartConfig: {
-    type: Object as PropType<config>,
+    type: Object as PropType<CreateComponentType>,
     required: true
   }
 })

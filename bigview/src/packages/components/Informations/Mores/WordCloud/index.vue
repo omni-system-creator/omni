@@ -17,13 +17,15 @@ import { useCanvasInitOptions } from '@/hooks/useCanvasInitOptions.hook'
 import 'echarts-wordcloud'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import config, { includes } from './config'
 import { mergeTheme, setOption } from '@/packages/public/chart'
 import { useChartDataFetch } from '@/hooks'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
 import { isPreview } from '@/utils'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import dataJson from './data.json'
+import { CreateComponentType } from '@/packages/index.d'
+
+const includes: string[] = []
 
 const props = defineProps({
   themeSetting: {
@@ -35,7 +37,7 @@ const props = defineProps({
     required: true
   },
   chartConfig: {
-    type: Object as PropType<config>,
+    type: Object as PropType<CreateComponentType>,
     required: true
   }
 })

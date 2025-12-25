@@ -53,7 +53,7 @@
                 size="small"
                 placeholder="请输入JSON格式的数据，例如：&#10;[&#10;  {&quot;name&quot;: &quot;A&quot;, &quot;value&quot;: 100},&#10;  {&quot;name&quot;: &quot;B&quot;, &quot;value&quot;: 200}&#10;]"
                 :autosize="{ minRows: 4, maxRows: 8 }"
-                :status="getJsonValidationStatus(item.staticData)"
+                :status="getJsonValidationStatus(item.staticData || '') as any"
                 @blur="validateJson(item, index)"
               />
               <div v-if="item.jsonError" class="json-error">
@@ -72,7 +72,7 @@
                 size="small"
                 placeholder="请输入CSV格式的数据，例如：&#10;name,value&#10;A,100&#10;B,200"
                 :autosize="{ minRows: 4, maxRows: 8 }"
-                :status="getCsvValidationStatus(item.csvData)"
+                :status="getCsvValidationStatus(item.csvData || '') as any"
                 @blur="validateCsv(item, index)"
               />
               <div v-if="item.csvError" class="json-error">
@@ -99,7 +99,7 @@
                     accept=".json"
                     @change="handleFileUpload($event, item, index, 'json')"
                     style="display: none;"
-                    :ref="el => fileInputRefs[`json-${index}`] = el"
+                    :ref="(el: any) => fileInputRefs[`json-${index}`] = el"
                   />
                   <n-button 
                     size="small" 
@@ -147,7 +147,7 @@
                     accept=".csv"
                     @change="handleFileUpload($event, item, index, 'csv')"
                     style="display: none;"
-                    :ref="el => fileInputRefs[`csv-${index}`] = el"
+                    :ref="(el: any) => fileInputRefs[`csv-${index}`] = el"
                   />
                   <n-button 
                     size="small" 
@@ -431,7 +431,7 @@ const getJsonValidationStatus = (jsonStr: string) => {
 }
 
 // CSV验证状态
-const getCsvValidationStatus = (csvStr: string) => {
+const getCsvValidationStatus = (csvStr?: string) => {
   if (!csvStr) return undefined
   try {
     const lines = csvStr.trim().split('\n')

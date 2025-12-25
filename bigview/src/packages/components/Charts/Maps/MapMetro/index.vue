@@ -72,12 +72,14 @@ const options = ref([
 const sel_map_param_name = ref('yingdian')
 
 const vChartRef = ref<HTMLElement>()
-let map
-let hotLayer = null
+let map: any
+let hotLayer: any = null
 let zoomStart = 0
 let hot_size = 20
 let nowId = 1
-const propOptions = ref({})
+let pici: any = ''
+let shangxia: any = ''
+const propOptions = ref<any>({})
 const metroInfo = {
   tz: {
     center: [121.342, 28.4869],
@@ -133,7 +135,7 @@ const zoomArr = [
     elevationScale: 1
   }
 ]
-const handleUpdateValue = val => {
+const handleUpdateValue = (val: any) => {
   console.log('成功调用UpdateValue', val)
   sel_map_param_name.value = val
   deck_del(hotLayer)
@@ -146,7 +148,8 @@ const handleUpdateValue = val => {
   )
 }
 
-function deck_del(deckOverlay) {
+function deck_del(deckOverlay: any) {
+  if (!deckOverlay) return
   // const decklayers = deckOverlay._props.layers
   // for (let i = 0; i < decklayers.length; i++) {
   //   decklayers.splice(i, 1)
@@ -157,8 +160,8 @@ function deck_del(deckOverlay) {
   })
 }
 
-function addNewLayer(deckOverlay, param_name, size, elevationScale, radius) {
-  const label_cn = options.value.filter(map => map.value === param_name)[0].label
+function addNewLayer(deckOverlay: any, param_name: string, size: number, elevationScale: number, radius: number) {
+  const label_cn = options.value.filter((map: any) => map.value === param_name)[0].label
   let baseUrl = location.protocol + '//' + location.hostname + (location.port ? ':' + location.port : '') + '/'
   const url = `goview/project/gettz_line_ex?type=${param_name}&size=${size}&pici=${pici}&shangxia=${shangxia}`
   const nowAlpha = propOptions.value.alpha
@@ -167,9 +170,9 @@ function addNewLayer(deckOverlay, param_name, size, elevationScale, radius) {
     id: 'HexagonLayer',
     data: baseUrl + url,
     extruded: true,
-    getPosition: d => d.COORDINATES,
-    getColorWeight: d => d.VALUES,
-    getElevationWeight: d => d.VALUES,
+    getPosition: (d: any) => d.COORDINATES,
+    getColorWeight: (d: any) => d.VALUES,
+    getElevationWeight: (d: any) => d.VALUES,
     elevationAggregation: 'MAX',
     colorAggregation: 'MAX',
     elevationScale: elevationScale,
@@ -192,13 +195,13 @@ function addNewLayer(deckOverlay, param_name, size, elevationScale, radius) {
   if (deckOverlay == null) {
     const deckOverlay = new DeckOverlay({
       layers: [layer],
-      getTooltip: ({ object }) => object && `${label_cn}: ${object.elevationValue}`
+      getTooltip: ({ object }: any) => object && `${label_cn}: ${object.elevationValue}`
     })
     return deckOverlay
   } else {
     deckOverlay.setProps({
       layers: [layer],
-      getTooltip: ({ object }) => object && `${label_cn}: ${object.elevationValue}`
+      getTooltip: ({ object }: any) => object && `${label_cn}: ${object.elevationValue}`
     })
   }
 }
@@ -206,14 +209,15 @@ function addNewLayer(deckOverlay, param_name, size, elevationScale, radius) {
 const initMap = async (newData: any) => {
   // 初始化
   const baseUrlSuffix = import.meta.env.VITE_MAP_METRO_BASE_URL
-  map = new maplibregl.Map({ container: vChartRef.value, ...option.maplibreglOptions })
+  if (!vChartRef.value) return
+  map = new maplibregl.Map({ container: vChartRef.value as HTMLElement, ...(option.maplibreglOptions as any) })
   let baseUrl =
     location.protocol + '//' + location.hostname + (location.port ? ':' + location.port : '') + '/' + baseUrlSuffix
   console.log(baseUrl, 'baseUrlbaseUrl')
   const json_file = propOptions.value.line === 'all' ? 'geojson_all' : propOptions.value.line
   const res = await http(RequestHttpEnum.GET)(baseUrl + `/${json_file}.json`)
   // debugger
-  var res_station = null
+  var res_station: any = null
   if (json_file == 'geojson_fz_f1') {
     res_station = await http(RequestHttpEnum.GET)(baseUrl + `/getstation_fz_f1.json`)
   } else if (json_file == 'geojson_tz') {
@@ -313,7 +317,7 @@ const initMap = async (newData: any) => {
   })
 
   let old_id = -1
-  map.on('zoomend', event => {
+  map.on('zoomend', (event: any) => {
     const zoomEnd = map.getZoom()
     let _id = -1
     for (let i = 0; i < zoomArr.length; i++) {
@@ -327,20 +331,22 @@ const initMap = async (newData: any) => {
       if (old_id != _id) {
         old_id = _id
         nowId = _id
-        deck_del(hotLayer)
-        addNewLayer(
-          hotLayer,
-          sel_map_param_name.value,
-          zoomArr[_id].hot_size,
-          zoomArr[_id].elevationScale,
-          zoomArr[_id].radius
-        )
+        if (hotLayer) {
+          deck_del(hotLayer)
+          addNewLayer(
+            hotLayer,
+            sel_map_param_name.value,
+            zoomArr[_id].hot_size,
+            zoomArr[_id].elevationScale,
+            zoomArr[_id].radius
+          )
+        }
       }
     }
   })
 }
 
-function updateMap(option) {
+function updateMap(option: any) {
   propOptions.value = option
 
   // console.error(propOptions.value)
@@ -355,10 +361,8 @@ function updateMap(option) {
 }
 
 const dataHandle = (newData: any) => {}
-let pici = '0'
-let shangxia = '1'
 // 处理树的数据
-function handleTreeData(e) {
+function handleTreeData(e: any) {
   if (!e.children) {
     const key = e.key.split('-')
     pici = parseInt(key[0]) + 1 + ''
@@ -375,8 +379,8 @@ function handleTreeData(e) {
     )
   }
 }
-let prevPopup = null
-const addPopup = isFuzhou => {
+let prevPopup: any = null
+const addPopup = (isFuzhou: boolean) => {
   if (!propOptions.value.showLabel) {
     return
   }
@@ -386,28 +390,30 @@ const addPopup = isFuzhou => {
     prevPopup.remove()
   }
   const popup = new maplibregl.Popup({ closeOnClick: false })
-    .setLngLat(popupCoor)
+    .setLngLat(popupCoor as [number, number])
     .setHTML('<h1>' + popupTitle + '</h1>')
     .addTo(map)
   prevPopup = popup
 }
-const ChangeMetro = val => {
-  let metro_sel = null
+const ChangeMetro = (val: string) => {
+  let metro_sel: any = null
   if (val === 'tz') {
     metro_sel = metroInfo.tz
   } else if (val == 'fz_f1') {
     metro_sel = metroInfo.fz_f1
   }
-  map.flyTo({
-    center: metro_sel.center,
-    zoom: metro_sel.zoom,
-    pitch: metro_sel.pitch,
-    bearing: metro_sel.rotate
-  })
+  if (metro_sel && map) {
+    map.flyTo({
+      center: metro_sel.center,
+      zoom: metro_sel.zoom,
+      pitch: metro_sel.pitch,
+      bearing: metro_sel.rotate
+    })
+  }
   addPopup(val === 'fz_f1')
 }
 // 处理标签的数据
-function handleTabData(e) {
+function handleTabData(e: any) {
   // alert(JSON.stringify(e))
   if (e != '第二次') {
     alert('当前只导入了第二次的数据')
@@ -416,7 +422,7 @@ function handleTabData(e) {
 }
 
 onMounted(() => {
-  initMap()
+  initMap(null)
   // 可以在这里添加额外的地图交互或标记等
 })
 
@@ -441,6 +447,7 @@ watch(
   () => props.chartConfig.option.dataset,
   newData => {
     try {
+      // empty
     } catch (error) {
       console.log(error)
     }

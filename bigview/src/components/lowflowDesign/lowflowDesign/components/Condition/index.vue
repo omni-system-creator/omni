@@ -104,7 +104,7 @@ const delGroup = (index: number) => {
           <el-col :xs="24" :sm="10" v-if="item.field">
             <el-form-item :prop="'conditions.' + index + '.value'" style="width: 100%;">
               <Render
-                  :field="$props.filterFields.find(e=>e.id===item.field)"
+                  :field="$props.filterFields.find(e=>e.id===item.field) || ({} as any)"
                   v-model="item.value"
               />
             </el-form-item>

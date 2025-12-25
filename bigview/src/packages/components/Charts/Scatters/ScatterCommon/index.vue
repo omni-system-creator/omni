@@ -18,7 +18,6 @@ import {useCanvasInitOptions} from '@/hooks/useCanvasInitOptions.hook'
 import {use} from 'echarts/core'
 import {CanvasRenderer} from 'echarts/renderers'
 import {ScatterChart, EffectScatterChart} from 'echarts/charts'
-import config, {includes, seriesItem} from './config'
 import {mergeTheme} from '@/packages/public/chart'
 import {useChartEditStore} from '@/store/modules/chartEditStore/chartEditStore'
 import {useChartDataFetch} from '@/hooks'
@@ -33,6 +32,45 @@ import {
   MarkPointComponent
 } from 'echarts/components'
 import cloneDeep from 'lodash/cloneDeep'
+import { CreateComponentType } from '@/packages/index.d'
+
+const includes = ['legend', 'xAxis', 'yAxis', 'grid']
+
+const seriesItem = {
+  type: 'scatter',
+  emphasis: {
+    focus: 'series'
+  },
+  symbolSize: 12,
+  markArea: {
+    silent: true,
+    itemStyle: {
+      color: 'transparent',
+      borderWidth: 1,
+      borderType: 'dashed'
+    },
+    data: [
+      [
+        {
+          xAxis: 'min',
+          yAxis: 'min'
+        },
+        {
+          xAxis: 'max',
+          yAxis: 'max'
+        }
+      ]
+    ]
+  },
+  markPoint: {
+    symbol: 'pin',
+    symbolSize: 50,
+    data: [
+      { type: 'max', name: 'Max' },
+      { type: 'min', name: 'Min' }
+    ]
+  }
+}
 
 const props = defineProps({
   themeSetting: {
@@ -44,7 +82,7 @@ const props = defineProps({
     required: true
   },
   chartConfig: {
-    type: Object as PropType<config>,
+    type: Object as PropType<CreateComponentType>,
     required: true
   }
 })
