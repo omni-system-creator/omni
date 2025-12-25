@@ -30,7 +30,7 @@ namespace omsapi.Services
             query = query.Where(p => p.IsDelete != "1");
 
             var total = await query.CountAsync();
-            var entities = await query.OrderByDescending(p => p.CreateTime)
+            var entities = await query.OrderBy(p => p.CreateTime)
                                    .Skip((page - 1) * limit)
                                    .Take(limit)
                                    .ToListAsync();
