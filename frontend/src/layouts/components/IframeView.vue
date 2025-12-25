@@ -6,6 +6,7 @@
   <div v-for="item in iframeViews" 
        :key="tabsStore.getTabIdentity(item.fullPath)" 
        class="iframe-component-wrapper"
+       :class="{ 'active-iframe': tabsStore.getTabIdentity(route.fullPath) === tabsStore.getTabIdentity(item.fullPath) }"
        :style="getIframeStyle(item)">
     <iframe :src="getIframeUrl(item)" frameborder="0" width="100%" height="100%"></iframe>
   </div>

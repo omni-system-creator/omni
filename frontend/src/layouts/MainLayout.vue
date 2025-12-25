@@ -226,9 +226,13 @@ const breadcrumbs = computed(() => {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  position: relative;
   display: flex;
   flex-direction: column;
+}
+
+/* Hide scrollbar when iframe is active to prevent double scrolling */
+.site-layout-content:has(.active-iframe) {
+  overflow: hidden;
 }
 
 /* Transition effects */
