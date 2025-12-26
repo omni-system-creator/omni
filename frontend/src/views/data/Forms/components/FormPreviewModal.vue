@@ -147,7 +147,7 @@ const calculateValues = () => {
       try {
         let formulaStr = item.formula;
         // Replace {field} with value
-        formulaStr = formulaStr.replace(/\{(\w+)\}/g, (match: string, field: string) => {
+        formulaStr = formulaStr.replace(/\{(\w+)\}/g, (_match: string, field: string) => {
           const val = previewForm.value[field];
           return (val === null || val === undefined || val === '') ? 0 : val;
         });

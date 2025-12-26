@@ -90,7 +90,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import draggable from 'vuedraggable';
 import { DeleteOutlined } from '@ant-design/icons-vue';
 
@@ -115,12 +114,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'update:selectedIndex', 'update:selectedSubtableColumnIndex']);
 
-const selectedItem = computed(() => {
-  if (props.selectedIndex > -1 && props.selectedIndex < props.modelValue.length) {
-    return props.modelValue[props.selectedIndex];
-  }
-  return null;
-});
 
 const onItemClick = (index: number) => {
   emit('update:selectedIndex', index);

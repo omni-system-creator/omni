@@ -159,7 +159,7 @@ import {
 import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import { useRouter } from 'vue-router';
-import { getFormList, createForm, updateForm, deleteForm, getCategoryTree, type FormDefinition, getFormDetail } from '@/api/form';
+import { getFormList, createForm, updateForm, deleteForm, getCategoryTree, type FormDefinition } from '@/api/form';
 
 const props = defineProps({
   categoryId: {

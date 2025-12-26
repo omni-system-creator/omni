@@ -189,7 +189,7 @@ const cloneComponent = (origin: any) => {
 
 const canvasGroup = {
   name: 'people',
-  pull: (to: any, from: any, dragEl: any, evt: any) => {
+  pull: (to: any, _from: any, _dragEl: any, _evt: any) => {
     // When dragging to subtable, use clone to prevent layout shift (flickering)
     if (to.el.classList.contains('subtable-column-list')) {
       return 'clone';

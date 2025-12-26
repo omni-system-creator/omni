@@ -71,8 +71,7 @@ import {
   EditOutlined, 
   DeleteOutlined,
   FolderOutlined,
-  FolderOpenOutlined,
-  FileOutlined
+  FolderOpenOutlined
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import { getCategoryTree, createCategory, updateCategory, deleteCategory, type FormCategory } from '@/api/form';

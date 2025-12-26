@@ -84,7 +84,7 @@ export function updateForm(id: number, data: FormDefinition) {
   });
 }
 
-export function publishForm(id: number, isPublished: boolean) {
+export function publishForm(_id: number, _isPublished: boolean) {
   // Since we don't have a specific publish endpoint, we get the form first (or assume we have data) 
   // and then update it. However, the best way here is to just expect the component to call updateForm.
   // But to keep compatibility with existing code imports, I'll add this.

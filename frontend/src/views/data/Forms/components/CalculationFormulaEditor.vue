@@ -56,7 +56,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const formula = ref(props.modelValue);
-const textareaRef = ref();
+// const textareaRef = ref();
 
 watch(() => props.modelValue, (val) => {
   if (val !== formula.value) {
@@ -93,7 +93,7 @@ const availableFields = computed(() => {
 });
 
 const insertText = (text: string) => {
-  const textarea = textareaRef.value?.$el?.nextElementSibling || textareaRef.value?.$el; // Antdv textarea might wrap input
+  // const textarea = textareaRef.value?.$el?.nextElementSibling || textareaRef.value?.$el; // Antdv textarea might wrap input
   // Fallback if ref structure is different in different antd versions, simpler approach:
   // Just append for now, proper cursor insertion requires more DOM manipulation which might be flaky without direct access.
   // Let's try to append to end for simplicity, or use simple string concat.
