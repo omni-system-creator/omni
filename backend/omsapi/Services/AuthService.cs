@@ -63,6 +63,7 @@ namespace omsapi.Services
             await _context.SaveChangesAsync();
 
             var token = GenerateJwtToken(user.Username, user.Id);
+            var roleIds = await GetEffectiveRoleIdsAsync(user.Id);
 
             var result = new LoginResultDto
             {
@@ -74,7 +75,8 @@ namespace omsapi.Services
                     Nickname = user.Nickname,
                     Email = user.Email,
                     Phone = user.Phone,
-                    Avatar = user.Avatar
+                    Avatar = user.Avatar,
+                    Roles = roleIds
                 }
             };
 

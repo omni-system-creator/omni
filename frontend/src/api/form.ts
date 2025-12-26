@@ -50,6 +50,9 @@ export interface FormDefinition {
   isPublished?: boolean;
   requiresLogin?: boolean;
   limitOnePerUser?: boolean;
+  viewRoleIds?: string;
+  fillRoleIds?: string;
+  manageRoleIds?: string;
   hasSubmitted?: boolean;
   submittedData?: string;
   createdAt?: string;

@@ -441,5 +441,22 @@ namespace omsapi.Services
             await _context.SaveChangesAsync();
             return (true, "密码修改成功");
         }
+
+        public async Task<(bool IsAdmin, List<long> RoleIds)> GetUserPermissionsAsync(long? userId)
+        {
+            if (!userId.HasValue) return (false, new List<long>());
+
+            // Check if user is Admin
+            // Assuming Admin role code is "ADMIN"
+            var userRoles = await _context.UserRoles
+                .Where(ur => ur.UserId == userId.Value)
+                .Include(ur => ur.Role)
+                .ToListAsync();
+
+            var roleIds = userRoles.Select(ur => ur.RoleId).ToList();
+            var isAdmin = userRoles.Any(ur => ur.Role.Code == "ADMIN");
+
+            return (isAdmin, roleIds);
+        }
     }
 }

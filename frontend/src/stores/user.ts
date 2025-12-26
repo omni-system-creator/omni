@@ -17,11 +17,12 @@ export const useUserStore = defineStore('user', () => {
         username: userData.username || '',
         nickname: userData.nickname || '',
         avatar: userData.avatar || '',
-        status: userData.status || 'online'
+        status: userData.status || 'online',
+        roles: userData.roles || []
       };
     } catch (e) {
       console.error('Error parsing user store data', e);
-      return { token: '', id: 0, username: '', nickname: '', avatar: '', status: 'online' };
+      return { token: '', id: 0, username: '', nickname: '', avatar: '', status: 'online', roles: [] };
     }
   };
 
@@ -33,6 +34,7 @@ export const useUserStore = defineStore('user', () => {
   const nickname = ref<string>(state.nickname);
   const avatar = ref<string>(state.avatar);
   const status = ref<string>(state.status);
+  const roles = ref<number[]>(state.roles);
   // const router = useRouter();
 
   function setToken(newToken: string) {
@@ -40,19 +42,21 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('oms.auth', JSON.stringify({ token: newToken }));
   }
 
-  function setUserInfo(info: { id: number; username: string; nickname?: string; avatar?: string; status?: string }) {
+  function setUserInfo(info: { id: number; username: string; nickname?: string; avatar?: string; status?: string; roles?: number[] }) {
     id.value = info.id;
     username.value = info.username;
     nickname.value = info.nickname || '';
     avatar.value = info.avatar || '';
     status.value = info.status || 'online';
+    roles.value = info.roles || [];
     
     const userData = {
       id: id.value,
       username: username.value,
       nickname: nickname.value,
       avatar: avatar.value,
-      status: status.value
+      status: status.value,
+      roles: roles.value
     };
     localStorage.setItem('oms.user', JSON.stringify(userData));
   }
@@ -64,6 +68,7 @@ export const useUserStore = defineStore('user', () => {
     nickname.value = '';
     avatar.value = '';
     status.value = 'online';
+    roles.value = [];
     
     localStorage.removeItem('oms.auth');
     localStorage.removeItem('oms.user');
@@ -91,6 +96,7 @@ export const useUserStore = defineStore('user', () => {
     nickname,
     avatar,
     status,
+    roles,
     setToken,
     setUserInfo,
     logout,

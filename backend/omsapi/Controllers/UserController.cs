@@ -140,7 +140,7 @@ namespace omsapi.Controllers
         }
 
         [HttpPost("{id}/reset-password")]
-        public async Task<ApiResponse<object>> ResetPassword(long id, [FromBody] ChangePasswordDto dto) // 这里复用 ChangePasswordDto，或者新建一个
+        public async Task<ApiResponse<object>> ResetPassword(long id, [FromBody] ResetPasswordDto dto)
         {
             // 管理员重置密码，只需要新密码
             if (string.IsNullOrEmpty(dto.NewPassword))

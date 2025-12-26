@@ -12,7 +12,7 @@
             style="width: 200px"
             @search="handleSearch"
           />
-          <a-button type="primary" @click="handleCreate">
+          <a-button type="primary" @click="handleCreate" v-if="permissionStore.hasPermission('form:create')">
             <template #icon><PlusOutlined /></template>
             新建表单
           </a-button>
@@ -43,17 +43,17 @@
           </template>
           <template v-else-if="column.key === 'action'">
             <a-space>
-              <a-tooltip title="编辑">
+              <a-tooltip title="编辑" v-if="canManage(record)">
                 <a-button type="link" size="small" @click="handleEdit(record)">
                   <template #icon><EditOutlined /></template>
                 </a-button>
               </a-tooltip>
-              <a-tooltip title="设计">
+              <a-tooltip title="设计" v-if="canManage(record)">
                 <a-button type="link" size="small" @click="handleDesign(record)">
                   <template #icon><FormOutlined /></template>
                 </a-button>
               </a-tooltip>
-              <a-tooltip title="发布" v-if="!record.isPublished">
+              <a-tooltip title="发布" v-if="!record.isPublished && canManage(record)">
                 <a-button 
                   type="link" 
                   size="small" 
@@ -62,7 +62,7 @@
                   <template #icon><SendOutlined /></template>
                 </a-button>
               </a-tooltip>
-              <a-tooltip title="取消发布" v-if="record.isPublished">
+              <a-tooltip title="取消发布" v-if="record.isPublished && canManage(record)">
                 <a-button 
                   type="link" 
                   size="small" 
@@ -71,7 +71,7 @@
                   <template #icon><StopOutlined /></template>
                 </a-button>
               </a-tooltip>
-              <a-tooltip title="分享" v-if="record.isPublished">
+              <a-tooltip title="分享" v-if="record.isPublished && canManage(record)">
                 <a-button 
                   type="link" 
                   size="small" 
@@ -80,7 +80,7 @@
                   <template #icon><ShareAltOutlined /></template>
                 </a-button>
               </a-tooltip>
-              <a-tooltip title="数据" v-if="record.isPublished">
+              <a-tooltip title="数据" v-if="record.isPublished && canManage(record)">
                 <a-button 
                   type="link" 
                   size="small" 
@@ -89,7 +89,7 @@
                   <template #icon><TableOutlined /></template>
                 </a-button>
               </a-tooltip>
-              <a-popconfirm title="确定删除吗？" @confirm="handleDelete(record.id)">
+              <a-popconfirm title="确定删除吗？" @confirm="handleDelete(record.id)" v-if="canManage(record)">
                 <a-tooltip title="删除">
                   <a-button type="link" danger size="small">
                     <template #icon><DeleteOutlined /></template>
@@ -132,6 +132,44 @@
             <a-checkbox v-model:checked="formState.requiresLogin">需要登录才能填报</a-checkbox>
             <a-checkbox v-model:checked="formState.limitOnePerUser">每人只能填一份 (需登录)</a-checkbox>
           </a-space>
+        </a-form-item>
+
+        <a-divider orientation="left">权限设置</a-divider>
+
+        <a-form-item label="查看权限" help="指定哪些角色可以看到此表单（为空则所有人可见）">
+          <a-select
+            v-model:value="formState.viewRoleIdsList"
+            mode="multiple"
+            placeholder="请选择角色"
+            :options="roleOptions"
+            :filter-option="filterRoleOption"
+            allow-clear
+            style="width: 100%"
+          />
+        </a-form-item>
+
+        <a-form-item label="填报权限" help="指定哪些角色可以填报此表单（为空则所有人可填）">
+          <a-select
+            v-model:value="formState.fillRoleIdsList"
+            mode="multiple"
+            placeholder="请选择角色"
+            :options="roleOptions"
+            :filter-option="filterRoleOption"
+            allow-clear
+            style="width: 100%"
+          />
+        </a-form-item>
+
+        <a-form-item label="管理权限" help="指定哪些角色可以管理此表单（编辑/删除/查看数据）">
+          <a-select
+            v-model:value="formState.manageRoleIdsList"
+            mode="multiple"
+            placeholder="请选择角色"
+            :options="roleOptions"
+            :filter-option="filterRoleOption"
+            allow-clear
+            style="width: 100%"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -246,10 +284,13 @@ import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import { useRouter } from 'vue-router';
 import { getFormList, createForm, updateForm, deleteForm, getCategoryTree, getFormResults, type FormDefinition } from '@/api/form';
+import { getRoleList, type RoleDto } from '@/api/role';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import DraggableModal from '@/components/DraggableModal.vue';
 import { useElementSize } from '@vueuse/core';
+import { usePermissionStore } from '@/stores/permission';
+import { useUserStore } from '@/stores/user';
 
 const props = defineProps({
   categoryId: {
@@ -264,6 +305,8 @@ const props = defineProps({
 
 const emit = defineEmits(['open-designer']);
 
+const permissionStore = usePermissionStore();
+const userStore = useUserStore();
 const router = useRouter();
 const loading = ref(false);
 const tableData = ref<FormDefinition[]>([]);
@@ -280,6 +323,16 @@ const queryParams = reactive({
   categoryId: props.categoryId
 });
 
+const canManage = (record: FormDefinition) => {
+  if (userStore.username === 'admin') return true;
+  if (!record.manageRoleIds) return false;
+  
+  const allowedRoles = record.manageRoleIds.split(',').map(r => Number(r.trim()));
+  const userRoles = userStore.roles || [];
+  
+  return userRoles.some(r => allowedRoles.includes(r));
+};
+
 const columns = [
   { title: '序号', key: 'index', width: 70, align: 'center' },
   { title: '表单名称', dataIndex: 'name', key: 'name', sorter: true },
@@ -294,13 +347,29 @@ const dialogVisible = ref(false);
 const dialogTitle = ref('新建表单');
 const confirmLoading = ref(false);
 const categoryTreeData = ref([]);
-const formState = reactive<FormDefinition>({
+const roleList = ref<RoleDto[]>([]);
+const formState = reactive<FormDefinition & {
+  viewRoleIdsList: number[];
+  fillRoleIdsList: number[];
+  manageRoleIdsList: number[];
+}>({
   name: '',
   categoryId: 0,
   description: '',
   requiresLogin: false,
-  limitOnePerUser: false
+  limitOnePerUser: false,
+  viewRoleIdsList: [],
+  fillRoleIdsList: [],
+  manageRoleIdsList: []
 });
+
+const roleOptions = computed(() => {
+  return roleList.value.map(r => ({ label: r.name, value: r.id }));
+});
+
+const filterRoleOption = (input: string, option: any) => {
+  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0;
+};
 
 // Link Modal
 const linkModalVisible = ref(false);
@@ -596,6 +665,15 @@ const loadCategories = async () => {
   categoryTreeData.value = (Array.isArray(res) ? res : (res as any).data) || [];
 };
 
+const loadRoles = async () => {
+  try {
+    const res = await getRoleList();
+    roleList.value = res || [];
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 const handleSearch = () => {
   pagination.current = 1;
   loadData();
@@ -613,6 +691,11 @@ const handleTableChange = (pag: any, _filters: any, sorter: any) => {
   loadData();
 };
 
+const parseRoleIds = (str?: string) => {
+  if (!str) return [];
+  return str.split(',').map(s => Number(s)).filter(n => !isNaN(n));
+};
+
 const handleCreate = () => {
   formState.id = undefined;
   formState.name = '';
@@ -620,6 +703,9 @@ const handleCreate = () => {
   formState.description = '';
   formState.requiresLogin = false;
   formState.limitOnePerUser = false;
+  formState.viewRoleIdsList = [];
+  formState.fillRoleIdsList = [];
+  formState.manageRoleIdsList = [];
   dialogTitle.value = '新建表单';
   dialogVisible.value = true;
 };
@@ -631,6 +717,9 @@ const handleEdit = (record: FormDefinition) => {
   formState.description = record.description;
   formState.requiresLogin = !!record.requiresLogin;
   formState.limitOnePerUser = !!record.limitOnePerUser;
+  formState.viewRoleIdsList = parseRoleIds(record.viewRoleIds);
+  formState.fillRoleIdsList = parseRoleIds(record.fillRoleIds);
+  formState.manageRoleIdsList = parseRoleIds(record.manageRoleIds);
   dialogTitle.value = '编辑表单';
   dialogVisible.value = true;
 };
@@ -658,10 +747,17 @@ const handleDialogOk = async () => {
   
   confirmLoading.value = true;
   try {
+    const dataToSave = {
+      ...formState,
+      viewRoleIds: formState.viewRoleIdsList.length > 0 ? formState.viewRoleIdsList.join(',') : undefined,
+      fillRoleIds: formState.fillRoleIdsList.length > 0 ? formState.fillRoleIdsList.join(',') : undefined,
+      manageRoleIds: formState.manageRoleIdsList.length > 0 ? formState.manageRoleIdsList.join(',') : undefined
+    };
+
     if (formState.id) {
-      await updateForm(formState.id, formState);
+      await updateForm(formState.id, dataToSave);
     } else {
-      await createForm(formState);
+      await createForm(dataToSave);
     }
     message.success('保存成功');
     dialogVisible.value = false;
@@ -714,6 +810,7 @@ watch(() => props.categoryId, (val) => {
 onMounted(() => {
   loadData();
   loadCategories();
+  loadRoles();
 });
 </script>
 

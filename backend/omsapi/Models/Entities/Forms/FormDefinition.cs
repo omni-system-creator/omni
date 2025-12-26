@@ -31,6 +31,15 @@ namespace omsapi.Models.Entities.Forms
 
         public bool LimitOnePerUser { get; set; } = false;
 
+        [MaxLength(500)]
+        public string? ViewRoleIds { get; set; } // Comma separated role IDs
+
+        [MaxLength(500)]
+        public string? FillRoleIds { get; set; }
+
+        [MaxLength(500)]
+        public string? ManageRoleIds { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime UpdatedAt { get; set; } = DateTime.Now;

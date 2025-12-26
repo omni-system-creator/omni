@@ -15,5 +15,6 @@ namespace omsapi.Models.Dtos
         public string? Phone { get; set; }
         public string? Avatar { get; set; }
         public string? Status { get; set; }
+        public List<long> Roles { get; set; } = new();
     }
 }

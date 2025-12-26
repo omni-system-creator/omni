@@ -29,6 +29,13 @@ namespace omsapi.Models.Dtos
         public string NewPassword { get; set; } = string.Empty;
     }
 
+    public class ResetPasswordDto
+    {
+        [Required]
+        [MinLength(6)]
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
     public class CreateUserDto
     {
         [Required]

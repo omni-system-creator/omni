@@ -16,5 +16,8 @@ namespace omsapi.Services.Interfaces
         Task<(bool Success, string Message)> UpdateUserAsync(long id, UpdateUserDto dto);
         Task<(bool Success, string Message)> DeleteUserAsync(long id);
         Task<(bool Success, string Message)> ResetPasswordAsync(long id, string newPassword);
+
+        // 权限辅助接口
+        Task<(bool IsAdmin, List<long> RoleIds)> GetUserPermissionsAsync(long? userId);
     }
 }

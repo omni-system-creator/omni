@@ -63,7 +63,8 @@ namespace omsapi.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _formService.GetFormsAsync(categoryId, sortBy, isDescending, page, pageSize);
+            long? userId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
+            var result = await _formService.GetFormsAsync(userId, categoryId, sortBy, isDescending, page, pageSize);
             return Ok(ApiResponse<PagedResult<FormDefinitionDto>>.Success(result));
         }
 
@@ -71,8 +72,9 @@ namespace omsapi.Controllers
         public async Task<ActionResult<ApiResponse<FormDefinitionDto>>> GetForm(long id)
         {
             string? username = User.GetUsername();
-            var result = await _formService.GetFormByIdAsync(id, username);
-            if (result == null) return NotFound(ApiResponse<object>.Error("Form not found", 404));
+            long? userId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
+            var result = await _formService.GetFormByIdAsync(id, userId, username);
+            if (result == null) return NotFound(ApiResponse<object>.Error("Form not found or access denied", 404));
             return Ok(ApiResponse<FormDefinitionDto>.Success(result));
         }
 
@@ -94,8 +96,8 @@ namespace omsapi.Controllers
         [HttpDelete("definitions/{id}")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteForm(long id)
         {
-            var result = await _formService.DeleteFormAsync(id);
-            if (!result) return NotFound(ApiResponse<object>.Error("Form not found", 404));
+            var result = await _formService.DeleteFormAsync(id, User.GetUserId());
+            if (!result) return NotFound(ApiResponse<object>.Error("Form not found or access denied", 404));
             return Ok(ApiResponse<bool>.Success(true, "Deleted successfully"));
         }
 
@@ -119,7 +121,8 @@ namespace omsapi.Controllers
                     }
                 }
                 
-                var result = await _formService.SubmitFormAsync(dto);
+                long? userId = User.Identity?.IsAuthenticated == true ? User.GetUserId() : null;
+                var result = await _formService.SubmitFormAsync(dto, userId);
                 return Ok(ApiResponse<FormResultDto>.Success(result, "Submitted successfully"));
             }
             catch (Exception ex)
@@ -134,8 +137,15 @@ namespace omsapi.Controllers
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
-            var result = await _formService.GetFormResultsAsync(formId, page, pageSize);
-            return Ok(ApiResponse<PagedResult<FormResultDto>>.Success(result));
+            try
+            {
+                var result = await _formService.GetFormResultsAsync(formId, User.GetUserId(), page, pageSize);
+                return Ok(ApiResponse<PagedResult<FormResultDto>>.Success(result));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Error(ex.Message));
+            }
         }
     }
 }

@@ -131,7 +131,8 @@ const handleLogin = async (_values: any) => {
           id: res.user.id,
           username: res.user.username,
           nickname: res.user.nickname,
-          avatar: res.user.avatar
+          avatar: res.user.avatar,
+          roles: res.user.roles
         });
       } else {
         // 如果后端没有返回 user 对象，使用用户名作为 fallback

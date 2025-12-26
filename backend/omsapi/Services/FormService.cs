@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using omsapi.Data;
 using omsapi.Models.Dtos.Forms;
+using omsapi.Models.Entities;
 using omsapi.Models.Entities.Forms;
 using omsapi.Services.Interfaces;
 using omsapi.Infrastructure.Attributes;
 using omsapi.Models.Common;
+using omsapi.Infrastructure.Helpers;
 
 namespace omsapi.Services
 {
@@ -12,10 +14,12 @@ namespace omsapi.Services
     public class FormService : IFormService
     {
         private readonly OmsContext _context;
+        private readonly IUserService _userService;
 
-        public FormService(OmsContext context)
+        public FormService(OmsContext context, IUserService userService)
         {
             _context = context;
+            _userService = userService;
         }
 
         // Category Methods
@@ -131,8 +135,10 @@ namespace omsapi.Services
         }
 
         // Form Definition Methods
-        public async Task<PagedResult<FormDefinitionDto>> GetFormsAsync(long? categoryId = null, string? sortBy = null, bool isDescending = true, int page = 1, int pageSize = 10)
+        public async Task<PagedResult<FormDefinitionDto>> GetFormsAsync(long? userId, long? categoryId = null, string? sortBy = null, bool isDescending = true, int page = 1, int pageSize = 10)
         {
+            var (isAdmin, roleIds) = await _userService.GetUserPermissionsAsync(userId);
+            
             var query = _context.FormDefinitions.AsQueryable();
 
             if (categoryId.HasValue)
@@ -142,6 +148,40 @@ namespace omsapi.Services
                 GetDescendantCategoryIds(allCategories, categoryId.Value, categoryIds);
 
                 query = query.Where(f => categoryIds.Contains(f.CategoryId));
+            }
+
+            // Permission Filter
+            // If not admin, filter forms based on permissions
+            if (!isAdmin)
+            {
+                // We fetch lightweight projection first to filter in memory
+                // This is to handle the comma-separated role IDs which are hard to query in EF Core
+                var allFormsProjection = await query.Select(f => new 
+                { 
+                    f.Id, 
+                    f.ViewRoleIds, 
+                    f.FillRoleIds, 
+                    f.ManageRoleIds, 
+                    f.UpdatedAt, 
+                    f.Name, 
+                    f.CreatedAt 
+                }).ToListAsync();
+
+                var visibleFormIds = allFormsProjection
+                    .Where(f => 
+                        // Publicly visible
+                        string.IsNullOrEmpty(f.ViewRoleIds) || 
+                        // Or user has View/Fill/Manage permission
+                        (roleIds.Any() && (
+                            (f.ViewRoleIds != null && PermissionHelper.RoleIdsIntersect(f.ViewRoleIds, roleIds)) ||
+                            (f.FillRoleIds != null && PermissionHelper.RoleIdsIntersect(f.FillRoleIds, roleIds)) ||
+                            (f.ManageRoleIds != null && PermissionHelper.RoleIdsIntersect(f.ManageRoleIds, roleIds))
+                        ))
+                    )
+                    .Select(f => f.Id)
+                    .ToList();
+
+                query = query.Where(f => visibleFormIds.Contains(f.Id));
             }
 
             // Sorting
@@ -184,6 +224,9 @@ namespace omsapi.Services
                     IsPublished = f.IsPublished,
                     RequiresLogin = f.RequiresLogin,
                     LimitOnePerUser = f.LimitOnePerUser,
+                    ViewRoleIds = f.ViewRoleIds,
+                    FillRoleIds = f.FillRoleIds,
+                    ManageRoleIds = f.ManageRoleIds,
                     CreatedAt = f.CreatedAt,
                     UpdatedAt = f.UpdatedAt
                 })
@@ -192,9 +235,24 @@ namespace omsapi.Services
             return new PagedResult<FormDefinitionDto>(items, total, page, pageSize);
         }
 
-        public async Task<FormDefinitionDto?> GetFormByIdAsync(long id, string? submittedBy = null)
+        public async Task<FormDefinitionDto?> GetFormByIdAsync(long id, long? userId, string? submittedBy = null)
         {
             var f = await _context.FormDefinitions.FindAsync(id);
+            if (f == null) return null;
+
+            // Check Permissions
+            var (isAdmin, roleIds) = await _userService.GetUserPermissionsAsync(userId);
+            if (!isAdmin)
+            {
+                bool canView = string.IsNullOrEmpty(f.ViewRoleIds) ||
+                               (roleIds.Any() && (
+                                   (f.ViewRoleIds != null && PermissionHelper.RoleIdsIntersect(f.ViewRoleIds, roleIds)) ||
+                                   (f.FillRoleIds != null && PermissionHelper.RoleIdsIntersect(f.FillRoleIds, roleIds)) ||
+                                   (f.ManageRoleIds != null && PermissionHelper.RoleIdsIntersect(f.ManageRoleIds, roleIds))
+                               ));
+                
+                if (!canView) return null; // Or throw UnauthorizedAccessException
+            }
             if (f == null) return null;
 
             bool hasSubmitted = false;
@@ -224,6 +282,9 @@ namespace omsapi.Services
                 IsPublished = f.IsPublished,
                 RequiresLogin = f.RequiresLogin,
                 LimitOnePerUser = f.LimitOnePerUser,
+                ViewRoleIds = f.ViewRoleIds,
+                FillRoleIds = f.FillRoleIds,
+                ManageRoleIds = f.ManageRoleIds,
                 HasSubmitted = hasSubmitted,
                 SubmittedData = submittedData,
                 CreatedAt = f.CreatedAt,
@@ -243,6 +304,9 @@ namespace omsapi.Services
                 IsPublished = false,
                 RequiresLogin = dto.RequiresLogin,
                 LimitOnePerUser = dto.LimitOnePerUser,
+                ViewRoleIds = dto.ViewRoleIds,
+                FillRoleIds = dto.FillRoleIds,
+                ManageRoleIds = dto.ManageRoleIds,
                 CreatedBy = userId,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -262,6 +326,9 @@ namespace omsapi.Services
                 IsPublished = form.IsPublished,
                 RequiresLogin = form.RequiresLogin,
                 LimitOnePerUser = form.LimitOnePerUser,
+                ViewRoleIds = form.ViewRoleIds,
+                FillRoleIds = form.FillRoleIds,
+                ManageRoleIds = form.ManageRoleIds,
                 CreatedAt = form.CreatedAt,
                 UpdatedAt = form.UpdatedAt
             };
@@ -271,6 +338,16 @@ namespace omsapi.Services
         {
             var form = await _context.FormDefinitions.FindAsync(id);
             if (form == null) return null;
+
+            // Check Manage Permission
+            var (isAdmin, roleIds) = await _userService.GetUserPermissionsAsync(userId);
+            if (!isAdmin)
+            {
+                bool isCreator = form.CreatedBy == userId;
+                bool canManage = isCreator || (form.ManageRoleIds != null && PermissionHelper.RoleIdsIntersect(form.ManageRoleIds, roleIds));
+                
+                if (!canManage) return null; // Or throw
+            }
 
             form.CategoryId = dto.CategoryId;
             form.Name = dto.Name;
@@ -282,6 +359,9 @@ namespace omsapi.Services
             }
             form.RequiresLogin = dto.RequiresLogin;
             form.LimitOnePerUser = dto.LimitOnePerUser;
+            form.ViewRoleIds = dto.ViewRoleIds;
+            form.FillRoleIds = dto.FillRoleIds;
+            form.ManageRoleIds = dto.ManageRoleIds;
             if (dto.IsPublished.HasValue)
             {
                 form.IsPublished = dto.IsPublished.Value;
@@ -302,15 +382,28 @@ namespace omsapi.Services
                 IsPublished = form.IsPublished,
                 RequiresLogin = form.RequiresLogin,
                 LimitOnePerUser = form.LimitOnePerUser,
+                ViewRoleIds = form.ViewRoleIds,
+                FillRoleIds = form.FillRoleIds,
+                ManageRoleIds = form.ManageRoleIds,
                 CreatedAt = form.CreatedAt,
                 UpdatedAt = form.UpdatedAt
             };
         }
 
-        public async Task<bool> DeleteFormAsync(long id)
+        public async Task<bool> DeleteFormAsync(long id, long userId)
         {
             var form = await _context.FormDefinitions.FindAsync(id);
             if (form == null) return false;
+
+            // Check Manage Permission
+            var (isAdmin, roleIds) = await _userService.GetUserPermissionsAsync(userId);
+            if (!isAdmin)
+            {
+                bool isCreator = form.CreatedBy == userId;
+                bool canManage = isCreator || (form.ManageRoleIds != null && PermissionHelper.RoleIdsIntersect(form.ManageRoleIds, roleIds));
+                
+                if (!canManage) return false;
+            }
 
             _context.FormDefinitions.Remove(form);
             await _context.SaveChangesAsync();
@@ -318,27 +411,37 @@ namespace omsapi.Services
         }
 
         // Form Submission
-        public async Task<FormResultDto> SubmitFormAsync(CreateFormResultDto dto)
+        public async Task<FormResultDto> SubmitFormAsync(CreateFormResultDto dto, long? userId)
         {
             var form = await _context.FormDefinitions.FindAsync(dto.FormId);
-            if (form == null)
+            if (form == null) throw new Exception("Form not found");
+
+            // Check Fill Permission
+            var (isAdmin, roleIds) = await _userService.GetUserPermissionsAsync(userId);
+            if (!isAdmin)
             {
-                throw new Exception("表单不存在");
+                bool canFill = string.IsNullOrEmpty(form.FillRoleIds) || 
+                               (roleIds.Any() && PermissionHelper.RoleIdsIntersect(form.FillRoleIds, roleIds));
+                
+                if (!canFill) throw new Exception("You do not have permission to fill this form.");
             }
+
             if (!form.IsPublished)
             {
-                throw new Exception("表单未发布或已停止收集");
+                throw new Exception("Form is not published or has stopped collecting");
+            }
+
+            if (form.RequiresLogin && (!userId.HasValue || userId.Value == 0))
+            {
+                throw new Exception("Login is required to submit this form");
             }
 
             if (form.LimitOnePerUser)
             {
-                // If SubmittedBy is "Anonymous", we can't really limit unless we use IP or something, 
-                // but usually LimitOnePerUser implies RequiresLogin.
-                // Assuming SubmittedBy is unique per user (e.g. username).
                 bool hasSubmitted = await _context.FormResults.AnyAsync(r => r.FormId == dto.FormId && r.SubmittedBy == dto.SubmittedBy);
                 if (hasSubmitted)
                 {
-                    throw new Exception("您已填写过此表单，不可重复提交");
+                    throw new Exception("You have already submitted this form");
                 }
             }
 
@@ -362,8 +465,21 @@ namespace omsapi.Services
             };
         }
 
-        public async Task<PagedResult<FormResultDto>> GetFormResultsAsync(long formId, int page = 1, int pageSize = 10)
+        public async Task<PagedResult<FormResultDto>> GetFormResultsAsync(long formId, long userId, int page = 1, int pageSize = 10)
         {
+            // Check Manage Permission
+            var form = await _context.FormDefinitions.FindAsync(formId);
+            if (form == null) throw new Exception("Form not found");
+
+            var (isAdmin, roleIds) = await _userService.GetUserPermissionsAsync(userId);
+            if (!isAdmin)
+            {
+                bool isCreator = form.CreatedBy == userId;
+                bool canManage = isCreator || (form.ManageRoleIds != null && PermissionHelper.RoleIdsIntersect(form.ManageRoleIds, roleIds));
+                
+                if (!canManage) throw new Exception("You do not have permission to view data for this form.");
+            }
+
             var query = _context.FormResults
                 .Where(r => r.FormId == formId);
 
@@ -383,13 +499,7 @@ namespace omsapi.Services
                 })
                 .ToListAsync();
 
-            return new PagedResult<FormResultDto>
-            {
-                Items = items,
-                Total = total,
-                Page = page,
-                PageSize = pageSize
-            };
+            return new PagedResult<FormResultDto>(items, total, page, pageSize);
         }
     }
 }

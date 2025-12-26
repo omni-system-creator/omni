@@ -75,12 +75,7 @@
               <template v-else-if="column.key === 'action'">
                 <a-space divider type="vertical">
                   <a @click="handleEdit(record)">编辑</a>
-                  <a-popconfirm
-                    title="确定要重置该用户的密码吗？"
-                    @confirm="handleResetPwd(record)"
-                  >
-                    <a>重置密码</a>
-                  </a-popconfirm>
+                  <a @click="handleResetPwd(record)">重置密码</a>
                   <a-popconfirm
                     title="确定要删除该用户吗？此操作不可恢复"
                     ok-text="删除"
@@ -203,17 +198,46 @@
         </a-form-item>
       </a-form>
     </a-modal>
+
+    <!-- 重置密码弹窗 -->
+    <a-modal
+      v-model:open="resetPwdVisible"
+      title="重置密码"
+      @ok="handleResetPwdSubmit"
+      :confirmLoading="resetPwdLoading"
+    >
+      <a-form
+        ref="resetPwdFormRef"
+        :model="resetPwdState"
+        :rules="resetPwdRules"
+        layout="vertical"
+      >
+        <a-form-item label="新密码" name="newPassword">
+          <a-input-password v-model:value="resetPwdState.newPassword" placeholder="请输入新密码">
+            <template #addonAfter>
+              <a-tooltip title="随机生成密码">
+                <ThunderboltOutlined @click="handleGeneratePassword" style="cursor: pointer"/>
+              </a-tooltip>
+            </template>
+          </a-input-password>
+        </a-form-item>
+        <a-form-item label="确认密码" name="confirmPassword">
+          <a-input-password v-model:value="resetPwdState.confirmPassword" placeholder="请再次输入新密码" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, onMounted, computed, reactive } from 'vue';
 import { message, Modal } from 'ant-design-vue';
-import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
 import { getUserList, createUser, updateUser, deleteUser, resetUserPassword, type UserListDto } from '@/api/user';
 import { getRoleList, type RoleDto } from '@/api/role';
 import { type Dept } from '@/api/dept';
 import { getPostList, type Post } from '@/api/post';
+import { generatePassword } from '@/utils/password';
 import dayjs from 'dayjs';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
@@ -472,20 +496,56 @@ const handleDelete = async (record: UserListDto) => {
 };
 
 const handleResetPwd = async (record: UserListDto) => {
-  Modal.confirm({
-    title: '重置密码',
-    content: '请输入新密码：',
-    // 这里简单演示，实际可以用自定义 content 渲染 input
-    onOk: async () => {
-       // 为了演示方便，这里重置为默认密码 123456
-       try {
-         await resetUserPassword(record.id, { newPassword: '123456' });
-         message.success('密码已重置为 123456');
-       } catch (error) {
-         console.error(error);
-       }
-    }
-  });
+  currentId.value = record.id;
+  resetPwdState.newPassword = '';
+  resetPwdState.confirmPassword = '';
+  resetPwdVisible.value = true;
+};
+
+// --- Reset Password Logic ---
+const resetPwdVisible = ref(false);
+const resetPwdLoading = ref(false);
+const resetPwdFormRef = ref();
+const resetPwdState = reactive({
+  newPassword: '',
+  confirmPassword: ''
+});
+
+const validateConfirmPassword = async (_rule: any, value: string) => {
+  if (value === '') {
+    return Promise.reject('请再次输入密码');
+  } else if (value !== resetPwdState.newPassword) {
+    return Promise.reject("两次输入的密码不一致!");
+  } else {
+    return Promise.resolve();
+  }
+};
+
+const resetPwdRules = {
+  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }, { min: 6, message: '密码至少6位', trigger: 'blur' }],
+  confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }]
+};
+
+const handleGeneratePassword = () => {
+  const pwd = generatePassword();
+  resetPwdState.newPassword = pwd;
+  resetPwdState.confirmPassword = pwd;
+};
+
+const handleResetPwdSubmit = async () => {
+  try {
+    await resetPwdFormRef.value.validate();
+    if (!currentId.value) return;
+
+    resetPwdLoading.value = true;
+    await resetUserPassword(currentId.value, { newPassword: resetPwdState.newPassword });
+    message.success('密码重置成功');
+    resetPwdVisible.value = false;
+  } catch (error) {
+    console.error(error);
+  } finally {
+    resetPwdLoading.value = false;
+  }
 };
 
 
