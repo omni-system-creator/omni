@@ -72,7 +72,7 @@ router.beforeEach(async (to, _from, next) => {
     console.error('Error parsing auth data', e);
   }
   
-  if (to.path === '/login' || to.meta.public) {
+  if (to.path === '/login' || to.meta.public || to.path.startsWith('/m/')) {
     if (token && to.path === '/login') {
       next('/');
     } else {

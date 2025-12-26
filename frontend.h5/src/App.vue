@@ -40,7 +40,8 @@ onMounted(async () => {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   if (!isMobile) {
     // 如果是电脑端，跳转到Web端根路径
-    window.location.href = '/';
+    const path = window.location.pathname.replace(/^\/m/, '') || '/';
+    window.location.href = path + window.location.search;
     return;
   }
 
