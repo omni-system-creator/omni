@@ -3,6 +3,7 @@ using omsapi.Models.Entities;
 using omsapi.Models.Entities.Archive;
 using omsapi.Models.Entities.BigView;
 using omsapi.Models.Entities.Data;
+using omsapi.Models.Entities.Forms;
 
 namespace omsapi.Data
 {
@@ -38,6 +39,10 @@ namespace omsapi.Data
 
         // BigView Entities
         public DbSet<BigViewProject> BigViewProjects { get; set; }
+
+        // Form Entities
+        public DbSet<FormCategory> FormCategories { get; set; }
+        public DbSet<FormDefinition> FormDefinitions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
