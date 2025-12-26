@@ -32,6 +32,7 @@ namespace omsapi.Models.Dtos.Forms
         public string? FormItems { get; set; }
         public bool IsPublished { get; set; }
         public bool RequiresLogin { get; set; }
+        public bool LimitOnePerUser { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -44,6 +45,7 @@ namespace omsapi.Models.Dtos.Forms
         public string? Description { get; set; }
         public string? FormItems { get; set; }
         public bool RequiresLogin { get; set; }
+        public bool LimitOnePerUser { get; set; }
     }
 
     public class UpdateFormDefinitionDto : CreateFormDefinitionDto

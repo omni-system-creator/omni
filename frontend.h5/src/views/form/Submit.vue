@@ -16,7 +16,7 @@
     <div v-else-if="submitted" class="success-state">
       <van-empty image="network" description="提交成功" />
       <div class="success-actions">
-        <van-button block type="primary" @click="resetForm">再填一份</van-button>
+        <van-button v-if="!formDefinition?.limitOnePerUser" block type="primary" @click="resetForm">再填一份</van-button>
         <van-button block plain type="primary" @click="onClickLeft" style="margin-top: 10px">返回首页</van-button>
       </div>
     </div>

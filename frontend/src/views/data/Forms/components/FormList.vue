@@ -119,7 +119,10 @@
           <a-textarea v-model:value="formState.description" :rows="4" />
         </a-form-item>
         <a-form-item label="设置" name="requiresLogin">
-          <a-checkbox v-model:checked="formState.requiresLogin">需要登录才能填报</a-checkbox>
+          <a-space direction="vertical">
+            <a-checkbox v-model:checked="formState.requiresLogin">需要登录才能填报</a-checkbox>
+            <a-checkbox v-model:checked="formState.limitOnePerUser">每人只能填一份 (需登录)</a-checkbox>
+          </a-space>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -208,7 +211,8 @@ const formState = reactive<FormDefinition>({
   name: '',
   categoryId: 0,
   description: '',
-  requiresLogin: false
+  requiresLogin: false,
+  limitOnePerUser: false
 });
 
 // Link Modal
@@ -261,6 +265,7 @@ const handleCreate = () => {
   formState.categoryId = props.categoryId || (categoryTreeData.value[0] as any)?.id;
   formState.description = '';
   formState.requiresLogin = false;
+  formState.limitOnePerUser = false;
   dialogTitle.value = '新建表单';
   dialogVisible.value = true;
 };
@@ -271,6 +276,7 @@ const handleEdit = (record: FormDefinition) => {
   formState.categoryId = record.categoryId;
   formState.description = record.description;
   formState.requiresLogin = !!record.requiresLogin;
+  formState.limitOnePerUser = !!record.limitOnePerUser;
   dialogTitle.value = '编辑表单';
   dialogVisible.value = true;
 };

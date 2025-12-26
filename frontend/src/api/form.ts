@@ -49,6 +49,7 @@ export interface FormDefinition {
   formItems?: string; // JSON string
   isPublished?: boolean;
   requiresLogin?: boolean;
+  limitOnePerUser?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

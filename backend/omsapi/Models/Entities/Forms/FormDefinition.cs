@@ -29,6 +29,8 @@ namespace omsapi.Models.Entities.Forms
 
         public bool RequiresLogin { get; set; } = false;
 
+        public bool LimitOnePerUser { get; set; } = false;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime UpdatedAt { get; set; } = DateTime.Now;

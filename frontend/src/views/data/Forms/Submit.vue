@@ -17,7 +17,7 @@
       <template v-else-if="submitted">
         <a-result status="success" title="提交成功" sub-title="感谢您的参与">
           <template #extra>
-            <a-button type="primary" @click="resetForm">再填一份</a-button>
+            <a-button v-if="!formDefinition?.limitOnePerUser" type="primary" @click="resetForm">再填一份</a-button>
           </template>
         </a-result>
       </template>

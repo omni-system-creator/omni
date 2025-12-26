@@ -141,6 +141,7 @@ namespace omsapi.Services
                     FormItems = f.FormItems,
                     IsPublished = f.IsPublished,
                     RequiresLogin = f.RequiresLogin,
+                    LimitOnePerUser = f.LimitOnePerUser,
                     CreatedAt = f.CreatedAt,
                     UpdatedAt = f.UpdatedAt
                 })
@@ -162,6 +163,7 @@ namespace omsapi.Services
                 FormItems = f.FormItems,
                 IsPublished = f.IsPublished,
                 RequiresLogin = f.RequiresLogin,
+                LimitOnePerUser = f.LimitOnePerUser,
                 CreatedAt = f.CreatedAt,
                 UpdatedAt = f.UpdatedAt
             };
@@ -178,6 +180,7 @@ namespace omsapi.Services
                 FormItems = dto.FormItems,
                 IsPublished = false,
                 RequiresLogin = dto.RequiresLogin,
+                LimitOnePerUser = dto.LimitOnePerUser,
                 CreatedBy = userId,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -196,6 +199,7 @@ namespace omsapi.Services
                 FormItems = form.FormItems,
                 IsPublished = form.IsPublished,
                 RequiresLogin = form.RequiresLogin,
+                LimitOnePerUser = form.LimitOnePerUser,
                 CreatedAt = form.CreatedAt,
                 UpdatedAt = form.UpdatedAt
             };
@@ -215,6 +219,7 @@ namespace omsapi.Services
                 form.FormItems = dto.FormItems;
             }
             form.RequiresLogin = dto.RequiresLogin;
+            form.LimitOnePerUser = dto.LimitOnePerUser;
             if (dto.IsPublished.HasValue)
             {
                 form.IsPublished = dto.IsPublished.Value;
@@ -234,6 +239,7 @@ namespace omsapi.Services
                 FormItems = form.FormItems,
                 IsPublished = form.IsPublished,
                 RequiresLogin = form.RequiresLogin,
+                LimitOnePerUser = form.LimitOnePerUser,
                 CreatedAt = form.CreatedAt,
                 UpdatedAt = form.UpdatedAt
             };
@@ -260,6 +266,18 @@ namespace omsapi.Services
             if (!form.IsPublished)
             {
                 throw new Exception("表单未发布或已停止收集");
+            }
+
+            if (form.LimitOnePerUser)
+            {
+                // If SubmittedBy is "Anonymous", we can't really limit unless we use IP or something, 
+                // but usually LimitOnePerUser implies RequiresLogin.
+                // Assuming SubmittedBy is unique per user (e.g. username).
+                bool hasSubmitted = await _context.FormResults.AnyAsync(r => r.FormId == dto.FormId && r.SubmittedBy == dto.SubmittedBy);
+                if (hasSubmitted)
+                {
+                    throw new Exception("您已填写过此表单，不可重复提交");
+                }
             }
 
             var result = new FormResult
