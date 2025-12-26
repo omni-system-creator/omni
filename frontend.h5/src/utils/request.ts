@@ -2,6 +2,7 @@ import axios from 'axios';
 import type { AxiosInstance, AxiosResponse } from 'axios';
 import { showToast, showDialog } from 'vant';
 import { Capacitor } from '@capacitor/core';
+import router from '@/router';
 
 export interface ApiResponse<T = any> {
   code: number;
@@ -96,7 +97,12 @@ service.interceptors.response.use(
       if (status === 401) {
         msg = '登录已过期，请重新登录';
         showDialog({ message: msg }).then(() => {
-           // Handle logout or redirect
+          localStorage.removeItem('oms.auth');
+          const currentPath = router.currentRoute.value.fullPath;
+          router.replace({
+            path: '/login',
+            query: { redirect: currentPath }
+          });
         });
         return Promise.reject(error);
       } else if (status === 404) {

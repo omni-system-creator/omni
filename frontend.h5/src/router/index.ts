@@ -84,7 +84,11 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.name !== 'Login' && !userStore.token) {
-    next({ name: 'Login', replace: true });
+    next({ 
+      name: 'Login', 
+      replace: true,
+      query: { redirect: to.fullPath }
+    });
   } else {
     next();
   }
