@@ -4,6 +4,7 @@ using omsapi.Models.Dtos.Forms;
 using omsapi.Models.Entities.Forms;
 using omsapi.Services.Interfaces;
 using omsapi.Infrastructure.Attributes;
+using omsapi.Models.Common;
 
 namespace omsapi.Services
 {
@@ -40,6 +41,16 @@ namespace omsapi.Services
                     Children = BuildCategoryTree(allCategories, c.Id)
                 })
                 .ToList();
+        }
+
+        private void GetDescendantCategoryIds(List<FormCategory> allCategories, long parentId, List<long> result)
+        {
+            var children = allCategories.Where(c => c.ParentId == parentId);
+            foreach (var child in children)
+            {
+                result.Add(child.Id);
+                GetDescendantCategoryIds(allCategories, child.Id, result);
+            }
         }
 
         public async Task<FormCategoryDto?> GetCategoryByIdAsync(long id)
@@ -120,17 +131,48 @@ namespace omsapi.Services
         }
 
         // Form Definition Methods
-        public async Task<List<FormDefinitionDto>> GetFormsAsync(long? categoryId = null)
+        public async Task<PagedResult<FormDefinitionDto>> GetFormsAsync(long? categoryId = null, string? sortBy = null, bool isDescending = true, int page = 1, int pageSize = 10)
         {
             var query = _context.FormDefinitions.AsQueryable();
 
             if (categoryId.HasValue)
             {
-                query = query.Where(f => f.CategoryId == categoryId.Value);
+                var allCategories = await _context.FormCategories.ToListAsync();
+                var categoryIds = new List<long> { categoryId.Value };
+                GetDescendantCategoryIds(allCategories, categoryId.Value, categoryIds);
+
+                query = query.Where(f => categoryIds.Contains(f.CategoryId));
             }
 
-            return await query
-                .OrderByDescending(f => f.CreatedAt)
+            // Sorting
+            if (string.IsNullOrEmpty(sortBy))
+            {
+                // Default sort by UpdatedAt descending as requested
+                query = query.OrderByDescending(f => f.UpdatedAt);
+            }
+            else
+            {
+                switch (sortBy.ToLower())
+                {
+                    case "name":
+                        query = isDescending ? query.OrderByDescending(f => f.Name) : query.OrderBy(f => f.Name);
+                        break;
+                    case "createdat":
+                        query = isDescending ? query.OrderByDescending(f => f.CreatedAt) : query.OrderBy(f => f.CreatedAt);
+                        break;
+                    case "updatedat":
+                        query = isDescending ? query.OrderByDescending(f => f.UpdatedAt) : query.OrderBy(f => f.UpdatedAt);
+                        break;
+                    default:
+                        query = isDescending ? query.OrderByDescending(f => f.UpdatedAt) : query.OrderBy(f => f.UpdatedAt);
+                        break;
+                }
+            }
+
+            var total = await query.CountAsync();
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(f => new FormDefinitionDto
                 {
                     Id = f.Id,
@@ -146,6 +188,8 @@ namespace omsapi.Services
                     UpdatedAt = f.UpdatedAt
                 })
                 .ToListAsync();
+
+            return new PagedResult<FormDefinitionDto>(items, total, page, pageSize);
         }
 
         public async Task<FormDefinitionDto?> GetFormByIdAsync(long id)

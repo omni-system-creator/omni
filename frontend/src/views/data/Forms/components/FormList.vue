@@ -195,10 +195,10 @@ const queryParams = reactive({
 
 const columns = [
   { title: '序号', key: 'index', width: 70, align: 'center' },
-  { title: '表单名称', dataIndex: 'name', key: 'name' },
+  { title: '表单名称', dataIndex: 'name', key: 'name', sorter: true },
   { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
   { title: '状态', dataIndex: 'isPublished', key: 'status', width: 100 },
-  { title: '修改时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180 },
+  { title: '修改时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180, sorter: true },
   { title: '操作', key: 'action', width: 280, fixed: 'right' }
 ];
 
@@ -219,18 +219,57 @@ const formState = reactive<FormDefinition>({
 const linkModalVisible = ref(false);
 const publishUrl = ref('');
 
+// Sorting state
+const sortState = reactive({
+  field: 'updatedAt',
+  order: 'descend' // 'ascend' | 'descend'
+});
+
 const loadData = async () => {
   loading.value = true;
   try {
     const res = await getFormList({
-      categoryId: queryParams.categoryId
+      categoryId: queryParams.categoryId,
+      page: pagination.current,
+      pageSize: pagination.pageSize,
+      sortBy: sortState.field,
+      isDescending: sortState.order === 'descend'
     });
-    // request returns res.data directly (the array)
-    const list = (Array.isArray(res) ? res : (res as any).data) || [];
-    tableData.value = list;
-    pagination.total = list.length;
+    
+    // Check structure. If it's ApiResponse<PagedResult<T>>, then res might be { code, msg, data: { items, total } }
+    // Or if axios interceptor unwraps it...
+    // Let's assume axios interceptor unwraps "data". So res is { items, total } or similar.
+    // BUT previous code was: const list = (Array.isArray(res) ? res : (res as any).data) || [];
+    // If backend changed from List<T> to PagedResult<T>, the structure changed.
+    // The previous implementation of FormController.GetForms returned ApiResponse<List<T>>.
+    // Now it returns ApiResponse<PagedResult<T>>.
+    // If interceptor returns `response.data`, then `res` is `ApiResponse`.
+    // If interceptor returns `response.data.data` (common pattern), then `res` is `PagedResult`.
+    
+    // Let's look at `utils/request.ts` if possible, but assuming standard behavior or inspecting previous code.
+    // Previous code: `const list = (Array.isArray(res) ? res : (res as any).data) || [];`
+    // This suggests res might be the array itself OR an object containing data.
+    
+    // With PagedResult, we expect:
+    // res.items (or res.data.items)
+    // res.total (or res.data.total)
+    
+    // Let's handle it safely.
+    const resultData = (res as any).items ? res : (res as any).data;
+    
+    if (resultData && Array.isArray(resultData.items)) {
+       tableData.value = resultData.items;
+       pagination.total = resultData.total;
+    } else {
+       // Fallback or error
+       tableData.value = [];
+       pagination.total = 0;
+    }
+
   } catch (e) {
     // error
+    tableData.value = [];
+    pagination.total = 0;
   } finally {
     loading.value = false;
   }
@@ -242,21 +281,20 @@ const loadCategories = async () => {
 };
 
 const handleSearch = () => {
-  // Client side filtering if backend doesn't support search yet
-  // Or just reload if backend supports search (it only supports categoryId now)
+  pagination.current = 1;
   loadData();
 };
 
-const handleTableChange = (pag: any) => {
+const handleTableChange = (pag: any, filters: any, sorter: any) => {
   pagination.current = pag.current;
   pagination.pageSize = pag.pageSize;
-  // loadData(); // No need to reload if client side pagination, but Ant Design Table handles it if we don't handle change event for server side
-  // But here we are just setting pagination state. If we want client side pagination with Ant Table, we pass data and pagination prop.
-  // If we want server side, we call API. 
-  // Since backend doesn't support pagination, we should probably just let Ant Table handle it by not listening to change or implementing client side slicing.
-  // For simplicity, let's just reload.
-  // Actually, if backend returns all, Ant Table with pagination prop will slice it automatically if we don't use server-side logic.
-  // But we are setting tableData to full list.
+  
+  if (sorter.field) {
+    sortState.field = sorter.field;
+    sortState.order = sorter.order || 'descend'; // Default to descend if order is null (cancelled sort)
+  }
+  
+  loadData();
 };
 
 const handleCreate = () => {

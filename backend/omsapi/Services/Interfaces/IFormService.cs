@@ -1,3 +1,4 @@
+using omsapi.Models.Common;
 using omsapi.Models.Dtos.Forms;
 
 namespace omsapi.Services.Interfaces
@@ -12,7 +13,7 @@ namespace omsapi.Services.Interfaces
         Task<bool> DeleteCategoryAsync(long id);
 
         // Form Definition
-        Task<List<FormDefinitionDto>> GetFormsAsync(long? categoryId = null);
+        Task<PagedResult<FormDefinitionDto>> GetFormsAsync(long? categoryId = null, string? sortBy = null, bool isDescending = true, int page = 1, int pageSize = 10);
         Task<FormDefinitionDto?> GetFormByIdAsync(long id);
         Task<FormDefinitionDto> CreateFormAsync(CreateFormDefinitionDto dto, long userId);
         Task<FormDefinitionDto?> UpdateFormAsync(long id, UpdateFormDefinitionDto dto, long userId);

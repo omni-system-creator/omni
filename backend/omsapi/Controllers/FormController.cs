@@ -72,10 +72,15 @@ namespace omsapi.Controllers
         // Forms
 
         [HttpGet("definitions")]
-        public async Task<ActionResult<ApiResponse<List<FormDefinitionDto>>>> GetForms([FromQuery] long? categoryId)
+        public async Task<ActionResult<ApiResponse<PagedResult<FormDefinitionDto>>>> GetForms(
+            [FromQuery] long? categoryId, 
+            [FromQuery] string? sortBy, 
+            [FromQuery] bool isDescending = true,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var result = await _formService.GetFormsAsync(categoryId);
-            return Ok(ApiResponse<List<FormDefinitionDto>>.Success(result));
+            var result = await _formService.GetFormsAsync(categoryId, sortBy, isDescending, page, pageSize);
+            return Ok(ApiResponse<PagedResult<FormDefinitionDto>>.Success(result));
         }
 
         [HttpGet("definitions/{id}")]

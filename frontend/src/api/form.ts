@@ -54,7 +54,13 @@ export interface FormDefinition {
   updatedAt?: string;
 }
 
-export function getFormList(params: { categoryId?: number }) {
+export function getFormList(params: { 
+  categoryId?: number;
+  sortBy?: string;
+  isDescending?: boolean;
+  page?: number;
+  pageSize?: number;
+}) {
   return request({
     url: '/form/definitions',
     method: 'get',
