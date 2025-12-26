@@ -22,6 +22,8 @@
     "@leafer-in/find": "^1.12.0",
     "@types/three": "^0.182.0",
     "@types/uuid": "^10.0.0",
+    "@wangeditor/editor": "^5.1.23",
+    "@wangeditor/editor-for-vue": "^5.1.12",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.13.2",
     "echarts": "^6.0.0",
