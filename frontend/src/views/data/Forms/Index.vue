@@ -36,6 +36,7 @@ import CategoryTree from './components/CategoryTree.vue';
 import FormList from './components/FormList.vue';
 import FormDesigner from './components/FormDesigner.vue';
 import { updateForm, getFormDetail, type FormCategory } from '@/api/form';
+import { message } from 'ant-design-vue';
 
 const currentCategoryId = ref<number | undefined>(undefined);
 const currentCategoryName = ref('');
@@ -54,9 +55,17 @@ const handleCategorySelect = (category: FormCategory | null) => {
 
 const openDesigner = async (form: any) => {
   // Fetch latest detail to get content
-  const res = await getFormDetail(form.id);
-  currentForm.value = (res as any).data;
-  isDesignerOpen.value = true;
+  try {
+    const res = await getFormDetail(form.id);
+    const data = (res as any).data || res;
+    currentForm.value = {
+      ...data,
+      content: data.formItems || '[]'
+    };
+    isDesignerOpen.value = true;
+  } catch (error) {
+    message.error('加载表单失败');
+  }
 };
 
 const closeDesigner = () => {
@@ -66,11 +75,19 @@ const closeDesigner = () => {
 
 const handleDesignerSave = async (content: string) => {
   if (currentForm.value.id) {
-    await updateForm(currentForm.value.id, {
-      ...currentForm.value,
-      content
-    });
-    // Maybe show success message here or inside component
+    try {
+      const { content: ignored, ...formData } = currentForm.value;
+      await updateForm(formData.id, {
+        ...formData,
+        formItems: content
+      });
+      message.success('保存成功');
+      // Update local state in case we continue editing
+      currentForm.value.content = content;
+      currentForm.value.formItems = content;
+    } catch (error) {
+      // Error handled by request interceptor usually, but safe to log
+    }
   }
 };
 </script>

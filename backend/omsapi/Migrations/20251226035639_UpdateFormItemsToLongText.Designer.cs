@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20251226035639_UpdateFormItemsToLongText")]
+    partial class UpdateFormItemsToLongText
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -462,9 +465,6 @@ namespace omsapi.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
-                    b.Property<bool>("RequiresLogin")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -508,7 +508,7 @@ namespace omsapi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("frm_data");
+                    b.ToTable("sys_form_result");
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.SystemAuditLog", b =>

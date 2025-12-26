@@ -108,5 +108,41 @@ namespace omsapi.Controllers
             if (!result) return NotFound(ApiResponse<object>.Error("Form not found", 404));
             return Ok(ApiResponse<bool>.Success(true, "Deleted successfully"));
         }
+
+        [HttpPost("submit")]
+        public async Task<ActionResult<ApiResponse<FormResultDto>>> SubmitForm([FromBody] CreateFormResultDto dto)
+        {
+            try 
+            {
+                // If submittedBy is not provided, try to use current user
+                if (string.IsNullOrEmpty(dto.SubmittedBy))
+                {
+                    // For anonymous submission, we might use IP or just "Anonymous"
+                    // Here we assume if they are logged in we use username, else "Anonymous"
+                    if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        dto.SubmittedBy = User.Identity.Name ?? "User " + GetCurrentUserId();
+                    }
+                    else
+                    {
+                         dto.SubmittedBy = "Anonymous";
+                    }
+                }
+                
+                var result = await _formService.SubmitFormAsync(dto);
+                return Ok(ApiResponse<FormResultDto>.Success(result, "Submitted successfully"));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.Error(ex.Message));
+            }
+        }
+
+        [HttpGet("results/{formId}")]
+        public async Task<ActionResult<ApiResponse<List<FormResultDto>>>> GetFormResults(long formId)
+        {
+            var result = await _formService.GetFormResultsAsync(formId);
+            return Ok(ApiResponse<List<FormResultDto>>.Success(result));
+        }
     }
 }

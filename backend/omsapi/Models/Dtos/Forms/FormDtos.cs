@@ -31,6 +31,7 @@ namespace omsapi.Models.Dtos.Forms
         public string? Description { get; set; }
         public string? FormItems { get; set; }
         public bool IsPublished { get; set; }
+        public bool RequiresLogin { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -42,15 +43,27 @@ namespace omsapi.Models.Dtos.Forms
         public string? Code { get; set; }
         public string? Description { get; set; }
         public string? FormItems { get; set; }
+        public bool RequiresLogin { get; set; }
     }
 
-    public class UpdateFormDefinitionDto
+    public class UpdateFormDefinitionDto : CreateFormDefinitionDto
     {
-        public long CategoryId { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string? Code { get; set; }
-        public string? Description { get; set; }
-        public string? FormItems { get; set; }
-        public bool IsPublished { get; set; }
+        public bool? IsPublished { get; set; }
+    }
+
+    public class FormResultDto
+    {
+        public long Id { get; set; }
+        public long FormId { get; set; }
+        public string Data { get; set; }
+        public DateTime SubmittedAt { get; set; }
+        public string SubmittedBy { get; set; }
+    }
+
+    public class CreateFormResultDto
+    {
+        public long FormId { get; set; }
+        public string Data { get; set; }
+        public string SubmittedBy { get; set; }
     }
 }

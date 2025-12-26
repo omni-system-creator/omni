@@ -29,34 +29,63 @@
         @change="handleTableChange"
         row-key="id"
       >
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'status'">
-            <a-tag :color="record.status === 1 ? 'green' : 'orange'">
-              {{ record.status === 1 ? '已发布' : '草稿' }}
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.key === 'index'">
+            {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+          </template>
+          <template v-else-if="column.key === 'status'">
+            <a-tag :color="record.isPublished ? 'green' : 'orange'">
+              {{ record.isPublished ? '已发布' : '草稿' }}
             </a-tag>
+          </template>
+          <template v-else-if="column.key === 'updatedAt'">
+            {{ record.updatedAt ? dayjs(record.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-' }}
           </template>
           <template v-else-if="column.key === 'action'">
             <a-space>
-              <a-button type="link" size="small" @click="handleEdit(record)">编辑</a-button>
-              <a-button type="link" size="small" @click="handleDesign(record)">设计</a-button>
-              <a-button 
-                type="link" 
-                size="small" 
-                @click="handlePublish(record)"
-                v-if="record.status !== 1"
-              >
-                发布
-              </a-button>
-              <a-button 
-                type="link" 
-                size="small" 
-                @click="handleViewLink(record)"
-                v-if="record.status === 1"
-              >
-                链接
-              </a-button>
+              <a-tooltip title="编辑">
+                <a-button type="link" size="small" @click="handleEdit(record)">
+                  <template #icon><EditOutlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="设计">
+                <a-button type="link" size="small" @click="handleDesign(record)">
+                  <template #icon><FormOutlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="发布" v-if="!record.isPublished">
+                <a-button 
+                  type="link" 
+                  size="small" 
+                  @click="handlePublish(record)"
+                >
+                  <template #icon><SendOutlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="取消发布" v-if="record.isPublished">
+                <a-button 
+                  type="link" 
+                  size="small" 
+                  @click="handleUnpublish(record)"
+                >
+                  <template #icon><StopOutlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="分享" v-if="record.isPublished">
+                <a-button 
+                  type="link" 
+                  size="small" 
+                  @click="handleViewLink(record)"
+                >
+                  <template #icon><ShareAltOutlined /></template>
+                </a-button>
+              </a-tooltip>
               <a-popconfirm title="确定删除吗？" @confirm="handleDelete(record.id)">
-                <a-button type="link" danger size="small">删除</a-button>
+                <a-tooltip title="删除">
+                  <a-button type="link" danger size="small">
+                    <template #icon><DeleteOutlined /></template>
+                  </a-button>
+                </a-tooltip>
               </a-popconfirm>
             </a-space>
           </template>
@@ -89,6 +118,9 @@
         <a-form-item label="描述">
           <a-textarea v-model:value="formState.description" :rows="4" />
         </a-form-item>
+        <a-form-item label="设置" name="requiresLogin">
+          <a-checkbox v-model:checked="formState.requiresLogin">需要登录才能填报</a-checkbox>
+        </a-form-item>
       </a-form>
     </a-modal>
 
@@ -114,9 +146,20 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue';
-import { PlusOutlined, CopyOutlined } from '@ant-design/icons-vue';
+import { 
+  PlusOutlined, 
+  CopyOutlined,
+  EditOutlined,
+  FormOutlined,
+  SendOutlined,
+  StopOutlined,
+  ShareAltOutlined,
+  DeleteOutlined
+} from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import { getFormList, createForm, updateForm, deleteForm, publishForm, getCategoryTree, type FormDefinition } from '@/api/form';
+import dayjs from 'dayjs';
+import { useRouter } from 'vue-router';
+import { getFormList, createForm, updateForm, deleteForm, getCategoryTree, type FormDefinition, getFormDetail } from '@/api/form';
 
 const props = defineProps({
   categoryId: {
@@ -131,12 +174,16 @@ const props = defineProps({
 
 const emit = defineEmits(['open-designer']);
 
+const router = useRouter();
 const loading = ref(false);
 const tableData = ref<FormDefinition[]>([]);
 const pagination = reactive({
   current: 1,
   pageSize: 10,
-  total: 0
+  total: 0,
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50', '100'],
+  showTotal: (total: number) => `共 ${total} 条`
 });
 const queryParams = reactive({
   keyword: '',
@@ -144,10 +191,11 @@ const queryParams = reactive({
 });
 
 const columns = [
+  { title: '序号', key: 'index', width: 70, align: 'center' },
   { title: '表单名称', dataIndex: 'name', key: 'name' },
   { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
-  { title: '创建时间', dataIndex: 'createTime', key: 'createTime', width: 180 },
+  { title: '状态', dataIndex: 'isPublished', key: 'status', width: 100 },
+  { title: '修改时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180 },
   { title: '操作', key: 'action', width: 280, fixed: 'right' }
 ];
 
@@ -159,7 +207,8 @@ const categoryTreeData = ref([]);
 const formState = reactive<FormDefinition>({
   name: '',
   categoryId: 0,
-  description: ''
+  description: '',
+  requiresLogin: false
 });
 
 // Link Modal
@@ -170,12 +219,12 @@ const loadData = async () => {
   loading.value = true;
   try {
     const res = await getFormList({
-      page: pagination.current,
-      pageSize: pagination.pageSize,
-      ...queryParams
+      categoryId: queryParams.categoryId
     });
-    tableData.value = (res as any).data.list;
-    pagination.total = (res as any).data.total;
+    // request returns res.data directly (the array)
+    const list = (Array.isArray(res) ? res : (res as any).data) || [];
+    tableData.value = list;
+    pagination.total = list.length;
   } catch (e) {
     // error
   } finally {
@@ -185,18 +234,25 @@ const loadData = async () => {
 
 const loadCategories = async () => {
   const res = await getCategoryTree();
-  categoryTreeData.value = (res as any).data;
+  categoryTreeData.value = (Array.isArray(res) ? res : (res as any).data) || [];
 };
 
 const handleSearch = () => {
-  pagination.current = 1;
+  // Client side filtering if backend doesn't support search yet
+  // Or just reload if backend supports search (it only supports categoryId now)
   loadData();
 };
 
 const handleTableChange = (pag: any) => {
   pagination.current = pag.current;
   pagination.pageSize = pag.pageSize;
-  loadData();
+  // loadData(); // No need to reload if client side pagination, but Ant Design Table handles it if we don't handle change event for server side
+  // But here we are just setting pagination state. If we want client side pagination with Ant Table, we pass data and pagination prop.
+  // If we want server side, we call API. 
+  // Since backend doesn't support pagination, we should probably just let Ant Table handle it by not listening to change or implementing client side slicing.
+  // For simplicity, let's just reload.
+  // Actually, if backend returns all, Ant Table with pagination prop will slice it automatically if we don't use server-side logic.
+  // But we are setting tableData to full list.
 };
 
 const handleCreate = () => {
@@ -204,6 +260,7 @@ const handleCreate = () => {
   formState.name = '';
   formState.categoryId = props.categoryId || (categoryTreeData.value[0] as any)?.id;
   formState.description = '';
+  formState.requiresLogin = false;
   dialogTitle.value = '新建表单';
   dialogVisible.value = true;
 };
@@ -213,6 +270,7 @@ const handleEdit = (record: FormDefinition) => {
   formState.name = record.name;
   formState.categoryId = record.categoryId;
   formState.description = record.description;
+  formState.requiresLogin = !!record.requiresLogin;
   dialogTitle.value = '编辑表单';
   dialogVisible.value = true;
 };
@@ -256,16 +314,30 @@ const handleDialogOk = async () => {
 };
 
 const handlePublish = async (record: FormDefinition) => {
-  const res = await publishForm(record.id!);
+  await updateForm(record.id!, {
+    ...record,
+    isPublished: true
+  });
   message.success('发布成功');
   loadData();
-  publishUrl.value = (res as any).data.url;
-  linkModalVisible.value = true;
+  handleViewLink({ ...record, isPublished: true });
+};
+
+const handleUnpublish = async (record: FormDefinition) => {
+  await updateForm(record.id!, {
+    ...record,
+    isPublished: false
+  });
+  message.success('已取消发布');
+  loadData();
 };
 
 const handleViewLink = (record: FormDefinition) => {
-  // Normally this URL comes from backend or constructed
-  publishUrl.value = `http://localhost:5173/form/submit/${record.id}`; 
+  const routeData = router.resolve({
+    name: 'FormSubmit',
+    params: { id: record.id }
+  });
+  publishUrl.value = `${window.location.origin}${routeData.href}`; 
   linkModalVisible.value = true;
 };
 

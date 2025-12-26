@@ -140,6 +140,7 @@ namespace omsapi.Services
                     Description = f.Description,
                     FormItems = f.FormItems,
                     IsPublished = f.IsPublished,
+                    RequiresLogin = f.RequiresLogin,
                     CreatedAt = f.CreatedAt,
                     UpdatedAt = f.UpdatedAt
                 })
@@ -160,6 +161,7 @@ namespace omsapi.Services
                 Description = f.Description,
                 FormItems = f.FormItems,
                 IsPublished = f.IsPublished,
+                RequiresLogin = f.RequiresLogin,
                 CreatedAt = f.CreatedAt,
                 UpdatedAt = f.UpdatedAt
             };
@@ -175,6 +177,7 @@ namespace omsapi.Services
                 Description = dto.Description,
                 FormItems = dto.FormItems,
                 IsPublished = false,
+                RequiresLogin = dto.RequiresLogin,
                 CreatedBy = userId,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -192,6 +195,7 @@ namespace omsapi.Services
                 Description = form.Description,
                 FormItems = form.FormItems,
                 IsPublished = form.IsPublished,
+                RequiresLogin = form.RequiresLogin,
                 CreatedAt = form.CreatedAt,
                 UpdatedAt = form.UpdatedAt
             };
@@ -206,8 +210,15 @@ namespace omsapi.Services
             form.Name = dto.Name;
             form.Code = dto.Code;
             form.Description = dto.Description;
-            form.FormItems = dto.FormItems;
-            form.IsPublished = dto.IsPublished;
+            if (dto.FormItems != null)
+            {
+                form.FormItems = dto.FormItems;
+            }
+            form.RequiresLogin = dto.RequiresLogin;
+            if (dto.IsPublished.HasValue)
+            {
+                form.IsPublished = dto.IsPublished.Value;
+            }
             form.UpdatedBy = userId;
             form.UpdatedAt = DateTime.Now;
 
@@ -222,6 +233,7 @@ namespace omsapi.Services
                 Description = form.Description,
                 FormItems = form.FormItems,
                 IsPublished = form.IsPublished,
+                RequiresLogin = form.RequiresLogin,
                 CreatedAt = form.CreatedAt,
                 UpdatedAt = form.UpdatedAt
             };
@@ -235,6 +247,55 @@ namespace omsapi.Services
             _context.FormDefinitions.Remove(form);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        // Form Submission
+        public async Task<FormResultDto> SubmitFormAsync(CreateFormResultDto dto)
+        {
+            var form = await _context.FormDefinitions.FindAsync(dto.FormId);
+            if (form == null)
+            {
+                throw new Exception("表单不存在");
+            }
+            if (!form.IsPublished)
+            {
+                throw new Exception("表单未发布或已停止收集");
+            }
+
+            var result = new FormResult
+            {
+                FormId = dto.FormId,
+                Data = dto.Data,
+                SubmittedBy = dto.SubmittedBy,
+                SubmittedAt = DateTime.Now
+            };
+            _context.FormResults.Add(result);
+            await _context.SaveChangesAsync();
+
+            return new FormResultDto
+            {
+                Id = result.Id,
+                FormId = result.FormId,
+                Data = result.Data,
+                SubmittedBy = result.SubmittedBy,
+                SubmittedAt = result.SubmittedAt
+            };
+        }
+
+        public async Task<List<FormResultDto>> GetFormResultsAsync(long formId)
+        {
+            return await _context.FormResults
+                .Where(r => r.FormId == formId)
+                .OrderByDescending(r => r.SubmittedAt)
+                .Select(r => new FormResultDto
+                {
+                    Id = r.Id,
+                    FormId = r.FormId,
+                    Data = r.Data,
+                    SubmittedBy = r.SubmittedBy,
+                    SubmittedAt = r.SubmittedAt
+                })
+                .ToListAsync();
         }
     }
 }

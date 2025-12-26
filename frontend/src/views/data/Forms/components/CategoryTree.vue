@@ -16,18 +16,26 @@
       />
       
       <a-tree
-        v-if="treeData.length > 0"
+        v-if="treeData && treeData.length > 0"
         :tree-data="treeData"
         :field-names="{ children: 'children', title: 'name', key: 'id' }"
         :default-expand-all="true"
+        show-line
+        show-icon
         @select="onSelect"
         block-node
       >
-        <template #title="{ name, id }">
+        <template #icon="{ expanded, dataRef }">
+          <template v-if="dataRef.children && dataRef.children.length > 0">
+            <FolderOpenOutlined v-if="expanded" />
+            <FolderOutlined v-else />
+          </template>
+        </template>
+        <template #title="{ name, id, dataRef }">
           <div class="tree-node">
-            <span>{{ name }}</span>
+            <span class="node-title">{{ name }}</span>
             <span class="node-actions" @click.stop>
-              <EditOutlined class="action-icon" @click="handleEdit(id, name)" />
+              <EditOutlined class="action-icon" @click="handleEdit(dataRef)" />
               <DeleteOutlined class="action-icon" @click="handleDelete(id)" />
               <PlusOutlined class="action-icon" @click="handleAddChild(id)" />
             </span>
@@ -49,7 +57,7 @@
           <a-input v-model:value="formState.name" placeholder="请输入分类名称" />
         </a-form-item>
         <a-form-item label="排序">
-          <a-input-number v-model:value="formState.sort" style="width: 100%" :min="0" />
+          <a-input-number v-model:value="formState.sortOrder" style="width: 100%" :min="0" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -58,7 +66,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+import { 
+  PlusOutlined, 
+  EditOutlined, 
+  DeleteOutlined,
+  FolderOutlined,
+  FolderOpenOutlined,
+  FileOutlined
+} from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import { getCategoryTree, createCategory, updateCategory, deleteCategory, type FormCategory } from '@/api/form';
 
@@ -73,7 +88,7 @@ const dialogTitle = ref('新建分类');
 const confirmLoading = ref(false);
 const formState = reactive<FormCategory>({
   name: '',
-  sort: 0,
+  sortOrder: 0,
   parentId: null
 });
 
@@ -81,8 +96,29 @@ const formState = reactive<FormCategory>({
 const loadData = async () => {
   try {
     const res = await getCategoryTree();
-    treeData.value = (res as any).data || [];
+    // The backend returns a flat list or tree, but if it returns ApiResponse<T>, we need to access .data
+    // If request utility automatically unwraps, we might get data directly.
+    // Based on previous code, it seems request returns full Axios response or ApiResponse structure.
+    // Let's check api/form.ts again. It uses request from utils/request.
+    // Assuming request returns { data: ... } or the data directly.
+    // If res.data exists, use it. If res is an array, use it.
+    
+    // Check if res has data property (standard axios response or ApiResponse wrapper)
+    const data = (res as any).data || res;
+    
+    if (Array.isArray(data)) {
+        treeData.value = data;
+    } else if (data && Array.isArray(data.children)) {
+         // Maybe it returns a root node?
+         treeData.value = [data];
+    } else {
+        // Fallback
+        treeData.value = [];
+    }
+    
+    console.log('Category Tree Data:', treeData.value);
   } catch (error) {
+    console.error('Failed to load categories:', error);
     message.error('加载分类失败');
   }
 };
@@ -100,7 +136,7 @@ const onSelect = (keys: number[], info: any) => {
 const handleAddRoot = () => {
   formState.id = undefined;
   formState.name = '';
-  formState.sort = 0;
+  formState.sortOrder = 0;
   formState.parentId = null;
   dialogTitle.value = '新建根分类';
   dialogVisible.value = true;
@@ -109,16 +145,17 @@ const handleAddRoot = () => {
 const handleAddChild = (parentId: number) => {
   formState.id = undefined;
   formState.name = '';
-  formState.sort = 0;
+  formState.sortOrder = 0;
   formState.parentId = parentId;
   dialogTitle.value = '新建子分类';
   dialogVisible.value = true;
 };
 
-const handleEdit = (id: number, name: string) => {
-  formState.id = id;
-  formState.name = name;
-  // In real app, fetch detail or find from tree
+const handleEdit = (category: any) => {
+  formState.id = category.id;
+  formState.name = category.name;
+  formState.sortOrder = category.sortOrder || 0;
+  formState.parentId = category.parentId;
   dialogTitle.value = '编辑分类';
   dialogVisible.value = true;
 };
@@ -193,25 +230,56 @@ onMounted(() => {
 .tree-node {
   display: flex;
   justify-content: space-between;
-  width: 100%;
-  padding-right: 8px;
+  align-items: center;
+  flex: 1;
+  width: 100%; /* Ensure it takes full width in block-node mode */
+  min-width: 0;
+}
+
+.node-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .node-actions {
   display: none;
+  margin-left: 8px;
+  flex-shrink: 0;
 }
 
 .tree-node:hover .node-actions {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
 }
 
 .action-icon {
   margin-left: 8px;
   color: #666;
-  cursor: pointer;
+  font-size: 14px;
 }
 
 .action-icon:hover {
   color: #1890ff;
+}
+
+:deep(.ant-tree-node-content-wrapper) {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+}
+
+:deep(.ant-tree-switcher) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+}
+
+:deep(.ant-tree-title) {
+  flex: 1;
+  overflow: hidden;
+  min-width: 0;
 }
 </style>

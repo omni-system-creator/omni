@@ -17,5 +17,9 @@ namespace omsapi.Services.Interfaces
         Task<FormDefinitionDto> CreateFormAsync(CreateFormDefinitionDto dto, long userId);
         Task<FormDefinitionDto?> UpdateFormAsync(long id, UpdateFormDefinitionDto dto, long userId);
         Task<bool> DeleteFormAsync(long id);
+
+        // Form Submission
+        Task<FormResultDto> SubmitFormAsync(CreateFormResultDto dto);
+        Task<List<FormResultDto>> GetFormResultsAsync(long formId);
     }
 }

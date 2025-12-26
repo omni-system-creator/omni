@@ -5,106 +5,110 @@ export interface FormCategory {
   id?: number;
   name: string;
   parentId?: number | null;
-  sort?: number;
+  sortOrder?: number;
   children?: FormCategory[];
 }
 
-export function getCategoryTree(params?: any) {
-  // Mock data for now if backend is not ready, but normally this calls API
-  // return request({
-  //   url: '/api/form/category/tree',
-  //   method: 'get',
-  //   params
-  // });
-  
-  // Return mock promise for UI development
-  return Promise.resolve({
-    data: [
-      {
-        id: 1,
-        name: '人事管理',
-        children: [
-          { id: 11, name: '入职申请' },
-          { id: 12, name: '请假申请' }
-        ]
-      },
-      {
-        id: 2,
-        name: '行政管理',
-        children: [
-          { id: 21, name: '物资申领' }
-        ]
-      }
-    ]
+export function getCategoryTree() {
+  return request({
+    url: '/form/categories/tree',
+    method: 'get'
   });
 }
 
 export function createCategory(data: FormCategory) {
-  return Promise.resolve({ code: 200, message: 'Success' });
+  return request({
+    url: '/form/categories',
+    method: 'post',
+    data
+  });
 }
 
 export function updateCategory(id: number, data: FormCategory) {
-  return Promise.resolve({ code: 200, message: 'Success' });
+  return request({
+    url: `/form/categories/${id}`,
+    method: 'put',
+    data
+  });
 }
 
 export function deleteCategory(id: number) {
-  return Promise.resolve({ code: 200, message: 'Success' });
+  return request({
+    url: `/form/categories/${id}`,
+    method: 'delete'
+  });
 }
 
 // Forms
 export interface FormDefinition {
   id?: number;
-  name: string;
   categoryId: number;
+  name: string;
+  code?: string;
   description?: string;
-  status?: number; // 0: Draft, 1: Published
-  content?: string;
-  publishUrl?: string;
-  createTime?: string;
+  formItems?: string; // JSON string
+  isPublished?: boolean;
+  requiresLogin?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export function getFormList(params: any) {
-  // return request({
-  //   url: '/api/form/list',
-  //   method: 'get',
-  //   params
-  // });
-  
-  return Promise.resolve({
-    data: {
-      total: 2,
-      list: [
-        { id: 1, name: '员工入职登记表', categoryId: 11, status: 1, createTime: '2023-10-01', description: '用于新员工入职信息采集' },
-        { id: 2, name: '请假条', categoryId: 12, status: 0, createTime: '2023-10-05', description: '员工请假使用' }
-      ]
-    }
+export function getFormList(params: { categoryId?: number }) {
+  return request({
+    url: '/form/definitions',
+    method: 'get',
+    params
   });
 }
 
 export function getFormDetail(id: number) {
-  return Promise.resolve({
-    data: {
-      id,
-      name: '员工入职登记表',
-      categoryId: 11,
-      content: '[]', // JSON string of form schema
-      status: 1
-    }
+  return request({
+    url: `/form/definitions/${id}`,
+    method: 'get'
   });
 }
 
 export function createForm(data: FormDefinition) {
-  return Promise.resolve({ code: 200, message: 'Success', data: { id: 99 } });
+  return request({
+    url: '/form/definitions',
+    method: 'post',
+    data
+  });
 }
 
 export function updateForm(id: number, data: FormDefinition) {
-  return Promise.resolve({ code: 200, message: 'Success' });
+  return request({
+    url: `/form/definitions/${id}`,
+    method: 'put',
+    data
+  });
+}
+
+export function publishForm(id: number, isPublished: boolean) {
+  // Since we don't have a specific publish endpoint, we get the form first (or assume we have data) 
+  // and then update it. However, the best way here is to just expect the component to call updateForm.
+  // But to keep compatibility with existing code imports, I'll add this.
+  // Actually, better to just let the component handle the logic, but I need to export the function 
+  // if it's imported.
+  // Let's implement it as a partial update if possible, but the API expects a full DTO usually.
+  // The updateForm expects FormDefinition.
+  // I will assume the caller passes the full object or I'll just change the component to use updateForm.
+  // For now, let's export a helper that requires the full object or just change the component.
+  // I will NOT export publishForm here, I will remove it from FormList.vue imports and use updateForm there.
+  return Promise.reject('Use updateForm instead');
 }
 
 export function deleteForm(id: number) {
-  return Promise.resolve({ code: 200, message: 'Success' });
+  return request({
+    url: `/form/definitions/${id}`,
+    method: 'delete'
+  });
 }
 
-export function publishForm(id: number) {
-  return Promise.resolve({ code: 200, message: 'Success', data: { url: `http://localhost:5173/form/submit/${id}` } });
+export function submitForm(data: { formId: number; data: string; submittedBy?: string }) {
+  return request({
+    url: '/form/submit',
+    method: 'post',
+    data
+  });
 }

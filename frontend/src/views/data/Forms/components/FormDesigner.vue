@@ -242,7 +242,6 @@ onUnmounted(() => {
 const handleSave = () => {
   const content = JSON.stringify(formItems.value);
   emit('save', content);
-  message.success('保存成功');
 };
 
 // Preview Logic

@@ -17,6 +17,12 @@ const router = createRouter({
       component: () => import('../views/share/ShareAccess.vue'),
       meta: { title: '文件分享', public: true }
     },
+    {
+      path: '/form/submit/:id',
+      name: 'FormSubmit',
+      component: () => import('../views/data/Forms/Submit.vue'),
+      meta: { title: '表单填写', public: true }
+    },
     // 基础路由，不需要权限
     {
       path: '/basic', // 避免和动态路由的 / 冲突

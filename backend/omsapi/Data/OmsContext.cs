@@ -43,6 +43,7 @@ namespace omsapi.Data
         // Form Entities
         public DbSet<FormCategory> FormCategories { get; set; }
         public DbSet<FormDefinition> FormDefinitions { get; set; }
+        public DbSet<FormResult> FormResults { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
