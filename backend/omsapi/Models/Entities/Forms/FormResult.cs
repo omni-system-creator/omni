@@ -16,13 +16,13 @@ namespace omsapi.Models.Entities.Forms
 
         // Storing JSON data as string. 
         [Column("data")] 
-        public string Data { get; set; }
+        public string Data { get; set; } = string.Empty;
 
         [Column("submitted_at")]
         public DateTime SubmittedAt { get; set; } = DateTime.Now;
 
         [Column("submitted_by")]
         [StringLength(100)]
-        public string SubmittedBy { get; set; } // Username or IP
+        public string SubmittedBy { get; set; } = string.Empty; // Username or IP
     }
 }

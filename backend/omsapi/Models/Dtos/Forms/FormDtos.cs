@@ -55,15 +55,15 @@ namespace omsapi.Models.Dtos.Forms
     {
         public long Id { get; set; }
         public long FormId { get; set; }
-        public string Data { get; set; }
+        public string Data { get; set; } = string.Empty;
         public DateTime SubmittedAt { get; set; }
-        public string SubmittedBy { get; set; }
+        public string SubmittedBy { get; set; } = string.Empty;
     }
 
     public class CreateFormResultDto
     {
         public long FormId { get; set; }
-        public string Data { get; set; }
-        public string SubmittedBy { get; set; }
+        public string Data { get; set; } = string.Empty;
+        public string SubmittedBy { get; set; } = string.Empty;
     }
 }

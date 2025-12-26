@@ -22,6 +22,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false
       },
+      '/m': {
+        target: 'http://localhost:5174',
+        changeOrigin: true,
+        secure: false
+      },
       '/bigview': {
         target: 'https://oms.jinlan.info',
         changeOrigin: true,
