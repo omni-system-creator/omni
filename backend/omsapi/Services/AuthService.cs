@@ -218,6 +218,7 @@ namespace omsapi.Services
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, username),
+                new Claim(ClaimTypes.Name, username),
                 new Claim("id", userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

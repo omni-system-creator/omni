@@ -33,6 +33,8 @@ namespace omsapi.Models.Dtos.Forms
         public bool IsPublished { get; set; }
         public bool RequiresLogin { get; set; }
         public bool LimitOnePerUser { get; set; }
+        public bool HasSubmitted { get; set; }
+        public string? SubmittedData { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

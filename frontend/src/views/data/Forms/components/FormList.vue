@@ -285,7 +285,7 @@ const handleSearch = () => {
   loadData();
 };
 
-const handleTableChange = (pag: any, filters: any, sorter: any) => {
+const handleTableChange = (pag: any, _filters: any, sorter: any) => {
   pagination.current = pag.current;
   pagination.pageSize = pag.pageSize;
   

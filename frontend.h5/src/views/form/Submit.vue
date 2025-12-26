@@ -13,7 +13,7 @@
       </van-empty>
     </div>
     
-    <div v-else-if="submitted" class="success-state">
+    <div v-else-if="submitted && !isReadOnly" class="success-state">
       <van-empty image="network" description="提交成功" />
       <div class="success-actions">
         <van-button v-if="!formDefinition?.limitOnePerUser" block type="primary" @click="resetForm">再填一份</van-button>
@@ -22,6 +22,7 @@
     </div>
     
     <van-form v-else @submit="onSubmit">
+      <van-notice-bar v-if="isReadOnly" wrapable :scrollable="false" text="您已提交过此表单，以下是您的提交内容（只读）" color="#1989fa" background="#ecf9ff" left-icon="info-o" />
       <van-cell-group inset style="margin-top: 10px;">
         <div v-for="item in formItems" :key="item.id">
            <!-- Subtable -->
@@ -31,7 +32,7 @@
              <div v-for="(row, index) in formData[item.id]" :key="index" class="subtable-card">
                <div class="subtable-card-header">
                  <span>第 {{ Number(index) + 1 }} 行</span>
-                 <van-icon name="delete-o" color="#ee0a24" size="20" @click="removeSubTableRow(item.id, Number(index))" />
+                 <van-icon v-if="!isReadOnly" name="delete-o" color="#ee0a24" size="20" @click="removeSubTableRow(item.id, Number(index))" />
                </div>
                
                <div v-for="col in item.columns" :key="col.id">
@@ -43,6 +44,7 @@
                    :label="col.label"
                    :placeholder="col.placeholder || '请输入'"
                    :rules="[{ required: item.required, message: '必填' }]"
+                   :readonly="isReadOnly"
                  />
                  <!-- Subtable Textarea -->
                  <van-field
@@ -55,6 +57,7 @@
                    rows="1"
                    autosize
                    :rules="[{ required: item.required, message: '必填' }]"
+                   :readonly="isReadOnly"
                  />
                  <!-- Subtable Number -->
                  <van-field
@@ -65,6 +68,7 @@
                    :placeholder="col.placeholder || '请输入'"
                    type="number"
                    :rules="[{ required: item.required, message: '必填' }]"
+                   :readonly="isReadOnly"
                  />
                  <!-- Subtable Date -->
                  <van-field
@@ -75,6 +79,7 @@
                    :placeholder="col.placeholder || '选择日期'"
                    type="date"
                    :rules="[{ required: item.required, message: '必填' }]"
+                   :readonly="isReadOnly"
                  />
                  <!-- Subtable Other -->
                  <van-field
@@ -88,7 +93,7 @@
                </div>
              </div>
              
-             <div class="add-row-btn">
+             <div class="add-row-btn" v-if="!isReadOnly">
                <van-button icon="plus" block plain type="primary" size="small" @click="addSubTableRow(item.id, item.columns)">
                  添加行
                </van-button>
@@ -103,6 +108,7 @@
              :label="item.label"
              :placeholder="item.placeholder || '请输入'"
              :rules="[{ required: item.required, message: item.label + '不能为空' }]"
+             :readonly="isReadOnly"
            />
            <!-- Textarea -->
            <van-field
@@ -115,9 +121,10 @@
              rows="2"
              autosize
              :rules="[{ required: item.required, message: item.label + '不能为空' }]"
+             :readonly="isReadOnly"
            />
            <!-- Number -->
-            <van-field
+           <van-field
              v-else-if="item.type === 'number'"
              v-model="formData[item.id]"
              :name="item.id"
@@ -125,8 +132,9 @@
              :placeholder="item.placeholder || '请输入'"
              type="number"
              :rules="[{ required: item.required, message: item.label + '不能为空' }]"
+             :readonly="isReadOnly"
            />
-           <!-- Date Picker -->
+           <!-- Date -->
            <van-field
              v-else-if="item.type === 'date'"
              v-model="formData[item.id]"
@@ -135,20 +143,32 @@
              :placeholder="item.placeholder || '选择日期'"
              type="date"
              :rules="[{ required: item.required, message: item.label + '不能为空' }]"
+             :readonly="isReadOnly"
            />
-           
-           <!-- Others simplified for now -->
+           <!-- Select -->
+           <van-field
+             v-else-if="item.type === 'select'"
+             v-model="formData[item.id]"
+             :name="item.id"
+             :label="item.label"
+             :placeholder="item.placeholder || '请选择'"
+             readonly
+             is-link
+             @click="!isReadOnly && showSelectPicker(item)"
+             :rules="[{ required: item.required, message: item.label + '不能为空' }]"
+           />
+           <!-- Other -->
            <van-field
              v-else
              v-model="formData[item.id]"
              :name="item.id"
              :label="item.label"
-             :placeholder="'(暂不支持的类型: ' + item.type + ')'"
+             :placeholder="'(暂不支持: ' + item.type + ')'"
              readonly
            />
         </div>
       </van-cell-group>
-      <div style="margin: 16px;">
+      <div style="margin: 16px;" v-if="!isReadOnly">
         <van-button round block type="primary" native-type="submit" :loading="submitting">
           提交
         </van-button>
@@ -175,6 +195,7 @@ const error = ref('');
 const formDefinition = ref<any>(null);
 const formItems = ref<any[]>([]);
 const formData = ref<Record<string, any>>({});
+const isReadOnly = ref(false);
 
 const onClickLeft = () => {
   if (window.history.length > 1) {
@@ -209,13 +230,20 @@ const loadForm = async () => {
       return;
     }
 
-    if (data.requiresLogin && !userStore.token) {
+    if ((data.requiresLogin || data.limitOnePerUser) && !userStore.token) {
        error.value = 'requires_login';
        loading.value = false;
        return;
     }
 
     formDefinition.value = data;
+
+    if (data.limitOnePerUser && data.hasSubmitted) {
+       // error.value = '您已填写过此表单，不可重复提交';
+       submitted.value = true;
+       isReadOnly.value = true;
+    }
+
     try {
       formItems.value = JSON.parse(data.formItems || '[]');
     } catch (e) {
@@ -223,13 +251,22 @@ const loadForm = async () => {
     }
     
     // Init form data
-    formItems.value.forEach((item: any) => {
-      if (item.type === 'subtable') {
-        formData.value[item.id] = item.defaultValue || [];
-      } else {
-        formData.value[item.id] = item.defaultValue;
-      }
-    });
+    if (data.limitOnePerUser && data.hasSubmitted && data.submittedData) {
+       try {
+         formData.value = JSON.parse(data.submittedData);
+       } catch (e) {
+         console.error('Failed to parse submitted data', e);
+         formData.value = {};
+       }
+    } else {
+       formItems.value.forEach((item: any) => {
+         if (item.type === 'subtable') {
+           formData.value[item.id] = item.defaultValue || [];
+         } else {
+           formData.value[item.id] = item.defaultValue;
+         }
+       });
+    }
 
   } catch (e) {
     error.value = '加载表单失败';
@@ -363,6 +400,12 @@ onMounted(() => {
 :deep(.van-field--min-height .van-field__value) {
   padding-top: 8px;
   padding-bottom: 8px;
+}
+
+/* 只读状态下字体颜色加深 */
+:deep(.van-field__control:read-only), :deep(.van-field__control:disabled) {
+  color: #323233;
+  -webkit-text-fill-color: #323233;
 }
 
 .loading-state, .error-state {

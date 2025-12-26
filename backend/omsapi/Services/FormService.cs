@@ -192,10 +192,26 @@ namespace omsapi.Services
             return new PagedResult<FormDefinitionDto>(items, total, page, pageSize);
         }
 
-        public async Task<FormDefinitionDto?> GetFormByIdAsync(long id)
+        public async Task<FormDefinitionDto?> GetFormByIdAsync(long id, string? submittedBy = null)
         {
             var f = await _context.FormDefinitions.FindAsync(id);
             if (f == null) return null;
+
+            bool hasSubmitted = false;
+            string? submittedData = null;
+            if (f.LimitOnePerUser && !string.IsNullOrEmpty(submittedBy))
+            {
+                var submission = await _context.FormResults
+                    .Where(r => r.FormId == id && r.SubmittedBy == submittedBy)
+                    .OrderByDescending(r => r.SubmittedAt)
+                    .FirstOrDefaultAsync();
+
+                if (submission != null)
+                {
+                    hasSubmitted = true;
+                    submittedData = submission.Data;
+                }
+            }
 
             return new FormDefinitionDto
             {
@@ -208,6 +224,8 @@ namespace omsapi.Services
                 IsPublished = f.IsPublished,
                 RequiresLogin = f.RequiresLogin,
                 LimitOnePerUser = f.LimitOnePerUser,
+                HasSubmitted = hasSubmitted,
+                SubmittedData = submittedData,
                 CreatedAt = f.CreatedAt,
                 UpdatedAt = f.UpdatedAt
             };

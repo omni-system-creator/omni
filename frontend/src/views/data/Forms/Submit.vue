@@ -14,7 +14,7 @@
       <template v-else-if="error">
         <a-result status="error" :title="error" />
       </template>
-      <template v-else-if="submitted">
+      <template v-else-if="submitted && !isReadOnly">
         <a-result status="success" title="提交成功" sub-title="感谢您的参与">
           <template #extra>
             <a-button v-if="!formDefinition?.limitOnePerUser" type="primary" @click="resetForm">再填一份</a-button>
@@ -22,6 +22,9 @@
         </a-result>
       </template>
       <template v-else>
+        <div v-if="isReadOnly" class="readonly-alert">
+           <a-alert message="您已提交过此表单，以下是您的提交内容（只读）" type="info" show-icon style="margin-bottom: 20px" />
+        </div>
         <a-form
           ref="formRef"
           :model="formData"
@@ -48,7 +51,7 @@
                   <template #bodyCell="{ column, record, index }">
                     <template v-if="column.key === 'action'">
                       <div style="text-align: center">
-                        <DeleteOutlined class="delete-btn" @click="removeSubTableRow(item.id, index)" />
+                        <DeleteOutlined v-if="!isReadOnly" class="delete-btn" @click="removeSubTableRow(item.id, index)" />
                       </div>
                     </template>
                     <template v-else>
@@ -59,11 +62,12 @@
                         v-bind="column.props"
                         :options="column.options"
                         :placeholder="column.title"
+                        :disabled="isReadOnly"
                       />
                     </template>
                   </template>
                 </a-table>
-                <a-button type="dashed" block @click="addSubTableRow(item.id, item.columns)" style="margin-top: 8px">
+                <a-button v-if="!isReadOnly" type="dashed" block @click="addSubTableRow(item.id, item.columns)" style="margin-top: 8px">
                   <PlusOutlined /> 添加一行
                 </a-button>
               </div>
@@ -82,11 +86,12 @@
                 v-bind="item.props"
                 :options="item.options"
                 style="width: 100%"
+                :disabled="isReadOnly"
               />
             </a-form-item>
           </div>
 
-          <div class="form-actions">
+          <div class="form-actions" v-if="!isReadOnly">
             <a-button type="primary" size="large" :loading="submitting" block @click="handleSubmit">
               提交
             </a-button>
@@ -127,7 +132,7 @@ const error = ref('');
 const formDefinition = ref<any>(null);
 const formItems = ref<any[]>([]);
 const formData = ref<Record<string, any>>({});
-const formRef = ref();
+const isReadOnly = ref(false);
 
 const goToLogin = () => {
   router.push({
@@ -135,6 +140,8 @@ const goToLogin = () => {
     query: { redirect: route.fullPath }
   });
 };
+
+const formRef = ref();
 
 const getComponent = (type: string) => {
   switch (type) {
@@ -170,13 +177,22 @@ const loadForm = async () => {
       return;
     }
 
-    if (data.requiresLogin && !userStore.isLoggedIn()) {
+    if ((data.requiresLogin || data.limitOnePerUser) && !userStore.isLoggedIn()) {
       error.value = 'requires_login'; // Special error code
       loading.value = false;
       return;
     }
 
     formDefinition.value = data;
+
+    if (data.limitOnePerUser && data.hasSubmitted) {
+      // 如果已提交，不显示错误，而是进入只读模式
+      // error.value = '您已填写过此表单，不可重复提交';
+      submitted.value = true; // 复用提交成功状态，或者新增一个状态
+      // 这里我们为了显示已填内容，直接在正常表单页面显示，但禁用所有输入
+      isReadOnly.value = true;
+    }
+
     try {
       formItems.value = JSON.parse(data.formItems || '[]');
     } catch (e) {
@@ -184,13 +200,22 @@ const loadForm = async () => {
     }
     
     // 初始化 formData
-    formItems.value.forEach(item => {
-      if (item.type === 'subtable') {
-        formData.value[item.id] = item.defaultValue || [];
-      } else {
-        formData.value[item.id] = item.defaultValue;
-      }
-    });
+    if (data.limitOnePerUser && data.hasSubmitted && data.submittedData) {
+       try {
+         formData.value = JSON.parse(data.submittedData);
+       } catch (e) {
+         console.error('Failed to parse submitted data', e);
+         formData.value = {};
+       }
+    } else {
+       formItems.value.forEach(item => {
+        if (item.type === 'subtable') {
+          formData.value[item.id] = item.defaultValue || [];
+        } else {
+          formData.value[item.id] = item.defaultValue;
+        }
+      });
+    }
 
   } catch (e) {
     error.value = '加载表单失败';
@@ -258,12 +283,16 @@ const getSubTableColumns = (item: any) => {
     props: col.props,
     options: col.options
   }));
-  cols.push({
-    title: '操作',
-    key: 'action',
-    width: 60,
-    align: 'center'
-  });
+  
+  if (!isReadOnly.value) {
+    cols.push({
+      title: '操作',
+      key: 'action',
+      width: 60,
+      align: 'center'
+    });
+  }
+  
   return cols;
 };
 
@@ -349,5 +378,20 @@ onMounted(() => {
 
 .delete-btn:hover {
   color: #ff7875;
+}
+
+/* 增强只读模式下的文字显示 */
+:deep(.ant-input[disabled]), 
+:deep(.ant-input-number-input[disabled]), 
+:deep(.ant-select-disabled.ant-select:not(.ant-select-customize-input) .ant-select-selector),
+:deep(.ant-picker-input > input[disabled]) {
+  color: rgba(0, 0, 0, 0.85) !important;
+  background-color: #fcfcfc;
+  cursor: default;
+}
+
+:deep(.ant-radio-disabled + span), 
+:deep(.ant-checkbox-disabled + span) {
+  color: rgba(0, 0, 0, 0.85) !important;
 }
 </style>

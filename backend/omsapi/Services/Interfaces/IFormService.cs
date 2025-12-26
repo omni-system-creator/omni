@@ -14,7 +14,7 @@ namespace omsapi.Services.Interfaces
 
         // Form Definition
         Task<PagedResult<FormDefinitionDto>> GetFormsAsync(long? categoryId = null, string? sortBy = null, bool isDescending = true, int page = 1, int pageSize = 10);
-        Task<FormDefinitionDto?> GetFormByIdAsync(long id);
+        Task<FormDefinitionDto?> GetFormByIdAsync(long id, string? submittedBy = null);
         Task<FormDefinitionDto> CreateFormAsync(CreateFormDefinitionDto dto, long userId);
         Task<FormDefinitionDto?> UpdateFormAsync(long id, UpdateFormDefinitionDto dto, long userId);
         Task<bool> DeleteFormAsync(long id);

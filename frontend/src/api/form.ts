@@ -50,12 +50,15 @@ export interface FormDefinition {
   isPublished?: boolean;
   requiresLogin?: boolean;
   limitOnePerUser?: boolean;
+  hasSubmitted?: boolean;
+  submittedData?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export function getFormList(params: { 
   categoryId?: number;
+  name?: string;
   sortBy?: string;
   isDescending?: boolean;
   page?: number;

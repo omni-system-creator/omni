@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using omsapi.Models.Common;
 using omsapi.Models.Dtos.Forms;
 using omsapi.Services.Interfaces;
+using omsapi.Infrastructure.Extensions;
 using omsapi.Infrastructure.Attributes;
 
 namespace omsapi.Controllers
@@ -20,23 +21,6 @@ namespace omsapi.Controllers
             _userService = userService;
         }
 
-        private long GetCurrentUserId()
-        {
-            // Assuming we can get user ID from claims, or use a helper.
-            // For now, let's try to parse from User.Identity if available, or default to 1 (admin) if dev/test without auth context.
-            // In a real scenario, this should come from ICurrentUserService or HttpContext.User.Claims.
-            // Looking at other controllers might help.
-            if (User.Identity != null && User.Identity.IsAuthenticated)
-            {
-                var idClaim = User.Claims.FirstOrDefault(c => c.Type == "Id"); // Adjust claim type based on Auth implementation
-                if (idClaim != null && long.TryParse(idClaim.Value, out long id))
-                {
-                    return id;
-                }
-            }
-            return 1; // Fallback for dev/testing
-        }
-
         // Categories
 
         [HttpGet("categories/tree")]
@@ -49,7 +33,7 @@ namespace omsapi.Controllers
         [HttpPost("categories")]
         public async Task<ActionResult<ApiResponse<FormCategoryDto>>> CreateCategory([FromBody] CreateFormCategoryDto dto)
         {
-            var result = await _formService.CreateCategoryAsync(dto, GetCurrentUserId());
+            var result = await _formService.CreateCategoryAsync(dto, User.GetUserId());
             return Ok(ApiResponse<FormCategoryDto>.Success(result, "Created successfully"));
         }
 
@@ -86,7 +70,8 @@ namespace omsapi.Controllers
         [HttpGet("definitions/{id}")]
         public async Task<ActionResult<ApiResponse<FormDefinitionDto>>> GetForm(long id)
         {
-            var result = await _formService.GetFormByIdAsync(id);
+            string? username = User.GetUsername();
+            var result = await _formService.GetFormByIdAsync(id, username);
             if (result == null) return NotFound(ApiResponse<object>.Error("Form not found", 404));
             return Ok(ApiResponse<FormDefinitionDto>.Success(result));
         }
@@ -94,14 +79,14 @@ namespace omsapi.Controllers
         [HttpPost("definitions")]
         public async Task<ActionResult<ApiResponse<FormDefinitionDto>>> CreateForm([FromBody] CreateFormDefinitionDto dto)
         {
-            var result = await _formService.CreateFormAsync(dto, GetCurrentUserId());
+            var result = await _formService.CreateFormAsync(dto, User.GetUserId());
             return Ok(ApiResponse<FormDefinitionDto>.Success(result, "Created successfully"));
         }
 
         [HttpPut("definitions/{id}")]
         public async Task<ActionResult<ApiResponse<FormDefinitionDto>>> UpdateForm(long id, [FromBody] UpdateFormDefinitionDto dto)
         {
-            var result = await _formService.UpdateFormAsync(id, dto, GetCurrentUserId());
+            var result = await _formService.UpdateFormAsync(id, dto, User.GetUserId());
             if (result == null) return NotFound(ApiResponse<object>.Error("Form not found", 404));
             return Ok(ApiResponse<FormDefinitionDto>.Success(result, "Updated successfully"));
         }
@@ -126,7 +111,7 @@ namespace omsapi.Controllers
                     // Here we assume if they are logged in we use username, else "Anonymous"
                     if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
-                        dto.SubmittedBy = User.Identity.Name ?? "User " + GetCurrentUserId();
+                        dto.SubmittedBy = User.GetUsername() ?? "User " + User.GetUserId();
                     }
                     else
                     {
