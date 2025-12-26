@@ -17,7 +17,7 @@ onMounted(() => {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   if (isMobile) {
     // 如果是移动端，跳转到移动端项目路径
-    window.location.href = '/m/';
+    window.location.href = '/m' + window.location.pathname + window.location.search;
   }
 });
 </script>

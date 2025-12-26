@@ -59,6 +59,11 @@ const router = createRouter({
       path: '/contacts',
       name: 'Contacts',
       component: () => import('@/views/Contacts.vue')
+    },
+    {
+      path: '/form/submit/:id',
+      name: 'FormSubmit',
+      component: () => import('@/views/form/Submit.vue')
     }
   ]
 })

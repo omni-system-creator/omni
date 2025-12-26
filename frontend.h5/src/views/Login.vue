@@ -104,7 +104,7 @@
 <script setup lang="ts">
 import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { showToast } from 'vant';
 import { login } from '@/api/auth';
@@ -117,6 +117,7 @@ const serverUrl = ref('https://oms.jinlan.info');
 // const remember = ref(false); // Removed
 const loading = ref(false);
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 const isApp = Capacitor.isNativePlatform();
 const showFooter = ref(true);
@@ -227,7 +228,13 @@ const onSubmit = async (values: any) => {
       
       await nextTick();
       showToast('登录成功');
-      router.replace('/');
+      
+      const redirect = route.query.redirect as string;
+      if (redirect) {
+        router.replace(decodeURIComponent(redirect));
+      } else {
+        router.replace('/');
+      }
     } else {
       showToast('登录失败：未获取到Token');
     }

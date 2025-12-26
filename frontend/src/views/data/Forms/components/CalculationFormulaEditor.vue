@@ -6,7 +6,6 @@
         :rows="4" 
         placeholder="点击下方字段或运算符生成公式"
         @change="handleChange"
-        ref="textareaRef"
       />
     </div>
     
