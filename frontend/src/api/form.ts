@@ -122,3 +122,11 @@ export function submitForm(data: { formId: number; data: string; submittedBy?: s
     data
   });
 }
+
+export function getFormResults(formId: number, params?: { page?: number; pageSize?: number }) {
+  return request({
+    url: `/form/results/${formId}`,
+    method: 'get',
+    params
+  });
+}

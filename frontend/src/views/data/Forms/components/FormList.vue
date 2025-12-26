@@ -80,6 +80,15 @@
                   <template #icon><ShareAltOutlined /></template>
                 </a-button>
               </a-tooltip>
+              <a-tooltip title="数据" v-if="record.isPublished">
+                <a-button 
+                  type="link" 
+                  size="small" 
+                  @click="handleViewData(record)"
+                >
+                  <template #icon><TableOutlined /></template>
+                </a-button>
+              </a-tooltip>
               <a-popconfirm title="确定删除吗？" @confirm="handleDelete(record.id)">
                 <a-tooltip title="删除">
                   <a-button type="link" danger size="small">
@@ -144,11 +153,83 @@
         </div>
       </div>
     </a-modal>
+
+    <!-- Data Viewer Modal -->
+    <DraggableModal
+      v-model:visible="dataModalVisible"
+      :title="`${currentFormName} - 数据汇总`"
+      width="80%"
+      height="80%"
+      bodyPadding="0"
+    >
+      <div class="data-view-container">
+        <div class="toolbar">
+          <a-button type="primary" size="small" @click="exportExcel">
+            <template #icon><DownloadOutlined /></template>
+            导出Excel
+          </a-button>
+        </div>
+        
+        <div class="table-wrapper" ref="tableWrapperRef">
+          <a-table
+            :columns="dataColumns"
+            :data-source="dataTableData"
+            :loading="dataLoading"
+            :pagination="false"
+            row-key="id"
+            size="small"
+            :scroll="{ x: 'max-content', y: tableHeight }"
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'submittedAt'">
+                {{ dayjs(record.submittedAt).format('YYYY-MM-DD HH:mm:ss') }}
+              </template>
+              <template v-else-if="column.isSubTable">
+                 <a-button type="link" size="small" @click="viewSubTable(record[column.key], column)">
+                   查看 ({{ Array.isArray(record[column.key]) ? record[column.key].length : 0 }})
+                 </a-button>
+              </template>
+            </template>
+          </a-table>
+        </div>
+        <div class="pagination-wrapper">
+          <a-pagination
+            v-model:current="dataPagination.current"
+            v-model:pageSize="dataPagination.pageSize"
+            :total="dataPagination.total"
+            :show-total="dataPagination.showTotal"
+            :page-size-options="dataPagination.pageSizeOptions"
+            show-size-changer
+            size="small"
+            @change="handlePageChange"
+            @showSizeChange="handlePageSizeChange"
+          />
+        </div>
+      </div>
+    </DraggableModal>
+
+    <!-- SubTable Data Modal -->
+    <a-modal
+      v-model:open="subTableModalVisible"
+      :title="`${subTableTitle} - 明细`"
+      :footer="null"
+      width="800px"
+      :zIndex="2200"
+    >
+      <a-table
+        :columns="subTableColumns"
+        :data-source="subTableData"
+        size="small"
+        :pagination="false"
+        :scroll="{ y: 500 }"
+      >
+      </a-table>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue';
+import { ref, reactive, watch, onMounted, computed } from 'vue';
 import { 
   PlusOutlined, 
   CopyOutlined,
@@ -157,12 +238,18 @@ import {
   SendOutlined,
   StopOutlined,
   ShareAltOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  TableOutlined,
+  DownloadOutlined
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import { useRouter } from 'vue-router';
-import { getFormList, createForm, updateForm, deleteForm, getCategoryTree, type FormDefinition } from '@/api/form';
+import { getFormList, createForm, updateForm, deleteForm, getCategoryTree, getFormResults, type FormDefinition } from '@/api/form';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
+import DraggableModal from '@/components/DraggableModal.vue';
+import { useElementSize } from '@vueuse/core';
 
 const props = defineProps({
   categoryId: {
@@ -218,6 +305,235 @@ const formState = reactive<FormDefinition>({
 // Link Modal
 const linkModalVisible = ref(false);
 const publishUrl = ref('');
+
+// Data Viewer Modal Logic
+const dataModalVisible = ref(false);
+const currentFormName = ref('');
+const currentFormId = ref<number | null>(null);
+const dataLoading = ref(false);
+const dataTableData = ref<any[]>([]);
+const dataColumns = ref<any[]>([]);
+
+// SubTable Modal Logic
+const subTableModalVisible = ref(false);
+const subTableTitle = ref('');
+const subTableData = ref<any[]>([]);
+const subTableColumns = ref<any[]>([]);
+
+const viewSubTable = (data: any[], column: any) => {
+  subTableTitle.value = column.title;
+  subTableData.value = Array.isArray(data) ? data : [];
+  subTableColumns.value = (column.subColumns || []).map((col: any) => ({
+    title: col.label,
+    dataIndex: col.id,
+    key: col.id,
+    width: 150
+  }));
+  subTableModalVisible.value = true;
+};
+
+// Auto resize table height
+const tableWrapperRef = ref<HTMLElement | null>(null);
+const { height: wrapperHeight } = useElementSize(tableWrapperRef);
+const tableHeight = computed(() => {
+  if (!wrapperHeight.value) return 400;
+  // Subtract header height (approx 40px)
+  return Math.max(300, wrapperHeight.value - 40); 
+});
+
+const dataPagination = reactive({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50', '100'],
+  showTotal: (total: number) => `共 ${total} 条`
+});
+
+const handleViewData = async (record: FormDefinition) => {
+  currentFormId.value = record.id!;
+  currentFormName.value = record.name;
+  dataModalVisible.value = true;
+  dataPagination.current = 1;
+  
+  // Parse form items to build columns
+  try {
+    const items = JSON.parse(record.formItems || '[]');
+    const cols: any[] = [
+      { title: '提交时间', dataIndex: 'submittedAt', key: 'submittedAt', width: 180, fixed: 'left' },
+      { title: '提交人', dataIndex: 'submittedBy', key: 'submittedBy', width: 120 }
+    ];
+    
+    // Flatten form items (handle sub-tables later or just show summary)
+    // For now, let's extract top-level fields
+    items.forEach((item: any) => {
+      if (item.type === 'subtable') {
+        cols.push({
+           title: item.label,
+           dataIndex: item.id,
+           key: item.id,
+           width: 150,
+           isSubTable: true,
+           subColumns: item.columns
+        });
+      } else {
+        cols.push({
+          title: item.label,
+          dataIndex: item.id,
+          key: item.id,
+          width: 150,
+          ellipsis: true
+        });
+      }
+    });
+    
+    dataColumns.value = cols;
+    await loadFormData();
+  } catch (e) {
+    console.error(e);
+    message.error('解析表单结构失败');
+  }
+};
+
+const loadFormData = async () => {
+  if (!currentFormId.value) return;
+  dataLoading.value = true;
+  try {
+    const res = await getFormResults(currentFormId.value, {
+       page: dataPagination.current,
+       pageSize: dataPagination.pageSize
+    });
+    
+    // Check if result is PagedResult
+    const data = (res as any).data || res;
+    // Structure: { items: [], total: 0, ... }
+    
+    if (data && Array.isArray(data.items)) {
+       const rawItems = data.items;
+       dataPagination.total = data.total;
+       
+       // Process data: parse JSON string in 'data' field
+       dataTableData.value = rawItems.map((item: any) => {
+          let parsedData = {};
+          try {
+             parsedData = JSON.parse(item.data);
+          } catch (e) { /* ignore */ }
+          
+          return {
+             ...item,
+             ...parsedData
+          };
+       });
+    } else {
+       dataTableData.value = [];
+       dataPagination.total = 0;
+    }
+  } catch (e) {
+    message.error('加载数据失败');
+    dataTableData.value = [];
+  } finally {
+    dataLoading.value = false;
+  }
+};
+
+const handlePageChange = (page: number, _pageSize: number) => {
+  dataPagination.current = page;
+  loadFormData();
+};
+
+const handlePageSizeChange = (_current: number, size: number) => {
+  dataPagination.current = 1;
+  dataPagination.pageSize = size;
+  loadFormData();
+};
+
+const exportExcel = () => {
+  if (dataTableData.value.length === 0) {
+    message.warning('暂无数据可导出');
+    return;
+  }
+  
+  // We should export ALL data, not just current page. 
+  // Ideally, call backend for export or fetch all pages.
+  // For simplicity, let's fetch all (or a large limit) if user wants export.
+  // Or just export current view? User usually wants all.
+  // Let's try to fetch all for export.
+  
+  fetchAllDataAndExport();
+};
+
+const fetchAllDataAndExport = async () => {
+  const hide = message.loading('正在导出所有数据...', 0);
+  try {
+    // Use total from pagination to fetch all records
+    const totalCount = dataPagination.total > 0 ? dataPagination.total : 10000;
+    
+    const res = await getFormResults(currentFormId.value!, {
+       page: 1,
+       pageSize: totalCount
+    });
+    const data = (res as any).data || res;
+    const items = data.items || [];
+    
+    if (items.length === 0) {
+      message.warning('没有数据可导出');
+      return;
+    }
+    
+    const exportData = items.map((item: any) => {
+       let parsed: any = {};
+       try { parsed = JSON.parse(item.data); } catch(e){}
+       
+       const row: any = {
+          '提交时间': dayjs(item.submittedAt).format('YYYY-MM-DD HH:mm:ss'),
+          '提交人': item.submittedBy
+       };
+       
+       // Map dynamic fields
+       dataColumns.value.forEach(col => {
+          if (col.key !== 'submittedAt' && col.key !== 'submittedBy' && !col.isSubTable) {
+             let val = parsed[col.key];
+             // Handle object
+             if (typeof val === 'object' && val !== null) {
+                val = JSON.stringify(val);
+             }
+             row[col.title] = val;
+          } else if (col.isSubTable) {
+             // Handle subtable
+             let val = parsed[col.key];
+             if (Array.isArray(val)) {
+                // Export as JSON string for now, or maybe count? 
+                // User usually wants content.
+                val = JSON.stringify(val);
+             }
+             row[col.title] = val;
+          }
+       });
+       return row;
+    });
+    
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Sheet1');
+    
+    if (exportData.length > 0) {
+       const headers = Object.keys(exportData[0]);
+       worksheet.columns = headers.map(header => ({ header, key: header, width: 20 }));
+       worksheet.addRows(exportData);
+    }
+    
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `${currentFormName.value}_数据汇总.xlsx`);
+    
+    message.success(`成功导出 ${items.length} 条数据`);
+    
+  } catch (e) {
+    console.error(e);
+    message.error('导出失败');
+  } finally {
+    hide();
+  }
+};
 
 // Sorting state
 const sortState = reactive({
@@ -425,5 +741,29 @@ onMounted(() => {
 .list-content {
   flex: 1;
   overflow: hidden;
+}
+
+.data-view-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.toolbar {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+  text-align: right;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow: hidden;
+}
+
+.pagination-wrapper {
+  flex-shrink: 0;
+  margin-top: 16px;
+  text-align: right;
 }
 </style>

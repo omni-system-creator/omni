@@ -362,11 +362,17 @@ namespace omsapi.Services
             };
         }
 
-        public async Task<List<FormResultDto>> GetFormResultsAsync(long formId)
+        public async Task<PagedResult<FormResultDto>> GetFormResultsAsync(long formId, int page = 1, int pageSize = 10)
         {
-            return await _context.FormResults
-                .Where(r => r.FormId == formId)
+            var query = _context.FormResults
+                .Where(r => r.FormId == formId);
+
+            var total = await query.CountAsync();
+
+            var items = await query
                 .OrderByDescending(r => r.SubmittedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(r => new FormResultDto
                 {
                     Id = r.Id,
@@ -376,6 +382,14 @@ namespace omsapi.Services
                     SubmittedAt = r.SubmittedAt
                 })
                 .ToListAsync();
+
+            return new PagedResult<FormResultDto>
+            {
+                Items = items,
+                Total = total,
+                Page = page,
+                PageSize = pageSize
+            };
         }
     }
 }

@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
-import DraggableModal from '../../../../components/DraggableModal.vue';
+import DraggableModal from '@/components/DraggableModal.vue';
 import { UploadOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';

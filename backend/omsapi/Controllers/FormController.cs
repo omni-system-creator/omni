@@ -129,10 +129,13 @@ namespace omsapi.Controllers
         }
 
         [HttpGet("results/{formId}")]
-        public async Task<ActionResult<ApiResponse<List<FormResultDto>>>> GetFormResults(long formId)
+        public async Task<ActionResult<ApiResponse<PagedResult<FormResultDto>>>> GetFormResults(
+            long formId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var result = await _formService.GetFormResultsAsync(formId);
-            return Ok(ApiResponse<List<FormResultDto>>.Success(result));
+            var result = await _formService.GetFormResultsAsync(formId, page, pageSize);
+            return Ok(ApiResponse<PagedResult<FormResultDto>>.Success(result));
         }
     }
 }

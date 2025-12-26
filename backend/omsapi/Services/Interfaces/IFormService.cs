@@ -21,6 +21,6 @@ namespace omsapi.Services.Interfaces
 
         // Form Submission
         Task<FormResultDto> SubmitFormAsync(CreateFormResultDto dto);
-        Task<List<FormResultDto>> GetFormResultsAsync(long formId);
+        Task<PagedResult<FormResultDto>> GetFormResultsAsync(long formId, int page = 1, int pageSize = 10);
     }
 }

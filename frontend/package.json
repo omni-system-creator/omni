@@ -22,11 +22,14 @@
     "@leafer-in/find": "^1.12.0",
     "@types/three": "^0.182.0",
     "@types/uuid": "^10.0.0",
+    "@vueuse/core": "^14.1.0",
     "@wangeditor/editor": "^5.1.23",
     "@wangeditor/editor-for-vue": "^5.1.12",
     "ant-design-vue": "^4.2.6",
     "axios": "^1.13.2",
     "echarts": "^6.0.0",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
     "grid-layout-plus": "^1.1.1",
     "leafer-ui": "^1.12.0",
     "less": "^4.5.1",
@@ -38,6 +41,7 @@
     "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
