@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div v-if="visible" class="draggable-modal-mask" @click="handleMaskClick"></div>
     <div v-if="visible" class="draggable-modal-overlay" :class="{ maximized: isMaximized }" :style="!isMaximized ? { top: modalState.y + 'px', left: modalState.x + 'px', width: modalState.width + 'px', height: modalState.height + 'px' } : {}">
-      <div class="draggable-modal-header" @mousedown="startDrag">
+      <div class="draggable-modal-header" @mousedown="startDrag" @dblclick="toggleMaximize">
         <div class="modal-title">{{ title }}</div>
         <div class="modal-actions">
           <div class="modal-header-btn" @click="toggleMaximize">
@@ -94,7 +94,7 @@ watch(() => props.visible, (newVal) => {
     modalState.value.x = (viewportWidth - targetWidth) / 2;
     modalState.value.y = (viewportHeight - targetHeight) / 2;
   }
-});
+}, { immediate: true });
 
 const handleMaskClick = () => {
   if (props.maskClosable) {
@@ -219,7 +219,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 8px;
   cursor: move;
   border-bottom: 1px solid #d9d9d9;
   user-select: none;
@@ -256,7 +256,7 @@ onUnmounted(() => {
 .draggable-modal-body {
   flex: 1;
   background: #fff;
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
 }

@@ -228,24 +228,32 @@
     </div>
 
     <!-- Debug Modal -->
-    <a-modal
-      v-model:open="debugVisible"
+    <DraggableModal
+      v-model:visible="debugVisible"
       title="在线调试"
-      width="800px"
-      @ok="executeDebug"
-      :confirmLoading="debugLoading"
-      okText="运行"
-      cancelText="关闭"
+      :width="800"
     >
        <a-form layout="vertical">
          <a-form-item label="Params (JSON)">
            <a-textarea v-model:value="debugData.params" :rows="5" placeholder='{ "id": 1 }' style="font-family: monospace;" />
+           <div style="margin-top: 5px; color: #888; font-size: 12px;">
+             示例: { "userId": 1001, "status": "active" } <br/>
+             说明: 用于传递 URL 查询参数，对应接口中的 Query 参数。
+           </div>
          </a-form-item>
          <a-form-item label="Body (JSON)">
            <a-textarea v-model:value="debugData.body" :rows="5" placeholder='{ "name": "test" }' style="font-family: monospace;" />
+           <div style="margin-top: 5px; color: #888; font-size: 12px;">
+             示例: { "productName": "Apple", "quantity": 10 } <br/>
+             说明: 用于传递 POST/PUT 请求的 JSON 请求体内容。
+           </div>
          </a-form-item>
        </a-form>
-    </a-modal>
+       <template #footer>
+          <a-button @click="debugVisible = false">关闭</a-button>
+          <a-button type="primary" :loading="debugLoading" @click="executeDebug">运行</a-button>
+       </template>
+    </DraggableModal>
 
     <!-- Node Detail Drawer (Removed, replaced by bottom panel) -->
     <!-- 
@@ -265,6 +273,7 @@ import {
   CloseOutlined
 } from '@ant-design/icons-vue';
 import ApiFlowDesigner from './ApiFlowDesigner.vue';
+import DraggableModal from '@/components/DraggableModal.vue';
 import { interfaceApi, type InterfaceCategory } from '@/api/interface';
 import { getRoleList } from '@/api/role';
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';

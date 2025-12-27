@@ -31,144 +31,76 @@
       </div>
     </div>
 
-    <!-- Properties Panel -->
-    <div class="flow-properties" v-if="selectedNode">
-      <div class="props-header">
-        <span>节点配置</span>
-        <CloseOutlined @click="deselectAll" style="cursor: pointer" />
-      </div>
+    <!-- Properties Panel (Dialog) -->
+    <DraggableModal
+      v-if="selectedNode"
+      :visible="!!selectedNode"
+      :title="'节点配置: ' + (selectedNode.label || 'Node')"
+      :width="500"
+      :height="600"
+      body-padding="0"
+      :maskClosable="false"
+      @close="deselectAll"
+    >
       <div class="props-content">
         <a-form layout="vertical" :disabled="readOnly">
           <a-form-item label="节点名称">
             <a-input v-model:value="selectedNode.label" @change="updateNodeLabel" @input="updateNodeLabel" />
           </a-form-item>
           
-          <!-- Request Node Config -->
-          <template v-if="selectedNode.type === 'request'">
-            <a-alert message="流程入口" type="info" show-icon style="margin-bottom: 16px">
-                <template #description>
-                    <div style="font-size: 12px;">
-                        <p>接收外部HTTP请求，参数将注入到上下文中。</p>
-                        <p><strong>注意:</strong> 请求路径和方法在“基本信息”中配置，此处仅作为入口定义。</p>
-                        <p><strong>Input:</strong> Query/Body (e.g. ?id=1001)</p>
-                        <p><strong>Context:</strong> { id: 1001 }</p>
-                    </div>
-                </template>
-            </a-alert>
-          </template>
+          <RequestNodeConfig 
+            v-if="selectedNode.type === 'request'" 
+            :node="selectedNode" 
+            :readOnly="readOnly" 
+          />
 
-          <!-- Database Node Config -->
-          <template v-if="selectedNode.type === 'database'">
-            <a-alert message="数据操作" type="info" show-icon style="margin-bottom: 16px">
-                <template #description>
-                    <div style="font-size: 12px;">
-                        <p>执行SQL语句，系统会自动将<strong>上下文变量</strong>注入为SQL参数。</p>
-                        <p><strong>使用方式:</strong> 直接使用 <code>@参数名</code> (例如请求参数为 id，则写 @id)</p>
-                        <p><strong>Example:</strong> SELECT * FROM production_plans WHERE plan_no = @id</p>
-                        <p><strong>Output:</strong> 结果数组将存入 <code>dbResult</code> 变量供后续使用</p>
-                    </div>
-                </template>
-            </a-alert>
-            <a-form-item label="数据源">
-              <a-select v-model:value="selectedNode.data.sourceId" @change="updateNodeVisual">
-                <a-select-option value="db1">主业务库 (MySQL)</a-select-option>
-                <a-select-option value="db2">日志库 (MongoDB)</a-select-option>
-              </a-select>
-            </a-form-item>
-            <a-form-item label="操作类型">
-               <a-select v-model:value="selectedNode.data.opType" @change="updateNodeVisual">
-                <a-select-option value="select">查询 (Select)</a-select-option>
-                <a-select-option value="insert">插入 (Insert)</a-select-option>
-                <a-select-option value="update">更新 (Update)</a-select-option>
-                <a-select-option value="delete">删除 (Delete)</a-select-option>
-              </a-select>
-            </a-form-item>
-            <a-form-item label="SQL语句">
-              <a-textarea v-model:value="selectedNode.data.sql" :rows="5" placeholder="SELECT * FROM production_plans WHERE plan_no = @id" @input="updateNodeVisual" />
-            </a-form-item>
-          </template>
+          <DatabaseNodeConfig 
+            v-if="selectedNode.type === 'database'" 
+            :node="selectedNode" 
+            :readOnly="readOnly" 
+            @change="updateNodeVisual" 
+          />
 
-          <!-- API Node Config -->
-          <template v-if="selectedNode.type === 'api'">
-            <a-alert message="外部接口" type="info" show-icon style="margin-bottom: 16px">
-                <template #description>
-                    <div style="font-size: 12px;">
-                        <p>调用外部HTTP服务。</p>
-                        <p><strong>参数传递:</strong> 上下文变量 (e.g. <code>dbResult</code>) 将自动作为 Body (POST) 或 Query (GET) 发送。</p>
-                        <p><strong>Example:</strong> http://mes-system/api/check_stock</p>
-                    </div>
-                </template>
-            </a-alert>
-            <a-form-item label="目标URL">
-              <a-input v-model:value="selectedNode.data.url" @change="updateNodeVisual" @input="updateNodeVisual" />
-            </a-form-item>
-            <a-form-item label="方法">
-              <a-select v-model:value="selectedNode.data.method" defaultValue="GET" @change="updateNodeVisual">
-                <a-select-option value="GET">GET</a-select-option>
-                <a-select-option value="POST">POST</a-select-option>
-              </a-select>
-            </a-form-item>
-          </template>
+          <ApiNodeConfig 
+            v-if="selectedNode.type === 'api'" 
+            :node="selectedNode" 
+            :readOnly="readOnly" 
+            @change="updateNodeVisual" 
+          />
 
-           <!-- Script Node Config -->
-          <template v-if="selectedNode.type === 'script'">
-            <a-alert message="脚本逻辑" type="info" show-icon style="margin-bottom: 16px">
-                <template #description>
-                    <div style="font-size: 12px;">
-                        <p>执行自定义脚本进行数据转换。</p>
-                        <p><strong>Available Vars:</strong> <code>context</code> (dictionary/object)</p>
-                        <p><strong>Return:</strong> 返回结果将存入 <code>scriptResult</code></p>
-                    </div>
-                </template>
-            </a-alert>
-            <a-form-item label="脚本语言">
-                <a-select v-model:value="selectedNode.data.language" defaultValue="javascript" @change="updateNodeVisual">
-                    <a-select-option value="javascript">JavaScript</a-select-option>
-                    <a-select-option value="csharp">C#</a-select-option>
-                    <a-select-option value="python">Python</a-select-option>
-                    <a-select-option value="matlab">Matlab</a-select-option>
-                </a-select>
-            </a-form-item>
-            <a-form-item label="脚本代码">
-              <a-textarea v-model:value="selectedNode.data.script" :rows="10" :placeholder="getScriptPlaceholder(selectedNode.data.language)" @input="updateNodeVisual" style="font-family: monospace;" />
-            </a-form-item>
-          </template>
+          <ScriptNodeConfig 
+            v-if="selectedNode.type === 'script'" 
+            :node="selectedNode" 
+            :readOnly="readOnly" 
+            @change="updateNodeVisual" 
+          />
 
-          <!-- Response Node Config -->
-          <template v-if="selectedNode.type === 'response'">
-             <a-alert message="发送响应" type="info" show-icon style="margin-bottom: 16px">
-                <template #description>
-                    <div style="font-size: 12px;">
-                        <p>结束流程并返回数据。</p>
-                        <p><strong>默认行为:</strong> 自动返回上下文中的最后一次操作结果 (例如 <code>dbResult</code>)。</p>
-                        <p><strong>自定义:</strong> 如需返回特定结构，请在响应节点前添加“脚本逻辑”节点进行处理。</p>
-                    </div>
-                </template>
-            </a-alert>
-             <a-form-item label="响应类型">
-              <a-select v-model:value="selectedNode.data.contentType" defaultValue="json">
-                <a-select-option value="json">JSON</a-select-option>
-                <a-select-option value="xml">XML</a-select-option>
-                <a-select-option value="text">Text</a-select-option>
-              </a-select>
-            </a-form-item>
-          </template>
+          <ResponseNodeConfig 
+            v-if="selectedNode.type === 'response'" 
+            :node="selectedNode" 
+            :readOnly="readOnly" 
+          />
         </a-form>
       </div>
-    </div>
+    </DraggableModal>
   </div>
 </template>
 
 <script setup lang="ts">
+import DraggableModal from '@/components/DraggableModal.vue';
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { 
   GlobalOutlined, 
   DatabaseOutlined, 
   CloudServerOutlined, 
   CodeOutlined, 
-  ExportOutlined,
-  CloseOutlined
+  ExportOutlined
 } from '@ant-design/icons-vue';
+import RequestNodeConfig from './node-config/RequestNodeConfig.vue';
+import DatabaseNodeConfig from './node-config/DatabaseNodeConfig.vue';
+import ApiNodeConfig from './node-config/ApiNodeConfig.vue';
+import ScriptNodeConfig from './node-config/ScriptNodeConfig.vue';
+import ResponseNodeConfig from './node-config/ResponseNodeConfig.vue';
 import { Leafer, Rect, Text, Group, Ellipse, PointerEvent, Path, Line } from 'leafer-ui';
 import '@leafer-in/find';
 import '@leafer-in/arrow';
@@ -205,6 +137,20 @@ const canvasRef = ref<HTMLElement | null>(null);
 const selectedNodeId = ref<string | null>(null);
 const selectedEdgeId = ref<string | null>(null);
 const selectedNode = computed(() => nodes.value.find(n => n.id === selectedNodeId.value));
+
+// Patch data when node is selected
+watch(selectedNodeId, (newId) => {
+  if (newId) {
+    const node = nodes.value.find(n => n.id === newId);
+    if (node && node.type === 'api') {
+        if (!node.data.paramMode) node.data.paramMode = 'all';
+        if (!node.data.headers) node.data.headers = [];
+        if (!node.data.params) node.data.params = [];
+    }
+  }
+});
+
+
 
 // Leafer Instances
 let leaferApp: Leafer | null = null;
@@ -336,6 +282,13 @@ const initLeafer = () => {
   leaferApp.on(PointerEvent.TAP, (e: PointerEvent) => {
     // Check if clicked on a node
     let target = e.target;
+
+    // Check if clicked directly on a port (or its vicinity if wrapped)
+    // We should not select the node if a port is clicked
+    if (target && (target.name === 'port-in' || target.name === 'port-out')) {
+        return;
+    }
+
     while(target && target.tag !== 'Leafer' && target.id !== 'graph-group') {
         if (target.tag === 'Group' && target.id && target.name === 'node-group') {
             selectNode(target.id);
@@ -697,70 +650,7 @@ const getNodeTitle = (type: string) => {
   return titles[type] || '节点';
 };
 
-const getScriptPlaceholder = (lang: string) => {
-    const l = lang || 'javascript';
-    switch (l) {
-        case 'csharp':
-            return `// C# Script
-// Variables: context (Dictionary<string, object>), log (Action<string>)
-// Return: Any object
 
-// Example:
-var rows = context["dbResult"] as List<object>;
-if (rows != null) {
-    log("Processing " + rows.Count + " rows");
-    return new { Count = rows.Count, Status = "OK" };
-}
-return null;`;
-        case 'python':
-            return `# Python Script
-# Input: 'context.json' file (in current dir)
-# Output: Print JSON to stdout
-
-import json
-import sys
-
-# Read context
-try:
-    with open('context.json', 'r', encoding='utf-8') as f:
-        context = json.load(f)
-    
-    # Logic here
-    result = { "status": "ok", "data": context.get("dbResult") }
-    
-    print(json.dumps(result))
-except Exception as e:
-    print(json.dumps({ "error": str(e) }));`;
-        case 'matlab':
-            return `% Matlab Script
-% Input: 'context.json'
-% Output: Write to 'result.json'
-
-data = jsondecode(fileread('context.json'));
-
-% Logic here
-result.status = 'ok';
-result.processed = true;
-
-fid = fopen('result.json', 'w');
-fprintf(fid, '%s', jsonencode(result));
-fclose(fid);`;
-        case 'javascript':
-        default:
-            return `// Example: Process DB results
-var rows = context.dbResult;
-if (!rows) return { count: 0 };
-
-var total = 0;
-for (var i = 0; i < rows.length; i++) {
-    // Assuming row has 'price' field
-    total += (rows[i].price || 0);
-}
-
-log('Calculated total: ' + total);
-return { total: total, count: rows.length };`;
-    }
-};
 
 const createNodeVisual = (node: Node) => {
   if (!leaferApp) return;
@@ -897,6 +787,52 @@ const createNodeVisual = (node: Node) => {
     e.stop();
     group.draggable = false;
     startConnection(group);
+  });
+
+  // Auto Connect on Double Click
+  outPort.on(PointerEvent.DOUBLE_TAP, (e: PointerEvent) => {
+    e.stop();
+    
+    // 1. Check if current node already has outgoing edges
+    const hasOutgoing = edges.value.some(edge => edge.sourceId === node.id);
+    if (hasOutgoing) return;
+
+    // 2. Find potential target nodes
+    // - Must be to the right of current node
+    // - Must have no incoming edges
+    // - Must have an input port (type !== 'request')
+    const candidates = nodes.value.filter(n => {
+        if (n.id === node.id) return false;
+        if (n.x <= node.x) return false; // Must be to the right
+        if (n.type === 'request') return false; // Request node has no input
+
+        const hasIncoming = edges.value.some(edge => edge.targetId === n.id);
+        return !hasIncoming;
+    });
+
+    if (candidates.length === 0) return;
+
+    // 3. Find the nearest candidate
+    const startX = node.x + 180;
+    const startY = node.y + 35;
+
+    candidates.sort((a, b) => {
+        const distA = Math.pow(a.x - startX, 2) + Math.pow((a.y + 35) - startY, 2);
+        const distB = Math.pow(b.x - startX, 2) + Math.pow((b.y + 35) - startY, 2);
+        return distA - distB;
+    });
+
+    const targetNode = candidates[0];
+    if (!targetNode) return;
+
+    // 4. Create Connection
+    const newEdge: Edge = {
+        id: uuidv4(),
+        sourceId: node.id,
+        targetId: targetNode.id
+    };
+    edges.value.push(newEdge);
+    createConnectionLine(node, targetNode, newEdge.id);
   });
 
   group.add(rect);
@@ -1093,6 +1029,34 @@ const cancelConnection = () => {
 
 // --- Drag & Drop from Toolbar ---
 
+const getInitialData = (type: string) => {
+  if (type === 'api') {
+    return {
+      method: 'GET',
+      paramMode: 'all',
+      headers: [],
+      params: []
+    };
+  }
+  if (type === 'database') {
+      return {
+          sourceId: 'db1',
+          opType: 'select'
+      };
+  }
+  if (type === 'script') {
+      return {
+          language: 'javascript'
+      };
+  }
+  if (type === 'response') {
+      return {
+          contentType: 'json'
+      };
+  }
+  return {};
+};
+
 const onDragStart = (e: DragEvent, type: string) => {
   if (e.dataTransfer) {
     e.dataTransfer.setData('type', type);
@@ -1124,7 +1088,7 @@ const onDrop = (e: DragEvent) => {
       x,
       y,
       label: getNodeTitle(type),
-      data: {}
+      data: getInitialData(type)
     };
     
     nodes.value.push(newNode);
@@ -1278,25 +1242,6 @@ defineExpose({
   position: relative;
   overflow: hidden;
   touch-action: none;
-}
-
-.flow-properties {
-  width: 300px;
-  background: #fff;
-  border-left: 1px solid #ddd;
-  display: flex;
-  flex-direction: column;
-  z-index: 2;
-  box-shadow: -2px 0 8px rgba(0,0,0,0.05);
-}
-
-.props-header {
-  padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: bold;
 }
 
 .props-content {
