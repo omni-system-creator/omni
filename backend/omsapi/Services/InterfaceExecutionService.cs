@@ -8,6 +8,7 @@ using omsapi.Models.Flow;
 using omsapi.Models.Debug;
 using omsapi.Services.Debug;
 using Jint;
+using Jint.Runtime;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using System.Diagnostics;
@@ -147,9 +148,14 @@ namespace omsapi.Services
             object? lastResult = null;
             int steps = 0;
             
+            // Queue for BFS traversal to support branching
+            var nodeQueue = new Queue<FlowNode>();
+            nodeQueue.Enqueue(currentNode);
+
             // Simple traversal
-            while (currentNode != null && steps < 100)
+            while (nodeQueue.Count > 0 && steps < 100)
             {
+                currentNode = nodeQueue.Dequeue();
                 steps++;
                 executedNodes.Add(currentNode.Id);
                 
@@ -191,6 +197,7 @@ namespace omsapi.Services
                             if (lastResult != null)
                             {
                                 context["dbResult"] = lastResult;
+                                context[currentNode.Id] = lastResult;
                             }
                             break;
                         case "response":
@@ -200,14 +207,39 @@ namespace omsapi.Services
                             flowSw.Stop();
                             await LogAsync($"Total execution time: {flowSw.ElapsedMilliseconds} ms");
 
-                            var result = new ExecuteResultDto 
-                            { 
-                                StatusCode = 200, 
-                                Data = lastResult ?? context, 
+                            object? responseData;
+                            int finalStatusCode = 200;
+                            ExecuteResultDto result;        
+                            // Determine the raw response data (either from script or last result)
+                            if (currentNode.Data.ParamMode == "custom" && !string.IsNullOrWhiteSpace(currentNode.Data.Script))
+                            {
+                                var jsContext = ConvertToJsFriendly(context) as Dictionary<string, object?>;
+                                responseData = ExecuteJintScript(currentNode.Data.Script, jsContext ?? new Dictionary<string, object?>(), (msg) =>
+                                {
+                                    if (isDebug) logs.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
+                                });
+                            }
+                            else
+                            {
+                                responseData = lastResult ?? context;
+                            }
+
+                            // Always wrap the data in standard structure
+                            responseData = new
+                            {
+                                code = 200,
+                                data = responseData,
+                                msg = "Success"
+                            };
+
+                            result = new ExecuteResultDto
+                            {
+                                StatusCode = finalStatusCode,
+                                Data = responseData,
                                 Logs = logs,
                                 ExecutedNodes = executedNodes
                             };
-                            
+
                             // Notify End
                             sw.Stop();
                             if (!string.IsNullOrEmpty(sessionId))
@@ -233,6 +265,7 @@ namespace omsapi.Services
                             if (lastResult != null)
                             {
                                 context["scriptResult"] = lastResult;
+                                context[currentNode.Id] = lastResult;
                             }
                             break;
                         case "api":
@@ -244,6 +277,7 @@ namespace omsapi.Services
                             if (lastResult != null)
                             {
                                 context["apiResult"] = lastResult;
+                                context[currentNode.Id] = lastResult;
                             }
                             break;
                         default:
@@ -291,15 +325,39 @@ namespace omsapi.Services
                     });
                 }
 
-                // Find next node
-                var edge = flow.Edges.FirstOrDefault(e => e.SourceId == currentNode.Id);
-                if (edge == null)
+                // Find next nodes
+                var outgoingEdges = flow.Edges.Where(e => e.SourceId == currentNode.Id).ToList();
+                if (!outgoingEdges.Any())
                 {
-                    await LogAsync("End of flow (no outgoing edge).");
-                    break;
+                    await LogAsync($"Node {currentNode.Id} has no outgoing edges.");
+                    continue;
                 }
 
-                currentNode = flow.Nodes.FirstOrDefault(n => n.Id == edge.TargetId);
+                // 1. Check Conditional Edges
+                foreach (var edge in outgoingEdges.Where(e => !string.IsNullOrWhiteSpace(e.Condition)))
+                {
+                    try 
+                    {
+                        var jsContext = ConvertToJsFriendly(context) as Dictionary<string, object?>;
+                        if (EvaluateCondition(edge.Condition!, jsContext, (msg) => { }))
+                        {
+                            await LogAsync($"Condition matched: {edge.Condition}");
+                            var targetNode = flow.Nodes.FirstOrDefault(n => n.Id == edge.TargetId);
+                            if (targetNode != null) nodeQueue.Enqueue(targetNode);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        await LogAsync($"Condition error ({edge.Condition}): {ex.Message}", "Warning");
+                    }
+                }
+
+                // 2. Execute Unconditional Edges (Always)
+                foreach (var edge in outgoingEdges.Where(e => string.IsNullOrWhiteSpace(e.Condition)))
+                {
+                    var targetNode = flow.Nodes.FirstOrDefault(n => n.Id == edge.TargetId);
+                    if (targetNode != null) nodeQueue.Enqueue(targetNode);
+                }
             }
 
             flowSw.Stop();
@@ -398,11 +456,38 @@ namespace omsapi.Services
         {
             var url = node.Data.Url;
             var method = node.Data.Method?.ToUpper() ?? "GET";
-
             if (string.IsNullOrWhiteSpace(url)) return null;
 
+            var paramMode = node.Data.ParamMode ?? "all";
+            var parameters = new Dictionary<string, object?>();
+
+            if (paramMode == "custom")
+            {
+                 // Only use configured params
+                 if (node.Data.Params != null)
+                 {
+                     foreach (var p in node.Data.Params)
+                     {
+                         if (string.IsNullOrWhiteSpace(p.Key)) continue;
+                         
+                         object? val = p.Value;
+                         val = EvaluateParamValue(p.Value, context, log);
+                         parameters[p.Key] = val;
+                     }
+                 }
+            }
+            else
+            {
+                // Legacy: Use all context
+                foreach(var kvp in context)
+                {
+                    parameters[kvp.Key] = kvp.Value;
+                }
+            }
+
             // 1. URL Parameter Replacement (e.g. @id or {id})
-            foreach (var kvp in context)
+            // Iterate parameters to replace in URL
+            foreach (var kvp in parameters)
             {
                 var valStr = GetValueString(kvp.Value);
                 if (valStr != null)
@@ -412,46 +497,46 @@ namespace omsapi.Services
             }
 
             var client = _httpClientFactory.CreateClient();
+            var request = new HttpRequestMessage(new HttpMethod(method), url);
             
-            HttpRequestMessage request = new HttpRequestMessage(new HttpMethod(method), url);
+            // Headers
+            if (node.Data.Headers != null)
+            {
+                foreach(var h in node.Data.Headers)
+                {
+                    if (!string.IsNullOrEmpty(h.Key)) request.Headers.TryAddWithoutValidation(h.Key, h.Value);
+                }
+            }
+
             log($"Request: {method} {url}");
 
             // 2. Body or Query
-            if (method == "GET")
+            if (method == "GET" || method == "DELETE")
             {
-                // Append params to query string if not already in URL?
-                // Or assume URL replacement covered it?
-                // Usually "GET" with a "Data" object implies query params.
-                // Let's append all context vars as query params if they weren't used in URL?
-                // To be safe and simple: Append ALL context vars as query params.
-                var queryBuilder = new System.Text.StringBuilder();
-                var hasQuery = url.Contains("?");
-                
-                foreach (var kvp in context)
-                {
-                    var valStr = GetValueString(kvp.Value);
-                    if (valStr != null)
-                    {
-                        queryBuilder.Append(hasQuery ? "&" : "?");
-                        queryBuilder.Append(System.Web.HttpUtility.UrlEncode(kvp.Key));
-                        queryBuilder.Append("=");
-                        queryBuilder.Append(System.Web.HttpUtility.UrlEncode(valStr));
-                        hasQuery = true;
-                    }
-                }
-                // Note: This might duplicate params if they were also replaced in URL. 
-                // But typically users either use URL path params OR query params.
-                // If they use URL replacement, they probably don't want them appended again.
-                // But determining which ones were used is tricky.
-                // Let's just append. APIs usually ignore extra query params.
-                request.RequestUri = new Uri(url + queryBuilder.ToString());
+                 if (parameters.Any())
+                 {
+                     var queryBuilder = new System.Text.StringBuilder();
+                     var hasQuery = url.Contains("?");
+                     
+                     foreach (var kvp in parameters)
+                     {
+                         var valStr = GetValueString(kvp.Value);
+                         if (valStr != null)
+                         {
+                             queryBuilder.Append(hasQuery ? "&" : "?");
+                             queryBuilder.Append(System.Web.HttpUtility.UrlEncode(kvp.Key));
+                             queryBuilder.Append("=");
+                             queryBuilder.Append(System.Web.HttpUtility.UrlEncode(valStr));
+                             hasQuery = true;
+                         }
+                     }
+                     request.RequestUri = new Uri(url + queryBuilder.ToString());
+                 }
             }
-            else // POST, PUT, DELETE, etc.
+            else // POST, PUT
             {
-                // Send Context as JSON Body
-                // We should probably exclude internal keys if any?
-                // For now, send everything.
-                var json = JsonSerializer.Serialize(context);
+                // Serialize parameters
+                var json = JsonSerializer.Serialize(parameters);
                 request.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
             }
 
@@ -466,13 +551,11 @@ namespace omsapi.Services
                 {
                     try 
                     {
-                        // Try parsing as JSON
                         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                         return JsonSerializer.Deserialize<object>(content, options);
                     }
                     catch
                     {
-                        // Return string if not JSON
                         return content;
                     }
                 }
@@ -513,6 +596,31 @@ namespace omsapi.Services
             }
         }
 
+        private bool EvaluateCondition(string condition, Dictionary<string, object?>? context, Action<string> log)
+        {
+             var engine = new Engine(cfg => cfg.AllowClr());
+             
+             engine.SetValue("context", context);
+             if (context != null)
+             {
+                 foreach (var kvp in context)
+                 {
+                     engine.SetValue(kvp.Key, kvp.Value);
+                 }
+             }
+
+             try 
+             {
+                 var result = engine.Evaluate($"Boolean({condition})");
+                 return result.AsBoolean();
+             }
+             catch (Exception ex)
+             {
+                 log($"Condition Error: {ex.Message}");
+                 throw;
+             }
+        }
+
         private object? ExecuteJintScript(string script, Dictionary<string, object?> context, Action<string> log)
         {
              var engine = new Engine(cfg => cfg.AllowClr());
@@ -522,9 +630,20 @@ namespace omsapi.Services
 
              try 
              {
+                 // If script contains "return", wrap in function. Otherwise evaluate as expression/block.
+                 // But user is instructed to use "return".
+                 // And complex scripts need to be function wrapped to support return.
+                 // If user writes "return {...}", it must be in a function.
                  var wrappedScript = $"(function() {{ {script} }})()";
                  var result = engine.Evaluate(wrappedScript);
                  return result.ToObject();
+             }
+             catch (JavaScriptException jsex) when (jsex.Message.Contains("return"))
+             {
+                  // Fallback: If "return" is used outside function (shouldn't happen with wrapper), or syntax error
+                  // Try eval raw if wrapper fails? No, wrapper is safer for "return".
+                  log($"JS Error: {jsex.Message}");
+                  throw;
              }
              catch (Exception ex)
              {
@@ -652,6 +771,31 @@ namespace omsapi.Services
             {
                 try { Directory.Delete(tempDir, true); } catch { }
             }
+        }
+
+        private object? EvaluateParamValue(string value, Dictionary<string, object> context, Action<string> log)
+        {
+             if (string.IsNullOrWhiteSpace(value)) return value;
+             
+             if (value.StartsWith("@"))
+             {
+                 try 
+                 {
+                     var expr = "context." + value.Substring(1);
+                     var jsContext = ConvertToJsFriendly(context) as Dictionary<string, object?>;
+                     var engine = new Engine(cfg => cfg.AllowClr());
+                     engine.SetValue("context", jsContext);
+                     var result = engine.Evaluate(expr);
+                     return result.ToObject();
+                 }
+                 catch (Exception ex)
+                 {
+                     log($"Param evaluation failed ({value}): {ex.Message}. Using literal.");
+                     return value; 
+                 }
+             }
+             
+             return value;
         }
 
         private object? ConvertToJsFriendly(object? obj)

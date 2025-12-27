@@ -10,10 +10,10 @@
   </a-alert>
   <a-form-item label="脚本语言">
     <a-select v-model:value="node.data.language" defaultValue="javascript" @change="onChange">
-      <a-select-option value="javascript">JavaScript</a-select-option>
-      <a-select-option value="csharp">C#</a-select-option>
-      <a-select-option value="python">Python</a-select-option>
-      <a-select-option value="matlab">Matlab</a-select-option>
+      <a-select-option value="JavaScript">JavaScript</a-select-option>
+      <a-select-option value="CSharp">C#</a-select-option>
+      <a-select-option value="Python">Python</a-select-option>
+      <a-select-option value="Matlab">Matlab</a-select-option>
     </a-select>
   </a-form-item>
   <a-form-item label="脚本代码">

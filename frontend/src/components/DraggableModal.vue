@@ -190,7 +190,7 @@ onUnmounted(() => {
   width: 100vw;
   height: 100vh;
   background: rgba(0,0,0,0.3);
-  z-index: 2000;
+  z-index: 1000;
 }
 
 .draggable-modal-overlay {
@@ -198,7 +198,7 @@ onUnmounted(() => {
   background: #fff;
   box-shadow: 0 0 20px rgba(0,0,0,0.2);
   border-radius: 4px;
-  z-index: 2001;
+  z-index: 1001;
   display: flex;
   flex-direction: column;
   overflow: hidden;

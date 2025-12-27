@@ -163,7 +163,7 @@
 
         <a-tab-pane key="flow" tab="接口编排">
           <div class="tab-panel flow-designer-container" style="padding: 0;">
-            <div class="flow-designer-wrapper">
+            <div class="flow-designer-wrapper" :style="{ height: nodeDetailVisible ? 'calc(100% - 300px)' : '100%' }">
                 <div v-if="formState.isPublished" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: rgba(255,255,255,0.1); cursor: not-allowed;"></div>
                 <ApiFlowDesigner 
                   ref="designerRef" 
@@ -171,6 +171,9 @@
                   :debugResult="debugResult"
                   :readOnly="formState.isPublished"
                   @node-click="handleNodeClick"
+                  @check="handleCheck"
+                  @debug="handleDebug"
+                  @clear-debug="clearDebug"
                 />
             </div>
             

@@ -25,6 +25,16 @@ namespace omsapi.Models.Flow
         public string? Script { get; set; }
         public string? Language { get; set; }
         public string? ContentType { get; set; }
+        public string? ParamMode { get; set; }
+        public List<FlowKeyValue>? Params { get; set; }
+        public List<FlowKeyValue>? Headers { get; set; }
+        public string? JoinMode { get; set; }
+    }
+
+    public class FlowKeyValue
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
     }
 
     public class FlowEdge
@@ -32,5 +42,6 @@ namespace omsapi.Models.Flow
         public string Id { get; set; } = string.Empty;
         public string SourceId { get; set; } = string.Empty;
         public string TargetId { get; set; } = string.Empty;
+        public string? Condition { get; set; }
     }
 }

@@ -26,28 +26,63 @@
         ref="canvasRef"
         @drop="onDrop" 
         @dragover.prevent
+        @contextmenu.prevent="showContextMenu"
       >
         <!-- Leafer Canvas will be mounted here -->
+      </div>
+      
+      <!-- Context Menu -->
+      <div v-if="contextMenu.visible" 
+           class="context-menu" 
+           :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }">
+        <div class="menu-item" @click="handleMenuSelect('check')">接口检查</div>
+        <div class="menu-item" @click="handleMenuSelect('debug')">在线调试</div>
+        <div class="menu-item" v-if="debugResult" @click="handleMenuSelect('clear-debug')">清理调试</div>
+        <div class="menu-divider"></div>
+        <div class="menu-item" @click="handleMenuSelect('fit-view')">自适应画布</div>
+        <div class="menu-item" @click="handleMenuSelect('copy-image')">复制为图片</div>
+      </div>
+
+      <!-- Bottom Tip -->
+      <div class="flow-tip">
+        提示: 双击节点打开配置窗口 | 双击连线配置条件(多分支) | 拖拽节点移动 | 滚轮缩放画布
       </div>
     </div>
 
     <!-- Properties Panel (Dialog) -->
     <DraggableModal
-      v-if="selectedNode"
-      :visible="!!selectedNode"
+      v-if="selectedNode && isNodeConfigVisible"
+      :visible="!!selectedNode && isNodeConfigVisible"
       :title="'节点配置: ' + (selectedNode.label || 'Node')"
       :width="500"
       :height="600"
       body-padding="0"
       :maskClosable="false"
-      @close="deselectAll"
+      @close="closeNodeConfig"
     >
       <div class="props-content">
         <a-form layout="vertical" :disabled="readOnly">
+          <a-form-item label="节点标识 (ID/Key)">
+             <a-input :value="selectedNode?.id" @change="(e: any) => selectedNode && updateNodeId(selectedNode.id, e.target.value)" />
+             <div style="font-size: 12px; color: #888; margin-top: 4px;">
+               唯一标识，后续节点可通过 @{{selectedNode?.id}} 引用结果
+             </div>
+          </a-form-item>
           <a-form-item label="节点名称">
             <a-input v-model:value="selectedNode.label" @change="updateNodeLabel" @input="updateNodeLabel" />
           </a-form-item>
           
+          <a-form-item label="前置汇聚模式 (Join Mode)" v-if="selectedNode.type !== 'request' && hasMultipleIncomingEdges">
+            <a-radio-group v-model:value="selectedNode.data.joinMode" button-style="solid">
+              <a-radio-button value="all">等待所有 (And)</a-radio-button>
+              <a-radio-button value="any">任一触发 (Or)</a-radio-button>
+            </a-radio-group>
+            <div style="font-size: 12px; color: #888; margin-top: 4px;">
+              等待所有: 所有前序节点执行成功后才执行此节点<br>
+              任一触发: 只要有一个前序节点执行完成就触发 (后续到达的触发将被忽略)
+            </div>
+          </a-form-item>
+
           <RequestNodeConfig 
             v-if="selectedNode.type === 'request'" 
             :node="selectedNode" 
@@ -83,12 +118,37 @@
         </a-form>
       </div>
     </DraggableModal>
+
+    <!-- Edge Properties Panel -->
+    <DraggableModal
+      v-if="selectedEdge && isNodeConfigVisible"
+      :visible="!!selectedEdge && isNodeConfigVisible"
+      title="连接线配置"
+      :width="400"
+      :height="300"
+      paddding="0"
+      :maskClosable="false"
+      @close="closeNodeConfig"
+    >
+      <div class="props-content">
+        <a-form layout="vertical" :disabled="readOnly">
+          <a-form-item label="流转条件 (JavaScript)">
+             <a-textarea v-model:value="selectedEdge.condition" :rows="4" placeholder="例如: prevNode.data.status === 'success'" style="font-family: monospace;" />
+             <div style="font-size: 12px; color: #888; margin-top: 5px;">
+               当表达式返回 true 时才执行后续节点。<br>
+               留空表示无条件流转。
+             </div>
+          </a-form-item>
+        </a-form>
+      </div>
+    </DraggableModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import DraggableModal from '@/components/DraggableModal.vue';
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch, nextTick, reactive } from 'vue';
+import { message } from 'ant-design-vue';
 import { 
   GlobalOutlined, 
   DatabaseOutlined, 
@@ -104,6 +164,7 @@ import ResponseNodeConfig from './node-config/ResponseNodeConfig.vue';
 import { Leafer, Rect, Text, Group, Ellipse, PointerEvent, Path, Line } from 'leafer-ui';
 import '@leafer-in/find';
 import '@leafer-in/arrow';
+import '@leafer-in/export';
 import { v4 as uuidv4 } from 'uuid';
 
 interface Node {
@@ -119,6 +180,7 @@ interface Edge {
   id: string;
   sourceId: string;
   targetId: string;
+  condition?: string;
 }
 
 const props = defineProps<{
@@ -127,7 +189,7 @@ const props = defineProps<{
   readOnly?: boolean;
 }>();
 
-const emit = defineEmits(['node-click']);
+const emit = defineEmits(['node-click', 'check', 'debug', 'clear-debug']);
 
 const nodes = ref<Node[]>([]);
 const edges = ref<Edge[]>([]);
@@ -136,21 +198,38 @@ const canvasRef = ref<HTMLElement | null>(null);
 // Selection
 const selectedNodeId = ref<string | null>(null);
 const selectedEdgeId = ref<string | null>(null);
+const isNodeConfigVisible = ref(false);
+const isConnecting = ref(false);
 const selectedNode = computed(() => nodes.value.find(n => n.id === selectedNodeId.value));
+const selectedEdge = computed(() => edges.value.find(e => e.id === selectedEdgeId.value));
+
+const hasMultipleIncomingEdges = computed(() => {
+    if (!selectedNodeId.value) return false;
+    const incoming = edges.value.filter(e => e.targetId === selectedNodeId.value);
+    return incoming.length > 1;
+});
 
 // Patch data when node is selected
 watch(selectedNodeId, (newId) => {
+  updatePortsVisibility();
   if (newId) {
     const node = nodes.value.find(n => n.id === newId);
-    if (node && node.type === 'api') {
-        if (!node.data.paramMode) node.data.paramMode = 'all';
-        if (!node.data.headers) node.data.headers = [];
-        if (!node.data.params) node.data.params = [];
+    if (node) {
+        if (!node.data.joinMode && node.type !== 'request') node.data.joinMode = 'all';
+        if (node.type === 'api') {
+             if (!node.data.paramMode) node.data.paramMode = 'all';
+             if (!node.data.headers) node.data.headers = [];
+             if (!node.data.params) node.data.params = [];
+        }
     }
   }
 });
 
 
+
+watch(isConnecting, () => {
+    updatePortsVisibility();
+});
 
 // Leafer Instances
 let leaferApp: Leafer | null = null;
@@ -159,6 +238,61 @@ let activeConnectionLine: Path | null = null;
 let connectionStartNode: Group | null = null;
 let hGuideLine: Line | null = null;
 let vGuideLine: Line | null = null;
+
+// Context Menu Logic
+const contextMenu = reactive({
+  visible: false,
+  x: 0,
+  y: 0
+});
+
+const showContextMenu = (e: MouseEvent) => {
+  contextMenu.visible = true;
+  contextMenu.x = e.clientX;
+  contextMenu.y = e.clientY;
+};
+
+const hideContextMenu = () => {
+  contextMenu.visible = false;
+};
+
+const handleMenuSelect = async (key: string) => {
+  hideContextMenu();
+  switch (key) {
+    case 'check':
+      emit('check');
+      break;
+    case 'debug':
+      emit('debug');
+      break;
+    case 'clear-debug':
+      emit('clear-debug');
+      break;
+    case 'fit-view':
+      fitView();
+      break;
+    case 'copy-image':
+      if (leaferApp) {
+        try {
+           const result = await leaferApp.export('png');
+           if (result.data) {
+               const res = await fetch(result.data);
+               const blob = await res.blob();
+               if (navigator.clipboard && navigator.clipboard.write) {
+                   await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                   message.success('已复制到剪贴板');
+               } else {
+                   message.warning('浏览器不支持自动复制');
+               }
+           }
+        } catch (e) {
+            console.error(e);
+            message.error('复制失败');
+        }
+      }
+      break;
+  }
+};
 
 // Pan & Zoom State
 let isPanning = false;
@@ -169,6 +303,7 @@ let resizeObserver: ResizeObserver | null = null;
 
 // Initialization
 onMounted(() => {
+  window.addEventListener('click', hideContextMenu);
   nextTick(initLeafer);
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
@@ -190,6 +325,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener('click', hideContextMenu);
   if (resizeObserver) {
     resizeObserver.disconnect();
   }
@@ -307,6 +443,25 @@ const initLeafer = () => {
     deselectAll();
     emit('node-click', null); // Emit null to indicate deselection
   });
+
+  // Double Click to open config
+  leaferApp.on(PointerEvent.DOUBLE_TAP, (e: PointerEvent) => {
+    let target = e.target;
+    
+    // Check if clicked directly on a port (ports have their own double click handler)
+    if (target && (target.name === 'port-in' || target.name === 'port-out')) {
+        return;
+    }
+
+    while(target && target.tag !== 'Leafer' && target.id !== 'graph-group') {
+        if (target.tag === 'Group' && target.id && target.name === 'node-group') {
+            selectNode(target.id); // Ensure selected
+            isNodeConfigVisible.value = true; // Open Config
+            return;
+        }
+        target = target.parent as any;
+    }
+  });
   
   setupInteractions();
 
@@ -353,7 +508,7 @@ const fitView = () => {
       minX = Math.min(minX, node.x);
       minY = Math.min(minY, node.y);
       maxX = Math.max(maxX, node.x + 180);
-      maxY = Math.max(maxY, node.y + 70);
+      maxY = Math.max(maxY, node.y + 80);
   });
 
   if (minX === Infinity) return;
@@ -390,7 +545,7 @@ const checkAlignment = (currentId: string, x: number, y: number) => {
 
     const threshold = 5;
     const currentCenterX = x + 90;
-    const currentCenterY = y + 35;
+    const currentCenterY = y + 40;
     
     let snappedX: number | undefined = undefined;
     let snappedY: number | undefined = undefined;
@@ -405,7 +560,7 @@ const checkAlignment = (currentId: string, x: number, y: number) => {
         if (otherNode.id === currentId) continue;
 
         const otherCenterX = otherNode.x + 90;
-        const otherCenterY = otherNode.y + 35;
+        const otherCenterY = otherNode.y + 40;
 
         // Vertical Alignment (Center X)
         if (Math.abs(currentCenterX - otherCenterX) < threshold) {
@@ -416,7 +571,7 @@ const checkAlignment = (currentId: string, x: number, y: number) => {
 
         // Horizontal Alignment (Center Y)
         if (Math.abs(currentCenterY - otherCenterY) < threshold) {
-            snappedY = otherCenterY - 35;
+            snappedY = otherCenterY - 40;
             hLineY = otherCenterY;
             showHLine = true;
         }
@@ -706,7 +861,7 @@ const createNodeVisual = (node: Node) => {
   // Main Box
   const rect = new Rect({
     width: 180,
-    height: 70,
+    height: 80,
     fill: '#fff',
     stroke: strokeColor,
     strokeWidth: strokeWidth,
@@ -722,14 +877,51 @@ const createNodeVisual = (node: Node) => {
     cornerRadius: [4, 4, 0, 0]
   });
 
+  // ID Ear (Tab)
+  const idEarWidth = Math.max(34, node.id.length * 10 + 14); 
+  const idEar = new Rect({
+      width: idEarWidth,
+      height: 26,
+      fill: getNodeColor(node.type), 
+      cornerRadius: [4, 4, 0, 0],
+      x: 0,
+      y: -22, 
+      stroke: strokeColor,
+      strokeWidth: strokeWidth
+  });
+
+  const earPatch = new Rect({
+      width: idEarWidth - strokeWidth * 2,
+      height: 6, 
+      fill: getNodeColor(node.type), 
+      x: strokeWidth, 
+      y: -3, 
+      zIndex: 2 
+  });
+
+  const idText = new Text({
+    text: node.id,
+    fill: '#fff', 
+    fontSize: 14, 
+    fontWeight: 'bold', 
+    width: idEarWidth,
+    textAlign: 'center',
+    x: 0,
+    y: -21, 
+    pointerEvents: 'none',
+    zIndex: 3
+  });
+
   // Title
   const titleText = new Text({
     text: node.label || getNodeTitle(node.type),
     fill: '#333',
     fontSize: 14,
     fontWeight: 'bold',
-    x: 10,
-    y: 12,
+    width: 180, 
+    textAlign: 'center', 
+    x: 0, 
+    y: 20, 
     pointerEvents: 'none'
   });
 
@@ -738,7 +930,7 @@ const createNodeVisual = (node: Node) => {
   if (node.type === 'request') info = `${node.data.method || 'GET'} ${node.data.path || ''}`;
   else if (node.type === 'database') info = `${node.data.opType || ''} ${node.data.sourceId || ''}`;
   else if (node.type === 'api') info = node.data.url || '';
-  else if (node.type === 'script') info = (node.data.language || 'javascript').toUpperCase();
+  else if (node.type === 'script') info = (node.data.language || 'javascript');
   else if (node.type === 'response') info = node.data.contentType || '';
   
   if (info.length > 20) info = info.substring(0, 18) + '...';
@@ -747,8 +939,10 @@ const createNodeVisual = (node: Node) => {
     text: info,
     fill: '#888',
     fontSize: 12,
-    x: 10,
-    y: 36,
+    width: 180, 
+    textAlign: 'center', 
+    x: 0, 
+    y: 47, 
     pointerEvents: 'none'
   });
 
@@ -756,19 +950,19 @@ const createNodeVisual = (node: Node) => {
   const inPort = new Ellipse({
     width: 10, height: 10,
     fill: '#fff', stroke: '#666', strokeWidth: 1,
-    x: -5, y: 30,
+    x: -5, y: 35,
     cursor: 'crosshair',
     name: 'port-in',
-    visible: node.type !== 'request'
+    visible: (node.type !== 'request') && (isSelected || isConnecting.value)
   });
 
   const outPort = new Ellipse({
     width: 10, height: 10,
     fill: '#fff', stroke: '#666', strokeWidth: 1,
-    x: 175, y: 30,
+    x: 175, y: 35,
     cursor: 'crosshair',
     name: 'port-out',
-    visible: node.type !== 'response'
+    visible: (node.type !== 'response') && (isSelected || isConnecting.value)
   });
 
   // Events
@@ -814,11 +1008,11 @@ const createNodeVisual = (node: Node) => {
 
     // 3. Find the nearest candidate
     const startX = node.x + 180;
-    const startY = node.y + 35;
+    const startY = node.y + 40;
 
     candidates.sort((a, b) => {
-        const distA = Math.pow(a.x - startX, 2) + Math.pow((a.y + 35) - startY, 2);
-        const distB = Math.pow(b.x - startX, 2) + Math.pow((b.y + 35) - startY, 2);
+        const distA = Math.pow(a.x - startX, 2) + Math.pow((a.y + 40) - startY, 2);
+        const distB = Math.pow(b.x - startX, 2) + Math.pow((b.y + 40) - startY, 2);
         return distA - distB;
     });
 
@@ -835,8 +1029,11 @@ const createNodeVisual = (node: Node) => {
     createConnectionLine(node, targetNode, newEdge.id);
   });
 
-  group.add(rect);
-  group.add(header);
+  group.add(idEar);
+    group.add(rect);
+    group.add(header);
+    group.add(earPatch); // Add patch to cover the seam
+    group.add(idText);
   group.add(titleText);
   group.add(detailText);
   if (node.type !== 'request') group.add(inPort);
@@ -895,9 +1092,14 @@ const createConnectionLine = (source: Node, target: Node, id: string) => {
         cursor: 'pointer'
     });
     
-    line.on(PointerEvent.TAP, (_e: PointerEvent) => {
-        // e.stop(); // Let it bubble to global handler
-        // selectEdge(id);
+    line.on(PointerEvent.DOUBLE_TAP, (e: PointerEvent) => {
+        // Only allow config if source node has multiple outgoing edges
+        const outgoingEdges = edges.value.filter(edge => edge.sourceId === source.id);
+        if (outgoingEdges.length > 1) {
+            e.stop();
+            selectEdge(id);
+            isNodeConfigVisible.value = true;
+        }
     });
 
     graphGroup.add(line);
@@ -921,6 +1123,7 @@ const updateConnectedLines = (nodeId: string) => {
 };
 
 const startConnection = (nodeGroup: Group) => {
+    isConnecting.value = true;
     connectionStartNode = nodeGroup;
     activeConnectionLine = new Path({
         stroke: '#1890ff',
@@ -1015,6 +1218,7 @@ const endConnection = (targetGroup: Group) => {
 };
 
 const cancelConnection = () => {
+    isConnecting.value = false;
     if (activeConnectionLine) {
         activeConnectionLine.remove();
         activeConnectionLine = null;
@@ -1033,7 +1237,7 @@ const getInitialData = (type: string) => {
   if (type === 'api') {
     return {
       method: 'GET',
-      paramMode: 'all',
+      paramMode: 'custom',
       headers: [],
       params: []
     };
@@ -1064,6 +1268,61 @@ const onDragStart = (e: DragEvent, type: string) => {
   }
 };
 
+const generateNodeId = (type: string) => {
+    const prefixMap: Record<string, string> = {
+        'request': 'req',
+        'database': 'db',
+        'api': 'api',
+        'script': 'code',
+        'response': 'res'
+    };
+    const prefix = prefixMap[type] || type;
+    
+    // Find max index
+    let maxIdx = 0;
+    nodes.value.forEach(n => {
+        if (n.id.startsWith(prefix + '_')) {
+             const parts = n.id.split('_');
+             if (parts.length === 2) {
+                 const idx = parseInt(parts[1]!);
+                 if (!isNaN(idx) && idx > maxIdx) maxIdx = idx;
+             }
+        }
+    });
+    return `${prefix}_${maxIdx + 1}`;
+};
+
+const updateNodeId = (oldId: string, newId: string) => {
+    if (oldId === newId) return;
+    if (!newId || newId.trim() === '') {
+        message.error('节点ID不能为空');
+        return;
+    }
+    // Check conflict
+    if (nodes.value.some(n => n.id === newId)) {
+        message.error(`节点ID "${newId}" 已存在`);
+        return;
+    }
+
+    // Update Node ID
+    const node = nodes.value.find(n => n.id === oldId);
+    if (node) {
+        node.id = newId;
+    }
+
+    // Update Edges
+    edges.value.forEach(edge => {
+        if (edge.sourceId === oldId) edge.sourceId = newId;
+        if (edge.targetId === oldId) edge.targetId = newId;
+    });
+
+    // Update Selection
+    selectedNodeId.value = newId;
+    
+    // Refresh
+    refreshVisuals();
+};
+
 const onDrop = (e: DragEvent) => {
   e.preventDefault();
   const type = e.dataTransfer?.getData('type');
@@ -1083,7 +1342,7 @@ const onDrop = (e: DragEvent) => {
     }
 
     const newNode: Node = {
-      id: uuidv4(),
+      id: generateNodeId(type),
       type,
       x,
       y,
@@ -1101,19 +1360,32 @@ const onDrop = (e: DragEvent) => {
 const selectNode = (id: string) => {
   selectedNodeId.value = id;
   selectedEdgeId.value = null;
+  // Don't open config on select (single click)
+  // isNodeConfigVisible.value = false; // Optional: Force close if clicking another node? 
+  // Let's force close to match "Single click selects, Double click opens"
+  isNodeConfigVisible.value = false;
   refreshVisuals();
 };
 
 const selectEdge = (id: string) => {
   selectedEdgeId.value = id;
   selectedNodeId.value = null;
+  isNodeConfigVisible.value = false;
   refreshVisuals();
 };
 
 const deselectAll = () => {
   selectedNodeId.value = null;
   selectedEdgeId.value = null;
+  isNodeConfigVisible.value = false;
   refreshVisuals();
+};
+
+const closeNodeConfig = () => {
+  isNodeConfigVisible.value = false;
+  // We can choose to keep selection or deselect. 
+  // Usually closing the dialog implies we are done editing, but maybe still selecting.
+  // For now, let's just close the dialog.
 };
 
 const refreshVisuals = () => {
@@ -1159,6 +1431,7 @@ const deleteNode = (id: string) => {
         nodes.value.splice(index, 1);
         edges.value = edges.value.filter(e => e.sourceId !== id && e.targetId !== id);
         selectedNodeId.value = null;
+        isNodeConfigVisible.value = false;
         renderGraph();
     }
 };
@@ -1180,6 +1453,37 @@ const updateNodeLabel = () => {
 
 const updateNodeVisual = () => {
   refreshVisuals();
+};
+
+const updatePortsVisibility = () => {
+    if (!graphGroup) return;
+    
+    nodes.value.forEach(node => {
+        const group = graphGroup?.findId(node.id) as Group;
+        if (!group) return;
+        
+        // Use recursive search or just search children
+        // In createNodeVisual, we added them directly to group
+        // Find children by name
+        if (!group.children) return;
+        
+        const inPort = group.children.find(c => c.name === 'port-in');
+        const outPort = group.children.find(c => c.name === 'port-out');
+        
+        const isNodeSelected = selectedNodeId.value === node.id;
+        const showPorts = isNodeSelected || isConnecting.value;
+        
+        if (inPort) {
+             // Respect original type constraint
+             if (node.type !== 'request') inPort.visible = showPorts;
+             else inPort.visible = false;
+        }
+        
+        if (outPort) {
+             if (node.type !== 'response') outPort.visible = showPorts;
+             else outPort.visible = false;
+        }
+    });
 };
 
 defineExpose({
@@ -1242,6 +1546,52 @@ defineExpose({
   position: relative;
   overflow: hidden;
   touch-action: none;
+}
+
+.flow-tip {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.8);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #666;
+  pointer-events: none;
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  white-space: nowrap;
+}
+
+.context-menu {
+  position: fixed;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #eee;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  padding: 4px 0;
+  min-width: 120px;
+}
+
+.menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+  transition: background 0.2s;
+}
+
+.menu-item:hover {
+  background: #f5f5f5;
+  color: #1890ff;
+}
+
+.menu-divider {
+  height: 1px;
+  background: #eee;
+  margin: 4px 0;
 }
 
 .props-content {
