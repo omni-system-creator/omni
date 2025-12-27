@@ -160,6 +160,18 @@ OMS/
    npm run build
    ```
 
+5. 构建 Android App：
+   ```bash
+   # 1. 构建移动端资源
+   npm run build:app
+
+   # 2. 同步资源到 Android 项目
+   npx cap sync
+
+   # 3. 打开 Android Studio 进行打包
+   npx cap open android
+   ```
+
 ## 🤝 支持与联系
 
 如果您觉得本项目对您有帮助，欢迎请作者喝杯咖啡 ☕
