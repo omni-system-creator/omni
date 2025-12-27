@@ -39,6 +39,9 @@ builder.Services.AddControllers(options =>
     options.Filters.Add<omsapi.Filters.AuditLogFilter>();
 });
 
+builder.Services.AddSignalR();
+builder.Services.AddHttpClient(); // Add HttpClient
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -81,6 +84,7 @@ app.UseAuthorization();
 app.UseMiddleware<omsapi.Middleware.JwtSlidingExpirationMiddleware>();
 
 app.MapControllers();
+app.MapHub<omsapi.Hubs.DebugHub>("/hubs/debug");
 
 // 初始化数据库
 using (var scope = app.Services.CreateScope())

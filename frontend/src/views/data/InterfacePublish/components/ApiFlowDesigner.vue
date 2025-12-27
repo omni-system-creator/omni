@@ -1,7 +1,7 @@
 <template>
   <div class="flow-container">
     <!-- Toolbar -->
-    <div class="flow-toolbar">
+    <div class="flow-toolbar" v-if="!readOnly">
       <div class="tool-item" draggable="true" @dragstart="onDragStart($event, 'request')">
         <GlobalOutlined /> 接收请求 (Request)
       </div>
@@ -38,28 +38,37 @@
         <CloseOutlined @click="deselectAll" style="cursor: pointer" />
       </div>
       <div class="props-content">
-        <a-form layout="vertical">
+        <a-form layout="vertical" :disabled="readOnly">
           <a-form-item label="节点名称">
             <a-input v-model:value="selectedNode.label" @change="updateNodeLabel" @input="updateNodeLabel" />
           </a-form-item>
           
           <!-- Request Node Config -->
           <template v-if="selectedNode.type === 'request'">
-            <a-form-item label="请求路径">
-              <a-input v-model:value="selectedNode.data.path" placeholder="/api/v1/..." @change="updateNodeVisual" @input="updateNodeVisual" />
-            </a-form-item>
-            <a-form-item label="请求方法">
-              <a-select v-model:value="selectedNode.data.method" @change="updateNodeVisual">
-                <a-select-option value="GET">GET</a-select-option>
-                <a-select-option value="POST">POST</a-select-option>
-                <a-select-option value="PUT">PUT</a-select-option>
-                <a-select-option value="DELETE">DELETE</a-select-option>
-              </a-select>
-            </a-form-item>
+            <a-alert message="流程入口" type="info" show-icon style="margin-bottom: 16px">
+                <template #description>
+                    <div style="font-size: 12px;">
+                        <p>接收外部HTTP请求，参数将注入到上下文中。</p>
+                        <p><strong>注意:</strong> 请求路径和方法在“基本信息”中配置，此处仅作为入口定义。</p>
+                        <p><strong>Input:</strong> Query/Body (e.g. ?id=1001)</p>
+                        <p><strong>Context:</strong> { id: 1001 }</p>
+                    </div>
+                </template>
+            </a-alert>
           </template>
 
           <!-- Database Node Config -->
           <template v-if="selectedNode.type === 'database'">
+            <a-alert message="数据操作" type="info" show-icon style="margin-bottom: 16px">
+                <template #description>
+                    <div style="font-size: 12px;">
+                        <p>执行SQL语句，系统会自动将<strong>上下文变量</strong>注入为SQL参数。</p>
+                        <p><strong>使用方式:</strong> 直接使用 <code>@参数名</code> (例如请求参数为 id，则写 @id)</p>
+                        <p><strong>Example:</strong> SELECT * FROM production_plans WHERE plan_no = @id</p>
+                        <p><strong>Output:</strong> 结果数组将存入 <code>dbResult</code> 变量供后续使用</p>
+                    </div>
+                </template>
+            </a-alert>
             <a-form-item label="数据源">
               <a-select v-model:value="selectedNode.data.sourceId" @change="updateNodeVisual">
                 <a-select-option value="db1">主业务库 (MySQL)</a-select-option>
@@ -75,12 +84,21 @@
               </a-select>
             </a-form-item>
             <a-form-item label="SQL语句">
-              <a-textarea v-model:value="selectedNode.data.sql" :rows="5" placeholder="SELECT * FROM users WHERE id = ?" @input="updateNodeVisual" />
+              <a-textarea v-model:value="selectedNode.data.sql" :rows="5" placeholder="SELECT * FROM production_plans WHERE plan_no = @id" @input="updateNodeVisual" />
             </a-form-item>
           </template>
 
           <!-- API Node Config -->
           <template v-if="selectedNode.type === 'api'">
+            <a-alert message="外部接口" type="info" show-icon style="margin-bottom: 16px">
+                <template #description>
+                    <div style="font-size: 12px;">
+                        <p>调用外部HTTP服务。</p>
+                        <p><strong>参数传递:</strong> 上下文变量 (e.g. <code>dbResult</code>) 将自动作为 Body (POST) 或 Query (GET) 发送。</p>
+                        <p><strong>Example:</strong> http://mes-system/api/check_stock</p>
+                    </div>
+                </template>
+            </a-alert>
             <a-form-item label="目标URL">
               <a-input v-model:value="selectedNode.data.url" @change="updateNodeVisual" @input="updateNodeVisual" />
             </a-form-item>
@@ -94,13 +112,39 @@
 
            <!-- Script Node Config -->
           <template v-if="selectedNode.type === 'script'">
-            <a-form-item label="脚本代码 (JS)">
-              <a-textarea v-model:value="selectedNode.data.script" :rows="8" placeholder="return input + 1;" @input="updateNodeVisual" />
+            <a-alert message="脚本逻辑" type="info" show-icon style="margin-bottom: 16px">
+                <template #description>
+                    <div style="font-size: 12px;">
+                        <p>执行自定义脚本进行数据转换。</p>
+                        <p><strong>Available Vars:</strong> <code>context</code> (dictionary/object)</p>
+                        <p><strong>Return:</strong> 返回结果将存入 <code>scriptResult</code></p>
+                    </div>
+                </template>
+            </a-alert>
+            <a-form-item label="脚本语言">
+                <a-select v-model:value="selectedNode.data.language" defaultValue="javascript" @change="updateNodeVisual">
+                    <a-select-option value="javascript">JavaScript</a-select-option>
+                    <a-select-option value="csharp">C#</a-select-option>
+                    <a-select-option value="python">Python</a-select-option>
+                    <a-select-option value="matlab">Matlab</a-select-option>
+                </a-select>
+            </a-form-item>
+            <a-form-item label="脚本代码">
+              <a-textarea v-model:value="selectedNode.data.script" :rows="10" :placeholder="getScriptPlaceholder(selectedNode.data.language)" @input="updateNodeVisual" style="font-family: monospace;" />
             </a-form-item>
           </template>
 
           <!-- Response Node Config -->
           <template v-if="selectedNode.type === 'response'">
+             <a-alert message="发送响应" type="info" show-icon style="margin-bottom: 16px">
+                <template #description>
+                    <div style="font-size: 12px;">
+                        <p>结束流程并返回数据。</p>
+                        <p><strong>默认行为:</strong> 自动返回上下文中的最后一次操作结果 (例如 <code>dbResult</code>)。</p>
+                        <p><strong>自定义:</strong> 如需返回特定结构，请在响应节点前添加“脚本逻辑”节点进行处理。</p>
+                    </div>
+                </template>
+            </a-alert>
              <a-form-item label="响应类型">
               <a-select v-model:value="selectedNode.data.contentType" defaultValue="json">
                 <a-select-option value="json">JSON</a-select-option>
@@ -147,7 +191,11 @@ interface Edge {
 
 const props = defineProps<{
   initialData?: any;
+  debugResult?: any;
+  readOnly?: boolean;
 }>();
+
+const emit = defineEmits(['node-click']);
 
 const nodes = ref<Node[]>([]);
 const edges = ref<Edge[]>([]);
@@ -222,6 +270,39 @@ watch(() => props.initialData, (val) => {
   }
 }, { deep: true });
 
+// Watch for debug result to highlight executed nodes
+watch(() => props.debugResult, () => {
+    if (!leaferApp || !graphGroup) return;
+    
+    // Always refresh visuals when debugResult changes, 
+    // including when it becomes null (to clear highlights)
+    refreshVisuals();
+}, { deep: true });
+
+const getDebugStatus = (nodeId: string) => {
+    if (!props.debugResult) return null;
+    
+    // Check running first
+    if (props.debugResult.runningNodes && props.debugResult.runningNodes.includes(nodeId)) {
+        return 'running';
+    }
+
+    if (props.debugResult.executedNodes && props.debugResult.executedNodes.includes(nodeId)) {
+        // Check if error
+        // Only consider it an error if status code is non-zero and not 200
+        if (props.debugResult.statusCode !== 0 && props.debugResult.statusCode !== 200 && 
+            props.debugResult.executedNodes[props.debugResult.executedNodes.length - 1] === nodeId) {
+            return 'error';
+        }
+        return 'success';
+    }
+    return null;
+};
+
+// ...
+
+
+
 const initLeafer = () => {
   if (!canvasRef.value) return;
   
@@ -258,6 +339,8 @@ const initLeafer = () => {
     while(target && target.tag !== 'Leafer' && target.id !== 'graph-group') {
         if (target.tag === 'Group' && target.id && target.name === 'node-group') {
             selectNode(target.id);
+            // Emit click event for parent to handle (e.g. show debug info)
+            emit('node-click', target.id);
             return;
         }
         // Check if clicked on an edge
@@ -269,6 +352,7 @@ const initLeafer = () => {
     }
     // Clicked on background
     deselectAll();
+    emit('node-click', null); // Emit null to indicate deselection
   });
   
   setupInteractions();
@@ -613,6 +697,71 @@ const getNodeTitle = (type: string) => {
   return titles[type] || '节点';
 };
 
+const getScriptPlaceholder = (lang: string) => {
+    const l = lang || 'javascript';
+    switch (l) {
+        case 'csharp':
+            return `// C# Script
+// Variables: context (Dictionary<string, object>), log (Action<string>)
+// Return: Any object
+
+// Example:
+var rows = context["dbResult"] as List<object>;
+if (rows != null) {
+    log("Processing " + rows.Count + " rows");
+    return new { Count = rows.Count, Status = "OK" };
+}
+return null;`;
+        case 'python':
+            return `# Python Script
+# Input: 'context.json' file (in current dir)
+# Output: Print JSON to stdout
+
+import json
+import sys
+
+# Read context
+try:
+    with open('context.json', 'r', encoding='utf-8') as f:
+        context = json.load(f)
+    
+    # Logic here
+    result = { "status": "ok", "data": context.get("dbResult") }
+    
+    print(json.dumps(result))
+except Exception as e:
+    print(json.dumps({ "error": str(e) }));`;
+        case 'matlab':
+            return `% Matlab Script
+% Input: 'context.json'
+% Output: Write to 'result.json'
+
+data = jsondecode(fileread('context.json'));
+
+% Logic here
+result.status = 'ok';
+result.processed = true;
+
+fid = fopen('result.json', 'w');
+fprintf(fid, '%s', jsonencode(result));
+fclose(fid);`;
+        case 'javascript':
+        default:
+            return `// Example: Process DB results
+var rows = context.dbResult;
+if (!rows) return { count: 0 };
+
+var total = 0;
+for (var i = 0; i < rows.length; i++) {
+    // Assuming row has 'price' field
+    total += (rows[i].price || 0);
+}
+
+log('Calculated total: ' + total);
+return { total: total, count: rows.length };`;
+    }
+};
+
 const createNodeVisual = (node: Node) => {
   if (!leaferApp) return;
 
@@ -628,26 +777,58 @@ const createNodeVisual = (node: Node) => {
     zIndex: isSelected ? 10 : 1
   });
 
-  const color = getNodeColor(node.type);
+  const debugStatus = getDebugStatus(node.id);
+  
+  // 1. Initialize Visual Properties
+  let strokeColor = getNodeColor(node.type);
+  let strokeWidth = 2;
+  let shadow = { x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' }; // Default Shadow
+
+  // 2. Determine Stroke Color & Base Styles based on Debug Status
+  if (debugStatus === 'success') {
+      strokeColor = '#52c41a'; // Green
+      strokeWidth = 3;
+  } else if (debugStatus === 'error') {
+      strokeColor = '#ff4d4f'; // Red
+      strokeWidth = 3;
+  } else if (debugStatus === 'running') {
+      strokeColor = '#faad14'; // Yellow
+      strokeWidth = 3;
+      shadow = { x: 0, y: 0, blur: 10, color: 'rgba(250, 173, 20, 0.6)' }; // Running Glow (default)
+  } else if (isSelected) {
+      strokeColor = '#1890ff'; // Blue (only if no debug status)
+      strokeWidth = 3;
+  }
+
+  // 3. Selection Shadow Overrides (Glow effects)
+  if (isSelected) {
+      if (debugStatus === 'success') {
+          shadow = { x: 0, y: 4, blur: 12, color: 'rgba(82, 196, 26, 0.6)' }; // Green Glow
+      } else if (debugStatus === 'error') {
+          shadow = { x: 0, y: 4, blur: 12, color: 'rgba(255, 77, 79, 0.6)' }; // Red Glow
+      } else if (debugStatus === 'running') {
+          shadow = { x: 0, y: 4, blur: 12, color: 'rgba(250, 173, 20, 0.6)' }; // Yellow Glow
+      } else {
+          shadow = { x: 0, y: 4, blur: 12, color: 'rgba(24, 144, 255, 0.4)' }; // Blue Glow
+      }
+  }
 
   // Main Box
   const rect = new Rect({
     width: 180,
     height: 70,
     fill: '#fff',
-    stroke: isSelected ? '#1890ff' : color,
-    strokeWidth: isSelected ? 3 : 2,
+    stroke: strokeColor,
+    strokeWidth: strokeWidth,
     cornerRadius: 4,
-    shadow: isSelected 
-      ? { x: 0, y: 4, blur: 12, color: 'rgba(24, 144, 255, 0.4)' } 
-      : { x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,0.1)' }
+    shadow: shadow
   });
 
   // Header Bar
   const header = new Rect({
     width: 180,
     height: 6,
-    fill: color,
+    fill: getNodeColor(node.type), // Header always keeps type color
     cornerRadius: [4, 4, 0, 0]
   });
 
@@ -667,6 +848,7 @@ const createNodeVisual = (node: Node) => {
   if (node.type === 'request') info = `${node.data.method || 'GET'} ${node.data.path || ''}`;
   else if (node.type === 'database') info = `${node.data.opType || ''} ${node.data.sourceId || ''}`;
   else if (node.type === 'api') info = node.data.url || '';
+  else if (node.type === 'script') info = (node.data.language || 'javascript').toUpperCase();
   else if (node.type === 'response') info = node.data.contentType || '';
   
   if (info.length > 20) info = info.substring(0, 18) + '...';
@@ -1038,7 +1220,9 @@ const updateNodeVisual = () => {
 
 defineExpose({
   nodes,
-  edges
+  edges,
+  selectNode,
+  clearSelection: deselectAll
 });
 </script>
 

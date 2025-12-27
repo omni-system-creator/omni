@@ -4,6 +4,7 @@ using omsapi.Models.Entities.Archive;
 using omsapi.Models.Entities.BigView;
 using omsapi.Models.Entities.Data;
 using omsapi.Models.Entities.Forms;
+using omsapi.Models.Entities.Interfaces;
 
 namespace omsapi.Data
 {
@@ -44,6 +45,10 @@ namespace omsapi.Data
         public DbSet<FormCategory> FormCategories { get; set; }
         public DbSet<FormDefinition> FormDefinitions { get; set; }
         public DbSet<FormResult> FormResults { get; set; }
+
+        // Interface Entities
+        public DbSet<InterfaceCategory> InterfaceCategories { get; set; }
+        public DbSet<InterfaceDefinition> InterfaceDefinitions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

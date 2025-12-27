@@ -1,135 +1,75 @@
 import request from '@/utils/request';
 
-// Categories
 export interface FormCategory {
   id?: number;
   name: string;
   parentId?: number | null;
-  sortOrder?: number;
+  sortOrder: number;
   children?: FormCategory[];
 }
 
-export function getCategoryTree() {
-  return request({
-    url: '/form/categories/tree',
-    method: 'get'
-  });
-}
-
-export function createCategory(data: FormCategory) {
-  return request({
-    url: '/form/categories',
-    method: 'post',
-    data
-  });
-}
-
-export function updateCategory(id: number, data: FormCategory) {
-  return request({
-    url: `/form/categories/${id}`,
-    method: 'put',
-    data
-  });
-}
-
-export function deleteCategory(id: number) {
-  return request({
-    url: `/form/categories/${id}`,
-    method: 'delete'
-  });
-}
-
-// Forms
 export interface FormDefinition {
   id?: number;
   categoryId: number;
   name: string;
   code?: string;
   description?: string;
-  formItems?: string; // JSON string
+  version?: string;
   isPublished?: boolean;
+  formConfig?: string;
+  formItems?: string;
+  manageRoleIds?: string;
+  submitRoleIds?: string;
+  fillRoleIds?: string;
+  viewRoleIds?: string;
   requiresLogin?: boolean;
   limitOnePerUser?: boolean;
-  viewRoleIds?: string;
-  fillRoleIds?: string;
-  manageRoleIds?: string;
-  hasSubmitted?: boolean;
-  submittedData?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export function getFormList(params: { 
-  categoryId?: number;
-  name?: string;
-  sortBy?: string;
-  isDescending?: boolean;
-  page?: number;
-  pageSize?: number;
-}) {
-  return request({
-    url: '/form/definitions',
-    method: 'get',
-    params
-  });
+// Categories
+export function getCategoryTree() {
+  return request.get<FormCategory[]>('/form/categories');
 }
 
-export function getFormDetail(id: number) {
-  return request({
-    url: `/form/definitions/${id}`,
-    method: 'get'
-  });
+export function createCategory(data: any) {
+  return request.post('/form/categories', data);
 }
 
-export function createForm(data: FormDefinition) {
-  return request({
-    url: '/form/definitions',
-    method: 'post',
-    data
-  });
+export function updateCategory(id: number, data: any) {
+  return request.put(`/form/categories/${id}`, data);
 }
 
-export function updateForm(id: number, data: FormDefinition) {
-  return request({
-    url: `/form/definitions/${id}`,
-    method: 'put',
-    data
-  });
+export function deleteCategory(id: number) {
+  return request.delete(`/form/categories/${id}`);
 }
 
-export function publishForm(_id: number, _isPublished: boolean) {
-  // Since we don't have a specific publish endpoint, we get the form first (or assume we have data) 
-  // and then update it. However, the best way here is to just expect the component to call updateForm.
-  // But to keep compatibility with existing code imports, I'll add this.
-  // Actually, better to just let the component handle the logic, but I need to export the function 
-  // if it's imported.
-  // Let's implement it as a partial update if possible, but the API expects a full DTO usually.
-  // The updateForm expects FormDefinition.
-  // I will assume the caller passes the full object or I'll just change the component to use updateForm.
-  // For now, let's export a helper that requires the full object or just change the component.
-  // I will NOT export publishForm here, I will remove it from FormList.vue imports and use updateForm there.
-  return Promise.reject('Use updateForm instead');
+// Forms
+export function getFormList(params: any) {
+  return request.get<{ items: FormDefinition[]; total: number }>('/form', { params });
+}
+
+export function getFormDetail(id: string | number) {
+  return request.get<FormDefinition>(`/form/${id}`);
+}
+
+export function createForm(data: any) {
+  return request.post('/form', data);
+}
+
+export function updateForm(id: number, data: any) {
+  return request.put(`/form/${id}`, data);
 }
 
 export function deleteForm(id: number) {
-  return request({
-    url: `/form/definitions/${id}`,
-    method: 'delete'
-  });
+  return request.delete(`/form/${id}`);
 }
 
-export function submitForm(data: { formId: number; data: string; submittedBy?: string }) {
-  return request({
-    url: '/form/submit',
-    method: 'post',
-    data
-  });
+export function submitForm(data: { formId: number; data: string; submittedBy: string }) {
+  return request.post('/form/submit', data);
 }
 
-export function getFormResults(formId: number, params?: { page?: number; pageSize?: number }) {
-  return request({
-    url: `/form/results/${formId}`,
-    method: 'get',
-    params
-  });
+export function getFormResults(formId: number, params: any) {
+  return request.get(`/form/${formId}/results`, { params });
 }

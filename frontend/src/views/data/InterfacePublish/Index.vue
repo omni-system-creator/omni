@@ -1,188 +1,248 @@
 <template>
-  <div class="page-container">
-    <div class="header-actions">
-      <div class="filters">
-        <a-input-search placeholder="搜索发布接口名称/URL" style="width: 300px" />
-        <a-select defaultValue="all" style="width: 120px; margin-left: 16px">
-          <a-select-option value="all">全部状态</a-select-option>
-          <a-select-option value="published">已发布</a-select-option>
-          <a-select-option value="offline">已下线</a-select-option>
-        </a-select>
+  <a-layout style="height: 100%; background: #fff">
+    <a-layout-sider width="280" theme="light" style="border-right: 1px solid #f0f0f0">
+      <CategoryTree @select="onCategorySelect" />
+    </a-layout-sider>
+    <a-layout-content class="page-container">
+      <div class="header-actions">
+        <div class="filters">
+          <a-input-search 
+            v-model:value="searchKeyword" 
+            placeholder="搜索发布接口名称/URL" 
+            style="width: 300px" 
+            @search="loadData"
+          />
+          <a-button @click="loadData" style="margin-left: 8px">刷新</a-button>
+        </div>
+        <a-button type="primary" @click="showDrawer">
+          <template #icon><PlusOutlined /></template>
+          发布新接口
+        </a-button>
       </div>
-      <a-button type="primary" @click="showDrawer">
-        <template #icon><PlusOutlined /></template>
-        发布新接口
-      </a-button>
-    </div>
 
-    <a-table :columns="columns" :data-source="data" :pagination="{ pageSize: 10 }">
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'status'">
-          <a-tag :color="record.status === 'published' ? 'success' : 'default'">
-            {{ record.status === 'published' ? '已发布' : '已下线' }}
-          </a-tag>
+      <a-table 
+        :columns="columns" 
+        :data-source="data" 
+        :pagination="pagination"
+        :loading="loading"
+        @change="handleTableChange"
+        row-key="id"
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'status'">
+            <a-tag :color="record.isPublished ? 'success' : 'default'">
+              {{ record.isPublished ? '已发布' : '已下线' }}
+            </a-tag>
+          </template>
+          <template v-else-if="column.key === 'method'">
+            <a-tag :color="getMethodColor(record.method)">{{ record.method }}</a-tag>
+          </template>
+          <template v-else-if="column.key === 'updatedAt'">
+            {{ record.updatedAt ? dayjs(record.updatedAt).format('YYYY-MM-DD HH:mm:ss') : '-' }}
+          </template>
+          <template v-else-if="column.key === 'action'">
+            <a-space>
+              <a @click.prevent="openEdit(record)">编辑</a>
+              <a-popconfirm title="确定要删除该接口吗？" @confirm="handleDelete(record.id)">
+                <a style="color: #ff4d4f">删除</a>
+              </a-popconfirm>
+            </a-space>
+          </template>
         </template>
-        <template v-else-if="column.key === 'action'">
-          <a-space>
-            <a @click.prevent="openEdit(record)">编辑</a>
-            <a>文档</a>
-            <a style="color: #ff4d4f">下线</a>
-          </a-space>
-        </template>
-      </template>
-    </a-table>
+      </a-table>
 
-    <ApiEditorDrawer
-      v-model:visible="visible"
-      :editingId="editingId"
-      :initialData="drawerData"
-      @save="onSave"
-    />
-  </div>
+      <ApiEditorDrawer
+        v-model:visible="visible"
+        :editingId="editingId"
+        :initialData="drawerData"
+        :categoryId="currentCategoryId"
+        @save="onSave"
+        @publish="onPublishChange"
+      />
+    </a-layout-content>
+  </a-layout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
+import { message } from 'ant-design-vue';
 import ApiEditorDrawer from './components/ApiEditorDrawer.vue';
-import { v4 as uuidv4 } from 'uuid';
+import CategoryTree from './components/CategoryTree.vue';
+import { interfaceApi, type InterfaceDefinition } from '@/api/interface';
 
 const visible = ref(false);
 const editingId = ref<string | null>(null);
 const drawerData = ref<any>(null);
+const loading = ref(false);
+const data = ref<InterfaceDefinition[]>([]);
+const searchKeyword = ref('');
+const currentCategoryId = ref<number | undefined>(undefined);
+
+const pagination = reactive({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showSizeChanger: true,
+  showQuickJumper: true
+});
+
+import dayjs from 'dayjs';
+
+const columns = [
+  { title: '接口名称', dataIndex: 'name', key: 'name' },
+  { title: '所属分类', dataIndex: 'categoryName', key: 'categoryName', width: 150 },
+  { title: '请求方法', dataIndex: 'method', key: 'method', width: 100 },
+  { title: '完整路径', dataIndex: 'fullPath', key: 'path' },
+  { title: '状态', key: 'status', width: 100 },
+  { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180 },
+  { title: '操作', key: 'action', width: 200 },
+];
+
+const getMethodColor = (method: string) => {
+  switch (method.toUpperCase()) {
+    case 'GET': return 'blue';
+    case 'POST': return 'green';
+    case 'PUT': return 'orange';
+    case 'DELETE': return 'red';
+    default: return 'default';
+  }
+};
+
+const loadData = async () => {
+  loading.value = true;
+  try {
+    const res = await interfaceApi.getInterfaces({
+      categoryId: currentCategoryId.value,
+      keyword: searchKeyword.value,
+      page: pagination.current,
+      pageSize: pagination.pageSize
+    });
+    // Adjust based on actual API response structure (PagedResult)
+    const result = (res as any).data || res;
+    data.value = result.items || [];
+    pagination.total = result.total || 0;
+  } catch (error) {
+    console.error(error);
+    message.error('加载接口列表失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const onCategorySelect = (category: any) => {
+  currentCategoryId.value = category ? category.id : undefined;
+  pagination.current = 1;
+  loadData();
+};
+
+const handleTableChange = (pag: any) => {
+  pagination.current = pag.current;
+  pagination.pageSize = pag.pageSize;
+  loadData();
+};
 
 const showDrawer = () => {
+  if (!currentCategoryId.value) {
+    message.warning('请先选择一个分类');
+    return;
+  }
   editingId.value = null;
   drawerData.value = null;
   visible.value = true;
 };
 
 const openEdit = (record: any) => {
-  editingId.value = record.key;
-  // Clone to avoid direct mutation
-  drawerData.value = JSON.parse(JSON.stringify(record));
+  editingId.value = String(record.id);
+  // Ensure deep copy and parse flowConfig
+  const data = JSON.parse(JSON.stringify(record));
+  if (data.flowConfig) {
+    try {
+        data.flow = JSON.parse(data.flowConfig);
+    } catch(e) {
+        data.flow = null;
+    }
+  }
+  drawerData.value = data;
   visible.value = true;
 };
 
-const onSave = (data: any) => {
-  console.log('Saved API:', data);
-  visible.value = false;
-  // In a real app, we would update the list here
-};
-
-const columns = [
-  { title: '接口名称', dataIndex: 'name', key: 'name' },
-  { title: 'URL路径', dataIndex: 'path', key: 'path' },
-  { title: '版本', dataIndex: 'version', key: 'version' },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
-  { title: '发布时间', dataIndex: 'publishTime', key: 'publishTime' },
-  { title: '操作', key: 'action', width: 200 },
-];
-
-// --- Mock Data Generators ---
-
-const generateSimpleCRUD = () => {
-  const reqId = uuidv4();
-  const dbId = uuidv4();
-  const resId = uuidv4();
-  
-  return {
-    nodes: [
-      { id: reqId, type: 'request', x: 50, y: 100, data: { path: '/api/v1/inventory/query', method: 'GET' } },
-      { id: dbId, type: 'database', x: 350, y: 100, data: { sourceId: 'db1', opType: 'select', sql: 'SELECT * FROM inventory WHERE item_id = ?' } },
-      { id: resId, type: 'response', x: 650, y: 100, data: { contentType: 'json' } }
-    ],
-    edges: [
-      { id: uuidv4(), sourceId: reqId, targetId: dbId },
-      { id: uuidv4(), sourceId: dbId, targetId: resId }
-    ]
-  };
-};
-
-const generateApiAggregation = () => {
-  const reqId = uuidv4();
-  const api1Id = uuidv4();
-  const api2Id = uuidv4();
-  const scriptId = uuidv4();
-  const resId = uuidv4();
-
-  return {
-    nodes: [
-      { id: reqId, type: 'request', x: 50, y: 200, data: { path: '/api/v1/user/full-profile', method: 'GET' } },
-      { id: api1Id, type: 'api', x: 350, y: 100, data: { url: 'http://user-service/info', method: 'GET' } },
-      { id: api2Id, type: 'api', x: 350, y: 300, data: { url: 'http://order-service/history', method: 'GET' } },
-      { id: scriptId, type: 'script', x: 650, y: 200, data: { script: 'return { user: input1, orders: input2 };' } },
-      { id: resId, type: 'response', x: 900, y: 200, data: { contentType: 'json' } }
-    ],
-    edges: [
-      { id: uuidv4(), sourceId: reqId, targetId: api1Id },
-      { id: uuidv4(), sourceId: reqId, targetId: api2Id },
-      { id: uuidv4(), sourceId: api1Id, targetId: scriptId },
-      { id: uuidv4(), sourceId: api2Id, targetId: scriptId },
-      { id: uuidv4(), sourceId: scriptId, targetId: resId }
-    ]
-  };
-};
-
-const generateComplexLogic = () => {
-  const reqId = uuidv4();
-  const dbCheckId = uuidv4();
-  const scriptId = uuidv4();
-  const dbUpdateId = uuidv4();
-  const resId = uuidv4();
-
-  return {
-    nodes: [
-      { id: reqId, type: 'request', x: 50, y: 150, data: { path: '/api/v1/order/submit', method: 'POST' } },
-      { id: dbCheckId, type: 'database', x: 300, y: 150, data: { sourceId: 'db1', opType: 'select', sql: 'SELECT stock FROM items WHERE id = ?' } },
-      { id: scriptId, type: 'script', x: 550, y: 150, data: { script: 'if (input[0].stock < req.qty) throw new Error("Out of stock"); return req;' } },
-      { id: dbUpdateId, type: 'database', x: 800, y: 150, data: { sourceId: 'db1', opType: 'update', sql: 'UPDATE items SET stock = stock - ? WHERE id = ?' } },
-      { id: resId, type: 'response', x: 1050, y: 150, data: { contentType: 'json' } }
-    ],
-    edges: [
-      { id: uuidv4(), sourceId: reqId, targetId: dbCheckId },
-      { id: uuidv4(), sourceId: dbCheckId, targetId: scriptId },
-      { id: uuidv4(), sourceId: scriptId, targetId: dbUpdateId },
-      { id: uuidv4(), sourceId: dbUpdateId, targetId: resId }
-    ]
-  };
-};
-
-const data = ref([
-  {
-    key: '1',
-    name: '获取商品库存',
-    path: '/api/v1/inventory/query',
-    version: 'v1.0.0',
-    status: 'published',
-    publishTime: '2023-10-20 10:00:00',
-    description: '查询指定商品的实时库存信息',
-    auth: { type: 'apikey', keyName: 'X-API-KEY' },
-    flow: generateSimpleCRUD()
-  },
-  {
-    key: '2',
-    name: '用户全景信息聚合',
-    path: '/api/v1/user/full-profile',
-    version: 'v1.0.1',
-    status: 'published',
-    publishTime: '2023-10-22 14:30:00',
-    description: '聚合用户基本信息和订单历史',
-    auth: { type: 'oauth2' },
-    flow: generateApiAggregation()
-  },
-  {
-    key: '3',
-    name: '提交订单处理',
-    path: '/api/v1/order/submit',
-    version: 'v2.0.0',
-    status: 'offline',
-    publishTime: '2023-11-05 09:15:00',
-    description: '包含库存检查和扣减的复杂订单处理流程',
-    auth: { type: 'jwt' },
-    flow: generateComplexLogic()
+const handleDelete = async (id: number) => {
+  try {
+    await interfaceApi.deleteInterface(id);
+    message.success('删除成功');
+    loadData();
+  } catch (error) {
+    message.error('删除失败');
   }
-]);
+};
+
+const onPublishChange = async (data: any) => {
+  try {
+      await interfaceApi.publishInterface(Number(data.id), data.isPublished);
+      message.success(data.isPublished ? '已发布' : '已下线');
+      loadData();
+      
+      // Update drawer data if open
+      if (editingId.value === String(data.id) && drawerData.value) {
+          // Instead of reopening (which causes flicker), we can just update the initialData prop
+          // But ApiEditorDrawer only watches visible prop to reset/init form.
+          // We need a way to update formState inside drawer when prop changes or expose a method.
+          // Since we are passing initialData, we can update it, but reactivity might not trigger form update inside unless we watch initialData deep or visible toggle.
+          
+          // Let's reload the drawer with new data to reflect status change
+          const res = await interfaceApi.getInterfaceById(Number(data.id));
+          const updatedRecord = (res as any).data || res;
+          
+          // Update local data
+          drawerData.value = {
+              ...updatedRecord,
+              flow: updatedRecord.flowConfig ? JSON.parse(updatedRecord.flowConfig) : null
+          };
+      }
+  } catch (e) {
+      message.error('操作失败');
+  }
+};
+
+const onSave = async (savedData: any) => {
+  try {
+    const apiPayload: any = {
+       categoryId: currentCategoryId.value,
+       name: savedData.name,
+       path: savedData.path,
+       method: savedData.method,
+       description: savedData.description,
+       flowConfig: savedData.flow ? JSON.stringify(savedData.flow) : undefined,
+       requiresAuth: savedData.auth?.type !== 'none',
+       viewRoles: savedData.viewRoles,
+       callRoles: savedData.callRoles,
+       manageRoles: savedData.manageRoles
+    };
+
+    if (editingId.value) {
+      await interfaceApi.updateInterface(Number(editingId.value), apiPayload);
+      message.success('更新成功');
+    } else {
+      if (!currentCategoryId.value) {
+        message.error('未选择分类');
+        return;
+      }
+      await interfaceApi.createInterface(apiPayload);
+      message.success('创建成功');
+      visible.value = false;
+    }
+    
+    loadData();
+  } catch (e) {
+    console.error(e);
+    message.error('保存失败');
+  }
+};
+
+onMounted(() => {
+  loadData();
+});
 </script>
 
 <style scoped>
@@ -190,6 +250,8 @@ const data = ref([
   padding: 24px;
   background: #fff;
   min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .header-actions {

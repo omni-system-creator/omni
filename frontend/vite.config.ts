@@ -17,6 +17,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false
       },
+      '/hubs': {
+        target: 'http://localhost:5016',
+        changeOrigin: true,
+        ws: true,
+        secure: false
+      },
       '/uploads': {
         target: 'http://localhost:5016',
         changeOrigin: true,
@@ -37,6 +43,12 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 10000,
     rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.message.includes('contains an annotation that Rollup cannot interpret') && warning.id?.includes('signalr')) {
+          return
+        }
+        warn(warning)
+      },
       output: {
         manualChunks: {
           'ant-design-vue': ['ant-design-vue', '@ant-design/icons-vue'],

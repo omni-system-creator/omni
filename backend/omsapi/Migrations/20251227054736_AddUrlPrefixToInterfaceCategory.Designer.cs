@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20251227054736_AddUrlPrefixToInterfaceCategory")]
+    partial class AddUrlPrefixToInterfaceCategory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -571,10 +574,6 @@ namespace omsapi.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("CallRoles")
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
                     b.Property<long>("CategoryId")
                         .HasColumnType("bigint");
 
@@ -593,10 +592,6 @@ namespace omsapi.Migrations
 
                     b.Property<bool>("IsPublished")
                         .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("ManageRoles")
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
 
                     b.Property<string>("Method")
                         .IsRequired()
@@ -621,10 +616,6 @@ namespace omsapi.Migrations
 
                     b.Property<long?>("UpdatedBy")
                         .HasColumnType("bigint");
-
-                    b.Property<string>("ViewRoles")
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
 
                     b.HasKey("Id");
 
