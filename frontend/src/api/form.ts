@@ -30,7 +30,7 @@ export interface FormDefinition {
 
 // Categories
 export function getCategoryTree() {
-  return request.get<FormCategory[]>('/form/categories');
+  return request.get<FormCategory[]>('/form/categories/tree');
 }
 
 export function createCategory(data: any) {
@@ -47,23 +47,23 @@ export function deleteCategory(id: number) {
 
 // Forms
 export function getFormList(params: any) {
-  return request.get<{ items: FormDefinition[]; total: number }>('/form', { params });
+  return request.get<{ items: FormDefinition[]; total: number }>('/form/definitions', { params });
 }
 
 export function getFormDetail(id: string | number) {
-  return request.get<FormDefinition>(`/form/${id}`);
+  return request.get<FormDefinition>(`/form/definitions/${id}`);
 }
 
 export function createForm(data: any) {
-  return request.post('/form', data);
+  return request.post('/form/definitions', data);
 }
 
 export function updateForm(id: number, data: any) {
-  return request.put(`/form/${id}`, data);
+  return request.put(`/form/definitions/${id}`, data);
 }
 
 export function deleteForm(id: number) {
-  return request.delete(`/form/${id}`);
+  return request.delete(`/form/definitions/${id}`);
 }
 
 export function submitForm(data: { formId: number; data: string; submittedBy: string }) {
@@ -71,5 +71,5 @@ export function submitForm(data: { formId: number; data: string; submittedBy: st
 }
 
 export function getFormResults(formId: number, params: any) {
-  return request.get(`/form/${formId}/results`, { params });
+  return request.get(`/form/results/${formId}`, { params });
 }
