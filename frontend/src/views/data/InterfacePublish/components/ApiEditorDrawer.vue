@@ -751,12 +751,14 @@ const togglePublish = () => {
   display: flex;
   flex-direction: column;
   background: #fcfcfc;
+  overflow: hidden;
 }
 
 .custom-tabs {
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 :deep(.ant-tabs-nav) {
