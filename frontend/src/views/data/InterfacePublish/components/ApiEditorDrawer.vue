@@ -162,8 +162,8 @@
         </a-tab-pane>
 
         <a-tab-pane key="flow" tab="接口编排">
-          <div class="tab-panel" style="padding: 0; height: 100%; display: flex; flex-direction: column;">
-            <div style="flex: 1; position: relative;">
+          <div class="tab-panel flow-designer-container" style="padding: 0;">
+            <div class="flow-designer-wrapper">
                 <div v-if="formState.isPublished" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; background: rgba(255,255,255,0.1); cursor: not-allowed;"></div>
                 <ApiFlowDesigner 
                   ref="designerRef" 
@@ -787,7 +787,24 @@ const togglePublish = () => {
 
 .debug-panel.visible {
     height: 300px;
-    padding-bottom: 10px;
+    padding-bottom: 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+    border-top: 1px solid #d9d9d9;
+}
+
+.flow-designer-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.flow-designer-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    transition: height 0.3s ease; 
 }
 
 .debug-panel-header {
