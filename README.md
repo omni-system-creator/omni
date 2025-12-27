@@ -1,8 +1,27 @@
-# 金兰®综合信息管理系统 (JinLan OMS)
+# 金兰®综合信息管理系统 (JinLan OmniSystem)
 
 金兰®综合信息管理系统是一款为企业提供一体化业务数据管理解决方案的平台，旨在实现合同、财务、项目、客户、供应商等核心业务流程的数字化管理与协同。系统采用模块化松耦合设计，各模块既可独立运行，又能通过标准接口实现数据深度互通。
 
+## 📚 文档资源
+
+- [📄 系统功能规划 (功能.md)](./documents/功能.md)
+- [📖 关于项目 (About.md)](./documents/About.md)
+
 ## 🌟 核心功能
+
+金兰®综合信息管理系统不仅仅是一个业务系统，更是一个强大的低代码/零代码开发与运行平台，具备以下核心能力：
+
+- **🛡️ 权限管控能力**：基于 RBAC 的动态权限控制体系，支持颗粒度精细到字段级、数据行级的安全管控，确保数据安全。
+- **📊 数据管理能力**：强大的数据建模与管理引擎，支持复杂业务数据的存储、检索、关联与流转，构建企业数据资产。
+- **🔌 接口编排能力**：可视化接口编排与逻辑设计，支持通过拖拽配置实现复杂的业务逻辑与 API 服务，降低开发门槛。
+- **🔗 数据集成能力**：强大的多源数据集成能力，轻松打破信息孤岛，实现异构系统间的数据互联互通与实时同步。
+- **🎨 界面自定义能力**：灵活的表单设计器与页面布局工具，支持拖拽式 UI 设计，满足企业个性化的界面交互需求。
+- **📱 形态多样性**：全终端形态支持，一次配置，多端运行。完美适配 **PC 浏览器**、**桌面客户端**、**移动端 H5**、**APP** 及 **嵌入式设备**。
+- **🚀 快速部署能力**：支持容器化部署与自动化运维，开箱即用，快速响应业务变化，大幅缩短交付周期。
+
+## 💡 应用场景
+
+基于强大的平台能力，系统内置并支持构建多种复杂的业务应用场景：
 
 ### 1. 合同全生命周期管理
 - **模板管理**：支持基于历史合同快速生成标准模板，支持复杂格式及动态表格。
@@ -50,10 +69,10 @@
 
 ```
 OMS/
-├── backend/           # 后端项目源码
-│   ├── omsapi/        # Web API 项目
+├── backend/             # 后端项目源码
+│   ├── omsapi/          # Web API 项目
 │   └── ...
-├── frontend/          # 前端项目源码
+├── frontend/            # 前端 PC 端项目源码 (Vue 3 + Ant Design Vue)
 │   ├── src/
 │   │   ├── components/  # 公共组件
 │   │   ├── layouts/     # 布局组件
@@ -62,8 +81,16 @@ OMS/
 │   │   ├── views/       # 页面视图
 │   │   └── ...
 │   └── ...
-├── 功能.md            # 系统功能需求规划方案
-└── README.md          # 项目说明文档
+├── frontend.h5/         # 前端移动端项目源码 (Vue 3 + Vant 4)
+│   ├── src/
+│   │   └── ...
+│   └── ...
+├── bigview/             # 数据大屏项目源码
+│   └── ...
+├── documents/           # 项目文档
+│   ├── 功能.md          # 系统功能需求规划方案
+│   └── About.md         # 项目介绍
+└── README.md            # 项目说明文档
 ```
 
 ## 🚀 快速开始
@@ -88,7 +115,7 @@ OMS/
    dotnet watch
    ```
 
-### 前端启动
+### 前端 PC 端启动
 
 1. 进入前端目录：
    ```bash
@@ -109,62 +136,36 @@ OMS/
    yarn dev
    ```
 
+### 前端移动端启动
+
+1. 进入移动端目录：
+   ```bash
+   cd frontend.h5
+   ```
+
+2. 安装依赖：
+   ```bash
+   npm install
+   ```
+
+3. 启动开发服务器：
+   ```bash
+   npm run dev
+   ```
+
 4. 构建生产版本：
    ```bash
    npm run build
    ```
 
-## 🗄️ 数据库迁移管理
+## 🤝 支持与联系
 
-在开发过程中，如果需要清理大量的迁移文件并重新生成一个初始迁移（同时保留现有数据库数据），请按照以下步骤操作：
+如果您觉得本项目对您有帮助，欢迎请作者喝杯咖啡 ☕
 
-### 1. 删除旧的迁移文件
-删除 `backend/omsapi/Migrations` 文件夹。
-
-### 2. 清理数据库迁移历史
-**重要**：不要删除业务数据表！只删除 EF Core 的版本记录表。
-在数据库管理工具（如 Navicat, Workbench）中执行 SQL：
-```sql
-DELETE FROM `__EFMigrationsHistory`;
-```
-或者直接删除该表（EF Core 会自动重建）：
-```sql
-DROP TABLE `__EFMigrationsHistory`;
-```
-
-### 3. 重新生成迁移文件
-在 `backend/omsapi` 目录下执行：
-```bash
-dotnet ef migrations add InitialCreate
-```
-这将基于当前的实体模型生成一个新的、完整的迁移文件。
-
-### 4. 这里的 update 仅用于创建历史表
-**注意**：由于数据库中已经存在业务表（如 `sys_user`），直接运行 `update` 可能会报错 "Table already exists"。
-实际上，如果你确定数据库结构与当前模型完全一致，你不需要真正执行 DDL 语句，只需要让 EF Core 认为已经应用了迁移。
-
-但标准的 EF Core 没有直接的 "mark as applied" 命令。通常的做法是：
-1. 生成 SQL 脚本：
-   ```bash
-   dotnet ef migrations script -o script.sql
-   ```
-2. 手动在数据库中插入一条记录到 `__EFMigrationsHistory` 表，表示该迁移已应用。
-   或者，如果仅仅是开发环境，且你刚删除了 `__EFMigrationsHistory` 表，你可以尝试运行：
-   ```bash
-   dotnet ef database update
-   ```
-   如果 EF Core 检测到表已存在，它可能会报错。如果报错，请手动将 `InitialCreate` 插入到 `__EFMigrationsHistory` 表中（包含 MigrationId 和 ProductVersion）。
-
-   **更简单的做法（开发环境）**：
-   如果数据不重要，直接 Drop Database 然后重新 Update 是最省事的。
-   **如果数据重要（且要保留）**：
-   你需要手动处理：
-   1. 删除 `Migrations` 文件夹。
-   2. `dotnet ef migrations add InitialCreate`。
-   3. 打开生成的 `..._InitialCreate.cs` 文件，注释掉 `Up()` 方法中的所有 `CreateTable` 代码（因为表已经存在了）。
-   4. `dotnet ef database update`（这会创建 `__EFMigrationsHistory` 表并记录迁移已应用，但不会重复创建业务表）。
-   5. **恢复** `..._InitialCreate.cs` 文件中的代码（取消注释），以便将来部署到新环境时能正确创建表。
+| 微信支付 | 支付宝 | 联系作者 |
+| :---: | :---: | :---: |
+| ![微信支付](./documents/捐赠收款-微信.png) | ![支付宝](./documents/捐赠收款-支付宝.jpg) | ![联系作者](./documents/作者微信.png) |
 
 ## 📄 许可证
 
-Private / Proprietary
+MIT License
