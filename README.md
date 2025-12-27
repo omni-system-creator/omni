@@ -51,7 +51,7 @@
 ## 🛠️ 技术栈
 
 ### 后端
-- **框架**: .NET 8 / 9
+- **框架**: .NET 10
 - **数据库**: MySQL 8.0+
 - **ORM**: Entity Framework Core
 - **API 文档**: Swagger / OpenAPI
