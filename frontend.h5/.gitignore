@@ -3,3 +3,4 @@ dist-node
 dist-types
 dist_app
 node_modules
+android/app/release
