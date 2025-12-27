@@ -71,10 +71,11 @@
           </a-form-item>
         </a-form>
 
-        <div class="card-footer">
-          <p>© 2025 jinlan.info All Rights Reserved.</p>
-        </div>
       </div>
+    </div>
+
+    <div class="page-footer">
+      <p>1.0.0 © 2025 os.jinlan.info All Rights Reserved.</p>
     </div>
 
     <!-- 忘记密码弹窗 -->
@@ -394,14 +395,12 @@ const handleSendResetLink = () => {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
 }
 
-.card-footer {
+.page-footer {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
   text-align: center;
-  margin-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 20px;
-}
-
-.card-footer p {
+  z-index: 10;
   color: rgba(255, 255, 255, 0.4);
   font-size: 12px;
 }
