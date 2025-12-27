@@ -13,7 +13,7 @@
             <img src="@/assets/logo.svg" alt="Logo" class="logo" />
           </div>
           <h1 class="title">金兰®综合信息管理系统</h1>
-          <p class="subtitle">JinLan Integrated Information Management System</p>
+          <p class="subtitle">JinLan OmniSystem</p>
         </div>
 
         <a-form

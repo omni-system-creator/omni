@@ -174,6 +174,15 @@
         </van-button>
       </div>
     </van-form>
+
+    <!-- Select Picker Popup -->
+    <van-popup v-model:show="showPicker" round position="bottom">
+      <van-picker
+        :columns="pickerColumns"
+        @cancel="showPicker = false"
+        @confirm="onPickerConfirm"
+      />
+    </van-popup>
   </div>
 </template>
 
@@ -196,6 +205,25 @@ const formDefinition = ref<any>(null);
 const formItems = ref<any[]>([]);
 const formData = ref<Record<string, any>>({});
 const isReadOnly = ref(false);
+
+// Picker state
+const showPicker = ref(false);
+const pickerColumns = ref<any[]>([]);
+const currentPickerItemId = ref<string>('');
+
+const showSelectPicker = (item: any) => {
+  if (isReadOnly.value) return;
+  currentPickerItemId.value = item.id;
+  pickerColumns.value = item.options.map((opt: any) => ({ text: opt.label, value: opt.value }));
+  showPicker.value = true;
+};
+
+const onPickerConfirm = ({ selectedOptions }: any) => {
+  if (selectedOptions && selectedOptions.length > 0) {
+    formData.value[currentPickerItemId.value] = selectedOptions[0].value;
+  }
+  showPicker.value = false;
+};
 
 const onClickLeft = () => {
   if (window.history.length > 1) {

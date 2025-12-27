@@ -231,7 +231,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted, computed, reactive } from 'vue';
-import { message, Modal } from 'ant-design-vue';
+import { message } from 'ant-design-vue';
 import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
 import { getUserList, createUser, updateUser, deleteUser, resetUserPassword, type UserListDto } from '@/api/user';
 import { getRoleList, type RoleDto } from '@/api/role';
