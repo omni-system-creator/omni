@@ -158,6 +158,21 @@ namespace omsapi.Services
                 currentNode = nodeQueue.Dequeue();
                 steps++;
                 executedNodes.Add(currentNode.Id);
+
+                // Capture Input Snapshot (Shallow Copy)
+                var inputSnapshot = new Dictionary<string, object>(context);
+
+                // Log Node Execution Details
+                try 
+                {
+                    await LogAsync($"[Node Start] ID: {currentNode.Id}, Type: {currentNode.Type}, Label: {currentNode.Label ?? "N/A"}");
+                    await LogAsync($"[Node Config] {JsonSerializer.Serialize(currentNode.Data)}");
+                    await LogAsync($"[Node Input] {JsonSerializer.Serialize(inputSnapshot)}");
+                }
+                catch (Exception logEx)
+                {
+                    await LogAsync($"[Log Error] Failed to serialize node info/input: {logEx.Message}", "Warning");
+                }
                 
                 // Notify Node Start
                 if (!string.IsNullOrEmpty(sessionId))
@@ -173,9 +188,6 @@ namespace omsapi.Services
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 // bool nodeSuccess = true; // Removed unused variable
                 // string? nodeError = null; // Removed unused variable
-
-                // Capture Input Snapshot (Shallow Copy)
-                var inputSnapshot = new Dictionary<string, object>(context);
 
                 try
                 {
@@ -283,6 +295,15 @@ namespace omsapi.Services
                         default:
                             await LogAsync($"Skipping unsupported node type: {currentNode.Type}");
                             break;
+                    }
+
+                    try 
+                    {
+                        await LogAsync($"[Node Output] {JsonSerializer.Serialize(lastResult)}");
+                    }
+                    catch (Exception logEx)
+                    {
+                        await LogAsync($"[Log Error] Failed to serialize output: {logEx.Message}", "Warning");
                     }
                 }
                 catch (Exception ex)
