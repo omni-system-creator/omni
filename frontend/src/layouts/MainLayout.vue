@@ -5,6 +5,12 @@
     <a-layout :style="{ marginLeft: tabsStore.isWebFull ? '0' : (collapsed ? '80px' : '240px'), transition: 'all 0.2s', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
       <a-layout-header class="header" v-if="!tabsStore.isWebFull">
         <div class="header-left">
+          <menu-unfold-outlined
+            v-if="collapsed"
+            class="trigger"
+            @click="() => (collapsed = !collapsed)"
+          />
+          <menu-fold-outlined v-else class="trigger" @click="() => (collapsed = !collapsed)" />
           <div v-if="isHome" class="welcome-text">
             欢迎使用 金兰®综合信息管理系统 - 全面的一站式管理组织、合同、项目、财务、CRM、进销存、流程、数据分析、系统管理等。
           </div>
@@ -57,6 +63,10 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import {
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+} from '@ant-design/icons-vue';
 import TabsView from '../components/TabsView.vue';
 import { useTabsStore } from '../stores/tabs';
 import { useSystemStore } from '@/stores/system';
@@ -198,6 +208,23 @@ const breadcrumbs = computed(() => {
 </script>
 
 <style scoped>
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.trigger {
+  font-size: 18px;
+  line-height: 64px;
+  padding: 0 24px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.trigger:hover {
+  color: #1890ff;
+}
+
 .welcome-text {
   font-size: 16px;
 }
@@ -205,6 +232,7 @@ const breadcrumbs = computed(() => {
 .header {
   background: #fff;
   padding: 0 24px;
+  padding-left: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
