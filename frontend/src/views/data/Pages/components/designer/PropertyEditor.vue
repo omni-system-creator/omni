@@ -122,6 +122,8 @@ const props = defineProps<{
   node?: ComponentNode;
 }>();
 
+const emit = defineEmits(['delete']);
+
 const activeKey = ref(['props', 'style', 'events']);
 const newPropKey = ref('');
 const newStyleKey = ref('');

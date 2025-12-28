@@ -99,7 +99,7 @@
       <div class="sidebar right-sidebar" v-if="mode === 'design'">
         <div class="panel-title">属性设置</div>
         <div class="panel-content">
-          <PropertyEditor :node="selectedNode" />
+          <PropertyEditor :node="selectedNode" @delete="handleDeleteNode" />
         </div>
       </div>
     </div>
@@ -183,9 +183,64 @@ const handleSelect = (id: string) => {
   selectedId.value = id;
 };
 
-const handleNodeDrop = (payload: { targetId: string, type: string }) => {
+const findParent = (node: ComponentNode, targetId: string): ComponentNode | undefined => {
+  if (!node.children) return undefined;
+  for (const child of node.children) {
+    if (child.id === targetId) return node;
+    const found = findParent(child, targetId);
+    if (found) return found;
+  }
+  return undefined;
+};
+
+const handleDeleteNode = (id: string) => {
+  const parent = findParent(pageConfig.root, id);
+  if (parent && parent.children) {
+    const idx = parent.children.findIndex(c => c.id === id);
+    if (idx > -1) {
+      parent.children.splice(idx, 1);
+      selectedId.value = '';
+      message.success('组件已删除');
+    }
+  } else {
+    message.warning('无法删除根节点或未找到节点');
+  }
+};
+
+const handleNodeDrop = (payload: { targetId: string, type?: string, nodeId?: string }) => {
   const target = findNode(pageConfig.root, payload.targetId);
-  if (target) {
+  if (!target) return;
+
+  // Case 1: Move existing node
+  if (payload.nodeId) {
+    // Prevent moving into itself or its children
+    if (payload.nodeId === payload.targetId) return;
+    
+    const nodeToMove = findNode(pageConfig.root, payload.nodeId);
+    if (!nodeToMove) return;
+
+    // Check if target is a descendant of nodeToMove
+    const isTargetDescendant = findNode(nodeToMove, payload.targetId);
+    if (isTargetDescendant) {
+      message.warning('无法将组件移动到其子组件内部');
+      return;
+    }
+
+    const oldParent = findParent(pageConfig.root, payload.nodeId);
+    if (oldParent && oldParent.children) {
+      const idx = oldParent.children.findIndex(c => c.id === payload.nodeId);
+      if (idx > -1) {
+        oldParent.children.splice(idx, 1);
+        if (!target.children) target.children = [];
+        target.children.push(nodeToMove);
+        selectedId.value = nodeToMove.id; // Keep selected
+      }
+    }
+    return;
+  }
+
+  // Case 2: Add new node
+  if (payload.type) {
     const groupItem = findComponentConfig(payload.type);
     
     const newNode: ComponentNode = {

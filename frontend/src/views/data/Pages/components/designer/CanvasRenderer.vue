@@ -8,7 +8,9 @@
       'preview-mode': preview
     }"
     :data-node-id="node.id"
+    :draggable="!isRoot && !preview"
     @click.stop="onSelect"
+    @dragstart.stop="onDragStart"
     @dragover.stop.prevent="onDragOver"
     @drop.stop="onDrop"
   >
@@ -75,6 +77,18 @@ const mergedProps = computed(() => {
 
 const onSelect = () => {
   emit('select', props.node.id);
+};
+
+const onDragStart = (e: DragEvent) => {
+  if (props.preview || props.isRoot) {
+    e.preventDefault();
+    return;
+  }
+  e.dataTransfer?.setData('nodeId', props.node.id);
+  // Optional: Set effectAllowed
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+  }
 };
 
 const onDragOver = (e: DragEvent) => {
