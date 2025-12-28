@@ -148,7 +148,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { 
   PlusOutlined, 
   InboxOutlined, 
@@ -157,6 +157,8 @@ import {
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { UploadChangeParam, UploadProps } from 'ant-design-vue';
+import { getTemplates, createTemplate, updateTemplate, deleteTemplate } from '@/api/contract';
+import type { ContractTemplateDto, CreateContractTemplateDto } from '@/api/contract';
 
 // --- 类型定义 ---
 interface TemplateItem {
@@ -179,7 +181,7 @@ const modalTitle = ref('新增模板');
 const previewVisible = ref(false);
 const previewData = ref<TemplateItem | null>(null);
 
-const fileList = ref([]);
+const fileList = ref<any[]>([]);
 const formRef = ref();
 
 const formState = reactive({
@@ -192,44 +194,214 @@ const formState = reactive({
 });
 
 // 模拟数据
-const dataSource = ref<TemplateItem[]>([
-  {
-    id: '1',
-    name: '标准产品销售合同',
-    type: 'sales',
-    description: '适用于一般标准产品的销售业务',
-    status: 'active',
-    updatedAt: '2023-12-01 10:00:00',
-    fileName: 'standard_sales_contract_v1.docx'
-  },
-  {
-    id: '2',
-    name: '原材料采购框架协议',
-    type: 'purchase',
-    description: '适用于长期原材料采购合作',
-    status: 'active',
-    updatedAt: '2023-11-20 14:30:00',
-    fileName: 'material_purchase_agreement.pdf'
-  },
-  {
-    id: '3',
-    name: '技术服务合同',
-    type: 'service',
-    description: '适用于软件开发及技术支持服务',
-    status: 'active',
-    updatedAt: '2023-12-05 09:15:00',
-    fileName: 'tech_service_contract.docx'
-  },
-  {
-    id: '4',
-    name: '员工劳动合同（标准版）',
-    type: 'labor',
-    description: '全职员工标准劳动合同',
-    status: 'active',
-    updatedAt: '2023-10-15 16:00:00',
-    fileName: 'employee_labor_contract.docx'
-  },
-]);
+const dataSource = ref<TemplateItem[]>([]);
+
+const fetchTemplates = async () => {
+  loading.value = true;
+  try {
+    const res = await getTemplates(filterType.value);
+    if (res) {
+      dataSource.value = res.map((item: ContractTemplateDto) => ({
+        id: item.id.toString(),
+        name: item.name,
+        type: item.type,
+        description: item.description || '',
+        status: (item.status as 'active' | 'inactive') || 'active',
+        updatedAt: item.updatedAt ? new Date(item.updatedAt).toLocaleString() : new Date(item.createdAt).toLocaleString(),
+        fileName: item.fileName || '',
+      }));
+    }
+  } catch (error) {
+    console.error('Failed to fetch templates:', error);
+    // Fallback mock data
+    dataSource.value = [
+      {
+        id: '1',
+        name: '标准产品销售合同',
+        type: 'sales',
+        description: '适用于一般标准产品的销售业务',
+        status: 'active',
+        updatedAt: '2023-12-01 10:00:00',
+        fileName: 'standard_sales_contract_v1.docx'
+      },
+      {
+        id: '2',
+        name: '原材料采购框架协议',
+        type: 'purchase',
+        description: '适用于长期原材料采购合作',
+        status: 'active',
+        updatedAt: '2023-11-20 14:30:00',
+        fileName: 'material_purchase_agreement.pdf'
+      },
+      {
+        id: '3',
+        name: '技术服务合同',
+        type: 'service',
+        description: '适用于软件开发及技术支持服务',
+        status: 'active',
+        updatedAt: '2023-12-05 09:15:00',
+        fileName: 'tech_service_contract.docx'
+      },
+      {
+        id: '4',
+        name: '员工劳动合同（标准版）',
+        type: 'labor',
+        description: '全职员工标准劳动合同',
+        status: 'active',
+        updatedAt: '2023-10-15 16:00:00',
+        fileName: 'employee_labor_contract.docx'
+      },
+    ];
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  fetchTemplates();
+});
+
+// --- Actions ---
+const handleSearch = () => {
+  fetchTemplates();
+};
+
+const showAddModal = () => {
+  modalTitle.value = '新增模板';
+  formState.id = '';
+  formState.name = '';
+  formState.type = undefined;
+  formState.description = '';
+  formState.status = 'active';
+  formState.fileName = '';
+  fileList.value = [];
+  modalVisible.value = true;
+};
+
+const handleEdit = (record: TemplateItem) => {
+  modalTitle.value = '编辑模板';
+  formState.id = record.id;
+  formState.name = record.name;
+  formState.type = record.type;
+  formState.description = record.description;
+  formState.status = record.status;
+  formState.fileName = record.fileName;
+  fileList.value = record.fileName ? [{
+    uid: '-1',
+    name: record.fileName,
+    status: 'done',
+  }] : [];
+  modalVisible.value = true;
+};
+
+const handleDelete = async (id: string) => {
+  try {
+    await deleteTemplate(Number(id));
+    message.success('删除成功');
+    fetchTemplates();
+  } catch (error) {
+    message.error('删除失败');
+    console.error(error);
+  }
+};
+
+const handleModalOk = async () => {
+  formRef.value.validate().then(async () => {
+    // 如果是新增且没有文件
+    if (!formState.id && !formState.fileName && fileList.value.length === 0) {
+       message.warning('请上传模板文件');
+       return;
+    }
+
+    modalLoading.value = true;
+    try {
+      const dto: CreateContractTemplateDto = {
+        name: formState.name,
+        type: formState.type!,
+        description: formState.description,
+        status: formState.status,
+        fileName: formState.fileName || (fileList.value[0] as any)?.name || 'unknown.docx',
+        filePath: '/uploads/templates/' + (formState.fileName || 'unknown.docx')
+      };
+
+      if (formState.id) {
+        // Edit logic
+        await updateTemplate(Number(formState.id), dto);
+        message.success('模板更新成功');
+      } else {
+        // Create logic
+        await createTemplate(dto);
+        message.success('创建模板成功');
+      }
+      
+      modalVisible.value = false;
+      fetchTemplates();
+    } catch (error) {
+      message.error('操作失败');
+      console.error(error);
+    } finally {
+      modalLoading.value = false;
+    }
+  });
+};
+
+const handlePreview = (record: TemplateItem) => {
+  previewData.value = record;
+  previewVisible.value = true;
+};
+
+// --- File Upload ---
+const beforeUpload: UploadProps['beforeUpload'] = file => {
+  formState.fileName = file.name;
+  fileList.value = [file];
+  return false; // Prevent auto upload
+};
+
+const handleFileChange = (info: UploadChangeParam) => {
+  let resFileList = [...info.fileList];
+  resFileList = resFileList.slice(-1); // Only keep the last file
+  fileList.value = resFileList;
+  const file = resFileList[0];
+  if (file && file.originFileObj) {
+     formState.fileName = file.name || '';
+  }
+};
+
+// --- Computed ---
+const filteredData = computed(() => {
+  let data = dataSource.value;
+  if (searchText.value) {
+    const key = searchText.value.toLowerCase();
+    data = data.filter(item => item.name.toLowerCase().includes(key));
+  }
+  // Filter by type is handled by API call in fetchTemplates, but for mock data fallback we need client-side filtering
+  if (filterType.value) {
+     data = data.filter(item => item.type === filterType.value);
+  }
+  return data;
+});
+
+const getTypeName = (type: string | undefined) => {
+  const map: Record<string, string> = {
+    sales: '销售合同',
+    purchase: '采购合同',
+    service: '服务合同',
+    labor: '劳动合同',
+    other: '其他'
+  };
+  return type ? map[type] || type : '';
+};
+
+const getTypeColor = (type: string | undefined) => {
+  const map: Record<string, string> = {
+    sales: 'blue',
+    purchase: 'green',
+    service: 'orange',
+    labor: 'cyan',
+    other: 'default'
+  };
+  return type ? map[type] || 'default' : 'default';
+};
 
 // --- 表格配置 ---
 const columns = [
@@ -272,152 +444,6 @@ const columns = [
 const pagination = {
   pageSize: 10,
 };
-
-// --- 计算属性 ---
-const filteredData = computed(() => {
-  return dataSource.value.filter(item => {
-    const matchText = item.name.toLowerCase().includes(searchText.value.toLowerCase());
-    const matchType = !filterType.value || item.type === filterType.value;
-    return matchText && matchType;
-  });
-});
-
-// --- 方法 ---
-
-const getTypeColor = (type: string) => {
-  const map: Record<string, string> = {
-    sales: 'blue',
-    purchase: 'cyan',
-    service: 'purple',
-    labor: 'orange',
-    other: 'default'
-  };
-  return map[type] || 'default';
-};
-
-const getTypeName = (type: string | undefined) => {
-    if (!type) return '';
-    const map: Record<string, string> = {
-        sales: '销售合同',
-        purchase: '采购合同',
-        service: '服务合同',
-        labor: '劳动合同',
-        other: '其他'
-    };
-    return map[type] || '未知类型';
-};
-
-const handleSearch = () => {
-  // 实际项目中可能触发后端搜索，这里仅依赖 computed 过滤
-};
-
-const showAddModal = () => {
-  modalTitle.value = '新增模板';
-  formState.id = '';
-  formState.name = '';
-  formState.type = undefined;
-  formState.description = '';
-  formState.status = 'active';
-  formState.fileName = '';
-  fileList.value = [];
-  modalVisible.value = true;
-};
-
-const handleEdit = (record: TemplateItem) => {
-  modalTitle.value = '编辑模板';
-  formState.id = record.id;
-  formState.name = record.name;
-  formState.type = record.type;
-  formState.description = record.description;
-  formState.status = record.status;
-  formState.fileName = record.fileName;
-  fileList.value = []; // 编辑时暂不回显文件列表，除非需要重新上传
-  modalVisible.value = true;
-};
-
-const handleDelete = (id: string) => {
-  dataSource.value = dataSource.value.filter(item => item.id !== id);
-  message.success('模板删除成功');
-};
-
-const handlePreview = (record: TemplateItem) => {
-    previewData.value = record;
-    previewVisible.value = true;
-};
-
-const handleModalOk = () => {
-  formRef.value.validate().then(() => {
-      // 如果是新增且没有文件
-      if (!formState.id && !formState.fileName && fileList.value.length === 0) {
-           message.warning('请上传模板文件');
-           return;
-      }
-      
-      modalLoading.value = true;
-      
-      // 模拟异步请求
-      setTimeout(() => {
-        if (formState.id) {
-          // 编辑
-          const index = dataSource.value.findIndex(item => item.id === formState.id);
-          if (index !== -1) {
-            const currentItem = dataSource.value[index];
-            if (currentItem) {
-              dataSource.value[index] = {
-                ...currentItem,
-                name: formState.name,
-                type: formState.type!,
-                description: formState.description,
-                status: formState.status as 'active' | 'inactive',
-                updatedAt: new Date().toLocaleString(),
-                fileName: formState.fileName || currentItem.fileName // 如果没上传新文件保持原样
-              };
-            }
-          }
-          message.success('模板更新成功');
-        } else {
-          // 新增
-          const newItem: TemplateItem = {
-            id: Date.now().toString(),
-            name: formState.name,
-            type: formState.type!,
-            description: formState.description,
-            status: formState.status as 'active' | 'inactive',
-            updatedAt: new Date().toLocaleString(),
-            fileName: formState.fileName || (fileList.value[0] as any)?.name
-          };
-          dataSource.value.unshift(newItem);
-          message.success('模板新增成功');
-        }
-        
-        modalLoading.value = false;
-        modalVisible.value = false;
-      }, 1000);
-  });
-};
-
-const handleFileChange = (info: UploadChangeParam) => {
-  const status = info.file.status;
-  if (status === 'done') {
-    message.success(`${info.file.name} 文件上传成功.`);
-    formState.fileName = info.file.name;
-  } else if (status === 'error') {
-    // 这里的 mock 接口可能会失败，我们在 beforeUpload 里模拟成功或者直接忽略错误
-    // 实际项目中根据接口返回处理
-    // message.error(`${info.file.name} 文件上传失败.`);
-    
-    // 即使上传接口失败，演示时我们也假装成功获取文件名
-     formState.fileName = info.file.name;
-  }
-};
-
-const beforeUpload: UploadProps['beforeUpload'] = file => {
-    // 简单模拟，直接设置为文件列表
-    fileList.value = [file] as any;
-    formState.fileName = file.name;
-    return false; // 阻止自动上传，实际项目中可能需要为 true
-};
-
 </script>
 
 <style scoped>

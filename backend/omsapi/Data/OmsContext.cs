@@ -6,6 +6,7 @@ using omsapi.Models.Entities.Data;
 using omsapi.Models.Entities.Forms;
 using omsapi.Models.Entities.Interfaces;
 using omsapi.Models.Entities.Pages;
+using omsapi.Models.Entities.Contract;
 
 namespace omsapi.Data
 {
@@ -54,6 +55,18 @@ namespace omsapi.Data
         // Page Entities
         public DbSet<PageCategory> PageCategories { get; set; }
         public DbSet<PageDefinition> PageDefinitions { get; set; }
+
+        // Contract Entities
+        public DbSet<ContractMain> Contracts { get; set; }
+        public DbSet<ContractTemplate> ContractTemplates { get; set; }
+        public DbSet<ContractKnowledgeCategory> ContractKnowledgeCategories { get; set; }
+        public DbSet<ContractKnowledgeFile> ContractKnowledgeFiles { get; set; }
+        public DbSet<ContractStat> ContractStats { get; set; }
+        public DbSet<ContractPaymentPlan> ContractPaymentPlans { get; set; }
+        public DbSet<ContractPaymentRecord> ContractPaymentRecords { get; set; }
+        public DbSet<ContractInvoice> ContractInvoices { get; set; }
+        public DbSet<ContractContact> ContractContacts { get; set; }
+        public DbSet<ContractAttachment> ContractAttachments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

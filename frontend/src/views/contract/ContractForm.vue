@@ -50,8 +50,8 @@
       <a-col :span="12">
         <a-form-item label="负责人" name="manager">
           <a-select v-model:value="formState.manager" placeholder="请选择负责人">
-            <a-select-option value="user1">张三</a-select-option>
-            <a-select-option value="user2">李四</a-select-option>
+            <a-select-option value="张三">张三</a-select-option>
+            <a-select-option value="李四">李四</a-select-option>
           </a-select>
         </a-form-item>
       </a-col>
@@ -129,10 +129,14 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { InboxOutlined } from '@ant-design/icons-vue';
 import type { UploadChangeParam } from 'ant-design-vue';
+
+const props = defineProps<{
+  initialType?: string;
+}>();
 
 const formRef = ref();
 
@@ -140,7 +144,7 @@ const formState = reactive({
   contractName: '',
   contractCode: 'CNT-' + new Date().getTime(),
   customer: undefined,
-  type: undefined,
+  type: props.initialType || undefined,
   signDate: undefined,
   manager: undefined,
   amount: 0,
@@ -149,7 +153,13 @@ const formState = reactive({
   period: [],
   taxId: '',
   description: '',
-  fileList: [],
+  fileList: [] as any[],
+});
+
+watch(() => props.initialType, (newVal) => {
+  if (newVal) {
+    formState.type = newVal;
+  }
 });
 
 const rules = {

@@ -89,25 +89,44 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
 import { FileTextOutlined } from '@ant-design/icons-vue';
+import type { ContractDetailDto } from '@/api/contract';
 
 const props = defineProps<{
   open: boolean;
-  contractData: any;
+  contractData: ContractDetailDto | null;
 }>();
 
 const emit = defineEmits(['update:open']);
 
 const visible = computed({
   get: () => props.open,
-  set: (val) => emit('update:open', val),
+  set: (val) => emit('update:open', val)
 });
 
 const onClose = () => {
   visible.value = false;
 };
 
-const contract = computed(() => props.contractData || {});
 const activeTab = ref('financial');
+// Mock empty data structure for safe access if contractData is null
+const emptyContract: ContractDetailDto = {
+  id: 0,
+  contractNo: '',
+  contractName: '',
+  status: '',
+  customerName: '',
+  signDate: '',
+  totalAmount: 0,
+  receivedAmount: 0,
+  paymentPlans: [],
+  paymentRecords: [],
+  invoices: [],
+  contacts: [],
+  attachments: []
+};
+
+const contract = computed(() => props.contractData || emptyContract);
+const detailData = computed(() => props.contractData);
 
 // Helpers
 const getStatusColor = (status: string) => {
@@ -128,7 +147,7 @@ const getStatusText = (status: string) => {
   }
 };
 
-// Mock Data Definitions
+// Data Definitions
 const planColumns = [
   { title: '期数', dataIndex: 'phase', key: 'phase', width: 80 },
   { title: '计划付款日期', dataIndex: 'dueDate', key: 'dueDate' },
@@ -137,11 +156,17 @@ const planColumns = [
   { title: '状态', dataIndex: 'status', key: 'status' },
 ];
 
-const planData = [
-  { key: '1', phase: '第一期', dueDate: '2025-12-10', amount: '20,000.00', condition: '合同签订后5个工作日', status: '已支付' },
-  { key: '2', phase: '第二期', dueDate: '2026-03-10', amount: '15,000.00', condition: '项目中期验收', status: '未支付' },
-  { key: '3', phase: '第三期', dueDate: '2026-06-10', amount: '15,000.00', condition: '项目终验', status: '未支付' },
-];
+const planData = computed(() => {
+  if (!detailData.value?.paymentPlans) return [];
+  return detailData.value.paymentPlans.map((p: any) => ({
+    key: p.id.toString(),
+    phase: p.phase,
+    dueDate: p.dueDate ? new Date(p.dueDate).toISOString().split('T')[0] : '',
+    amount: p.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    condition: p.condition,
+    status: p.status === 'paid' ? '已支付' : '未支付' // Simple mapping
+  }));
+});
 
 const recordColumns = [
   { title: '日期', dataIndex: 'date', key: 'date' },
@@ -151,9 +176,17 @@ const recordColumns = [
   { title: '备注', dataIndex: 'remark', key: 'remark' },
 ];
 
-const recordData = [
-  { key: '1', date: '2025-12-10', amount: '20,000.00', method: '银行转账', operator: '张三', remark: '首付款' },
-];
+const recordData = computed(() => {
+  if (!detailData.value?.paymentRecords) return [];
+  return detailData.value.paymentRecords.map((r: any) => ({
+    key: r.id.toString(),
+    date: new Date(r.paymentDate).toISOString().split('T')[0],
+    amount: r.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    method: r.method,
+    operator: r.operator,
+    remark: r.remark
+  }));
+});
 
 const invoiceColumns = [
   { title: '发票号码', dataIndex: 'invoiceNo', key: 'invoiceNo' },
@@ -163,9 +196,17 @@ const invoiceColumns = [
   { title: '状态', dataIndex: 'status', key: 'status' },
 ];
 
-const invoiceData = [
-  { key: '1', invoiceNo: 'FP20251210001', date: '2025-12-10', amount: '20,000.00', type: '增值税专用发票', status: '已开具' },
-];
+const invoiceData = computed(() => {
+  if (!detailData.value?.invoices) return [];
+  return detailData.value.invoices.map((i: any) => ({
+    key: i.id.toString(),
+    invoiceNo: i.invoiceNo,
+    date: new Date(i.invoiceDate).toISOString().split('T')[0],
+    amount: i.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    type: i.type,
+    status: i.status // Map status text if needed
+  }));
+});
 
 const contactColumns = [
   { title: '姓名', dataIndex: 'name', key: 'name' },
@@ -174,17 +215,25 @@ const contactColumns = [
   { title: '邮箱', dataIndex: 'email', key: 'email' },
 ];
 
-const contactData = [
-  { key: '1', name: '李四', role: '客户项目经理', phone: '13800138000', email: 'lisi@yytech.com' },
-  { key: '2', name: '王五', role: '财务对接人', phone: '13900139000', email: 'wangwu@yytech.com' },
-];
+const contactData = computed(() => {
+  if (!detailData.value?.contacts) return [];
+  return detailData.value.contacts.map((c: any) => ({
+    key: c.id.toString(),
+    name: c.name,
+    role: c.role,
+    phone: c.phone,
+    email: c.email
+  }));
+});
 
-const attachmentData = [
-  { name: '合同扫描件.pdf', size: '2.5 MB', date: '2025-12-05' },
-  { name: '技术协议.docx', size: '1.2 MB', date: '2025-12-05' },
-  { name: '补充协议一.pdf', size: '0.8 MB', date: '2025-12-15' },
-];
-
+const attachmentData = computed(() => {
+  if (!detailData.value?.attachments) return [];
+  return detailData.value.attachments.map((a: any) => ({
+    name: a.fileName,
+    size: a.size || '-',
+    date: new Date(a.uploadDate).toISOString().split('T')[0]
+  }));
+});
 </script>
 
 <style scoped>

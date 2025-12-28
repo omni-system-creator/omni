@@ -74,9 +74,9 @@
               <template #icon><MoreOutlined style="font-size: 16px; font-weight: bold; transform: rotate(90deg);" /></template>
             </a-button>
             <template #overlay>
-              <a-menu>
-                <a-menu-item key="view">查看</a-menu-item>
-                <a-menu-item key="edit">变更</a-menu-item>
+                <a-menu @click="(e: any) => handleMenuClick(e.key as string, record)">
+                  <a-menu-item key="view">查看</a-menu-item>
+                  <a-menu-item key="edit">变更</a-menu-item>
                 <a-menu-item key="payment">付款</a-menu-item>
                 <a-menu-divider />
                 <a-menu-item key="delete" danger>删除</a-menu-item>
@@ -86,12 +86,18 @@
         </template>
       </template>
     </a-table>
+    <ContractDetail
+      v-model:open="detailVisible"
+      :contract-data="currentContract as unknown as ContractDetailDto"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-// import { ref } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import { SearchOutlined, FilterFilled, MoreOutlined } from '@ant-design/icons-vue';
+import { getContracts } from '@/api/contract';
+import type { ContractDto, ContractDetailDto } from '@/api/contract';
 
 // Types
 interface PurchaseContract {
@@ -143,6 +149,16 @@ const handleReset = (clearFilters: any) => {
 const handleTableChange = (pag: any) => {
   console.log('Table changed:', pag);
 };
+
+// Pagination
+const pagination = reactive({
+  total: 0,
+  current: 1,
+  pageSize: 10,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (total: number) => `共 ${total} 条`,
+});
 
 // Columns
 const columns = [
@@ -269,57 +285,95 @@ const columns = [
   {
     title: '操作',
     key: 'action',
-    width: 60,
     fixed: 'right',
-    align: 'center',
+    width: 150,
   },
 ];
 
-// Mock Data
-const data: PurchaseContract[] = [
-  {
-    key: '1',
-    contractNo: 'CG2025120101',
-    contractName: '智慧城市二期项目采购合同',
-    supplierName: 'XX市政集团',
-    signDate: '2025-12-01',
-    totalAmount: '1,200,000.00',
-    paidAmount: '400,000.00',
-    latestPaymentDate: '2025-12-05',
-    status: 'executing',
-    remark: '预付款已付',
-  },
-  {
-    key: '2',
-    contractNo: 'CG2025121008',
-    contractName: '办公设备采购协议',
-    supplierName: 'AA贸易公司',
-    signDate: '2025-12-10',
-    totalAmount: '120,000.00',
-    paidAmount: '12,000.00',
-    latestPaymentDate: '2025-12-11',
-    status: 'executing',
-    remark: '定金已付',
-  },
-  {
-    key: '3',
-    contractNo: 'CG2025111505',
-    contractName: '服务器集群采购',
-    supplierName: 'Dell供应商',
-    signDate: '2025-11-15',
-    totalAmount: '500,000.00',
-    paidAmount: '500,000.00',
-    latestPaymentDate: '2025-11-20',
-    status: 'completed',
-    remark: '设备已验收',
-  },
-];
+const detailVisible = ref(false);
+const currentContract = ref<PurchaseContract | null>(null);
 
-const pagination = {
-  total: 50,
-  current: 1,
-  pageSize: 10,
+const handleMenuClick = (key: string, record: PurchaseContract) => {
+  if (key === 'view') {
+    currentContract.value = record;
+    detailVisible.value = true;
+  }
 };
+
+const data = ref<PurchaseContract[]>([]);
+
+const fetchContracts = async () => {
+  try {
+    const res = await getContracts('purchase');
+    if (res && res.length > 0) {
+      data.value = res.map((item: ContractDto) => ({
+        key: item.id.toString(),
+        contractNo: item.contractNo,
+        contractName: item.contractName,
+        supplierName: item.partnerName,
+        signDate: item.signDate ? new Date(item.signDate).toISOString().split('T')[0] : '',
+        totalAmount: item.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        paidAmount: item.paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        latestPaymentDate: item.latestTransactionDate ? new Date(item.latestTransactionDate).toISOString().split('T')[0] : '',
+        status: item.status,
+        remark: item.description || '',
+      })) as PurchaseContract[];
+      pagination.total = res.length;
+    } else {
+      throw new Error('No data from API');
+    }
+  } catch (error) {
+    console.error('Failed to fetch purchase contracts, using mock data:', error);
+    // Fallback to mock data
+    data.value = [
+      {
+        key: '1',
+        contractNo: 'CG2025120101',
+        contractName: '智慧城市二期项目采购合同',
+        supplierName: 'XX市政集团',
+        signDate: '2025-12-01',
+        totalAmount: '1,200,000.00',
+        paidAmount: '400,000.00',
+        latestPaymentDate: '2025-12-05',
+        status: 'executing',
+        remark: '预付款已付',
+      },
+      {
+        key: '2',
+        contractNo: 'CG2025111505',
+        contractName: '服务器集群采购',
+        supplierName: 'Dell供应商',
+        signDate: '2025-11-15',
+        totalAmount: '500,000.00',
+        paidAmount: '500,000.00',
+        latestPaymentDate: '2025-11-20',
+        status: 'completed',
+        remark: '设备已验收',
+      },
+      {
+        key: '3',
+        contractNo: 'CG2025121008',
+        contractName: '办公设备采购协议',
+        supplierName: 'AA贸易公司',
+        signDate: '2025-12-10',
+        totalAmount: '120,000.00',
+        paidAmount: '12,000.00',
+        latestPaymentDate: '2025-12-11',
+        status: 'executing',
+        remark: '定金已付',
+      },
+    ];
+    pagination.total = 3;
+  }
+};
+
+onMounted(() => {
+  fetchContracts();
+});
+
+defineExpose({
+  refresh: fetchContracts
+});
 </script>
 
 <style scoped>

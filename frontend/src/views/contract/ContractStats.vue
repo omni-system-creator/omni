@@ -137,6 +137,13 @@ import {
   ReadOutlined
 } from '@ant-design/icons-vue';
 import * as echarts from 'echarts';
+import { 
+  getCurrentStats, 
+  getTrendStats, 
+  getKnowledgeFiles, 
+  getKnowledgeCategories,
+  type ContractStatDto
+} from '@/api/contract';
 
 // --- 状态 ---
 const timeRange = ref('year');
@@ -157,37 +164,28 @@ const timeRangeMap: Record<string, string> = {
 
 // 核心指标数据
 const statsData = reactive({
-  totalContracts: 158,
-  totalContractsGrowth: 12.5,
-  totalAmount: 25800000,
-  amountCompletionRate: 78,
-  receivedAmount: 18500000,
-  receivedRate: 71.7,
-  pendingInvoice: 450000,
-  invoicedTotal: '1,200.5万'
+  totalContracts: 0,
+  totalContractsGrowth: 0,
+  totalAmount: 0,
+  amountCompletionRate: 0,
+  receivedAmount: 0,
+  receivedRate: 0,
+  pendingInvoice: 0,
+  invoicedTotal: '0'
 });
 
-// 趋势图数据 (模拟)
+// 趋势图数据
+const rawTrendData = ref<ContractStatDto[]>([]);
+
 const trendData = computed(() => {
-  if (trendMetric.value === 'amount') {
-    // 金额数据 (单位: 万)
-    return [
-      { year: '2020', value: 1200 },
-      { year: '2021', value: 1800 },
-      { year: '2022', value: 2100 },
-      { year: '2023', value: 2580 },
-      { year: '2024', value: 3000 },
-    ];
-  } else {
-    // 数量数据 (单位: 份)
-    return [
-      { year: '2020', value: 80 },
-      { year: '2021', value: 100 },
-      { year: '2022', value: 120 },
-      { year: '2023', value: 158 },
-      { year: '2024', value: 160 },
-    ];
-  }
+  return rawTrendData.value.map(item => {
+    // 假设 statDate 是 "2023-01-01T00:00:00"
+    const year = new Date(item.statDate).getFullYear().toString();
+    return {
+      year,
+      value: trendMetric.value === 'amount' ? (item.totalAmount / 10000) : item.totalContracts // 金额转为万元
+    };
+  });
 });
 
 // 类型分布数据
@@ -198,6 +196,99 @@ const typeData = [
   { type: 'labor', name: '劳动合同', value: 10 },
   { type: 'other', name: '其他', value: 5 },
 ];
+
+// 获取核心指标
+const fetchCurrentStats = async () => {
+  try {
+    const periodTypeMap: Record<string, string> = {
+      month: 'Month',
+      quarter: 'Quarter',
+      year: 'Year'
+    };
+    const periodType = periodTypeMap[timeRange.value] || 'Year';
+    const res = await getCurrentStats(periodType);
+    if (res) {
+      statsData.totalContracts = res.totalContracts;
+      statsData.totalContractsGrowth = res.totalContractsGrowth;
+      statsData.totalAmount = res.totalAmount;
+      statsData.amountCompletionRate = res.amountCompletionRate;
+      statsData.receivedAmount = res.receivedAmount;
+      statsData.receivedRate = res.receivedRate;
+      statsData.pendingInvoice = res.pendingInvoiceAmount;
+      statsData.invoicedTotal = (res.invoicedAmount / 10000).toFixed(1) + '万';
+    }
+  } catch (error) {
+    console.error('Failed to fetch current stats:', error);
+  }
+};
+
+// 获取趋势数据
+const fetchTrendStats = async () => {
+  try {
+    // 总是获取年度趋势
+    const res = await getTrendStats('Year', 5);
+    if (res) {
+      // 按时间升序排序
+      rawTrendData.value = res.sort((a, b) => {
+        const dateA = a.statDate ? new Date(a.statDate).getTime() : 0;
+        const dateB = b.statDate ? new Date(b.statDate).getTime() : 0;
+        return dateA - dateB;
+      });
+      updateTrendChart();
+    }
+  } catch (error) {
+    console.error('Failed to fetch trend stats:', error);
+  }
+};
+
+// 获取知识库数据
+const knowledgeList = ref<any[]>([]);
+const fetchKnowledge = async () => {
+  try {
+    // 获取所有分类，找到"合同知识库"下的文件
+    // 这里简化处理，直接获取某个分类下的文件，或者搜索
+    // 假设我们要展示最新的知识库文件
+    // 先获取分类
+    const categories = await getKnowledgeCategories();
+    // 假设我们取第一个分类的文件，或者所有文件的最新几个
+    // 这里我们先mock一下，或者如果后端支持获取最新文件更好
+    // 由于后端API限制，我们先获取根分类下的文件，或者 hardcode 一个 categoryId 如果知道的话
+    // 或者遍历获取。为了演示，我们先尝试获取 categoryId=1 的文件 (Usually Root or first category)
+    // 实际上 DbInitializer 创建了多个分类。
+    // 我们可以获取 "民法典" (civilCode) 的文件
+    
+    // 暂时用 API 获取 categoryId=1 的文件 (假设存在)
+    // Better: Recursive search or just fetch a known category.
+    // Let's try to find "法律法规" category.
+    let targetId = 1;
+    if (categories && categories.length > 0) {
+       const target = categories.find((c: any) => c.name === '法律法规');
+       const firstCategory = categories[0];
+       targetId = target ? target.id : (firstCategory ? firstCategory.id : 1);
+    }
+    
+    const files = await getKnowledgeFiles(targetId);
+    if (files) {
+      knowledgeList.value = files.map(f => ({
+        title: f.name,
+        desc: `类型: ${f.type} | 大小: ${f.size} | 上传者: ${f.uploader}`,
+        link: '#', // 暂无下载链接
+        isNew: new Date(f.uploadTime) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      }));
+    }
+  } catch (error) {
+    console.error('Failed to fetch knowledge:', error);
+    // Fallback to mock if failed
+    knowledgeList.value = [
+      { title: '民法典合同编核心条款解读', desc: '深入理解新法典下的合同签订风险点', link: '#', isNew: true },
+      { title: '企业合同管理常见法律风险及防范', desc: '实务案例分析与风控建议', link: '#', isNew: false },
+    ];
+  }
+};
+
+watch(timeRange, () => {
+  fetchCurrentStats();
+});
 
 // 初始化趋势图
 const initTrendChart = () => {
@@ -314,6 +405,9 @@ const handleResize = () => {
 
 onMounted(() => {
   nextTick(() => {
+    fetchCurrentStats();
+    fetchTrendStats();
+    fetchKnowledge();
     initTrendChart();
     initTypeChart();
     window.addEventListener('resize', handleResize);
@@ -342,34 +436,6 @@ const executionData = [
   { dept: '采购部', count: 25, progress: 92, status: '正常', statusType: 'success' },
   { dept: '研发部', count: 12, progress: 100, status: '完成', statusType: 'default' },
   { dept: '行政部', count: 8, progress: 100, status: '完成', statusType: 'default' },
-];
-
-// 知识学习列表
-const knowledgeList = [
-  { 
-    title: '民法典合同编核心条款解读', 
-    desc: '深入理解新法典下的合同签订风险点',
-    link: '#',
-    isNew: true 
-  },
-  { 
-    title: '企业合同管理常见法律风险及防范', 
-    desc: '实务案例分析与风控建议',
-    link: '#',
-    isNew: false 
-  },
-  { 
-    title: '采购合同审核要点清单', 
-    desc: '标准化采购流程中的关键审核项',
-    link: '#',
-    isNew: false 
-  },
-  { 
-    title: '电子合同法律效力与操作规范', 
-    desc: '数字化转型下的合同签署指南',
-    link: '#',
-    isNew: false 
-  },
 ];
 
 </script>

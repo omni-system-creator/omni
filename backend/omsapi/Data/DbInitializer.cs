@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using omsapi.Models.Entities;
+using omsapi.Models.Entities.Contract;
 
 namespace omsapi.Data
 {
@@ -9,6 +10,9 @@ namespace omsapi.Data
         {
             // 确保数据库已创建
             await context.Database.EnsureCreatedAsync();
+
+            // 初始化合同模块数据
+            await SeedContractDataAsync(context);
 
             // 如果已经有权限数据，则跳过
             if (await context.Permissions.AnyAsync())
@@ -186,6 +190,367 @@ namespace omsapi.Data
             if (newRolePerms.Any())
             {
                 context.RolePermissions.AddRange(newRolePerms);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        private static async Task SeedContractDataAsync(OmsContext context)
+        {
+            var now = DateTime.Now;
+
+            // 1. 合同模板
+            if (!await context.ContractTemplates.AnyAsync())
+            {
+                context.ContractTemplates.AddRange(
+                    new ContractTemplate
+                    {
+                        Name = "标准产品销售合同",
+                        Type = "sales",
+                        Description = "适用于一般标准产品的销售业务",
+                        Status = "active",
+                        FileName = "standard_sales_contract_v1.docx",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    },
+                    new ContractTemplate
+                    {
+                        Name = "原材料采购框架协议",
+                        Type = "purchase",
+                        Description = "适用于长期原材料采购合作",
+                        Status = "active",
+                        FileName = "material_purchase_agreement.pdf",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    },
+                    new ContractTemplate
+                    {
+                        Name = "技术服务合同",
+                        Type = "service",
+                        Description = "适用于软件开发及技术支持服务",
+                        Status = "active",
+                        FileName = "tech_service_contract.docx",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    },
+                    new ContractTemplate
+                    {
+                        Name = "员工劳动合同（标准版）",
+                        Type = "labor",
+                        Description = "全职员工标准劳动合同",
+                        Status = "active",
+                        FileName = "employee_labor_contract.docx",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            // 2. 合同知识库分类与文件
+            if (!await context.ContractKnowledgeCategories.AnyAsync())
+            {
+                // Root
+                var root = new ContractKnowledgeCategory { Name = "合同知识库", SortOrder = 1, CreatedAt = now };
+                context.ContractKnowledgeCategories.Add(root);
+                await context.SaveChangesAsync();
+
+                // Level 1
+                var laws = new ContractKnowledgeCategory { Name = "法律法规", ParentId = root.Id, SortOrder = 1, CreatedAt = now };
+                var policies = new ContractKnowledgeCategory { Name = "公司制度", ParentId = root.Id, SortOrder = 2, CreatedAt = now };
+                var templates = new ContractKnowledgeCategory { Name = "合同范本", ParentId = root.Id, SortOrder = 3, CreatedAt = now };
+                var risks = new ContractKnowledgeCategory { Name = "风险案例", ParentId = root.Id, SortOrder = 4, CreatedAt = now };
+                
+                context.ContractKnowledgeCategories.AddRange(laws, policies, templates, risks);
+                await context.SaveChangesAsync();
+
+                // Level 2
+                var civilCode = new ContractKnowledgeCategory { Name = "民法典", ParentId = laws.Id, SortOrder = 1, CreatedAt = now };
+                var tenderLaw = new ContractKnowledgeCategory { Name = "招标投标法", ParentId = laws.Id, SortOrder = 2, CreatedAt = now };
+                var constructLaw = new ContractKnowledgeCategory { Name = "建筑法", ParentId = laws.Id, SortOrder = 3, CreatedAt = now };
+                
+                var contractPolicy = new ContractKnowledgeCategory { Name = "合同管理制度", ParentId = policies.Id, SortOrder = 1, CreatedAt = now };
+                var sealPolicy = new ContractKnowledgeCategory { Name = "印章使用规范", ParentId = policies.Id, SortOrder = 2, CreatedAt = now };
+
+                var purchaseTpl = new ContractKnowledgeCategory { Name = "采购类", ParentId = templates.Id, SortOrder = 1, CreatedAt = now };
+                var salesTpl = new ContractKnowledgeCategory { Name = "销售类", ParentId = templates.Id, SortOrder = 2, CreatedAt = now };
+                var leaseTpl = new ContractKnowledgeCategory { Name = "租赁类", ParentId = templates.Id, SortOrder = 3, CreatedAt = now };
+
+                context.ContractKnowledgeCategories.AddRange(
+                    civilCode, tenderLaw, constructLaw,
+                    contractPolicy, sealPolicy,
+                    purchaseTpl, salesTpl, leaseTpl
+                );
+                await context.SaveChangesAsync();
+
+                // Files
+                context.ContractKnowledgeFiles.AddRange(
+                    new ContractKnowledgeFile { Name = "中华人民共和国民法典.pdf", Type = "pdf", Size = 5452595, Uploader = "系统管理员", UploadTime = now, CategoryId = civilCode.Id },
+                    new ContractKnowledgeFile { Name = "合同审查要点指南.docx", Type = "doc", Size = 1572864, Uploader = "法务部", UploadTime = now, CategoryId = contractPolicy.Id },
+                    new ContractKnowledgeFile { Name = "2023年度合同台账模板.xlsx", Type = "xls", Size = 46080, Uploader = "财务部", UploadTime = now, CategoryId = contractPolicy.Id },
+                    new ContractKnowledgeFile { Name = "常见合同风险提示.txt", Type = "txt", Size = 12288, Uploader = "风控部", UploadTime = now, CategoryId = risks.Id },
+                    new ContractKnowledgeFile { Name = "建设工程施工合同(示范文本).docx", Type = "doc", Size = 2936012, Uploader = "工程部", UploadTime = now, CategoryId = constructLaw.Id }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            // 3. 合同统计
+            if (!await context.ContractStats.AnyAsync())
+            {
+                context.ContractStats.AddRange(
+                    new ContractStat
+                    {
+                        PeriodType = "Year",
+                        StatDate = now,
+                        TotalContracts = 158,
+                        TotalContractsGrowth = 12.5m,
+                        TotalAmount = 25800000,
+                        AmountCompletionRate = 78,
+                        ReceivedAmount = 18500000,
+                        ReceivedRate = 71.7m,
+                        PendingInvoiceAmount = 450000,
+                        InvoicedAmount = 12005000,
+                        CreatedAt = now
+                    },
+                     new ContractStat
+                    {
+                        PeriodType = "Quarter",
+                        StatDate = now,
+                        TotalContracts = 45,
+                        TotalContractsGrowth = 5.2m,
+                        TotalAmount = 8500000,
+                        AmountCompletionRate = 60,
+                        ReceivedAmount = 5000000,
+                        ReceivedRate = 58.8m,
+                        PendingInvoiceAmount = 150000,
+                        InvoicedAmount = 4000000,
+                        CreatedAt = now
+                    },
+                     new ContractStat
+                    {
+                        PeriodType = "Month",
+                        StatDate = now,
+                        TotalContracts = 12,
+                        TotalContractsGrowth = 2.0m,
+                        TotalAmount = 2500000,
+                        AmountCompletionRate = 30,
+                        ReceivedAmount = 800000,
+                        ReceivedRate = 32.0m,
+                        PendingInvoiceAmount = 50000,
+                        InvoicedAmount = 700000,
+                        CreatedAt = now
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            // 4. 合同列表 (Sales & Purchase)
+            if (!await context.Contracts.AnyAsync())
+            {
+                context.Contracts.AddRange(
+                    // Sales
+                    new ContractMain
+                    {
+                        ContractNo = "XS2025122001",
+                        ContractName = "企业云服务年度订阅",
+                        Type = "sales",
+                        PartnerName = "YY科技股份有限公司",
+                        SignDate = DateTime.Parse("2025-12-05"),
+                        TotalAmount = 50000.00m,
+                        PaidAmount = 20000.00m,
+                        LatestTransactionDate = DateTime.Parse("2025-12-10"),
+                        Status = "completed",
+                        Description = "按季度付款",
+                        Manager = "Sales Manager",
+                        CreatedAt = now
+                    },
+                    new ContractMain
+                    {
+                        ContractNo = "XS2025121503",
+                        ContractName = "CRM系统维护服务",
+                        Type = "sales",
+                        PartnerName = "BB网络科技有限公司",
+                        SignDate = DateTime.Parse("2025-12-15"),
+                        TotalAmount = 12000.00m,
+                        PaidAmount = 0.00m,
+                        Status = "executing",
+                        Description = "首付款未到",
+                        Manager = "Sales Manager",
+                        CreatedAt = now
+                    },
+                    new ContractMain
+                    {
+                        ContractNo = "XS2025112009",
+                        ContractName = "数据中心扩容硬件销售",
+                        Type = "sales",
+                        PartnerName = "CC数据中心",
+                        SignDate = DateTime.Parse("2025-11-20"),
+                        TotalAmount = 450000.00m,
+                        PaidAmount = 450000.00m,
+                        LatestTransactionDate = DateTime.Parse("2025-11-25"),
+                        Status = "completed",
+                        Description = "已全额到账",
+                        Manager = "Sales Manager",
+                        CreatedAt = now
+                    },
+                    // Purchase
+                    new ContractMain
+                    {
+                        ContractNo = "CG2025120101",
+                        ContractName = "智慧城市二期项目采购合同",
+                        Type = "purchase",
+                        PartnerName = "XX市政集团",
+                        SignDate = DateTime.Parse("2025-12-01"),
+                        TotalAmount = 1200000.00m,
+                        PaidAmount = 400000.00m,
+                        LatestTransactionDate = DateTime.Parse("2025-12-05"),
+                        Status = "executing",
+                        Description = "预付款已付",
+                        Manager = "Purchase Manager",
+                        CreatedAt = now
+                    },
+                    new ContractMain
+                    {
+                        ContractNo = "CG2025121008",
+                        ContractName = "办公设备采购协议",
+                        Type = "purchase",
+                        PartnerName = "AA贸易公司",
+                        SignDate = DateTime.Parse("2025-12-10"),
+                        TotalAmount = 120000.00m,
+                        PaidAmount = 12000.00m,
+                        LatestTransactionDate = DateTime.Parse("2025-12-11"),
+                        Status = "executing",
+                        Description = "定金已付",
+                        Manager = "Purchase Manager",
+                        CreatedAt = now
+                    },
+                    new ContractMain
+                    {
+                        ContractNo = "CG2025111505",
+                        ContractName = "服务器集群采购",
+                        Type = "purchase",
+                        PartnerName = "Dell供应商",
+                        SignDate = DateTime.Parse("2025-11-15"),
+                        TotalAmount = 500000.00m,
+                        PaidAmount = 500000.00m,
+                        LatestTransactionDate = DateTime.Parse("2025-11-20"),
+                        Status = "completed",
+                        Description = "设备已验收",
+                        Manager = "Purchase Manager",
+                        CreatedAt = now
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            // 5. 合同详情 (Details for XS2025122001)
+            var detailContract = await context.Contracts.FirstOrDefaultAsync(c => c.ContractNo == "XS2025122001");
+            if (detailContract != null && !await context.ContractPaymentPlans.AnyAsync(p => p.ContractId == detailContract.Id))
+            {
+                // Payment Plans
+                context.ContractPaymentPlans.AddRange(
+                    new ContractPaymentPlan
+                    {
+                        ContractId = detailContract.Id,
+                        Phase = "第一期",
+                        DueDate = DateTime.Parse("2025-12-10"),
+                        Amount = 20000.00m,
+                        Condition = "合同签订后5个工作日",
+                        Status = "paid"
+                    },
+                    new ContractPaymentPlan
+                    {
+                        ContractId = detailContract.Id,
+                        Phase = "第二期",
+                        DueDate = DateTime.Parse("2026-03-10"),
+                        Amount = 15000.00m,
+                        Condition = "项目中期验收",
+                        Status = "pending"
+                    },
+                    new ContractPaymentPlan
+                    {
+                        ContractId = detailContract.Id,
+                        Phase = "第三期",
+                        DueDate = DateTime.Parse("2026-06-10"),
+                        Amount = 15000.00m,
+                        Condition = "项目终验",
+                        Status = "pending"
+                    }
+                );
+
+                // Payment Records
+                context.ContractPaymentRecords.Add(
+                    new ContractPaymentRecord
+                    {
+                        ContractId = detailContract.Id,
+                        PaymentDate = DateTime.Parse("2025-12-10"),
+                        Amount = 20000.00m,
+                        Method = "银行转账",
+                        Operator = "张三",
+                        Remark = "首付款"
+                    }
+                );
+
+                // Invoices
+                context.ContractInvoices.Add(
+                    new ContractInvoice
+                    {
+                        ContractId = detailContract.Id,
+                        InvoiceNo = "FP20251210001",
+                        InvoiceDate = DateTime.Parse("2025-12-10"),
+                        Amount = 20000.00m,
+                        Type = "增值税专用发票",
+                        Status = "issued"
+                    }
+                );
+
+                // Contacts
+                context.ContractContacts.AddRange(
+                    new ContractContact
+                    {
+                        ContractId = detailContract.Id,
+                        Name = "李四",
+                        Role = "客户项目经理",
+                        Phone = "13800138000",
+                        Email = "lisi@yytech.com"
+                    },
+                    new ContractContact
+                    {
+                        ContractId = detailContract.Id,
+                        Name = "王五",
+                        Role = "财务对接人",
+                        Phone = "13900139000",
+                        Email = "wangwu@yytech.com"
+                    }
+                );
+
+                // Attachments
+                context.ContractAttachments.AddRange(
+                    new ContractAttachment
+                    {
+                        ContractId = detailContract.Id,
+                        FileName = "合同扫描件.pdf",
+                        FilePath = "/uploads/contracts/scan_20251205.pdf",
+                        Size = "2.5 MB",
+                        UploadDate = DateTime.Parse("2025-12-05")
+                    },
+                    new ContractAttachment
+                    {
+                        ContractId = detailContract.Id,
+                        FileName = "技术协议.docx",
+                        FilePath = "/uploads/contracts/tech_20251205.docx",
+                        Size = "1.2 MB",
+                        UploadDate = DateTime.Parse("2025-12-05")
+                    },
+                    new ContractAttachment
+                    {
+                        ContractId = detailContract.Id,
+                        FileName = "补充协议一.pdf",
+                        FilePath = "/uploads/contracts/supp_20251215.pdf",
+                        Size = "0.8 MB",
+                        UploadDate = DateTime.Parse("2025-12-15")
+                    }
+                );
+
                 await context.SaveChangesAsync();
             }
         }

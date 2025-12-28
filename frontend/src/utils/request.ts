@@ -58,26 +58,29 @@ service.interceptors.response.use(
         return response.data;
     }
 
-    // 这里假设后端返回的总是 ApiResponse 结构，且 http status 总是 200
-    // 如果 code 不为 200，视为业务错误
-    if (res.code && res.code !== 200) {
-      // 401: 未登录或 token 过期
-      if (res.code === 401) {
-        // 清除 token 并跳转登录页
-        localStorage.removeItem('oms.auth');
-        localStorage.removeItem('oms.user');
-        // 避免重复提示
-        if (!window.location.pathname.includes('/login')) {
-            message.error('登录已过期，请重新登录');
-            window.location.href = '/login';
+    // 判断是否为标准 ApiResponse 结构 (含有 code 和 data 字段)
+    const isApiResponse = res && typeof res === 'object' && 'code' in res && 'data' in res;
+
+    if (isApiResponse) {
+      if (res.code !== 200) {
+        // 401: 未登录或 token 过期
+        if (res.code === 401) {
+          localStorage.removeItem('oms.auth');
+          localStorage.removeItem('oms.user');
+          if (!window.location.pathname.includes('/login')) {
+              message.error('登录已过期，请重新登录');
+              window.location.href = '/login';
+          }
+        } else {
+          message.error(res.msg || '系统错误');
         }
-      } else {
-        message.error(res.msg || '系统错误');
+        return Promise.reject(new Error(res.msg || 'Error'));
       }
-      return Promise.reject(new Error(res.msg || 'Error'));
-    } else {
-      return res.data; // 直接返回 data 部分
+      return res.data;
     }
+
+    // 非标准结构（如直接返回数组或对象的 API），直接返回整个响应体
+    return res;
   },
   (error) => {
     // 处理 HTTP 错误

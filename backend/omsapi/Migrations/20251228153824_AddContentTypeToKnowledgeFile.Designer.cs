@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20251228153824_AddContentTypeToKnowledgeFile")]
+    partial class AddContentTypeToKnowledgeFile
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -522,8 +525,9 @@ namespace omsapi.Migrations
                         .HasColumnType("varchar(255)")
                         .HasColumnName("name");
 
-                    b.Property<long>("Size")
-                        .HasColumnType("bigint")
+                    b.Property<string>("Size")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
                         .HasColumnName("size");
 
                     b.Property<string>("Type")

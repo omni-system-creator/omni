@@ -89,16 +89,17 @@
 
     <!-- 合同详情抽屉 -->
     <ContractDetail
-      v-model:open="detailVisible"
-      :contract-data="currentContract"
-    />
+    v-model:open="detailVisible"
+    :contract-data="currentContract as unknown as ContractDetailDto"
+  />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { SearchOutlined, FilterFilled, MoreOutlined } from '@ant-design/icons-vue';
 import ContractDetail from './ContractDetail.vue';
+import { getContracts, type ContractDto, type ContractDetailDto } from '@/api/contract';
 
 // Types
 interface SalesContract {
@@ -118,7 +119,6 @@ interface SalesContract {
 const parseAmount = (amountStr: string) => {
   return parseFloat(amountStr.replace(/,/g, ''));
 };
-
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'executing': return 'processing';
@@ -282,48 +282,37 @@ const columns = [
   },
 ];
 
-// Mock Data
-const data: SalesContract[] = [
-  {
-    key: '1',
-    contractNo: 'XS2025122001',
-    contractName: '企业云服务年度订阅',
-    customerName: 'YY科技股份有限公司',
-    signDate: '2025-12-05',
-    totalAmount: '50,000.00',
-    receivedAmount: '20,000.00',
-    latestCollectionDate: '2025-12-10',
-    status: 'completed',
-    remark: '按季度付款',
-  },
-  {
-    key: '2',
-    contractNo: 'XS2025121503',
-    contractName: 'CRM系统维护服务',
-    customerName: 'BB网络科技有限公司',
-    signDate: '2025-12-15',
-    totalAmount: '12,000.00',
-    receivedAmount: '0.00',
-    latestCollectionDate: '',
-    status: 'executing',
-    remark: '首付款未到',
-  },
-  {
-    key: '3',
-    contractNo: 'XS2025112009',
-    contractName: '数据中心扩容硬件销售',
-    customerName: 'CC数据中心',
-    signDate: '2025-11-20',
-    totalAmount: '450,000.00',
-    receivedAmount: '450,000.00',
-    latestCollectionDate: '2025-11-25',
-    status: 'completed',
-    remark: '已全额到账',
-  },
-];
+// Mock Data (replaced by API)
+const data = ref<SalesContract[]>([]);
+
+const fetchContracts = async () => {
+  try {
+    const res = await getContracts('sales');
+    if (res) {
+      data.value = res.map((item: ContractDto) => ({
+        key: item.id.toString(),
+        contractNo: item.contractNo,
+        contractName: item.contractName,
+        customerName: item.partnerName,
+        signDate: item.signDate ? new Date(item.signDate).toISOString().split('T')[0] : '',
+        totalAmount: item.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        receivedAmount: item.paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        latestCollectionDate: item.latestTransactionDate ? new Date(item.latestTransactionDate).toISOString().split('T')[0] : '',
+        status: item.status,
+        remark: item.description || '',
+      })) as SalesContract[];
+    }
+  } catch (error) {
+    console.error('Failed to fetch sales contracts:', error);
+  }
+};
+
+onMounted(() => {
+  fetchContracts();
+});
 
 const pagination = {
-  total: 50,
+  total: 50, // Should be updated from API if paginated
   current: 1,
   pageSize: 10,
 };
@@ -338,6 +327,10 @@ const handleMenuClick = (key: string, record: SalesContract) => {
     detailVisible.value = true;
   }
 };
+
+defineExpose({
+  refresh: fetchContracts
+});
 </script>
 
 <style scoped>

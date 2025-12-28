@@ -18,7 +18,7 @@
       </template>
       
       <div class="content-wrapper">
-        <component :is="currentTabComponent" />
+        <component :is="currentTabComponent" ref="listRef" />
       </div>
     </a-card>
 
@@ -45,9 +45,12 @@
 import { ref, computed } from 'vue';
 import { ExportOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
+import dayjs from 'dayjs';
 import ContractForm from './ContractForm.vue';
 import SalesContractList from './components/SalesContractList.vue';
 import PurchaseContractList from './components/PurchaseContractList.vue';
+import { createContract } from '@/api/contract';
+import type { CreateContractDto } from '@/api/contract';
 
 const activeTab = ref('sales');
 
@@ -63,6 +66,8 @@ const currentTabComponent = computed(() => {
     default: return SalesContractList;
   }
 });
+
+const listRef = ref();
 
 const handleTabChange = () => {
   // Component switching is handled by computed property
@@ -81,18 +86,46 @@ const onClose = () => {
 };
 
 const onSubmit = () => {
-  contractFormRef.value.validate().then(() => {
+  contractFormRef.value.validate().then(async () => {
     submitting.value = true;
-    setTimeout(() => {
-      submitting.value = false;
-      drawerVisible.value = false;
+    try {
+      const formState = contractFormRef.value.getFormState();
+      
+      const dto: CreateContractDto = {
+        contractName: formState.contractName,
+        type: formState.type,
+        partnerName: formState.customer,
+        signDate: formState.signDate ? dayjs(formState.signDate).format('YYYY-MM-DD') : undefined,
+        startDate: formState.period && formState.period[0] ? dayjs(formState.period[0]).format('YYYY-MM-DD') : undefined,
+        endDate: formState.period && formState.period[1] ? dayjs(formState.period[1]).format('YYYY-MM-DD') : undefined,
+        manager: formState.manager,
+        totalAmount: formState.amount,
+        currency: formState.currency,
+        paymentMethod: formState.paymentMethod,
+        taxId: formState.taxId,
+        description: formState.description,
+        files: JSON.stringify(formState.fileList),
+      };
+
+      await createContract(dto);
       message.success('创建成功');
-      // refresh list
-    }, 1000);
+      drawerVisible.value = false;
+      
+      // Refresh list
+      if (listRef.value && listRef.value.refresh) {
+        listRef.value.refresh();
+      }
+    } catch (error) {
+      console.error(error);
+      message.error('创建失败');
+    } finally {
+      submitting.value = false;
+    }
   }).catch((err: any) => {
     console.log('Validation failed:', err);
   });
 };
+
 </script>
 
 <style scoped>

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20251228134646_AddContractEntities")]
+    partial class AddContractEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -340,129 +343,6 @@ namespace omsapi.Migrations
                     b.ToTable("bigview_project");
                 });
 
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractAttachment", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("ContractId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("contract_id");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)")
-                        .HasColumnName("file_name");
-
-                    b.Property<string>("FilePath")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)")
-                        .HasColumnName("file_path");
-
-                    b.Property<string>("Size")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("size");
-
-                    b.Property<DateTime>("UploadDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("upload_date");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractId");
-
-                    b.ToTable("contract_attachment");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractContact", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("ContractId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("contract_id");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("email");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Phone")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("phone");
-
-                    b.Property<string>("Role")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("role");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractId");
-
-                    b.ToTable("contract_contact");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractInvoice", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)")
-                        .HasColumnName("amount");
-
-                    b.Property<long>("ContractId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("contract_id");
-
-                    b.Property<DateTime>("InvoiceDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("invoice_date");
-
-                    b.Property<string>("InvoiceNo")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("invoice_no");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("status");
-
-                    b.Property<string>("Type")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("type");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractId");
-
-                    b.ToTable("contract_invoice");
-                });
-
             modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractKnowledgeCategory", b =>
                 {
                     b.Property<long>("Id")
@@ -506,11 +386,6 @@ namespace omsapi.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("category_id");
 
-                    b.Property<string>("ContentType")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("content_type");
-
                     b.Property<string>("FilePath")
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)")
@@ -522,8 +397,9 @@ namespace omsapi.Migrations
                         .HasColumnType("varchar(255)")
                         .HasColumnName("name");
 
-                    b.Property<long>("Size")
-                        .HasColumnType("bigint")
+                    b.Property<string>("Size")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
                         .HasColumnName("size");
 
                     b.Property<string>("Type")
@@ -658,91 +534,6 @@ namespace omsapi.Migrations
                     b.ToTable("contract_main");
                 });
 
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractPaymentPlan", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)")
-                        .HasColumnName("amount");
-
-                    b.Property<string>("Condition")
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)")
-                        .HasColumnName("condition");
-
-                    b.Property<long>("ContractId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("contract_id");
-
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("due_date");
-
-                    b.Property<string>("Phase")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("phase");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("status");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractId");
-
-                    b.ToTable("contract_payment_plan");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractPaymentRecord", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18, 2)")
-                        .HasColumnName("amount");
-
-                    b.Property<long>("ContractId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("contract_id");
-
-                    b.Property<string>("Method")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("method");
-
-                    b.Property<string>("Operator")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("operator");
-
-                    b.Property<DateTime>("PaymentDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("payment_date");
-
-                    b.Property<string>("Remark")
-                        .HasColumnType("longtext")
-                        .HasColumnName("remark");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ContractId");
-
-                    b.ToTable("contract_payment_record");
-                });
-
             modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractStat", b =>
                 {
                     b.Property<long>("Id")
@@ -750,10 +541,6 @@ namespace omsapi.Migrations
                         .HasColumnType("bigint");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<decimal>("AmountCompletionRate")
-                        .HasColumnType("decimal(5, 2)")
-                        .HasColumnName("amount_completion_rate");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)")
@@ -787,10 +574,6 @@ namespace omsapi.Migrations
                         .HasColumnType("decimal(18, 2)")
                         .HasColumnName("received_amount");
 
-                    b.Property<decimal>("ReceivedRate")
-                        .HasColumnType("decimal(5, 2)")
-                        .HasColumnName("received_rate");
-
                     b.Property<int>("SalesCount")
                         .HasColumnType("int")
                         .HasColumnName("sales_count");
@@ -806,10 +589,6 @@ namespace omsapi.Migrations
                     b.Property<int>("TotalContracts")
                         .HasColumnType("int")
                         .HasColumnName("total_contracts");
-
-                    b.Property<decimal>("TotalContractsGrowth")
-                        .HasColumnType("decimal(5, 2)")
-                        .HasColumnName("total_contracts_growth");
 
                     b.HasKey("Id");
 
@@ -2133,61 +1912,6 @@ namespace omsapi.Migrations
                     b.Navigation("Parent");
                 });
 
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractAttachment", b =>
-                {
-                    b.HasOne("omsapi.Models.Entities.Contract.ContractMain", "Contract")
-                        .WithMany("Attachments")
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Contract");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractContact", b =>
-                {
-                    b.HasOne("omsapi.Models.Entities.Contract.ContractMain", "Contract")
-                        .WithMany("Contacts")
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Contract");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractInvoice", b =>
-                {
-                    b.HasOne("omsapi.Models.Entities.Contract.ContractMain", "Contract")
-                        .WithMany("Invoices")
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Contract");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractPaymentPlan", b =>
-                {
-                    b.HasOne("omsapi.Models.Entities.Contract.ContractMain", "Contract")
-                        .WithMany("PaymentPlans")
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Contract");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractPaymentRecord", b =>
-                {
-                    b.HasOne("omsapi.Models.Entities.Contract.ContractMain", "Contract")
-                        .WithMany("PaymentRecords")
-                        .HasForeignKey("ContractId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Contract");
-                });
-
             modelBuilder.Entity("omsapi.Models.Entities.Forms.FormCategory", b =>
                 {
                     b.HasOne("omsapi.Models.Entities.Forms.FormCategory", "Parent")
@@ -2403,19 +2127,6 @@ namespace omsapi.Migrations
             modelBuilder.Entity("omsapi.Models.Entities.Archive.ArchType", b =>
                 {
                     b.Navigation("Children");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractMain", b =>
-                {
-                    b.Navigation("Attachments");
-
-                    b.Navigation("Contacts");
-
-                    b.Navigation("Invoices");
-
-                    b.Navigation("PaymentPlans");
-
-                    b.Navigation("PaymentRecords");
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.Forms.FormCategory", b =>
