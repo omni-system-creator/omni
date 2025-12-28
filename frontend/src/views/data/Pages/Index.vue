@@ -29,6 +29,14 @@
           @back="viewMode = 'list'"
           @save="onPageSaved"
         />
+
+        <!-- Preview View -->
+        <PageDesigner 
+          v-if="viewMode === 'preview' && currentPage" 
+          :pageData="currentPage"
+          initialMode="preview"
+          @back="viewMode = 'list'"
+        />
       </a-layout-content>
     </a-layout>
   </div>
@@ -36,12 +44,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import { message } from 'ant-design-vue';
 import PageCategoryTree from './components/PageCategoryTree.vue';
 import PageList from './components/PageList.vue';
 import PageDesigner from './components/PageDesigner.vue';
-import type { PageDefinition } from '@/api/page';
+import { type PageDefinition, getPageById } from '@/api/page';
 
-const viewMode = ref<'list' | 'design'>('list');
+const viewMode = ref<'list' | 'design' | 'preview'>('list');
 const currentCategoryId = ref<number | undefined>(undefined);
 const currentCategoryName = ref<string>('');
 const currentPage = ref<PageDefinition | null>(null);
@@ -51,14 +60,28 @@ const onCategorySelect = (id: number, node: any) => {
   currentCategoryName.value = node ? node.name : '';
 };
 
-const handleDesign = (page: PageDefinition) => {
-  currentPage.value = page;
-  viewMode.value = 'design';
+const handleDesign = async (page: PageDefinition) => {
+  try {
+    const res = await getPageById(page.id);
+    if (res) {
+      currentPage.value = res;
+      viewMode.value = 'design';
+    }
+  } catch (e) {
+    message.error('加载页面详情失败');
+  }
 };
 
-const handlePreview = (page: PageDefinition) => {
-  // Simple alert for now, or open a modal
-  alert('预览功能待实现: ' + page.name);
+const handlePreview = async (page: PageDefinition) => {
+  try {
+    const res = await getPageById(page.id);
+    if (res) {
+      currentPage.value = res;
+      viewMode.value = 'preview';
+    }
+  } catch (e) {
+    message.error('加载页面详情失败');
+  }
 };
 
 const onPageSaved = () => {

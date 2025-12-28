@@ -8,7 +8,6 @@
       :indent-with-tab="true"
       :tab-size="2"
       :extensions="extensions"
-      @change="handleChange"
     />
   </div>
 </template>
@@ -33,10 +32,14 @@ const props = defineProps<{
 const emit = defineEmits(['update:value', 'change']);
 
 const code = ref(props.value || '');
+const lastEmittedValue = ref(props.value || '');
 
 watch(() => props.value, (newVal) => {
-  if (newVal !== code.value) {
-    code.value = newVal || '';
+  const val = newVal || '';
+  // 只有当新值既不等于当前内部值，也不等于上次发出的值时，才更新内部值
+  // 这样可以避免父组件回流旧值覆盖用户新输入的内容
+  if (val !== code.value && val !== lastEmittedValue.value) {
+    code.value = val;
   }
 });
 
@@ -67,10 +70,13 @@ const extensions = computed(() => {
   return exts;
 });
 
-const handleChange = () => {
-  emit('update:value', code.value);
-  emit('change', code.value);
-};
+watch(code, (newVal) => {
+  if (newVal !== props.value) {
+    lastEmittedValue.value = newVal;
+    emit('update:value', newVal);
+    emit('change', newVal);
+  }
+});
 </script>
 
 <style scoped>

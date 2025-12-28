@@ -99,7 +99,20 @@ namespace omsapi.Services
             var category = await _context.FormCategories.FindAsync(id);
             if (category == null) return null;
 
+            // Check for circular reference if ParentId is changed
+            if (dto.ParentId.HasValue && dto.ParentId != category.ParentId)
+            {
+                if (dto.ParentId == id) return null; // Cannot be parent of itself
+
+                // Deep check for circular dependency
+                if (await IsCircularReferenceAsync(id, dto.ParentId.Value))
+                {
+                    return null;
+                }
+            }
+
             category.Name = dto.Name;
+            category.ParentId = dto.ParentId;
             category.SortOrder = dto.SortOrder;
 
             await _context.SaveChangesAsync();
@@ -111,6 +124,23 @@ namespace omsapi.Services
                 ParentId = category.ParentId,
                 SortOrder = category.SortOrder
             };
+        }
+
+        private async Task<bool> IsCircularReferenceAsync(long currentCategoryId, long newParentId)
+        {
+            var parentId = newParentId;
+            while (true)
+            {
+                if (parentId == currentCategoryId) return true; // Found cycle
+
+                var parent = await _context.FormCategories
+                    .Where(c => c.Id == parentId)
+                    .Select(c => new { c.ParentId })
+                    .FirstOrDefaultAsync();
+
+                if (parent == null || parent.ParentId == null) return false; // Reached root
+                parentId = parent.ParentId.Value;
+            }
         }
 
         public async Task<bool> DeleteCategoryAsync(long id)

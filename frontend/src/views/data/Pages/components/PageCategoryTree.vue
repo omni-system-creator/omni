@@ -56,6 +56,17 @@
         <a-form-item label="分类名称" required>
           <a-input v-model:value="formState.name" placeholder="请输入分类名称" />
         </a-form-item>
+        <a-form-item label="父级分类">
+          <a-tree-select
+            v-model:value="formState.parentId"
+            :tree-data="treeData"
+            :field-names="{ label: 'name', value: 'id', children: 'children' }"
+            placeholder="请选择父级分类（留空为根分类）"
+            allow-clear
+            tree-default-expand-all
+            :disabled="false"
+          />
+        </a-form-item>
         <a-form-item label="排序">
           <a-input-number v-model:value="formState.sortOrder" style="width: 100%" :min="0" />
         </a-form-item>
@@ -214,6 +225,26 @@ onMounted(() => {
   align-items: center;
   width: 100%;
   padding-right: 4px;
+  white-space: nowrap;
+}
+
+.node-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:deep(.ant-tree-node-content-wrapper) {
+  display: flex !important;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+:deep(.ant-tree-title) {
+  flex: 1;
+  overflow: hidden;
 }
 
 .tree-node:hover .node-actions {

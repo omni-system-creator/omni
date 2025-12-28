@@ -5,6 +5,7 @@ using omsapi.Models.Entities.BigView;
 using omsapi.Models.Entities.Data;
 using omsapi.Models.Entities.Forms;
 using omsapi.Models.Entities.Interfaces;
+using omsapi.Models.Entities.Pages;
 
 namespace omsapi.Data
 {
@@ -49,6 +50,10 @@ namespace omsapi.Data
         // Interface Entities
         public DbSet<InterfaceCategory> InterfaceCategories { get; set; }
         public DbSet<InterfaceDefinition> InterfaceDefinitions { get; set; }
+
+        // Page Entities
+        public DbSet<PageCategory> PageCategories { get; set; }
+        public DbSet<PageDefinition> PageDefinitions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,18 +1,44 @@
 <template>
-  <div class="split-layout">
-    <div class="split-pane-left" :style="{ width: leftWidth + 'px' }">
-      <slot name="left"></slot>
-    </div>
-    <div 
-      class="split-trigger" 
-      :class="{ 'is-dragging': isDragging }"
-      @mousedown="onMouseDown"
-    >
-      <div class="split-trigger-line"></div>
-    </div>
-    <div class="split-pane-right">
-      <slot name="right"></slot>
-    </div>
+  <div class="split-layout" :class="{ 'is-right': position === 'right' }">
+    <!-- Left Mode: Sidebar (Fixed) -> Trigger -> Main (Adaptive) -->
+    <template v-if="position === 'left'">
+      <div class="split-pane-sidebar" :style="{ width: sidebarWidth + 'px' }">
+        <slot name="sidebar"></slot>
+        <!-- Backward compatibility for 'left' slot if sidebar not provided -->
+        <slot v-if="!$slots.sidebar" name="left"></slot>
+      </div>
+      <div 
+        class="split-trigger" 
+        :class="{ 'is-dragging': isDragging }"
+        @mousedown="onMouseDown"
+      >
+        <div class="split-trigger-line"></div>
+      </div>
+      <div class="split-pane-main">
+        <slot name="main"></slot>
+        <!-- Backward compatibility for 'right' slot if main not provided -->
+        <slot v-if="!$slots.main" name="right"></slot>
+      </div>
+    </template>
+
+    <!-- Right Mode: Main (Adaptive) -> Trigger -> Sidebar (Fixed) -->
+    <template v-else>
+      <div class="split-pane-main">
+        <slot name="main"></slot>
+        <slot v-if="!$slots.main" name="left"></slot>
+      </div>
+      <div 
+        class="split-trigger" 
+        :class="{ 'is-dragging': isDragging }"
+        @mousedown="onMouseDown"
+      >
+        <div class="split-trigger-line"></div>
+      </div>
+      <div class="split-pane-sidebar" :style="{ width: sidebarWidth + 'px' }">
+        <slot name="sidebar"></slot>
+        <slot v-if="!$slots.sidebar" name="right"></slot>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -20,21 +46,35 @@
 import { ref, onUnmounted } from 'vue';
 
 const props = defineProps({
-  initialLeftWidth: {
+  initialWidth: {
     type: Number,
     default: 280
   },
-  minLeftWidth: {
+  minWidth: {
     type: Number,
     default: 200
   },
-  maxLeftWidth: {
+  maxWidth: {
     type: Number,
     default: 500
-  }
+  },
+  position: {
+    type: String,
+    default: 'left', // 'left' or 'right'
+    validator: (val: string) => ['left', 'right'].includes(val)
+  },
+  // Legacy props support
+  initialLeftWidth: { type: Number, default: undefined },
+  minLeftWidth: { type: Number, default: undefined },
+  maxLeftWidth: { type: Number, default: undefined }
 });
 
-const leftWidth = ref(props.initialLeftWidth);
+// Normalize props
+const initW = props.initialLeftWidth !== undefined ? props.initialLeftWidth : props.initialWidth;
+const minW = props.minLeftWidth !== undefined ? props.minLeftWidth : props.minWidth;
+const maxW = props.maxLeftWidth !== undefined ? props.maxLeftWidth : props.maxWidth;
+
+const sidebarWidth = ref(initW);
 const isDragging = ref(false);
 let startX = 0;
 let startWidth = 0;
@@ -42,7 +82,7 @@ let startWidth = 0;
 const onMouseDown = (e: MouseEvent) => {
   isDragging.value = true;
   startX = e.clientX;
-  startWidth = leftWidth.value;
+  startWidth = sidebarWidth.value;
   
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
@@ -54,12 +94,16 @@ const onMouseMove = (e: MouseEvent) => {
   if (!isDragging.value) return;
   
   const dx = e.clientX - startX;
-  let newWidth = startWidth + dx;
+  // If position is left, dragging right increases width.
+  // If position is right, dragging right decreases width (because sidebar is on right).
+  const delta = props.position === 'left' ? dx : -dx;
   
-  if (newWidth < props.minLeftWidth) newWidth = props.minLeftWidth;
-  if (newWidth > props.maxLeftWidth) newWidth = props.maxLeftWidth;
+  let newWidth = startWidth + delta;
   
-  leftWidth.value = newWidth;
+  if (newWidth < minW) newWidth = minW;
+  if (newWidth > maxW) newWidth = maxW;
+  
+  sidebarWidth.value = newWidth;
 };
 
 const onMouseUp = () => {
@@ -84,16 +128,25 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.split-pane-left {
+.split-pane-sidebar {
   flex-shrink: 0;
   height: 100%;
   overflow: hidden;
-  transition: width 0.1s ease-out; /* Smooth transition unless dragging */
+  transition: width 0.1s ease-out;
 }
 
-/* Disable transition during drag for performance */
-.split-trigger.is-dragging + .split-pane-right,
-.split-trigger.is-dragging ~ .split-pane-left {
+.split-pane-main {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Disable transition during drag */
+.split-trigger.is-dragging + .split-pane-main,
+.split-trigger.is-dragging + .split-pane-sidebar,
+.split-trigger.is-dragging ~ .split-pane-sidebar,
+.split-trigger.is-dragging ~ .split-pane-main {
   transition: none;
 }
 
@@ -123,12 +176,5 @@ onUnmounted(() => {
 .split-trigger:hover .split-trigger-line,
 .split-trigger.is-dragging .split-trigger-line {
   background-color: #1890ff;
-}
-
-.split-pane-right {
-  flex: 1;
-  height: 100%;
-  overflow: hidden; /* Scroll should be handled by children if needed */
-  min-width: 0; /* Prevent flex overflow */
 }
 </style>

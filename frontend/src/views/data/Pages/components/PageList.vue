@@ -22,13 +22,30 @@
         row-key="id"
       >
         <template #bodyCell="{ column, record }">
+          <template v-if="column.key === 'updatedAt'">
+            {{ formatDate(record.updatedAt) }}
+          </template>
           <template v-if="column.key === 'action'">
-            <a @click="handleDesign(record)">设计</a>
-            <a-divider type="vertical" />
-            <a @click="handlePreview(record)">预览</a>
+            <a-tooltip title="设计">
+              <a-button type="link" size="small" @click="handleDesign(record)">
+                <template #icon><FormOutlined /></template>
+              </a-button>
+            </a-tooltip>
+            <a-tooltip title="预览">
+              <a-button type="link" size="small" @click="handlePreview(record)">
+                <template #icon><PlayCircleOutlined /></template>
+              </a-button>
+            </a-tooltip>
+            <a-tooltip title="编辑信息">
+              <a-button type="link" size="small" @click="handleEdit(record)">
+                <template #icon><EditOutlined /></template>
+              </a-button>
+            </a-tooltip>
             <a-divider type="vertical" />
             <a-popconfirm title="确定删除吗?" @confirm="handleDelete(record.id)">
-              <a class="danger-text">删除</a>
+              <a-button type="link" size="small" danger>
+                <template #icon><DeleteOutlined /></template>
+              </a-button>
             </a-popconfirm>
           </template>
         </template>
@@ -45,6 +62,16 @@
         <a-form-item label="页面名称" required>
           <a-input v-model:value="formState.name" />
         </a-form-item>
+        <a-form-item label="所属分类">
+          <a-tree-select
+            v-model:value="formState.categoryId"
+            :tree-data="categories"
+            :field-names="{ label: 'name', value: 'id', children: 'children' }"
+            placeholder="请选择分类"
+            allow-clear
+            tree-default-expand-all
+          />
+        </a-form-item>
         <a-form-item label="描述">
           <a-textarea v-model:value="formState.description" />
         </a-form-item>
@@ -55,19 +82,26 @@
 
 <script setup lang="ts">
 import { ref, watch, reactive, onMounted } from 'vue';
-import { PlusOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, FormOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import { getPages, savePage, deletePage, type PageDefinition } from '@/api/page';
+import dayjs from 'dayjs';
+import { getPages, savePage, deletePage, type PageDefinition, getPageCategoryTree, type PageCategory } from '@/api/page';
 
 const props = defineProps<{
   categoryId?: number;
   categoryName?: string;
 }>();
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-';
+  return dayjs(dateStr).format('YYYY-MM-DD HH:mm:ss');
+};
+
 const emit = defineEmits(['design', 'preview']);
 
 const loading = ref(false);
 const data = ref<PageDefinition[]>([]);
+const categories = ref<PageCategory[]>([]);
 const pagination = reactive({
   current: 1,
   pageSize: 10,
@@ -76,8 +110,9 @@ const pagination = reactive({
 
 const columns = [
   { title: '页面名称', dataIndex: 'name', key: 'name' },
+  { title: '描述', dataIndex: 'description', key: 'description' },
   { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 200 },
-  { title: '操作', key: 'action', width: 200 }
+  { title: '操作', key: 'action', width: 240 }
 ];
 
 const modalVisible = ref(false);
@@ -88,6 +123,15 @@ const formState = reactive<any>({
   description: '',
   categoryId: null
 });
+
+const loadCategories = async () => {
+  try {
+    const res = await getPageCategoryTree();
+    categories.value = res || [];
+  } catch (e) {
+    console.error(e);
+  }
+};
 
 const loadData = async () => {
   loading.value = true;
@@ -122,13 +166,50 @@ const handleCreate = () => {
   formState.categoryId = props.categoryId;
   modalTitle.value = '新建页面';
   modalVisible.value = true;
+  loadCategories();
+};
+
+const handleEdit = (record: PageDefinition) => {
+  formState.id = record.id;
+  formState.name = record.name;
+  formState.description = record.description;
+  formState.categoryId = record.categoryId;
+  modalTitle.value = '编辑页面';
+  modalVisible.value = true;
+  loadCategories();
 };
 
 const handleModalOk = async () => {
   if (!formState.name) return message.warning('请输入名称');
   
   try {
-    await savePage({ ...formState });
+    // Preserve existing data for edit, only update metadata
+    let dataToSave = { ...formState };
+    if (formState.id) {
+       // If editing, we might need to fetch full object or just send fields to update
+       // Backend update usually handles partial updates or we send what we have
+       // Ideally we should merge with existing data if needed, but for rename/move, this is enough
+       // provided the backend doesn't clear other fields if they are null in DTO.
+       // Based on PageService.cs, it updates fields from DTO. We should ensure we don't clear config/code.
+       // The UpdatePageAsync implementation updates Name, CategoryId, Code, Config, etc.
+       // We need to be careful. The current formState only has name, desc, categoryId.
+       // Code and Config are missing.
+       // We should fetch the full page data first or ensure backend supports partial update / check nulls.
+       // Let's check backend logic... PageService.cs lines:
+       // page.Name = dto.Name; page.CategoryId = dto.CategoryId; page.Code = dto.Code; ...
+       // It blindly assigns. So we MUST fetch the page first or send all data.
+       
+       // Optimization: fetch the current record from `data` array if it contains enough info?
+       // The list api usually doesn't return full config/code for performance.
+       // So we better fetch by ID first.
+       
+       const fullPage = await import('@/api/page').then(m => m.getPageById(formState.id));
+       if (fullPage) {
+         dataToSave = { ...fullPage, ...formState };
+       }
+    }
+
+    await savePage(dataToSave);
     message.success('保存成功');
     modalVisible.value = false;
     loadData();

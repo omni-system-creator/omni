@@ -19,6 +19,7 @@ namespace omsapi.Models.Dtos.Forms
     public class UpdateFormCategoryDto
     {
         public string Name { get; set; } = string.Empty;
+        public long? ParentId { get; set; }
         public int SortOrder { get; set; }
     }
 
