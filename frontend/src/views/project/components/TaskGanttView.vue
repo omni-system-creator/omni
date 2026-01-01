@@ -132,7 +132,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, onActivated, onDeactivated } from 'vue'
 import { useProjectFlowStore } from '@/stores/projectFlowStore'
-import { App, Rect, Text, Group, Path, Line, PointerEvent as LeaferPointerEvent } from 'leafer-ui'
+import { App, Rect, Text, Group, Path, Line, PointerEvent as LeaferPointerEvent, DragEvent } from 'leafer-ui'
 import '@leafer-in/find'
 import { holiday } from '@kang8/chinese-holidays'
 import { DownOutlined, RightOutlined } from '@ant-design/icons-vue'
@@ -1011,6 +1011,147 @@ const drawGantt = () => {
                 bar.on(LeaferPointerEvent.LEAVE, hideTooltip)
 
                 taskGroup.add(text)
+
+                // Resize Handles
+                const handleWidth = 8;
+                
+                // Left Handle
+                const leftHandle = new Rect({
+                    x: barX - handleWidth/2,
+                    y: barY,
+                    width: handleWidth,
+                    height: barHeight,
+                    fill: 'transparent',
+                    cursor: 'w-resize',
+                    zIndex: 10
+                });
+
+                // Right Handle
+                const rightHandle = new Rect({
+                    x: barX + barW - handleWidth/2,
+                    y: barY,
+                    width: handleWidth,
+                    height: barHeight,
+                    fill: 'transparent',
+                    cursor: 'e-resize',
+                    zIndex: 10
+                });
+
+                // Right Resize Logic
+                rightHandle.on(DragEvent.START, () => {
+                     // No op
+                });
+
+                rightHandle.on(DragEvent.DRAG, (e: DragEvent) => {
+                     const currentW = bar.width ?? 0;
+                     const newW = Math.max(DAY_WIDTH.value, currentW + e.moveX);
+                     bar.width = newW;
+                     
+                     rightHandle.x = (bar.x ?? 0) + (bar.width ?? 0) - handleWidth/2;
+                     
+                     // Update Text
+                     text.width = Math.max(0, (bar.width ?? 0) - 10);
+                     
+                     // Tooltip
+                     const days = (bar.width ?? 0) / DAY_WIDTH.value;
+                     const startOffsetMs = ((bar.x ?? 0) / DAY_WIDTH.value) * (24*3600*1000);
+                     const startDate = new Date(minDate.getTime() + startOffsetMs);
+                     const endDate = new Date(startDate.getTime() + (days - 1) * (24*3600*1000));
+                     
+                     const sY = startDate.getFullYear();
+                     const sM = String(startDate.getMonth() + 1).padStart(2, '0');
+                     const sD = String(startDate.getDate()).padStart(2, '0');
+                     const sStr = `${sY}-${sM}-${sD}`;
+                     
+                     const eY = endDate.getFullYear();
+                     const eM = String(endDate.getMonth() + 1).padStart(2, '0');
+                     const eD = String(endDate.getDate()).padStart(2, '0');
+                     const eStr = `${eY}-${eM}-${eD}`;
+                     
+                     tooltip.value.visible = true;
+                     tooltip.value.text = `${row.name}: ${sStr} - ${eStr}`;
+                     
+                     if (e.origin) {
+                        tooltip.value.x = e.origin.clientX + 10;
+                        tooltip.value.y = e.origin.clientY + 10;
+                     }
+                });
+
+                rightHandle.on(DragEvent.END, () => {
+                     tooltip.value.visible = false;
+                     
+                     const days = (bar.width ?? 0) / DAY_WIDTH.value;
+                     const startOffsetMs = ((bar.x ?? 0) / DAY_WIDTH.value) * (24*3600*1000);
+                     const startDate = new Date(minDate.getTime() + startOffsetMs);
+                     const newEndDate = new Date(startDate.getTime() + (days - 1) * (24*3600*1000));
+                     // Adjust for timezone issues if any, but toISOString().split('T')[0] is UTC.
+                     // We should use local date string.
+                     const y = newEndDate.getFullYear();
+                     const m = String(newEndDate.getMonth() + 1).padStart(2, '0');
+                     const d = String(newEndDate.getDate()).padStart(2, '0');
+                     const dateStr = `${y}-${m}-${d}`;
+                     
+                     if (row.endDate !== dateStr) {
+                         store.updateTask(row.id, { endDate: dateStr });
+                     }
+                     // drawGantt(); // Watcher will trigger
+                });
+
+                // Left Resize Logic
+                leftHandle.on(DragEvent.DRAG, (e: DragEvent) => {
+                     const currentRight = (bar.x ?? 0) + (bar.width ?? 0);
+                     
+                     let newX = (bar.x ?? 0) + e.moveX;
+                     let newW = (bar.width ?? 0) - e.moveX;
+                     
+                     if (newW < DAY_WIDTH.value) {
+                         newW = DAY_WIDTH.value;
+                         newX = currentRight - newW;
+                     }
+                     
+                     bar.x = newX;
+                     bar.width = newW;
+                     
+                     leftHandle.x = (bar.x ?? 0) - handleWidth/2;
+                     text.x = (bar.x ?? 0) + 5;
+                     text.width = Math.max(0, (bar.width ?? 0) - 10);
+                     
+                     // Tooltip
+                     const startOffsetMs = ((bar.x ?? 0) / DAY_WIDTH.value) * (24*3600*1000);
+                     const startDate = new Date(minDate.getTime() + startOffsetMs);
+                     
+                     const sY = startDate.getFullYear();
+                     const sM = String(startDate.getMonth() + 1).padStart(2, '0');
+                     const sD = String(startDate.getDate()).padStart(2, '0');
+                     const sStr = `${sY}-${sM}-${sD}`;
+                     
+                     tooltip.value.visible = true;
+                     tooltip.value.text = `${row.name}: ${sStr} - ${formatDate(row.endDate)}`;
+                     if (e.origin) {
+                        tooltip.value.x = e.origin.clientX + 10;
+                        tooltip.value.y = e.origin.clientY + 10;
+                     }
+                });
+                
+                leftHandle.on(DragEvent.END, () => {
+                     tooltip.value.visible = false;
+                     
+                     const startOffsetMs = ((bar.x ?? 0) / DAY_WIDTH.value) * (24*3600*1000);
+                     const newStartDate = new Date(minDate.getTime() + startOffsetMs);
+                     
+                     const y = newStartDate.getFullYear();
+                     const m = String(newStartDate.getMonth() + 1).padStart(2, '0');
+                     const d = String(newStartDate.getDate()).padStart(2, '0');
+                     const dateStr = `${y}-${m}-${d}`;
+                     
+                     if (row.startDate !== dateStr) {
+                         store.updateTask(row.id, { startDate: dateStr });
+                     }
+                     // drawGantt(); // Watcher will trigger
+                });
+
+                taskGroup.add(leftHandle);
+                taskGroup.add(rightHandle);
                 
                 taskPositions.set(row.id, { x: barX, y: barY, width: barW, height: barHeight })
             }
