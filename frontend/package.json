@@ -20,6 +20,7 @@
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/ri": "^1.2.6",
     "@iconify/vue": "^5.0.0",
+    "@kang8/chinese-holidays": "^1.0.1",
     "@leafer-in/arrow": "^1.12.0",
     "@leafer-in/editor": "^1.12.0",
     "@leafer-in/export": "^1.12.0",

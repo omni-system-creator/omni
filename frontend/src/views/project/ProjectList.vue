@@ -55,8 +55,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
+import { getProjects } from '@/api/project';
+import type { ProjectListItem } from '@/types/project';
+
+const router = useRouter();
 
 const queryParams = reactive({
   status: undefined,
@@ -72,25 +77,45 @@ const columns = [
   { title: '项目名称', dataIndex: 'name', key: 'name' },
   { title: '项目编号', dataIndex: 'code', key: 'code' },
   { title: '类型', dataIndex: 'type', key: 'type' },
-  { title: '负责人', dataIndex: 'leader', key: 'leader' },
+  { title: '负责人', dataIndex: 'manager', key: 'manager' },
   { title: '状态', dataIndex: 'status', key: 'status' },
   { title: '进度', dataIndex: 'progress', key: 'progress', width: 200 },
-  { title: '计划结束时间', dataIndex: 'endDate', key: 'endDate' },
+  { title: '计划结束时间', dataIndex: 'plannedEndDate', key: 'plannedEndDate' },
   { title: '操作', key: 'action', width: 150 }
 ];
 
-const projectList = ref([
-  { id: 1, name: 'OMS 系统重构', code: 'P2024001', type: '研发', leader: '张三', status: 'ongoing', progress: 65, endDate: '2024-12-31' },
-  { id: 2, name: '客户A CRM实施', code: 'P2024002', type: '实施', leader: '李四', status: 'paused', progress: 30, endDate: '2024-10-15' },
-  { id: 3, name: '年度审计', code: 'P2024003', type: '内部', leader: '王五', status: 'completed', progress: 100, endDate: '2024-06-30' },
-]);
+const projectList = ref<ProjectListItem[]>([]);
 
 const pagination = {
-  total: 100,
+  total: 0,
   current: 1,
   pageSize: 10,
   showSizeChanger: true
 };
+
+const fetchData = async () => {
+  loading.value = true;
+  try {
+    const data = await getProjects(queryParams);
+    if (data) {
+        // The API returns plain date string, we might need to format it if it's full ISO
+        // For now assume it's displayable or format it here
+        projectList.value = data.map(item => ({
+            ...item,
+            plannedEndDate: item.plannedEndDate ? item.plannedEndDate.split('T')[0] : ''
+        }));
+        pagination.total = data.length; // Client side pagination for now or if API returns list
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+    fetchData();
+});
 
 const getStatusColor = (status: string) => {
   const map: any = { ongoing: 'blue', completed: 'green', paused: 'orange' };
@@ -103,14 +128,14 @@ const getStatusText = (status: string) => {
 };
 
 const handleSearch = () => {
-  loading.value = true;
-  setTimeout(() => loading.value = false, 500);
+  fetchData();
 };
 
 const resetSearch = () => {
   queryParams.status = undefined;
   queryParams.type = undefined;
   queryParams.leader = '';
+  handleSearch();
 };
 
 const handleTabChange = (key: string) => {
@@ -118,11 +143,11 @@ const handleTabChange = (key: string) => {
   handleSearch();
 };
 
-const viewDetail = (record: any) => {
-  message.info(`查看项目详情：${record.name}`);
+const viewDetail = (record: ProjectListItem) => {
+  router.push({ name: 'ProjectDetail', params: { id: record.code } });
 };
 
-const editProject = (record: any) => {
+const editProject = (record: ProjectListItem) => {
   message.info(`编辑项目：${record.name}`);
 };
 </script>

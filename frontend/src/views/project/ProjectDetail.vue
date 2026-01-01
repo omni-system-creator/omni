@@ -1,0 +1,132 @@
+<template>
+  <div class="project-detail-container">
+    <div class="main-content">
+      <a-tabs v-model:activeKey="activeTab" type="card" class="project-tabs" :tabBarStyle="{ margin: 0, padding: '8px 8px 0' }">
+        <template #rightExtra>
+          <div id="tab-toolbar-target" style="display: flex; align-items: center; min-width: 200px; justify-content: flex-end;"></div>
+        </template>
+        <a-tab-pane key="flowchart" tab="泳道图">
+          <div class="tab-view-container">
+            <Controls :isActive="activeTab === 'flowchart'" />
+            <div class="canvas-area">
+              <LeaferCanvas />
+            </div>
+          </div>
+        </a-tab-pane>
+        <a-tab-pane key="gantt" tab="甘特图">
+          <div class="tab-view-container">
+             <TaskGanttView :isActive="activeTab === 'gantt'" />
+          </div>
+        </a-tab-pane>
+        <a-tab-pane key="kanban" tab="看板">
+          <div class="tab-view-container">
+             <KanbanView />
+          </div>
+        </a-tab-pane>
+      </a-tabs>
+    </div>
+
+    <!-- Global Detail Panel (Right Side) -->
+    <div class="detail-area" v-if="store.selectedElement">
+      <DetailPanel />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { useProjectFlowStore } from '@/stores/projectFlowStore';
+import Controls from './components/Controls.vue';
+import LeaferCanvas from './components/LeaferCanvas.vue';
+import DetailPanel from './components/DetailPanel.vue';
+import TaskGanttView from './components/TaskGanttView.vue';
+import KanbanView from './components/KanbanView.vue';
+
+const route = useRoute();
+const store = useProjectFlowStore();
+const activeTab = ref('flowchart');
+
+onMounted(() => {
+  const projectId = route.params.id as string;
+  if (projectId) {
+    console.log('Project Detail mounted for project:', projectId);
+    store.fetchProject(projectId);
+  }
+});
+
+onUnmounted(() => {
+  // Optional cleanup
+});
+
+// Clear selection when switching tabs to avoid context confusion (optional)
+watch(activeTab, () => {
+  store.clearSelection();
+});
+</script>
+
+<style scoped>
+.project-detail-container {
+  display: flex;
+  flex-direction: row;
+  height: 100%; /* Use 100% to fill available space in flex container */
+  background: #fff;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.project-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.ant-tabs-content-holder) {
+  flex: 1;
+  overflow: hidden;
+}
+
+:deep(.ant-tabs-content) {
+  height: 100%;
+}
+
+:deep(.ant-tabs-tabpane) {
+  height: 100%;
+}
+
+.tab-view-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.toolbar-area {
+  padding: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.canvas-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.detail-area {
+  width: 320px;
+  border-left: 1px solid #f0f0f0;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  flex-shrink: 0;
+}
+</style>

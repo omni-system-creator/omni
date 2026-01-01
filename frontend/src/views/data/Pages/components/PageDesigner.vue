@@ -131,7 +131,7 @@
           <CodeEditor 
             v-model:value="pageConfig.script" 
             language="typescript"
-            placeholder="// <script setup lang='ts'> content here..."
+            placeholder="// Script content here..."
             theme="dark"
           />
         </div>

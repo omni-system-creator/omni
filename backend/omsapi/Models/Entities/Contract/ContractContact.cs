@@ -16,7 +16,7 @@ namespace omsapi.Models.Entities.Contract
 
         [JsonIgnore]
         [ForeignKey("ContractId")]
-        public virtual ContractMain Contract { get; set; }
+        public virtual ContractMain Contract { get; set; } = null!;
 
         [Required]
         [MaxLength(50)]

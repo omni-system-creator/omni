@@ -7,6 +7,7 @@ using omsapi.Models.Entities.Forms;
 using omsapi.Models.Entities.Interfaces;
 using omsapi.Models.Entities.Pages;
 using omsapi.Models.Entities.Contract;
+using omsapi.Models.Entities.Project;
 
 namespace omsapi.Data
 {
@@ -67,6 +68,14 @@ namespace omsapi.Data
         public DbSet<ContractInvoice> ContractInvoices { get; set; }
         public DbSet<ContractContact> ContractContacts { get; set; }
         public DbSet<ContractAttachment> ContractAttachments { get; set; }
+
+        // Project Flow Entities
+        public DbSet<ProjectInfo> ProjectInfos { get; set; }
+        public DbSet<ProjectPhase> ProjectPhases { get; set; }
+        public DbSet<ProjectSwimlane> ProjectSwimlanes { get; set; }
+        public DbSet<ProjectTask> ProjectTasks { get; set; }
+        public DbSet<ProjectTaskDependency> ProjectTaskDependencies { get; set; }
+        public DbSet<ProjectAttachment> ProjectAttachments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -235,6 +244,11 @@ namespace omsapi.Data
                 new SystemRolePermission { RoleId = 1, PermissionId = 110, CreatedAt = fixedDate },
                 new SystemRolePermission { RoleId = 1, PermissionId = 111, CreatedAt = fixedDate }
             );
+
+            // Project Configurations
+            modelBuilder.Entity<ProjectPhase>().HasKey(p => new { p.Id, p.ProjectCode });
+            modelBuilder.Entity<ProjectSwimlane>().HasKey(s => new { s.Id, s.ProjectCode });
+            modelBuilder.Entity<ProjectTask>().HasKey(t => new { t.Id, t.ProjectCode });
         }
     }
 }

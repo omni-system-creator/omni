@@ -34,6 +34,18 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/project',
+      component: () => import('../layouts/MainLayout.vue'),
+      children: [
+        {
+          path: 'detail/:id',
+          name: 'ProjectDetail',
+          component: () => import('../views/project/ProjectDetail.vue'),
+          meta: { title: '项目详情' }
+        }
+      ]
+    },
     // 404 页面
     {
       path: '/help',
