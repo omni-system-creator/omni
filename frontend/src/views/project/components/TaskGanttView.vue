@@ -939,7 +939,7 @@ const drawGantt = () => {
                 
                 const bar = new Rect({
                     x: barX, y: barY, width: barW, height: barHeight,
-                    fill: fill,
+                    fill: fill as any, // Cast to any to avoid strict type checking on gradient
                     stroke: color,
                     strokeWidth: 1,
                     cornerRadius: 4,
