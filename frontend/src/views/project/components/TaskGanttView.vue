@@ -134,6 +134,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick, onActivated, on
 import { useProjectFlowStore } from '@/stores/projectFlowStore'
 import { App, Rect, Text, Group, Path, Line, PointerEvent as LeaferPointerEvent, DragEvent, Leafer } from 'leafer-ui'
 import '@leafer-in/find'
+import '@leafer-in/animate'
 import { holiday } from '@kang8/chinese-holidays'
 import { DownOutlined, RightOutlined } from '@ant-design/icons-vue'
 
