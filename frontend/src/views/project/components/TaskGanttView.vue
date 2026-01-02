@@ -132,7 +132,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, onActivated, onDeactivated } from 'vue'
 import { useProjectFlowStore } from '@/stores/projectFlowStore'
-import { App, Rect, Text, Group, Path, Line, PointerEvent as LeaferPointerEvent, DragEvent } from 'leafer-ui'
+import { App, Rect, Text, Group, Path, Line, PointerEvent as LeaferPointerEvent, DragEvent, Leafer } from 'leafer-ui'
 import '@leafer-in/find'
 import { holiday } from '@kang8/chinese-holidays'
 import { DownOutlined, RightOutlined } from '@ant-design/icons-vue'
@@ -775,9 +775,8 @@ const handleLeftScroll = (e: Event) => {
 
 // --- Leafer UI ---
 let leaferApp: App | null = null
-let chartGroup: Group | null = null
-const animatingLines: any[] = []
-let animationFrameId: number
+let staticLayer: Leafer | null = null
+let animateLayer: Leafer | null = null
 const selectedTaskId = ref<string | null>(null)
 
 const initLeafer = () => {
@@ -793,39 +792,26 @@ const initLeafer = () => {
         tree: {},
         type: 'user' as any
     })
-
-    chartGroup = new Group()
-    leaferApp.tree.add(chartGroup)
     
-    if (rightScrollRef.value) {
-         chartGroup.x = -rightScrollRef.value.scrollLeft
-         // chartGroup.y = -rightScrollRef.value.scrollTop // Do not shift Y, let div scroll
-    }
+    // Layer 1: Static Content (Grid, Tasks, Normal Lines)
+    staticLayer = new Leafer({ type: 'user' as any })
+    leaferApp.add(staticLayer)
+    
+    // Layer 2: Animation Content (Selected Lines, Interactions)
+    animateLayer = new Leafer({ type: 'user' as any })
+    leaferApp.add(animateLayer)
     
     drawGantt()
-    startAnimationLoop()
 }
 
-const startAnimationLoop = () => {
-    const animate = () => {
-        if (animatingLines.length > 0) {
-            animatingLines.forEach(line => {
-                const current = line.dashOffset || 0;
-                line.dashOffset = current - 0.5;
-            });
-        }
-        animationFrameId = requestAnimationFrame(animate);
-    };
-    animate();
-};
-
 const drawGantt = () => {
-    if (!chartGroup || !leaferApp) return
+    if (!leaferApp || !staticLayer || !animateLayer) return
+    
     // Reset tooltip when redrawing to prevent stuck tooltips
     tooltip.value.visible = false;
     
-    const group = chartGroup
-    group.clear()
+    staticLayer.clear()
+    animateLayer.clear()
     
     const { start: minDate } = timeRange.value
     if (!minDate) return
@@ -834,7 +820,8 @@ const drawGantt = () => {
     const lineGroup = new Group()
     const taskGroup = new Group()
     
-    group.add(gridGroup)
+    // Static Layer Structure: Grid -> Lines (Unselected) -> Tasks
+    staticLayer.add(gridGroup)
     
     // Background for panning
     const bgRect = new Rect({
@@ -843,10 +830,14 @@ const drawGantt = () => {
         height: Math.max(totalHeight.value, viewportHeight.value),
         fill: 'transparent'
     })
-    // Panning logic omitted for brevity, can be added if needed
-    group.add(bgRect)
-    group.add(lineGroup)
-    group.add(taskGroup)
+    staticLayer.add(bgRect)
+    
+    staticLayer.add(lineGroup)
+    staticLayer.add(taskGroup)
+    
+    // Animation Layer Structure: Selected Lines
+    const activeLineGroup = new Group()
+    animateLayer.add(activeLineGroup)
     
     // Draw Holidays
     if (zoomLevel.value !== 'year') {
@@ -1159,7 +1150,6 @@ const drawGantt = () => {
     })
     
     // Dependency Lines
-    animatingLines.length = 0
     visibleRows.value.forEach(row => {
         if (row.type === 'task' && row.data && row.data.dependencies) {
             row.data.dependencies.forEach((depOrObj: any) => {
@@ -1185,8 +1175,12 @@ const drawGantt = () => {
                          dashPattern: isSelected ? [5, 5] : undefined
                      });
                      
-                     if (isSelected) animatingLines.push(line);
-                     lineGroup.add(line);
+                     if (isSelected) {
+                         activeLineGroup.add(line);
+                         (line as any).animate({ dashOffset: -10 }, { duration: 1000, loop: true })
+                     } else {
+                         lineGroup.add(line);
+                     }
                 }
             })
         }
@@ -1270,7 +1264,6 @@ onMounted(() => {
 
 onUnmounted(() => {
     if (leaferApp) leaferApp.destroy()
-    if (animationFrameId) cancelAnimationFrame(animationFrameId)
     window.removeEventListener('resize', handleWindowResize)
     togglePageScroll(false)
 })
