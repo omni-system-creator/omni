@@ -11,7 +11,7 @@
  Target Server Version : 80036 (8.0.36)
  File Encoding         : 65001
 
- Date: 27/12/2025 10:25:48
+ Date: 04/01/2026 16:12:48
 */
 
 SET NAMES utf8mb4;
@@ -42,6 +42,72 @@ INSERT INTO `__efmigrationshistory` VALUES ('20251226035906_RenameFormResultTabl
 INSERT INTO `__efmigrationshistory` VALUES ('20251226041042_AddFormRequiresLogin', '9.0.0');
 INSERT INTO `__efmigrationshistory` VALUES ('20251226074152_AddFormLimitOnePerUser', '9.0.0');
 INSERT INTO `__efmigrationshistory` VALUES ('20251226125757_AddFormPermissions', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251227050330_AddInterfaceEntities', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251227054736_AddUrlPrefixToInterfaceCategory', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251227060156_AddInterfaceRoles', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251227060405_RenameExecuteToCallRoles', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251228094057_AddPageTables', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251228134646_AddContractEntities', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251228135843_UpdateContractStats', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251228141345_AddContractDetails', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251228153824_AddContentTypeToKnowledgeFile', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251228154949_ChangeKnowledgeFileSizeToLong', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20260101030353_RenameProjectFlowToProject', '9.0.0');
+
+-- ----------------------------
+-- Table structure for api_category
+-- ----------------------------
+DROP TABLE IF EXISTS `api_category`;
+CREATE TABLE `api_category`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `Name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `ParentId` bigint NULL DEFAULT NULL,
+  `SortOrder` int NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL,
+  `CreatedBy` bigint NULL DEFAULT NULL,
+  `UrlPrefix` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT '',
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_api_category_ParentId`(`ParentId` ASC) USING BTREE,
+  CONSTRAINT `FK_api_category_api_category_ParentId` FOREIGN KEY (`ParentId`) REFERENCES `api_category` (`Id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of api_category
+-- ----------------------------
+INSERT INTO `api_category` VALUES (1, '生产类', NULL, 1, '2025-12-27 13:38:00.131361', 0, '/mes/made');
+INSERT INTO `api_category` VALUES (2, '销售类', NULL, 2, '2025-12-27 13:38:18.442605', 0, '/sales');
+
+-- ----------------------------
+-- Table structure for api_definition
+-- ----------------------------
+DROP TABLE IF EXISTS `api_definition`;
+CREATE TABLE `api_definition`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `CategoryId` bigint NOT NULL,
+  `Name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `Path` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `Method` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `Description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `FlowConfig` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `IsPublished` tinyint(1) NOT NULL,
+  `RequiresAuth` tinyint(1) NOT NULL,
+  `CreatedAt` datetime(6) NOT NULL,
+  `UpdatedAt` datetime(6) NOT NULL,
+  `CreatedBy` bigint NULL DEFAULT NULL,
+  `UpdatedBy` bigint NULL DEFAULT NULL,
+  `ManageRoles` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `ViewRoles` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `CallRoles` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_api_definition_CategoryId`(`CategoryId` ASC) USING BTREE,
+  CONSTRAINT `FK_api_definition_api_category_CategoryId` FOREIGN KEY (`CategoryId`) REFERENCES `api_category` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of api_definition
+-- ----------------------------
+INSERT INTO `api_definition` VALUES (1, 1, '今日生产计划', 'plans', 'GET', '', '{\"nodes\":[{\"id\":\"req_1\",\"type\":\"request\",\"x\":-436.40625,\"y\":93.16665649414062,\"label\":\"接收请求\",\"data\":{\"method\":\"GET\"}},{\"id\":\"res_1\",\"type\":\"response\",\"x\":838.59375,\"y\":93.16665649414062,\"label\":\"发送响应\",\"data\":{\"contentType\":\"json\",\"joinMode\":\"all\",\"paramMode\":\"custom\",\"script\":\"return context.code_1;\"}},{\"id\":\"db_1\",\"type\":\"database\",\"x\":-100.3125,\"y\":93.16665649414062,\"label\":\"数据操作\",\"data\":{\"sourceId\":\"db1\",\"opType\":\"select\",\"sql\":\"SELECT * FROM testdb.test1;\",\"joinMode\":\"all\"}},{\"id\":\"api_1\",\"type\":\"api\",\"x\":230.1875,\"y\":93.16665649414062,\"label\":\"外部接口\",\"data\":{\"url\":\"https://www.baidu.com\",\"joinMode\":\"all\",\"paramMode\":\"custom\",\"headers\":[],\"params\":[]}},{\"id\":\"code_1\",\"type\":\"script\",\"x\":550.1875,\"y\":93.16665649414062,\"label\":\"脚本逻辑\",\"data\":{\"script\":\"var rows = context.dbResult;\\nvar total = 0;\\nfor(var i=0; i<rows.length; i++) {\\n   total += rows[i].age;\\n}\\nreturn { totalAmount: total };\",\"joinMode\":\"all\",\"language\":\"JavaScript\"}},{\"id\":\"api_2\",\"type\":\"api\",\"x\":230.1875,\"y\":-74.90245521359329,\"label\":\"外部接口\",\"data\":{\"method\":\"GET\",\"paramMode\":\"custom\",\"headers\":[],\"params\":[],\"joinMode\":\"all\",\"url\":\"https://www.qq.com\"}}],\"edges\":[{\"id\":\"9b571afa-6f39-4650-8362-38b0702d9ee9\",\"sourceId\":\"req_1\",\"targetId\":\"db_1\"},{\"id\":\"57e2bf06-1d3e-4dc6-b097-1fee2f246079\",\"sourceId\":\"db_1\",\"targetId\":\"api_1\"},{\"id\":\"4faee183-e196-4d61-bd37-c75adb60f4fd\",\"sourceId\":\"api_1\",\"targetId\":\"code_1\"},{\"id\":\"029ee7af-2282-43bb-acad-90b7a2097d06\",\"sourceId\":\"code_1\",\"targetId\":\"res_1\"},{\"id\":\"2f925ad5-4285-4517-b1a3-debb1db3d3c2\",\"sourceId\":\"db_1\",\"targetId\":\"api_2\"}]}', 0, 0, '2025-12-27 13:39:11.467822', '2025-12-29 10:13:07.696764', 0, 0, '', '', '');
+INSERT INTO `api_definition` VALUES (2, 2, '最近12个月销量趋势', 'currentyear/trend', 'GET', '', NULL, 0, 0, '2025-12-27 14:29:58.129609', '2025-12-27 14:29:58.129667', 0, NULL, '', '', '');
 
 -- ----------------------------
 -- Table structure for arch_attachment
@@ -92,7 +158,7 @@ CREATE TABLE `arch_box`  (
   INDEX `IX_arch_box_TypeId`(`TypeId` ASC) USING BTREE,
   CONSTRAINT `FK_arch_box_arch_fond_FondId` FOREIGN KEY (`FondId`) REFERENCES `arch_fond` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `FK_arch_box_arch_type_TypeId` FOREIGN KEY (`TypeId`) REFERENCES `arch_type` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of arch_box
@@ -130,7 +196,7 @@ CREATE TABLE `arch_file`  (
   CONSTRAINT `FK_arch_file_arch_box_BoxId` FOREIGN KEY (`BoxId`) REFERENCES `arch_box` (`Id`) ON DELETE RESTRICT ON UPDATE RESTRICT,
   CONSTRAINT `FK_arch_file_arch_fond_FondId` FOREIGN KEY (`FondId`) REFERENCES `arch_fond` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `FK_arch_file_arch_type_TypeId` FOREIGN KEY (`TypeId`) REFERENCES `arch_type` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of arch_file
@@ -170,7 +236,7 @@ CREATE TABLE `arch_type`  (
   UNIQUE INDEX `IX_arch_type_Code`(`Code` ASC) USING BTREE,
   INDEX `IX_arch_type_ParentId`(`ParentId` ASC) USING BTREE,
   CONSTRAINT `FK_arch_type_arch_type_ParentId` FOREIGN KEY (`ParentId`) REFERENCES `arch_type` (`Id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of arch_type
@@ -212,6 +278,275 @@ INSERT INTO `bigview_project` VALUES (13, '测试项目 副本', '0', '2025-12-2
 INSERT INTO `bigview_project` VALUES (14, '测试项目 副本', '0', '2025-12-25 18:54:34.270367', '0', '1', NULL, NULL, NULL);
 INSERT INTO `bigview_project` VALUES (15, '测试项目 副本', '0', '2025-12-25 18:58:48.662649', '0', '0', '/uploads/bigview/15.png', '\"{\\n  \\u0022editCanvasConfig\\u0022: {\\n    \\u0022projectName\\u0022: \\u0022\\u6D4B\\u8BD5\\u9879\\u76EE\\u526F\\u672C\\u0022,\\n    \\u0022width\\u0022: 1920,\\n    \\u0022height\\u0022: 1080,\\n    \\u0022filterShow\\u0022: false,\\n    \\u0022hueRotate\\u0022: 0,\\n    \\u0022saturate\\u0022: 1,\\n    \\u0022contrast\\u0022: 1,\\n    \\u0022brightness\\u0022: 1,\\n    \\u0022opacity\\u0022: 1,\\n    \\u0022rotateZ\\u0022: 0,\\n    \\u0022rotateX\\u0022: 0,\\n    \\u0022rotateY\\u0022: 0,\\n    \\u0022skewX\\u0022: 0,\\n    \\u0022skewY\\u0022: 0,\\n    \\u0022blendMode\\u0022: \\u0022normal\\u0022,\\n    \\u0022background\\u0022: null,\\n    \\u0022backgroundImage\\u0022: null,\\n    \\u0022selectColor\\u0022: true,\\n    \\u0022chartThemeColor\\u0022: \\u0022dark\\u0022,\\n    \\u0022chartCustomThemeColorInfo\\u0022: null,\\n    \\u0022chartThemeSetting\\u0022: {\\n      \\u0022title\\u0022: {\\n        \\u0022show\\u0022: true,\\n        \\u0022textStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#BFBFBF\\u0022,\\n          \\u0022fontSize\\u0022: 18\\n        },\\n        \\u0022subtextStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#A2A2A2\\u0022,\\n          \\u0022fontSize\\u0022: 14\\n        }\\n      },\\n      \\u0022xAxis\\u0022: {\\n        \\u0022show\\u0022: true,\\n        \\u0022name\\u0022: \\u0022\\u0022,\\n        \\u0022nameGap\\u0022: 15,\\n        \\u0022nameTextStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022fontSize\\u0022: 12\\n        },\\n        \\u0022inverse\\u0022: false,\\n        \\u0022axisLabel\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022fontSize\\u0022: 12,\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022rotate\\u0022: 0\\n        },\\n        \\u0022position\\u0022: \\u0022bottom\\u0022,\\n        \\u0022axisLine\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022lineStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022width\\u0022: 1\\n          },\\n          \\u0022onZero\\u0022: true\\n        },\\n        \\u0022axisTick\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022length\\u0022: 5\\n        },\\n        \\u0022splitLine\\u0022: {\\n          \\u0022show\\u0022: false,\\n          \\u0022lineStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#484753\\u0022,\\n            \\u0022width\\u0022: 1,\\n            \\u0022type\\u0022: \\u0022solid\\u0022\\n          }\\n        },\\n        \\u0022min\\u0022: null,\\n        \\u0022max\\u0022: null\\n      },\\n      \\u0022yAxis\\u0022: {\\n        \\u0022show\\u0022: true,\\n        \\u0022name\\u0022: \\u0022\\u0022,\\n        \\u0022nameGap\\u0022: 15,\\n        \\u0022max\\u0022: null,\\n        \\u0022min\\u0022: null,\\n        \\u0022nameTextStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022fontSize\\u0022: 12\\n        },\\n        \\u0022inverse\\u0022: false,\\n        \\u0022axisLabel\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022fontSize\\u0022: 12,\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022rotate\\u0022: 0\\n        },\\n        \\u0022position\\u0022: \\u0022left\\u0022,\\n        \\u0022axisLine\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022lineStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022width\\u0022: 1\\n          },\\n          \\u0022onZero\\u0022: true\\n        },\\n        \\u0022axisTick\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022length\\u0022: 5\\n        },\\n        \\u0022splitLine\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022lineStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#484753\\u0022,\\n            \\u0022width\\u0022: 1,\\n            \\u0022type\\u0022: \\u0022solid\\u0022\\n          }\\n        }\\n      },\\n      \\u0022legend\\u0022: {\\n        \\u0022show\\u0022: false,\\n        \\u0022type\\u0022: \\u0022scroll\\u0022,\\n        \\u0022x\\u0022: \\u0022center\\u0022,\\n        \\u0022y\\u0022: \\u0022top\\u0022,\\n        \\u0022icon\\u0022: \\u0022circle\\u0022,\\n        \\u0022orient\\u0022: \\u0022horizontal\\u0022,\\n        \\u0022textStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022fontSize\\u0022: 18\\n        },\\n        \\u0022itemHeight\\u0022: 15,\\n        \\u0022itemWidth\\u0022: 15,\\n        \\u0022pageTextStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022\\n        }\\n      },\\n      \\u0022grid\\u0022: {\\n        \\u0022show\\u0022: false,\\n        \\u0022left\\u0022: \\u002210%\\u0022,\\n        \\u0022top\\u0022: \\u002260\\u0022,\\n        \\u0022right\\u0022: \\u002210%\\u0022,\\n        \\u0022bottom\\u0022: \\u002260\\u0022\\n      },\\n      \\u0022dataset\\u0022: null,\\n      \\u0022renderer\\u0022: \\u0022svg\\u0022\\n    },\\n    \\u0022previewScaleType\\u0022: \\u0022fit\\u0022,\\n    \\u0022previewTheme\\u0022: \\u0022dark\\u0022\\n  },\\n  \\u0022componentList\\u0022: [\\n    {\\n      \\u0022id\\u0022: \\u0022id_127dubdy2hvk00\\u0022,\\n      \\u0022isGroup\\u0022: false,\\n      \\u0022attr\\u0022: {\\n        \\u0022x\\u0022: 498,\\n        \\u0022y\\u0022: 229,\\n        \\u0022w\\u0022: 1193,\\n        \\u0022h\\u0022: 622,\\n        \\u0022offsetX\\u0022: 0,\\n        \\u0022offsetY\\u0022: 0,\\n        \\u0022zIndex\\u0022: -1\\n      },\\n      \\u0022styles\\u0022: {\\n        \\u0022filterShow\\u0022: false,\\n        \\u0022hueRotate\\u0022: 0,\\n        \\u0022saturate\\u0022: 1,\\n        \\u0022contrast\\u0022: 1,\\n        \\u0022brightness\\u0022: 1,\\n        \\u0022opacity\\u0022: 1,\\n        \\u0022rotateZ\\u0022: 0,\\n        \\u0022rotateX\\u0022: 0,\\n        \\u0022rotateY\\u0022: 0,\\n        \\u0022skewX\\u0022: 0,\\n        \\u0022skewY\\u0022: 0,\\n        \\u0022blendMode\\u0022: \\u0022normal\\u0022,\\n        \\u0022animations\\u0022: []\\n      },\\n      \\u0022preview\\u0022: {\\n        \\u0022overFlowHidden\\u0022: false\\n      },\\n      \\u0022status\\u0022: {\\n        \\u0022lock\\u0022: false,\\n        \\u0022hide\\u0022: false\\n      },\\n      \\u0022request\\u0022: {\\n        \\u0022requestDataType\\u0022: 0,\\n        \\u0022requestHttpType\\u0022: \\u0022get\\u0022,\\n        \\u0022requestUrl\\u0022: \\u0022\\u0022,\\n        \\u0022requestInterval\\u0022: null,\\n        \\u0022requestIntervalUnit\\u0022: \\u0022second\\u0022,\\n        \\u0022requestContentType\\u0022: 0,\\n        \\u0022requestParamsBodyType\\u0022: \\u0022none\\u0022,\\n        \\u0022requestSQLContent\\u0022: {\\n          \\u0022sql\\u0022: \\u0022select * from  where\\u0022,\\n          \\u0022id\\u0022: \\u0022\\u0022,\\n          \\u0022key\\u0022: \\u0022\\u0022,\\n          \\u0022aux\\u0022: {},\\n          \\u0022fileds\\u0022: []\\n        },\\n        \\u0022requestParams\\u0022: {\\n          \\u0022Body\\u0022: {\\n            \\u0022form-data\\u0022: {},\\n            \\u0022x-www-form-urlencoded\\u0022: {},\\n            \\u0022json\\u0022: \\u0022\\u0022,\\n            \\u0022xml\\u0022: \\u0022\\u0022\\n          },\\n          \\u0022Header\\u0022: {},\\n          \\u0022Params\\u0022: {}\\n        }\\n      },\\n      \\u0022filter\\u0022: null,\\n      \\u0022events\\u0022: {\\n        \\u0022baseEvent\\u0022: {\\n          \\u0022click\\u0022: null,\\n          \\u0022dblclick\\u0022: null,\\n          \\u0022change\\u0022: null,\\n          \\u0022mouseenter\\u0022: null,\\n          \\u0022mouseleave\\u0022: null\\n        },\\n        \\u0022advancedEvents\\u0022: {\\n          \\u0022vnodeMounted\\u0022: null,\\n          \\u0022vnodeBeforeMount\\u0022: null\\n        },\\n        \\u0022interactEvents\\u0022: []\\n      },\\n      \\u0022key\\u0022: \\u0022BarCommon\\u0022,\\n      \\u0022chartConfig\\u0022: {\\n        \\u0022key\\u0022: \\u0022BarCommon\\u0022,\\n        \\u0022chartKey\\u0022: \\u0022VBarCommon\\u0022,\\n        \\u0022conKey\\u0022: \\u0022VCBarCommon\\u0022,\\n        \\u0022title\\u0022: \\u0022\\u67F1\\u72B6\\u56FE\\u0022,\\n        \\u0022category\\u0022: \\u0022Bars\\u0022,\\n        \\u0022categoryName\\u0022: \\u0022\\u67F1\\u72B6\\u56FE\\u0022,\\n        \\u0022package\\u0022: \\u0022Charts\\u0022,\\n        \\u0022chartFrame\\u0022: \\u0022echarts\\u0022,\\n        \\u0022image\\u0022: \\u0022bar_x.png\\u0022\\n      },\\n      \\u0022option\\u0022: {\\n        \\u0022legend\\u0022: {\\n          \\u0022show\\u0022: false,\\n          \\u0022type\\u0022: \\u0022scroll\\u0022,\\n          \\u0022x\\u0022: \\u0022center\\u0022,\\n          \\u0022y\\u0022: \\u0022top\\u0022,\\n          \\u0022icon\\u0022: \\u0022circle\\u0022,\\n          \\u0022orient\\u0022: \\u0022horizontal\\u0022,\\n          \\u0022textStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022fontSize\\u0022: 18\\n          },\\n          \\u0022itemHeight\\u0022: 15,\\n          \\u0022itemWidth\\u0022: 15,\\n          \\u0022pageTextStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022\\n          }\\n        },\\n        \\u0022xAxis\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022name\\u0022: \\u0022\\u0022,\\n          \\u0022nameGap\\u0022: 15,\\n          \\u0022nameTextStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022fontSize\\u0022: 12\\n          },\\n          \\u0022inverse\\u0022: false,\\n          \\u0022axisLabel\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022fontSize\\u0022: 12,\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022rotate\\u0022: 0\\n          },\\n          \\u0022position\\u0022: \\u0022bottom\\u0022,\\n          \\u0022axisLine\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022lineStyle\\u0022: {\\n              \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n              \\u0022width\\u0022: 1\\n            },\\n            \\u0022onZero\\u0022: true\\n          },\\n          \\u0022axisTick\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022length\\u0022: 5\\n          },\\n          \\u0022splitLine\\u0022: {\\n            \\u0022show\\u0022: false,\\n            \\u0022lineStyle\\u0022: {\\n              \\u0022color\\u0022: \\u0022#484753\\u0022,\\n              \\u0022width\\u0022: 1,\\n              \\u0022type\\u0022: \\u0022solid\\u0022\\n            }\\n          },\\n          \\u0022min\\u0022: null,\\n          \\u0022max\\u0022: null,\\n          \\u0022type\\u0022: \\u0022category\\u0022\\n        },\\n        \\u0022yAxis\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022name\\u0022: \\u0022\\u0022,\\n          \\u0022nameGap\\u0022: 15,\\n          \\u0022max\\u0022: null,\\n          \\u0022min\\u0022: null,\\n          \\u0022nameTextStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022fontSize\\u0022: 12\\n          },\\n          \\u0022inverse\\u0022: false,\\n          \\u0022axisLabel\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022fontSize\\u0022: 12,\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022rotate\\u0022: 0\\n          },\\n          \\u0022position\\u0022: \\u0022left\\u0022,\\n          \\u0022axisLine\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022lineStyle\\u0022: {\\n              \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n              \\u0022width\\u0022: 1\\n            },\\n            \\u0022onZero\\u0022: true\\n          },\\n          \\u0022axisTick\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022length\\u0022: 5\\n          },\\n          \\u0022splitLine\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022lineStyle\\u0022: {\\n              \\u0022color\\u0022: \\u0022#484753\\u0022,\\n              \\u0022width\\u0022: 1,\\n              \\u0022type\\u0022: \\u0022solid\\u0022\\n            }\\n          },\\n          \\u0022type\\u0022: \\u0022value\\u0022\\n        },\\n        \\u0022grid\\u0022: {\\n          \\u0022show\\u0022: false,\\n          \\u0022left\\u0022: \\u002210%\\u0022,\\n          \\u0022top\\u0022: \\u002260\\u0022,\\n          \\u0022right\\u0022: \\u002210%\\u0022,\\n          \\u0022bottom\\u0022: \\u002260\\u0022\\n        },\\n        \\u0022tooltip\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022trigger\\u0022: \\u0022axis\\u0022,\\n          \\u0022axisPointer\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022type\\u0022: \\u0022shadow\\u0022\\n          }\\n        },\\n        \\u0022dataZoom\\u0022: [\\n          {\\n            \\u0022show\\u0022: true,\\n            \\u0022type\\u0022: \\u0022inside\\u0022,\\n            \\u0022disabled\\u0022: false,\\n            \\u0022realtime\\u0022: true,\\n            \\u0022start\\u0022: 0,\\n            \\u0022end\\u0022: 100,\\n            \\u0022xAxisIndex\\u0022: [\\n              0,\\n              1\\n            ]\\n          }\\n        ],\\n        \\u0022dataset\\u0022: {\\n          \\u0022dimensions\\u0022: [\\n            \\u0022product\\u0022,\\n            \\u0022data1\\u0022,\\n            \\u0022data2\\u0022\\n          ],\\n          \\u0022source\\u0022: [\\n            {\\n              \\u0022product\\u0022: \\u0022Mon\\u0022,\\n              \\u0022data1\\u0022: 120,\\n              \\u0022data2\\u0022: 130\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Tue\\u0022,\\n              \\u0022data1\\u0022: 200,\\n              \\u0022data2\\u0022: 130\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Wed\\u0022,\\n              \\u0022data1\\u0022: 150,\\n              \\u0022data2\\u0022: 312\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Thu\\u0022,\\n              \\u0022data1\\u0022: 80,\\n              \\u0022data2\\u0022: 268\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Fri\\u0022,\\n              \\u0022data1\\u0022: 70,\\n              \\u0022data2\\u0022: 155\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Sat\\u0022,\\n              \\u0022data1\\u0022: 110,\\n              \\u0022data2\\u0022: 117\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Sun\\u0022,\\n              \\u0022data1\\u0022: 130,\\n              \\u0022data2\\u0022: 160\\n            }\\n          ]\\n        },\\n        \\u0022series\\u0022: [\\n          {\\n            \\u0022type\\u0022: \\u0022bar\\u0022,\\n            \\u0022barWidth\\u0022: 15,\\n            \\u0022label\\u0022: {\\n              \\u0022show\\u0022: true,\\n              \\u0022position\\u0022: \\u0022top\\u0022,\\n              \\u0022color\\u0022: \\u0022#fff\\u0022,\\n              \\u0022fontSize\\u0022: 12\\n            },\\n            \\u0022itemStyle\\u0022: {\\n              \\u0022color\\u0022: null,\\n              \\u0022borderRadius\\u0022: 2\\n            }\\n          },\\n          {\\n            \\u0022type\\u0022: \\u0022bar\\u0022,\\n            \\u0022barWidth\\u0022: 15,\\n            \\u0022label\\u0022: {\\n              \\u0022show\\u0022: true,\\n              \\u0022position\\u0022: \\u0022top\\u0022,\\n              \\u0022color\\u0022: \\u0022#fff\\u0022,\\n              \\u0022fontSize\\u0022: 12\\n            },\\n            \\u0022itemStyle\\u0022: {\\n              \\u0022color\\u0022: null,\\n              \\u0022borderRadius\\u0022: 2\\n            }\\n          }\\n        ],\\n        \\u0022backgroundColor\\u0022: \\u0022rgba(0,0,0,0)\\u0022\\n      }\\n    }\\n  ],\\n  \\u0022requestGlobalConfig\\u0022: {\\n    \\u0022requestDataPond\\u0022: [],\\n    \\u0022requestOriginUrl\\u0022: \\u0022\\u0022,\\n    \\u0022requestInterval\\u0022: 30,\\n    \\u0022requestIntervalUnit\\u0022: \\u0022second\\u0022,\\n    \\u0022requestParams\\u0022: {\\n      \\u0022Body\\u0022: {\\n        \\u0022form-data\\u0022: {},\\n        \\u0022x-www-form-urlencoded\\u0022: {},\\n        \\u0022json\\u0022: \\u0022\\u0022,\\n        \\u0022xml\\u0022: \\u0022\\u0022\\n      },\\n      \\u0022Header\\u0022: {},\\n      \\u0022Params\\u0022: {}\\n    }\\n  }\\n}\"', NULL);
 INSERT INTO `bigview_project` VALUES (16, '测试项目 副本 副本', '0', '2025-12-26 09:03:44.548381', '0', '0', '/uploads/bigview/15.png', '\"{\\n  \\u0022editCanvasConfig\\u0022: {\\n    \\u0022projectName\\u0022: \\u0022\\u6D4B\\u8BD5\\u9879\\u76EE\\u526F\\u672C\\u0022,\\n    \\u0022width\\u0022: 1920,\\n    \\u0022height\\u0022: 1080,\\n    \\u0022filterShow\\u0022: false,\\n    \\u0022hueRotate\\u0022: 0,\\n    \\u0022saturate\\u0022: 1,\\n    \\u0022contrast\\u0022: 1,\\n    \\u0022brightness\\u0022: 1,\\n    \\u0022opacity\\u0022: 1,\\n    \\u0022rotateZ\\u0022: 0,\\n    \\u0022rotateX\\u0022: 0,\\n    \\u0022rotateY\\u0022: 0,\\n    \\u0022skewX\\u0022: 0,\\n    \\u0022skewY\\u0022: 0,\\n    \\u0022blendMode\\u0022: \\u0022normal\\u0022,\\n    \\u0022background\\u0022: null,\\n    \\u0022backgroundImage\\u0022: null,\\n    \\u0022selectColor\\u0022: true,\\n    \\u0022chartThemeColor\\u0022: \\u0022dark\\u0022,\\n    \\u0022chartCustomThemeColorInfo\\u0022: null,\\n    \\u0022chartThemeSetting\\u0022: {\\n      \\u0022title\\u0022: {\\n        \\u0022show\\u0022: true,\\n        \\u0022textStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#BFBFBF\\u0022,\\n          \\u0022fontSize\\u0022: 18\\n        },\\n        \\u0022subtextStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#A2A2A2\\u0022,\\n          \\u0022fontSize\\u0022: 14\\n        }\\n      },\\n      \\u0022xAxis\\u0022: {\\n        \\u0022show\\u0022: true,\\n        \\u0022name\\u0022: \\u0022\\u0022,\\n        \\u0022nameGap\\u0022: 15,\\n        \\u0022nameTextStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022fontSize\\u0022: 12\\n        },\\n        \\u0022inverse\\u0022: false,\\n        \\u0022axisLabel\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022fontSize\\u0022: 12,\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022rotate\\u0022: 0\\n        },\\n        \\u0022position\\u0022: \\u0022bottom\\u0022,\\n        \\u0022axisLine\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022lineStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022width\\u0022: 1\\n          },\\n          \\u0022onZero\\u0022: true\\n        },\\n        \\u0022axisTick\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022length\\u0022: 5\\n        },\\n        \\u0022splitLine\\u0022: {\\n          \\u0022show\\u0022: false,\\n          \\u0022lineStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#484753\\u0022,\\n            \\u0022width\\u0022: 1,\\n            \\u0022type\\u0022: \\u0022solid\\u0022\\n          }\\n        },\\n        \\u0022min\\u0022: null,\\n        \\u0022max\\u0022: null\\n      },\\n      \\u0022yAxis\\u0022: {\\n        \\u0022show\\u0022: true,\\n        \\u0022name\\u0022: \\u0022\\u0022,\\n        \\u0022nameGap\\u0022: 15,\\n        \\u0022max\\u0022: null,\\n        \\u0022min\\u0022: null,\\n        \\u0022nameTextStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022fontSize\\u0022: 12\\n        },\\n        \\u0022inverse\\u0022: false,\\n        \\u0022axisLabel\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022fontSize\\u0022: 12,\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022rotate\\u0022: 0\\n        },\\n        \\u0022position\\u0022: \\u0022left\\u0022,\\n        \\u0022axisLine\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022lineStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022width\\u0022: 1\\n          },\\n          \\u0022onZero\\u0022: true\\n        },\\n        \\u0022axisTick\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022length\\u0022: 5\\n        },\\n        \\u0022splitLine\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022lineStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#484753\\u0022,\\n            \\u0022width\\u0022: 1,\\n            \\u0022type\\u0022: \\u0022solid\\u0022\\n          }\\n        }\\n      },\\n      \\u0022legend\\u0022: {\\n        \\u0022show\\u0022: false,\\n        \\u0022type\\u0022: \\u0022scroll\\u0022,\\n        \\u0022x\\u0022: \\u0022center\\u0022,\\n        \\u0022y\\u0022: \\u0022top\\u0022,\\n        \\u0022icon\\u0022: \\u0022circle\\u0022,\\n        \\u0022orient\\u0022: \\u0022horizontal\\u0022,\\n        \\u0022textStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n          \\u0022fontSize\\u0022: 18\\n        },\\n        \\u0022itemHeight\\u0022: 15,\\n        \\u0022itemWidth\\u0022: 15,\\n        \\u0022pageTextStyle\\u0022: {\\n          \\u0022color\\u0022: \\u0022#B9B8CE\\u0022\\n        }\\n      },\\n      \\u0022grid\\u0022: {\\n        \\u0022show\\u0022: false,\\n        \\u0022left\\u0022: \\u002210%\\u0022,\\n        \\u0022top\\u0022: \\u002260\\u0022,\\n        \\u0022right\\u0022: \\u002210%\\u0022,\\n        \\u0022bottom\\u0022: \\u002260\\u0022\\n      },\\n      \\u0022dataset\\u0022: null,\\n      \\u0022renderer\\u0022: \\u0022svg\\u0022\\n    },\\n    \\u0022previewScaleType\\u0022: \\u0022fit\\u0022,\\n    \\u0022previewTheme\\u0022: \\u0022dark\\u0022\\n  },\\n  \\u0022componentList\\u0022: [\\n    {\\n      \\u0022id\\u0022: \\u0022id_127dubdy2hvk00\\u0022,\\n      \\u0022isGroup\\u0022: false,\\n      \\u0022attr\\u0022: {\\n        \\u0022x\\u0022: 498,\\n        \\u0022y\\u0022: 229,\\n        \\u0022w\\u0022: 1193,\\n        \\u0022h\\u0022: 622,\\n        \\u0022offsetX\\u0022: 0,\\n        \\u0022offsetY\\u0022: 0,\\n        \\u0022zIndex\\u0022: -1\\n      },\\n      \\u0022styles\\u0022: {\\n        \\u0022filterShow\\u0022: false,\\n        \\u0022hueRotate\\u0022: 0,\\n        \\u0022saturate\\u0022: 1,\\n        \\u0022contrast\\u0022: 1,\\n        \\u0022brightness\\u0022: 1,\\n        \\u0022opacity\\u0022: 1,\\n        \\u0022rotateZ\\u0022: 0,\\n        \\u0022rotateX\\u0022: 0,\\n        \\u0022rotateY\\u0022: 0,\\n        \\u0022skewX\\u0022: 0,\\n        \\u0022skewY\\u0022: 0,\\n        \\u0022blendMode\\u0022: \\u0022normal\\u0022,\\n        \\u0022animations\\u0022: []\\n      },\\n      \\u0022preview\\u0022: {\\n        \\u0022overFlowHidden\\u0022: false\\n      },\\n      \\u0022status\\u0022: {\\n        \\u0022lock\\u0022: false,\\n        \\u0022hide\\u0022: false\\n      },\\n      \\u0022request\\u0022: {\\n        \\u0022requestDataType\\u0022: 0,\\n        \\u0022requestHttpType\\u0022: \\u0022get\\u0022,\\n        \\u0022requestUrl\\u0022: \\u0022\\u0022,\\n        \\u0022requestInterval\\u0022: null,\\n        \\u0022requestIntervalUnit\\u0022: \\u0022second\\u0022,\\n        \\u0022requestContentType\\u0022: 0,\\n        \\u0022requestParamsBodyType\\u0022: \\u0022none\\u0022,\\n        \\u0022requestSQLContent\\u0022: {\\n          \\u0022sql\\u0022: \\u0022select * from  where\\u0022,\\n          \\u0022id\\u0022: \\u0022\\u0022,\\n          \\u0022key\\u0022: \\u0022\\u0022,\\n          \\u0022aux\\u0022: {},\\n          \\u0022fileds\\u0022: []\\n        },\\n        \\u0022requestParams\\u0022: {\\n          \\u0022Body\\u0022: {\\n            \\u0022form-data\\u0022: {},\\n            \\u0022x-www-form-urlencoded\\u0022: {},\\n            \\u0022json\\u0022: \\u0022\\u0022,\\n            \\u0022xml\\u0022: \\u0022\\u0022\\n          },\\n          \\u0022Header\\u0022: {},\\n          \\u0022Params\\u0022: {}\\n        }\\n      },\\n      \\u0022filter\\u0022: null,\\n      \\u0022events\\u0022: {\\n        \\u0022baseEvent\\u0022: {\\n          \\u0022click\\u0022: null,\\n          \\u0022dblclick\\u0022: null,\\n          \\u0022change\\u0022: null,\\n          \\u0022mouseenter\\u0022: null,\\n          \\u0022mouseleave\\u0022: null\\n        },\\n        \\u0022advancedEvents\\u0022: {\\n          \\u0022vnodeMounted\\u0022: null,\\n          \\u0022vnodeBeforeMount\\u0022: null\\n        },\\n        \\u0022interactEvents\\u0022: []\\n      },\\n      \\u0022key\\u0022: \\u0022BarCommon\\u0022,\\n      \\u0022chartConfig\\u0022: {\\n        \\u0022key\\u0022: \\u0022BarCommon\\u0022,\\n        \\u0022chartKey\\u0022: \\u0022VBarCommon\\u0022,\\n        \\u0022conKey\\u0022: \\u0022VCBarCommon\\u0022,\\n        \\u0022title\\u0022: \\u0022\\u67F1\\u72B6\\u56FE\\u0022,\\n        \\u0022category\\u0022: \\u0022Bars\\u0022,\\n        \\u0022categoryName\\u0022: \\u0022\\u67F1\\u72B6\\u56FE\\u0022,\\n        \\u0022package\\u0022: \\u0022Charts\\u0022,\\n        \\u0022chartFrame\\u0022: \\u0022echarts\\u0022,\\n        \\u0022image\\u0022: \\u0022bar_x.png\\u0022\\n      },\\n      \\u0022option\\u0022: {\\n        \\u0022legend\\u0022: {\\n          \\u0022show\\u0022: false,\\n          \\u0022type\\u0022: \\u0022scroll\\u0022,\\n          \\u0022x\\u0022: \\u0022center\\u0022,\\n          \\u0022y\\u0022: \\u0022top\\u0022,\\n          \\u0022icon\\u0022: \\u0022circle\\u0022,\\n          \\u0022orient\\u0022: \\u0022horizontal\\u0022,\\n          \\u0022textStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022fontSize\\u0022: 18\\n          },\\n          \\u0022itemHeight\\u0022: 15,\\n          \\u0022itemWidth\\u0022: 15,\\n          \\u0022pageTextStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022\\n          }\\n        },\\n        \\u0022xAxis\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022name\\u0022: \\u0022\\u0022,\\n          \\u0022nameGap\\u0022: 15,\\n          \\u0022nameTextStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022fontSize\\u0022: 12\\n          },\\n          \\u0022inverse\\u0022: false,\\n          \\u0022axisLabel\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022fontSize\\u0022: 12,\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022rotate\\u0022: 0\\n          },\\n          \\u0022position\\u0022: \\u0022bottom\\u0022,\\n          \\u0022axisLine\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022lineStyle\\u0022: {\\n              \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n              \\u0022width\\u0022: 1\\n            },\\n            \\u0022onZero\\u0022: true\\n          },\\n          \\u0022axisTick\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022length\\u0022: 5\\n          },\\n          \\u0022splitLine\\u0022: {\\n            \\u0022show\\u0022: false,\\n            \\u0022lineStyle\\u0022: {\\n              \\u0022color\\u0022: \\u0022#484753\\u0022,\\n              \\u0022width\\u0022: 1,\\n              \\u0022type\\u0022: \\u0022solid\\u0022\\n            }\\n          },\\n          \\u0022min\\u0022: null,\\n          \\u0022max\\u0022: null,\\n          \\u0022type\\u0022: \\u0022category\\u0022\\n        },\\n        \\u0022yAxis\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022name\\u0022: \\u0022\\u0022,\\n          \\u0022nameGap\\u0022: 15,\\n          \\u0022max\\u0022: null,\\n          \\u0022min\\u0022: null,\\n          \\u0022nameTextStyle\\u0022: {\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022fontSize\\u0022: 12\\n          },\\n          \\u0022inverse\\u0022: false,\\n          \\u0022axisLabel\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022fontSize\\u0022: 12,\\n            \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n            \\u0022rotate\\u0022: 0\\n          },\\n          \\u0022position\\u0022: \\u0022left\\u0022,\\n          \\u0022axisLine\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022lineStyle\\u0022: {\\n              \\u0022color\\u0022: \\u0022#B9B8CE\\u0022,\\n              \\u0022width\\u0022: 1\\n            },\\n            \\u0022onZero\\u0022: true\\n          },\\n          \\u0022axisTick\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022length\\u0022: 5\\n          },\\n          \\u0022splitLine\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022lineStyle\\u0022: {\\n              \\u0022color\\u0022: \\u0022#484753\\u0022,\\n              \\u0022width\\u0022: 1,\\n              \\u0022type\\u0022: \\u0022solid\\u0022\\n            }\\n          },\\n          \\u0022type\\u0022: \\u0022value\\u0022\\n        },\\n        \\u0022grid\\u0022: {\\n          \\u0022show\\u0022: false,\\n          \\u0022left\\u0022: \\u002210%\\u0022,\\n          \\u0022top\\u0022: \\u002260\\u0022,\\n          \\u0022right\\u0022: \\u002210%\\u0022,\\n          \\u0022bottom\\u0022: \\u002260\\u0022\\n        },\\n        \\u0022tooltip\\u0022: {\\n          \\u0022show\\u0022: true,\\n          \\u0022trigger\\u0022: \\u0022axis\\u0022,\\n          \\u0022axisPointer\\u0022: {\\n            \\u0022show\\u0022: true,\\n            \\u0022type\\u0022: \\u0022shadow\\u0022\\n          }\\n        },\\n        \\u0022dataZoom\\u0022: [\\n          {\\n            \\u0022show\\u0022: true,\\n            \\u0022type\\u0022: \\u0022inside\\u0022,\\n            \\u0022disabled\\u0022: false,\\n            \\u0022realtime\\u0022: true,\\n            \\u0022start\\u0022: 0,\\n            \\u0022end\\u0022: 100,\\n            \\u0022xAxisIndex\\u0022: [\\n              0,\\n              1\\n            ]\\n          }\\n        ],\\n        \\u0022dataset\\u0022: {\\n          \\u0022dimensions\\u0022: [\\n            \\u0022product\\u0022,\\n            \\u0022data1\\u0022,\\n            \\u0022data2\\u0022\\n          ],\\n          \\u0022source\\u0022: [\\n            {\\n              \\u0022product\\u0022: \\u0022Mon\\u0022,\\n              \\u0022data1\\u0022: 120,\\n              \\u0022data2\\u0022: 130\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Tue\\u0022,\\n              \\u0022data1\\u0022: 200,\\n              \\u0022data2\\u0022: 130\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Wed\\u0022,\\n              \\u0022data1\\u0022: 150,\\n              \\u0022data2\\u0022: 312\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Thu\\u0022,\\n              \\u0022data1\\u0022: 80,\\n              \\u0022data2\\u0022: 268\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Fri\\u0022,\\n              \\u0022data1\\u0022: 70,\\n              \\u0022data2\\u0022: 155\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Sat\\u0022,\\n              \\u0022data1\\u0022: 110,\\n              \\u0022data2\\u0022: 117\\n            },\\n            {\\n              \\u0022product\\u0022: \\u0022Sun\\u0022,\\n              \\u0022data1\\u0022: 130,\\n              \\u0022data2\\u0022: 160\\n            }\\n          ]\\n        },\\n        \\u0022series\\u0022: [\\n          {\\n            \\u0022type\\u0022: \\u0022bar\\u0022,\\n            \\u0022barWidth\\u0022: 15,\\n            \\u0022label\\u0022: {\\n              \\u0022show\\u0022: true,\\n              \\u0022position\\u0022: \\u0022top\\u0022,\\n              \\u0022color\\u0022: \\u0022#fff\\u0022,\\n              \\u0022fontSize\\u0022: 12\\n            },\\n            \\u0022itemStyle\\u0022: {\\n              \\u0022color\\u0022: null,\\n              \\u0022borderRadius\\u0022: 2\\n            }\\n          },\\n          {\\n            \\u0022type\\u0022: \\u0022bar\\u0022,\\n            \\u0022barWidth\\u0022: 15,\\n            \\u0022label\\u0022: {\\n              \\u0022show\\u0022: true,\\n              \\u0022position\\u0022: \\u0022top\\u0022,\\n              \\u0022color\\u0022: \\u0022#fff\\u0022,\\n              \\u0022fontSize\\u0022: 12\\n            },\\n            \\u0022itemStyle\\u0022: {\\n              \\u0022color\\u0022: null,\\n              \\u0022borderRadius\\u0022: 2\\n            }\\n          }\\n        ],\\n        \\u0022backgroundColor\\u0022: \\u0022rgba(0,0,0,0)\\u0022\\n      }\\n    }\\n  ],\\n  \\u0022requestGlobalConfig\\u0022: {\\n    \\u0022requestDataPond\\u0022: [],\\n    \\u0022requestOriginUrl\\u0022: \\u0022\\u0022,\\n    \\u0022requestInterval\\u0022: 30,\\n    \\u0022requestIntervalUnit\\u0022: \\u0022second\\u0022,\\n    \\u0022requestParams\\u0022: {\\n      \\u0022Body\\u0022: {\\n        \\u0022form-data\\u0022: {},\\n        \\u0022x-www-form-urlencoded\\u0022: {},\\n        \\u0022json\\u0022: \\u0022\\u0022,\\n        \\u0022xml\\u0022: \\u0022\\u0022\\n      },\\n      \\u0022Header\\u0022: {},\\n      \\u0022Params\\u0022: {}\\n    }\\n  }\\n}\"', NULL);
+
+-- ----------------------------
+-- Table structure for contract_attachment
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_attachment`;
+CREATE TABLE `contract_attachment`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `contract_id` bigint NOT NULL,
+  `file_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `file_path` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `size` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `upload_date` datetime(6) NOT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_contract_attachment_contract_id`(`contract_id` ASC) USING BTREE,
+  CONSTRAINT `FK_contract_attachment_contract_main_contract_id` FOREIGN KEY (`contract_id`) REFERENCES `contract_main` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_attachment
+-- ----------------------------
+INSERT INTO `contract_attachment` VALUES (1, 1, '合同扫描件.pdf', '/uploads/contracts/scan_20251205.pdf', '2.5 MB', '2025-12-05 00:00:00.000000');
+INSERT INTO `contract_attachment` VALUES (2, 1, '技术协议.docx', '/uploads/contracts/tech_20251205.docx', '1.2 MB', '2025-12-05 00:00:00.000000');
+INSERT INTO `contract_attachment` VALUES (3, 1, '补充协议一.pdf', '/uploads/contracts/supp_20251215.pdf', '0.8 MB', '2025-12-15 00:00:00.000000');
+
+-- ----------------------------
+-- Table structure for contract_contact
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_contact`;
+CREATE TABLE `contract_contact`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `contract_id` bigint NOT NULL,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `role` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_contract_contact_contract_id`(`contract_id` ASC) USING BTREE,
+  CONSTRAINT `FK_contract_contact_contract_main_contract_id` FOREIGN KEY (`contract_id`) REFERENCES `contract_main` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_contact
+-- ----------------------------
+INSERT INTO `contract_contact` VALUES (1, 1, '李四', '客户项目经理', '13800138000', 'lisi@yytech.com');
+INSERT INTO `contract_contact` VALUES (2, 1, '王五', '财务对接人', '13900139000', 'wangwu@yytech.com');
+
+-- ----------------------------
+-- Table structure for contract_invoice
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_invoice`;
+CREATE TABLE `contract_invoice`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `contract_id` bigint NOT NULL,
+  `invoice_no` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `invoice_date` datetime(6) NOT NULL,
+  `amount` decimal(18, 2) NOT NULL,
+  `type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_contract_invoice_contract_id`(`contract_id` ASC) USING BTREE,
+  CONSTRAINT `FK_contract_invoice_contract_main_contract_id` FOREIGN KEY (`contract_id`) REFERENCES `contract_main` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_invoice
+-- ----------------------------
+INSERT INTO `contract_invoice` VALUES (1, 1, 'FP20251210001', '2025-12-10 00:00:00.000000', 20000.00, '增值税专用发票', 'issued');
+
+-- ----------------------------
+-- Table structure for contract_knowledge_category
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_knowledge_category`;
+CREATE TABLE `contract_knowledge_category`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `parent_id` bigint NULL DEFAULT NULL,
+  `sort_order` int NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`Id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_knowledge_category
+-- ----------------------------
+INSERT INTO `contract_knowledge_category` VALUES (2, '法律法规', NULL, 1, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (3, '公司制度', NULL, 2, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (4, '合同范本', NULL, 3, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (5, '风险案例', NULL, 4, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (6, '民法典', 2, 1, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (7, '招标投标法', 2, 2, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (8, '建筑法', 2, 3, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (9, '合同管理制度', 3, 1, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (10, '印章使用规范', 3, 2, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (11, '采购类', 4, 1, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (12, '销售类', 4, 2, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (13, '租赁类', 4, 3, '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_knowledge_category` VALUES (14, '测试', 15, 5, '2025-12-28 23:06:14.803225');
+INSERT INTO `contract_knowledge_category` VALUES (15, '111', 5, 1, '2025-12-28 23:06:30.250010');
+
+-- ----------------------------
+-- Table structure for contract_knowledge_file
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_knowledge_file`;
+CREATE TABLE `contract_knowledge_file`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `category_id` bigint NOT NULL,
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `file_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `size` bigint NOT NULL DEFAULT 0,
+  `uploader` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `upload_time` datetime(6) NOT NULL,
+  `content_type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 12 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_knowledge_file
+-- ----------------------------
+INSERT INTO `contract_knowledge_file` VALUES (1, 6, '中华人民共和国民法典.pdf', 'pdf', NULL, 0, '系统管理员', '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_knowledge_file` VALUES (2, 9, '合同审查要点指南.docx', 'doc', NULL, 0, '法务部', '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_knowledge_file` VALUES (3, 9, '2023年度合同台账模板.xlsx', 'xls', NULL, 0, '财务部', '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_knowledge_file` VALUES (4, 5, '常见合同风险提示.txt', 'txt', NULL, 0, '风控部', '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_knowledge_file` VALUES (5, 8, '建设工程施工合同(示范文本)1.docx', 'doc', NULL, 0, '工程部', '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_knowledge_file` VALUES (6, 2, '前端学习计划.docx', 'doc', '/uploads/knowledge/前端学习计划.docx', 0, '当前用户', '2025-12-28 23:25:29.141016', NULL);
+INSERT INTO `contract_knowledge_file` VALUES (10, 8, '前端学习计划.docx', 'doc', '/uploads/knowledge/法律法规/建筑法/前端学习计划.docx', 21119, 'admin', '2025-12-28 23:52:09.789025', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+INSERT INTO `contract_knowledge_file` VALUES (11, 8, '9.机关档案管理规定.doc', 'doc', '/uploads/knowledge/法律法规/建筑法/9.机关档案管理规定.doc', 281088, 'admin', '2025-12-29 00:24:33.034304', 'application/msword');
+
+-- ----------------------------
+-- Table structure for contract_main
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_main`;
+CREATE TABLE `contract_main`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `contract_no` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `contract_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `partner_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `sign_date` datetime(6) NULL DEFAULT NULL,
+  `start_date` datetime(6) NULL DEFAULT NULL,
+  `end_date` datetime(6) NULL DEFAULT NULL,
+  `manager` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `total_amount` decimal(18, 2) NOT NULL,
+  `paid_amount` decimal(18, 2) NOT NULL,
+  `invoiced_amount` decimal(18, 2) NOT NULL,
+  `progress` int NOT NULL,
+  `currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `payment_method` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `tax_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `latest_transaction_date` datetime(6) NULL DEFAULT NULL,
+  `files` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 8 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_main
+-- ----------------------------
+INSERT INTO `contract_main` VALUES (1, 'XS2025122001', '企业云服务年度订阅', 'sales', 'YY科技股份有限公司', '2025-12-05 00:00:00.000000', NULL, NULL, 'Sales Manager', 50000.00, 20000.00, 0.00, 0, 'CNY', NULL, NULL, 'completed', '按季度付款', '2025-12-10 00:00:00.000000', NULL, '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_main` VALUES (2, 'XS2025121503', 'CRM系统维护服务', 'sales', 'BB网络科技有限公司', '2025-12-15 00:00:00.000000', NULL, NULL, 'Sales Manager', 12000.00, 0.00, 0.00, 0, 'CNY', NULL, NULL, 'executing', '首付款未到', NULL, NULL, '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_main` VALUES (3, 'XS2025112009', '数据中心扩容硬件销售', 'sales', 'CC数据中心', '2025-11-20 00:00:00.000000', NULL, NULL, 'Sales Manager', 450000.00, 450000.00, 0.00, 0, 'CNY', NULL, NULL, 'completed', '已全额到账', '2025-11-25 00:00:00.000000', NULL, '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_main` VALUES (4, 'CG2025120101', '智慧城市二期项目采购合同', 'purchase', 'XX市政集团', '2025-12-01 00:00:00.000000', NULL, NULL, 'Purchase Manager', 1200000.00, 400000.00, 0.00, 0, 'CNY', NULL, NULL, 'executing', '预付款已付', '2025-12-05 00:00:00.000000', NULL, '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_main` VALUES (5, 'CG2025121008', '办公设备采购协议', 'purchase', 'AA贸易公司', '2025-12-10 00:00:00.000000', NULL, NULL, 'Purchase Manager', 120000.00, 12000.00, 0.00, 0, 'CNY', NULL, NULL, 'executing', '定金已付', '2025-12-11 00:00:00.000000', NULL, '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_main` VALUES (6, 'CG2025111505', '服务器集群采购', 'purchase', 'Dell供应商', '2025-11-15 00:00:00.000000', NULL, NULL, 'Purchase Manager', 500000.00, 500000.00, 0.00, 0, 'CNY', NULL, NULL, 'completed', '设备已验收', '2025-11-20 00:00:00.000000', NULL, '2025-12-28 21:59:24.534003', NULL);
+INSERT INTO `contract_main` VALUES (7, 'CNT-20251228224522', '综合信息管理系统开发服务合同', 'sales', 'cust001', '2025-12-28 00:00:00.000000', NULL, NULL, '张三', 1000000.00, 0.00, 0.00, 0, 'CNY', 'bank', '', 'executing', '', NULL, '[]', '2025-12-28 22:45:22.542600', NULL);
+
+-- ----------------------------
+-- Table structure for contract_payment_plan
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_payment_plan`;
+CREATE TABLE `contract_payment_plan`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `contract_id` bigint NOT NULL,
+  `phase` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `due_date` datetime(6) NULL DEFAULT NULL,
+  `amount` decimal(18, 2) NOT NULL,
+  `condition` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_contract_payment_plan_contract_id`(`contract_id` ASC) USING BTREE,
+  CONSTRAINT `FK_contract_payment_plan_contract_main_contract_id` FOREIGN KEY (`contract_id`) REFERENCES `contract_main` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_payment_plan
+-- ----------------------------
+INSERT INTO `contract_payment_plan` VALUES (1, 1, '第一期', '2025-12-10 00:00:00.000000', 20000.00, '合同签订后5个工作日', 'paid');
+INSERT INTO `contract_payment_plan` VALUES (2, 1, '第二期', '2026-03-10 00:00:00.000000', 15000.00, '项目中期验收', 'pending');
+INSERT INTO `contract_payment_plan` VALUES (3, 1, '第三期', '2026-06-10 00:00:00.000000', 15000.00, '项目终验', 'pending');
+
+-- ----------------------------
+-- Table structure for contract_payment_record
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_payment_record`;
+CREATE TABLE `contract_payment_record`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `contract_id` bigint NOT NULL,
+  `payment_date` datetime(6) NOT NULL,
+  `amount` decimal(18, 2) NOT NULL,
+  `method` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `operator` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `remark` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_contract_payment_record_contract_id`(`contract_id` ASC) USING BTREE,
+  CONSTRAINT `FK_contract_payment_record_contract_main_contract_id` FOREIGN KEY (`contract_id`) REFERENCES `contract_main` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_payment_record
+-- ----------------------------
+INSERT INTO `contract_payment_record` VALUES (1, 1, '2025-12-10 00:00:00.000000', 20000.00, '银行转账', '张三', '首付款');
+
+-- ----------------------------
+-- Table structure for contract_stat
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_stat`;
+CREATE TABLE `contract_stat`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `period_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `period_key` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `stat_date` datetime(6) NOT NULL,
+  `total_contracts` int NOT NULL,
+  `total_amount` decimal(18, 2) NOT NULL,
+  `received_amount` decimal(18, 2) NOT NULL,
+  `invoiced_amount` decimal(18, 2) NOT NULL,
+  `pending_invoice_amount` decimal(18, 2) NOT NULL,
+  `sales_count` int NOT NULL,
+  `purchase_count` int NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `amount_completion_rate` decimal(5, 2) NOT NULL DEFAULT 0.00,
+  `received_rate` decimal(5, 2) NOT NULL DEFAULT 0.00,
+  `total_contracts_growth` decimal(5, 2) NOT NULL DEFAULT 0.00,
+  PRIMARY KEY (`Id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_stat
+-- ----------------------------
+INSERT INTO `contract_stat` VALUES (1, 'Year', '', '2025-12-28 21:59:24.534003', 158, 25800000.00, 18500000.00, 12005000.00, 450000.00, 0, 0, '2025-12-28 21:59:24.534003', 78.00, 71.70, 12.50);
+INSERT INTO `contract_stat` VALUES (2, 'Quarter', '', '2025-12-28 21:59:24.534003', 45, 8500000.00, 5000000.00, 4000000.00, 150000.00, 0, 0, '2025-12-28 21:59:24.534003', 60.00, 58.80, 5.20);
+INSERT INTO `contract_stat` VALUES (3, 'Month', '', '2025-12-28 21:59:24.534003', 12, 2500000.00, 800000.00, 700000.00, 50000.00, 0, 0, '2025-12-28 21:59:24.534003', 30.00, 32.00, 2.00);
+
+-- ----------------------------
+-- Table structure for contract_template
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_template`;
+CREATE TABLE `contract_template`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `file_path` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `file_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of contract_template
+-- ----------------------------
+INSERT INTO `contract_template` VALUES (1, '标准产品销售合同', 'sales', '适用于一般标准产品的销售业务', NULL, 'standard_sales_contract_v1.docx', 'active', '2025-12-28 21:59:24.534003', '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_template` VALUES (2, '原材料采购框架协议', 'purchase', '适用于长期原材料采购合作', NULL, 'material_purchase_agreement.pdf', 'active', '2025-12-28 21:59:24.534003', '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_template` VALUES (3, '技术服务合同', 'service', '适用于软件开发及技术支持服务', NULL, 'tech_service_contract.docx', 'active', '2025-12-28 21:59:24.534003', '2025-12-28 21:59:24.534003');
+INSERT INTO `contract_template` VALUES (4, '员工劳动合同（标准版）', 'labor', '全职员工标准劳动合同', NULL, 'employee_labor_contract.docx', 'active', '2025-12-28 21:59:24.534003', '2025-12-28 21:59:24.534003');
 
 -- ----------------------------
 -- Table structure for data_source_connection
@@ -312,6 +647,341 @@ CREATE TABLE `frm_definition`  (
 INSERT INTO `frm_definition` VALUES (1, 4, '测试', NULL, '测试表单', '[{\"type\":\"input\",\"label\":\"单行文本1\",\"field\":\"input_1766720161571\",\"required\":true,\"placeholder\":\"\",\"span\":24,\"showLabel\":true,\"hidden\":false,\"id\":\"1766720161571_1\",\"columns\":[]},{\"type\":\"subtable\",\"label\":\"子表1\",\"field\":\"subtable_1766720186970\",\"required\":false,\"span\":24,\"columns\":[{\"label\":\"列1\",\"field\":\"col_1\",\"type\":\"input\",\"widthType\":\"px\",\"id\":\"1766720186971_2\"},{\"type\":\"input\",\"label\":\"单行文本2\",\"field\":\"input_1766720190508\",\"required\":false,\"placeholder\":\"\",\"span\":24,\"showLabel\":true,\"hidden\":false,\"id\":\"1766720190508_4\",\"widthType\":\"px\"},{\"label\":\"列2\",\"field\":\"col_2\",\"type\":\"input\",\"widthType\":\"px\",\"id\":\"1766720186971_3\"}],\"showRowNumber\":true,\"showSummary\":false,\"showLabel\":true,\"hidden\":false,\"id\":\"1766720186970_1\"},{\"type\":\"input\",\"label\":\"单行文本3\",\"field\":\"input_1766720195038\",\"required\":false,\"placeholder\":\"\",\"span\":24,\"showLabel\":true,\"hidden\":false,\"id\":\"1766720195038_5\",\"columns\":[]}]', 1, '2025-12-26 11:19:46.632341', '2025-12-26 22:00:20.746319', 1, 1, 1, 1, '2', '1,3', '1,3');
 
 -- ----------------------------
+-- Table structure for page_categories
+-- ----------------------------
+DROP TABLE IF EXISTS `page_categories`;
+CREATE TABLE `page_categories`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `Name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `ParentId` bigint NULL DEFAULT NULL,
+  `SortOrder` int NOT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_page_categories_ParentId`(`ParentId` ASC) USING BTREE,
+  CONSTRAINT `FK_page_categories_page_categories_ParentId` FOREIGN KEY (`ParentId`) REFERENCES `page_categories` (`Id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of page_categories
+-- ----------------------------
+INSERT INTO `page_categories` VALUES (1, '测试', 2, 2);
+INSERT INTO `page_categories` VALUES (2, '人事管理', NULL, 2);
+INSERT INTO `page_categories` VALUES (3, '招聘管理', 2, 1);
+
+-- ----------------------------
+-- Table structure for page_definitions
+-- ----------------------------
+DROP TABLE IF EXISTS `page_definitions`;
+CREATE TABLE `page_definitions`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `Name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `CategoryId` bigint NULL DEFAULT NULL,
+  `Code` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `Config` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `ApiBindings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `Description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `CreatedAt` datetime(6) NOT NULL,
+  `UpdatedAt` datetime(6) NOT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_page_definitions_CategoryId`(`CategoryId` ASC) USING BTREE,
+  CONSTRAINT `FK_page_definitions_page_categories_CategoryId` FOREIGN KEY (`CategoryId`) REFERENCES `page_categories` (`Id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of page_definitions
+-- ----------------------------
+INSERT INTO `page_definitions` VALUES (1, '招聘需求列表', 3, 'import { ref, reactive, onMounted } from \'vue\';\nimport { message } from \'ant-design-vue\';\n\n// 查询条件\nconst query = reactive({\n  keyword: \'\',\n  status: undefined,\n  page: 1,\n  pageSize: 10\n});\n\n// 分页配置\nconst pagination = reactive({\n  current: 1,\n  pageSize: 10,\n  total: 0,\n  showSizeChanger: true,\n  pageSizeOptions: [\'10\', \'20\', \'50\', \'100\'],\n  showTotal: (total) => `共 ${total} 条数据`\n});\n\n// 表格数据\nconst tableData = ref([]);\nconst loading = ref(false);\n\n// 方法\nconst handleSearch = () => {\n  loading.value = true;\n  message.info(\'执行查询: \' + JSON.stringify(query));\n  // 模拟API调用\n  setTimeout(() => {\n    // 模拟总数\n    const total = 100;\n    pagination.total = total;\n    \n    tableData.value = Array.from({ length: query.pageSize }).map((_, i) => ({\n      id: (query.page - 1) * query.pageSize + i + 1,\n      name: \'测试数据 \' + ((query.page - 1) * query.pageSize + i + 1),\n      status: i % 2 === 0 ? \'启用\' : \'禁用\',\n      createTime: \'2023-12-\' + (i + 1).toString().padStart(2, \'0\')\n    }));\n    loading.value = false;\n  }, 500);\n};\n\nconst handleTableChange = (pag) => {\n  pagination.current = pag.current;\n  pagination.pageSize = pag.pageSize;\n  query.page = pag.current;\n  query.pageSize = pag.pageSize;\n  handleSearch();\n};\n\nconst handleReset = () => {\n  query.keyword = \'\';\n  query.status = undefined;\n  query.page = 1;\n  handleSearch();\n};\n\nconst handleAdd = () => {\n  message.success(\'点击新增\');\n};\n\nconst handleEdit = () => {\n  message.success(\'点击修改\');\n};\n\nconst handleBatchDelete = () => {\n  message.error(\'点击批量删除\');\n};\n\nconst handleImport = () => {\n  message.success(\'点击导入\');\n};\n\nconst handleExport = () => {\n  message.success(\'点击导出\');\n};\n\nconst handleRefresh = () => {\n  handleSearch();\n};\n\nonMounted(() => {\n  handleSearch();\n});', '{\"root\":{\"id\":\"root\",\"type\":\"div\",\"props\":{},\"style\":{\"padding\":\"24px\",\"height\":\"100%\",\"display\":\"flex\",\"flexDirection\":\"column\",\"background\":\"#f0f2f5\"},\"events\":{},\"children\":[{\"id\":\"comp_1z0edrarb\",\"type\":\"ACard\",\"props\":{\"bordered\":false},\"style\":{\"marginBottom\":\"16px\",\"flexShrink\":\"0\"},\"events\":{},\"children\":[{\"id\":\"comp_l2mworood\",\"type\":\"AForm\",\"props\":{\"layout\":\"inline\"},\"style\":{\"marginBottom\":\"16px\"},\"events\":{},\"children\":[{\"id\":\"comp_5kgkrkj58\",\"type\":\"AFormItem\",\"props\":{\"label\":\"关键词\"},\"style\":{},\"events\":{},\"children\":[{\"id\":\"comp_0ko9d18l0\",\"type\":\"AInput\",\"props\":{\"placeholder\":\"请输入搜索关键词\",\"allowClear\":true},\"model\":\"query.keyword\",\"style\":{\"width\":\"200px\"},\"children\":[],\"events\":{}}]},{\"id\":\"comp_fq1x2qafs\",\"type\":\"AFormItem\",\"props\":{\"label\":\"状态\"},\"style\":{},\"events\":{},\"children\":[{\"id\":\"comp_4s8jtlfdr\",\"type\":\"ASelect\",\"props\":{\"placeholder\":\"请选择状态\",\"allowClear\":true,\"options\":[{\"label\":\"启用\",\"value\":\"1\"},{\"label\":\"禁用\",\"value\":\"0\"}]},\"model\":\"query.status\",\"style\":{\"width\":\"150px\"},\"children\":[],\"events\":{}}]},{\"id\":\"comp_yo17tzc9a\",\"type\":\"AFormItem\",\"props\":{},\"style\":{},\"events\":{},\"children\":[{\"id\":\"comp_iskef4hn6\",\"type\":\"ASpace\",\"props\":{},\"style\":{},\"events\":{},\"children\":[{\"id\":\"comp_e8lh3ebf6\",\"type\":\"AButton\",\"props\":{\"type\":\"primary\"},\"text\":\"查询\",\"events\":{\"click\":\"handleSearch\"},\"style\":{},\"children\":[]},{\"id\":\"comp_g6n3s2fmp\",\"type\":\"AButton\",\"props\":{},\"text\":\"重置\",\"events\":{\"click\":\"handleReset\"},\"style\":{},\"children\":[]}]}]}]},{\"id\":\"comp_ragn9bons\",\"type\":\"ASpace\",\"props\":{},\"style\":{\"width\":\"100%\",\"justifyContent\":\"space-between\"},\"events\":{},\"children\":[{\"id\":\"comp_z41j5665c\",\"type\":\"ASpace\",\"props\":{},\"style\":{},\"events\":{},\"children\":[{\"id\":\"comp_h7tg998rc\",\"type\":\"AButton\",\"props\":{\"type\":\"primary\"},\"text\":\"新增\",\"events\":{\"click\":\"handleAdd\"},\"style\":{},\"children\":[]},{\"id\":\"comp_zqjz3bdmo\",\"type\":\"AButton\",\"props\":{},\"text\":\"修改\",\"events\":{\"click\":\"handleEdit\"},\"style\":{},\"children\":[]},{\"id\":\"comp_69vrb654d\",\"type\":\"AButton\",\"props\":{\"danger\":true},\"text\":\"批量删除\",\"events\":{\"click\":\"handleBatchDelete\"},\"style\":{},\"children\":[]},{\"id\":\"comp_eatmh2mz5\",\"type\":\"AButton\",\"props\":{},\"text\":\"导入\",\"events\":{\"click\":\"handleImport\"},\"style\":{},\"children\":[]},{\"id\":\"comp_bik3e2icz\",\"type\":\"AButton\",\"props\":{},\"text\":\"导出\",\"events\":{\"click\":\"handleExport\"},\"style\":{},\"children\":[]}]},{\"id\":\"comp_8mihoyzt8\",\"type\":\"ASpace\",\"props\":{},\"style\":{},\"events\":{},\"children\":[{\"id\":\"comp_028w63q90\",\"type\":\"AButton\",\"props\":{},\"text\":\"刷新\",\"events\":{\"click\":\"handleRefresh\"},\"style\":{},\"children\":[]}]}]}]},{\"id\":\"comp_zbcnq48v9\",\"type\":\"ACard\",\"props\":{\"bordered\":false,\"bodyStyle\":{\"padding\":\"0\",\"flex\":\"1\",\"display\":\"flex\",\"flexDirection\":\"column\",\"overflow\":\"hidden\"}},\"style\":{\"flex\":\"1\",\"overflow\":\"hidden\",\"display\":\"flex\",\"flexDirection\":\"column\"},\"events\":{},\"children\":[{\"id\":\"comp_2n2srde9y\",\"type\":\"ATable\",\"props\":{\"columns\":[{\"title\":\"ID\",\"dataIndex\":\"id\",\"width\":80},{\"title\":\"名称\",\"dataIndex\":\"name\"},{\"title\":\"状态\",\"dataIndex\":\"status\"},{\"title\":\"创建时间\",\"dataIndex\":\"createTime\"},{\"title\":\"操作\",\"key\":\"action\",\"width\":200,\"fixed\":\"right\"}],\"dataSource\":[],\"scroll\":{\"y\":\"calc(100vh - 250px)\"},\"pagination\":{\"position\":[\"bottomRight\"],\"showSizeChanger\":true,\"showQuickJumper\":true,\"pageSize\":10,\"pageSizeOptions\":[\"10\",\"20\",\"50\",\"100\"],\"total\":100},\"rowSelection\":{\"type\":\"checkbox\"},\"rowKey\":\"id\"},\"model\":\"tableData\",\"style\":{\"flex\":\"1\"},\"events\":{\"change\":\"handleTableChange\"},\"children\":[]}]}]},\"script\":\"import { ref, reactive, onMounted } from \'vue\';\\nimport { message } from \'ant-design-vue\';\\n\\n// 查询条件\\nconst query = reactive({\\n  keyword: \'\',\\n  status: undefined,\\n  page: 1,\\n  pageSize: 10\\n});\\n\\n// 分页配置\\nconst pagination = reactive({\\n  current: 1,\\n  pageSize: 10,\\n  total: 0,\\n  showSizeChanger: true,\\n  pageSizeOptions: [\'10\', \'20\', \'50\', \'100\'],\\n  showTotal: (total) => `共 ${total} 条数据`\\n});\\n\\n// 表格数据\\nconst tableData = ref([]);\\nconst loading = ref(false);\\n\\n// 方法\\nconst handleSearch = () => {\\n  loading.value = true;\\n  message.info(\'执行查询: \' + JSON.stringify(query));\\n  // 模拟API调用\\n  setTimeout(() => {\\n    // 模拟总数\\n    const total = 100;\\n    pagination.total = total;\\n    \\n    tableData.value = Array.from({ length: query.pageSize }).map((_, i) => ({\\n      id: (query.page - 1) * query.pageSize + i + 1,\\n      name: \'测试数据 \' + ((query.page - 1) * query.pageSize + i + 1),\\n      status: i % 2 === 0 ? \'启用\' : \'禁用\',\\n      createTime: \'2023-12-\' + (i + 1).toString().padStart(2, \'0\')\\n    }));\\n    loading.value = false;\\n  }, 500);\\n};\\n\\nconst handleTableChange = (pag) => {\\n  pagination.current = pag.current;\\n  pagination.pageSize = pag.pageSize;\\n  query.page = pag.current;\\n  query.pageSize = pag.pageSize;\\n  handleSearch();\\n};\\n\\nconst handleReset = () => {\\n  query.keyword = \'\';\\n  query.status = undefined;\\n  query.page = 1;\\n  handleSearch();\\n};\\n\\nconst handleAdd = () => {\\n  message.success(\'点击新增\');\\n};\\n\\nconst handleEdit = () => {\\n  message.success(\'点击修改\');\\n};\\n\\nconst handleBatchDelete = () => {\\n  message.error(\'点击批量删除\');\\n};\\n\\nconst handleImport = () => {\\n  message.success(\'点击导入\');\\n};\\n\\nconst handleExport = () => {\\n  message.success(\'点击导出\');\\n};\\n\\nconst handleRefresh = () => {\\n  handleSearch();\\n};\\n\\nonMounted(() => {\\n  handleSearch();\\n});\",\"css\":\"\"}', '[]', '招聘需求列表页', '2025-12-28 17:49:54.074864', '2025-12-28 21:25:33.040162');
+
+-- ----------------------------
+-- Table structure for project_attachments
+-- ----------------------------
+DROP TABLE IF EXISTS `project_attachments`;
+CREATE TABLE `project_attachments`  (
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `taskId` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `project_code` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `url` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `type` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `uploadDate` datetime(6) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of project_attachments
+-- ----------------------------
+INSERT INTO `project_attachments` VALUES ('a1', 't1_1', 'PRJ-2024-001', '项目章程.pdf', '#', 'pdf', '2023-12-23 00:00:00.000000');
+INSERT INTO `project_attachments` VALUES ('a1767202033775', 't1766980097523', 'crrc-2025', '基于数据分析平台接口开发技术研究技术条件20251231.docx', '/pm/project/crrc-2025/t1766980097523/%E5%9F%BA%E4%BA%8E%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%8F%A3%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%A0%94%E7%A9%B6%E6%8A%80%E6%9C%AF%E6%9D%A1%E4%BB%B620251231.docx', 'file', '2025-12-31 00:00:00.000000');
+INSERT INTO `project_attachments` VALUES ('a2', 't1_1', 'PRJ-2024-001', '需求规格说明书_v1.0.docx', '#', 'doc', '2023-12-26 00:00:00.000000');
+INSERT INTO `project_attachments` VALUES ('a3', 't1_2', 'PRJ-2024-001', '总体方案汇报.pptx', '#', 'ppt', '2024-01-10 00:00:00.000000');
+
+-- ----------------------------
+-- Table structure for project_info
+-- ----------------------------
+DROP TABLE IF EXISTS `project_info`;
+CREATE TABLE `project_info`  (
+  `code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `type` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `manager` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `planned_start_date` datetime(6) NULL DEFAULT NULL,
+  `planned_end_date` datetime(6) NULL DEFAULT NULL,
+  PRIMARY KEY (`code`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of project_info
+-- ----------------------------
+INSERT INTO `project_info` VALUES ('1111', '地铁车辆设计项目', NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `project_info` VALUES ('crrc-2025', '多维数据分析平台2025', '通用', '', '', '2025-11-03 00:00:00.000000', NULL);
+INSERT INTO `project_info` VALUES ('PRJ-2024-001', '地铁车辆设计项目', '车辆工程', '地铁车辆全生命周期设计项目', '张三', '2023-12-22 00:00:00.000000', '2024-12-21 00:00:00.000000');
+
+-- ----------------------------
+-- Table structure for project_phases
+-- ----------------------------
+DROP TABLE IF EXISTS `project_phases`;
+CREATE TABLE `project_phases`  (
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `project_code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `color` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  PRIMARY KEY (`id`, `project_code`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of project_phases
+-- ----------------------------
+INSERT INTO `project_phases` VALUES ('p1', '1111', '概念设计阶段', '#E3F2FD');
+INSERT INTO `project_phases` VALUES ('p1', 'crrc-2025', '2026-01', '#E3F2FD');
+INSERT INTO `project_phases` VALUES ('p1', 'PRJ-2024-001', '概念设计阶段', '#E3F2FD');
+INSERT INTO `project_phases` VALUES ('p1766984086654', 'crrc-2025', '2026-02', '#e1feef');
+INSERT INTO `project_phases` VALUES ('p1766984103220', 'crrc-2025', '2026-03', '#F5F5F5');
+INSERT INTO `project_phases` VALUES ('p1766984110676', 'crrc-2025', '2026-04', '#F5F5F5');
+INSERT INTO `project_phases` VALUES ('p1766984123106', 'crrc-2025', '2026-05', '#F5F5F5');
+INSERT INTO `project_phases` VALUES ('p1766984133676', 'crrc-2025', '2026-06', '#F5F5F5');
+INSERT INTO `project_phases` VALUES ('p2', '1111', '方案设计阶段', '#E8F5E9');
+INSERT INTO `project_phases` VALUES ('p2', 'PRJ-2024-001', '方案设计阶段', '#E8F5E9');
+INSERT INTO `project_phases` VALUES ('p3', '1111', '详细设计阶段', '#FFF3E0');
+INSERT INTO `project_phases` VALUES ('p3', 'PRJ-2024-001', '详细设计阶段', '#FFF3E0');
+INSERT INTO `project_phases` VALUES ('p4', '1111', '设计验证阶段', '#F3E5F5');
+INSERT INTO `project_phases` VALUES ('p4', 'PRJ-2024-001', '设计验证阶段', '#F3E5F5');
+
+-- ----------------------------
+-- Table structure for project_swimlanes
+-- ----------------------------
+DROP TABLE IF EXISTS `project_swimlanes`;
+CREATE TABLE `project_swimlanes`  (
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `project_code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `color` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  PRIMARY KEY (`id`, `project_code`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of project_swimlanes
+-- ----------------------------
+INSERT INTO `project_swimlanes` VALUES ('sl1', '1111', '项目管理', '#F5F5F5');
+INSERT INTO `project_swimlanes` VALUES ('sl1', 'crrc-2025', '任务', '#3d4a8a');
+INSERT INTO `project_swimlanes` VALUES ('sl1', 'PRJ-2024-001', '项目管理', '#F5F5F5');
+INSERT INTO `project_swimlanes` VALUES ('sl1767086258904', 'crrc-2025', 'bug', '#ffcccc');
+INSERT INTO `project_swimlanes` VALUES ('sl1767144942000', 'crrc-2025', '后端', '#46eca4');
+INSERT INTO `project_swimlanes` VALUES ('sl1767144988697', 'crrc-2025', '前端', '#b8f3ff');
+INSERT INTO `project_swimlanes` VALUES ('sl1767146103244', 'crrc-2025', '大屏', '#62bcba');
+INSERT INTO `project_swimlanes` VALUES ('sl2', '1111', '机械设计专业', '#E1F5FE');
+INSERT INTO `project_swimlanes` VALUES ('sl2', 'PRJ-2024-001', '机械设计专业', '#E1F5FE');
+INSERT INTO `project_swimlanes` VALUES ('sl3', '1111', '电气设计专业', '#FFF3E0');
+INSERT INTO `project_swimlanes` VALUES ('sl3', 'PRJ-2024-001', '电气设计专业', '#FFF3E0');
+INSERT INTO `project_swimlanes` VALUES ('sl4', '1111', '软件与控制专业', '#E8F5E9');
+INSERT INTO `project_swimlanes` VALUES ('sl4', 'PRJ-2024-001', '软件与控制专业', '#E8F5E9');
+INSERT INTO `project_swimlanes` VALUES ('sl5', '1111', '工业设计专业', '#F3E5F5');
+INSERT INTO `project_swimlanes` VALUES ('sl5', 'PRJ-2024-001', '工业设计专业', '#F3E5F5');
+INSERT INTO `project_swimlanes` VALUES ('sl6', '1111', '系统集成与验证', '#EFEBE9');
+INSERT INTO `project_swimlanes` VALUES ('sl6', 'PRJ-2024-001', '系统集成与验证', '#EFEBE9');
+INSERT INTO `project_swimlanes` VALUES ('sl7', '1111', '质量管理', '#FFEBEE');
+INSERT INTO `project_swimlanes` VALUES ('sl7', 'PRJ-2024-001', '质量管理', '#FFEBEE');
+
+-- ----------------------------
+-- Table structure for project_task_dependencies
+-- ----------------------------
+DROP TABLE IF EXISTS `project_task_dependencies`;
+CREATE TABLE `project_task_dependencies`  (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `taskId` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `dependencyId` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `project_code` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `type` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `sourcePort` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `targetPort` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `controlPoints` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `controlPointCount` int NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 5443 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of project_task_dependencies
+-- ----------------------------
+INSERT INTO `project_task_dependencies` VALUES (4450, 't1_2', 't1_1', 'PRJ-2024-001', 'curve', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4451, 't1_3', 't1_2', 'PRJ-2024-001', 'polyline', 'top', 'bottom', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4452, 't2_1', 't1_3', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4453, 't2_10', 't1_3', 'PRJ-2024-001', 'curve', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4454, 't2_2', 't1_3', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4455, 't2_3', 't1_3', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4456, 't2_4', 't1_3', 'PRJ-2024-001', 'curve', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4457, 't2_5', 't1_3', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4458, 't2_6', 't1_3', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4459, 't2_7', 't1_3', 'PRJ-2024-001', 'curve', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4460, 't2_8', 't1_3', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4461, 't2_9', 't1_3', 'PRJ-2024-001', 'curve', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4462, 't3_1', 't2_1', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4463, 't3_10', 't2_1', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4464, 't3_10', 't2_4', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4465, 't3_11', 't3_1', 'PRJ-2024-001', 'curve', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4466, 't3_11', 't3_4', 'PRJ-2024-001', 'curve', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4467, 't3_2', 't2_2', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4468, 't3_3', 't2_10', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4469, 't3_4', 't2_4', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4470, 't3_5', 't2_6', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4471, 't3_6', 't2_6', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4472, 't3_7', 't2_8', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4473, 't3_8', 't2_8', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4474, 't3_9', 't2_7', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4475, 't4_1', 't3_1', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4476, 't4_1', 't3_4', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4477, 't4_2', 't4_1', 'PRJ-2024-001', 'curve', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4478, 't4_3', 't4_1', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4479, 't4_4', 't4_3', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4480, 't4_5', 't4_4', 'PRJ-2024-001', 'curve', 'left', 'right', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (4481, 't4_6', 't4_5', 'PRJ-2024-001', 'curve', 'top', 'bottom', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5422, 't1_3', 't1_2', '1111', 'polyline', 'top', 'bottom', '[{\"x\":0,\"y\":-20},{\"x\":2,\"y\":-357},{\"x\":72,\"y\":-196},{\"x\":155,\"y\":-450}]', NULL);
+INSERT INTO `project_task_dependencies` VALUES (5423, 't1765987308084', 't2_9', '1111', 'polyline', 'left', 'right', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5424, 't2_1', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5425, 't2_10', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5426, 't2_2', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5427, 't2_3', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5428, 't2_4', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5429, 't2_5', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5430, 't2_6', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5431, 't2_7', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5432, 't2_8', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5433, 't2_9', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5434, 't3_10', 't2_1', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5435, 't3_10', 't2_4', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5436, 't3_11', 't3_1', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5437, 't3_11', 't3_4', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5438, 't3_3', 't2_10', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5439, 't4_1', 't3_1', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5440, 't4_1', 't3_4', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5441, 't4_5', 't4_4', '1111', 'polyline', 'left', 'right', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (5442, 't4_6', 't4_5', '1111', 'polyline', 'top', 'bottom', NULL, 0);
+
+-- ----------------------------
+-- Table structure for project_tasks
+-- ----------------------------
+DROP TABLE IF EXISTS `project_tasks`;
+CREATE TABLE `project_tasks`  (
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `project_code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `phaseId` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `swimlaneId` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `status` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `progress` int NOT NULL,
+  `owner` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `startDate` datetime(6) NULL DEFAULT NULL,
+  `endDate` datetime(6) NULL DEFAULT NULL,
+  `type` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `x` float NOT NULL,
+  `y` float NOT NULL,
+  `startColor` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `endColor` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
+  `width` float NOT NULL,
+  PRIMARY KEY (`id`, `project_code`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of project_tasks
+-- ----------------------------
+INSERT INTO `project_tasks` VALUES ('t1_1', '1111', '项目启动与需求分析', 'p1', 'sl1', 'completed', 100, '项目经理', '2023-12-30 00:00:00.000000', '2024-01-08 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_1', 'PRJ-2024-001', '项目启动与需求分析', 'p1', 'sl1', 'completed', 100, '项目经理', '2023-12-22 00:00:00.000000', '2024-01-01 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_2', '1111', '总体方案设计', 'p1', 'sl6', 'completed', 100, '总工', '2024-01-09 00:00:00.000000', '2024-01-23 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_2', 'PRJ-2024-001', '总体方案设计', 'p1', 'sl6', 'completed', 100, '总工', '2024-01-01 00:00:00.000000', '2024-01-09 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_3', '1111', '概念评审与冻结', 'p1', 'sl1', 'completed', 100, '项目经理', '2024-01-24 00:00:00.000000', '2024-01-24 00:00:00.000000', 'milestone', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_3', 'PRJ-2024-001', '概念评审与冻结', 'p1', 'sl1', 'completed', 64, '项目经理', '2024-01-15 00:00:00.000000', '2024-01-19 00:00:00.000000', 'milestone', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1765987308084', '1111', '新任务', 'p1', 'sl7', 'in_progress', 45, '我', '2025-12-15 00:00:00.000000', '2025-12-15 00:00:00.000000', 'task', NULL, 68, 13, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1766980097523', 'crrc-2025', '项目需求-需求文件', 'p1', 'sl1', 'completed', 100, '饶荣', '2025-11-04 00:00:00.000000', '2025-11-09 00:00:00.000000', 'task', '', 60, 15, '#ffffff', '#B3E5FC', 140);
+INSERT INTO `project_tasks` VALUES ('t1767059425440', 'crrc-2025', '文件数据自定义裁剪', 'p1', 'sl1767146103244', 'pending', 0, '黄亮', '2025-10-29 00:00:00.000000', '2025-11-03 00:00:00.000000', 'task', '修改自定义高级地图', 130, 23.2085, '#F3E5F5', '#ECA9F8FF', 144.514);
+INSERT INTO `project_tasks` VALUES ('t1767059614944', 'crrc-2025', '数据展示由后端生成图片', 'p1766984086654', 'sl1767146103244', 'pending', 0, '待定', '2025-11-05 00:00:00.000000', '2025-11-09 00:00:00.000000', 'task', '', 106.57, 23.2085, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767059627136', 'crrc-2025', '算子添加自定义配置项', 'p1766984133676', 'sl1767144942000', 'pending', 0, '', '2025-11-02 00:00:00.000000', '2025-11-08 00:00:00.000000', 'task', '', 43.5673, 22.988, '#ffffff', '#B3E5FC', 140);
+INSERT INTO `project_tasks` VALUES ('t1767059628865', 'crrc-2025', '新增回收站机制', 'p1766984110676', 'sl1767144988697', 'pending', 9, '待定', '2025-11-05 00:00:00.000000', '2025-11-08 00:00:00.000000', 'task', '', 32.0539, 21.954, '#FFEBEE', '#EF5350', 140);
+INSERT INTO `project_tasks` VALUES ('t1767059630624', 'crrc-2025', '报告模版在线编辑', 'p1', 'sl1767144988697', 'pending', 0, '黄亮', '2025-11-05 00:00:00.000000', '2025-11-09 00:00:00.000000', 'task', '', 276.024, 21.954, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767059645544', 'crrc-2025', '车辆数据溯源', 'p1', 'sl1767144942000', 'pending', 0, '待定', '2025-11-04 00:00:00.000000', '2025-11-08 00:00:00.000000', 'task', '各种数据和车辆之间的关系', 277.685, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767059647128', 'crrc-2025', '提供快速获取结果数据API接口', 'p1766984110676', 'sl1767144942000', 'pending', 0, '王子恒', '2025-11-03 00:00:00.000000', '2025-11-08 00:00:00.000000', 'task', '', 32.0539, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086268029', 'crrc-2025', '文件保存节点保存csv格式为doris存储格式', 'p1766984086654', 'sl1767144942000', 'pending', 15, '待定', '2026-02-19 00:00:00.000000', '2026-02-25 00:00:00.000000', 'task', '', 23.6673, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086305845', 'crrc-2025', '文件保存节点没有保存tdms文件代码', 'p1766984086654', 'sl1767144942000', 'pending', 0, '待定', '2025-11-12 00:00:00.000000', '2025-11-17 00:00:00.000000', 'task', '', 201.045, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086331997', 'crrc-2025', 'AI助手优化代码报错(token too lager for edit)', 'p1', 'sl1767086258904', 'pending', 0, '待定', '2025-11-22 00:00:00.000000', '2025-11-28 00:00:00.000000', 'task', '', 60, 25.6625, NULL, NULL, 186.879);
+INSERT INTO `project_tasks` VALUES ('t1767086356700', 'crrc-2025', '在线debug失败', 'p1', 'sl1767086258904', 'pending', 0, '待定', '2025-11-18 00:00:00.000000', '2025-11-23 00:00:00.000000', 'task', '', 277.685, 25.6625, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086385356', 'crrc-2025', '提供文件保存方法', 'p1', 'sl1767144942000', 'pending', 0, '待定', '2025-11-10 00:00:00.000000', '2025-11-14 00:00:00.000000', 'task', '通过文件保存方法自定义保存文件(文件类型未知)', 57.685, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086575965', 'crrc-2025', '高级图表支持工作流文件保存节点的文件', 'p1766984103220', 'sl1767146103244', 'pending', 0, '待定', '2025-11-10 00:00:00.000000', '2025-11-16 00:00:00.000000', 'task', '工作流添加tdms数据', 44.5235, 23.2085, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767147161314', 'crrc-2025', '算子添加自定义配置项', 'p1766984086654', 'sl1767144988697', 'pending', 0, '黄亮', '2025-12-13 00:00:00.000000', '2025-12-16 00:00:00.000000', 'task', '', 93.6673, 21.954, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767147346473', 'crrc-2025', '车辆数据溯源', 'p1766984123106', 'sl1767144988697', 'pending', 0, '待定', '2025-12-13 00:00:00.000000', '2025-12-15 00:00:00.000000', 'task', '', 42.9921, 21.954, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_1', '1111', '车体方案设计', 'p2', 'sl2', 'completed', 100, '张工', '2024-01-30 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_1', 'PRJ-2024-001', '车体方案设计', 'p2', 'sl2', 'completed', 100, '张工', '2024-01-23 00:00:00.000000', '2024-02-11 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_10', '1111', '内饰方案设计', 'p2', 'sl5', 'in_progress', 60, '郑工', '2024-02-13 00:00:00.000000', '2024-03-08 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_10', 'PRJ-2024-001', '内饰方案设计', 'p2', 'sl5', 'in_progress', 60, '郑工', '2024-02-05 00:00:00.000000', '2024-02-29 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_2', '1111', '转向架方案', 'p2', 'sl2', 'completed', 100, '陈工', '2024-01-30 00:00:00.000000', '2026-01-31 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_2', 'PRJ-2024-001', '转向架方案', 'p2', 'sl2', 'completed', 100, '陈工', '2024-01-22 00:00:00.000000', '2024-02-15 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_3', '1111', '连接装置设计', 'p2', 'sl2', 'completed', 100, '王工', '2024-02-03 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_3', 'PRJ-2024-001', '连接装置设计', 'p2', 'sl2', 'completed', 100, '王工', '2024-01-26 00:00:00.000000', '2024-02-10 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_4', '1111', '牵引系统方案', 'p2', 'sl3', 'in_progress', 80, '李工', '2024-01-30 00:00:00.000000', '2024-02-26 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_4', 'PRJ-2024-001', '牵引系统方案', 'p2', 'sl3', 'in_progress', 80, '李工', '2024-01-22 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_5', '1111', '辅助供电系统', 'p2', 'sl3', 'in_progress', 70, '周工', '2024-02-03 00:00:00.000000', '2024-02-23 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_5', 'PRJ-2024-001', '辅助供电系统', 'p2', 'sl3', 'in_progress', 70, '周工', '2024-01-26 00:00:00.000000', '2024-02-15 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_6', '1111', '车载电气布置', 'p2', 'sl3', 'pending', 0, '吴工', '2024-02-08 00:00:00.000000', '2024-02-28 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_6', 'PRJ-2024-001', '车载电气布置', 'p2', 'sl3', 'pending', 0, '吴工', '2024-01-31 00:00:00.000000', '2024-02-20 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_7', '1111', '网络控制系统方案', 'p2', 'sl4', 'in_progress', 50, '赵工', '2024-01-30 00:00:00.000000', '2024-02-26 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_7', 'PRJ-2024-001', '网络控制系统方案', 'p2', 'sl4', 'in_progress', 50, '赵工', '2024-01-22 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_8', '1111', '车载软件框架', 'p2', 'sl4', 'pending', 0, '钱工', '2024-02-08 00:00:00.000000', '2024-03-03 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_8', 'PRJ-2024-001', '车载软件框架', 'p2', 'sl4', 'pending', 0, '钱工', '2024-01-31 00:00:00.000000', '2024-02-24 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_9', '1111', '外观造型设计', 'p2', 'sl5', 'completed', 100, '孙工', '2024-01-30 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_9', 'PRJ-2024-001', '外观造型设计', 'p2', 'sl5', 'completed', 100, '孙工', '2024-01-22 00:00:00.000000', '2024-02-10 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_1', '1111', '车体详细设计', 'p3', 'sl2', 'pending', 0, '张工', '2024-02-28 00:00:00.000000', '2024-04-28 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_1', 'PRJ-2024-001', '车体详细设计', 'p3', 'sl2', 'pending', 0, '张工', '2024-02-20 00:00:00.000000', '2024-04-20 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_10', '1111', '机电接口设计', 'p3', 'sl6', 'pending', 0, '总工', '2024-02-28 00:00:00.000000', '2024-03-30 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_10', 'PRJ-2024-001', '机电接口设计', 'p3', 'sl6', 'pending', 0, '总工', '2024-02-20 00:00:00.000000', '2024-03-22 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_11', '1111', 'BOM清单编制', 'p3', 'sl6', 'pending', 0, '管理员', '2024-04-29 00:00:00.000000', '2024-05-28 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_11', 'PRJ-2024-001', 'BOM清单编制', 'p3', 'sl6', 'pending', 0, '管理员', '2024-04-21 00:00:00.000000', '2024-05-20 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_2', '1111', '转向架详细设计转向架详细设计转向架详细设计转向架详细设计转向架详细设计', 'p3', 'sl2', 'pending', 0, '陈工', '2024-02-28 00:00:00.000000', '2024-05-13 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_2', 'PRJ-2024-001', '转向架详细设计', 'p3', 'sl2', 'pending', 0, '陈工', '2024-02-20 00:00:00.000000', '2024-05-05 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_3', '1111', '内装详细设计', 'p3', 'sl2', 'pending', 0, '郑工', '2024-03-13 00:00:00.000000', '2024-04-29 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_3', 'PRJ-2024-001', '内装详细设计', 'p3', 'sl2', 'pending', 0, '郑工', '2024-03-05 00:00:00.000000', '2024-04-21 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_4', '1111', '电气原理设计', 'p3', 'sl3', 'pending', 0, '李工', '2024-02-28 00:00:00.000000', '2024-04-13 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_4', 'PRJ-2024-001', '电气原理设计', 'p3', 'sl3', 'pending', 0, '李工', '2024-02-20 00:00:00.000000', '2024-04-05 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_5', '1111', '线束设计', 'p3', 'sl3', 'pending', 0, '吴工', '2024-03-13 00:00:00.000000', '2024-04-29 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_5', 'PRJ-2024-001', '线束设计', 'p3', 'sl3', 'pending', 0, '吴工', '2024-03-05 00:00:00.000000', '2024-04-21 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_6', '1111', '电气柜详细设计', 'p3', 'sl3', 'pending', 0, '周工', '2024-03-08 00:00:00.000000', '2024-04-28 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_6', 'PRJ-2024-001', '电气柜详细设计', 'p3', 'sl3', 'pending', 0, '周工', '2024-02-29 00:00:00.000000', '2024-04-20 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_7', '1111', '软件模块设计', 'p3', 'sl4', 'pending', 0, '钱工', '2024-03-08 00:00:00.000000', '2024-05-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_7', 'PRJ-2024-001', '软件模块设计', 'p3', 'sl4', 'pending', 0, '钱工', '2024-02-29 00:00:00.000000', '2024-05-10 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_8', '1111', 'HMI界面设计', 'p3', 'sl4', 'pending', 0, '孙工', '2024-03-13 00:00:00.000000', '2024-04-29 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_8', 'PRJ-2024-001', 'HMI界面设计', 'p3', 'sl4', 'pending', 0, '孙工', '2024-03-05 00:00:00.000000', '2024-04-21 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_9', '1111', '通信协议实现', 'p3', 'sl4', 'pending', 0, '赵工', '2024-03-03 00:00:00.000000', '2024-04-18 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_9', 'PRJ-2024-001', '通信协议实现', 'p3', 'sl4', 'pending', 0, '赵工', '2024-02-24 00:00:00.000000', '2024-04-10 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_1', '1111', '仿真分析验证', 'p4', 'sl6', 'pending', 0, '仿真组', '2024-05-30 00:00:00.000000', '2024-06-29 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_1', 'PRJ-2024-001', '仿真分析验证', 'p4', 'sl6', 'pending', 0, '仿真组', '2024-05-22 00:00:00.000000', '2024-06-21 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_2', '1111', '设计评审', 'p4', 'sl7', 'pending', 0, '质量部', '2024-07-03 00:00:00.000000', '2024-07-08 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_2', 'PRJ-2024-001', '设计评审', 'p4', 'sl7', 'pending', 0, '质量部', '2024-06-25 00:00:00.000000', '2024-06-30 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_3', '1111', '试验大纲编制', 'p4', 'sl6', 'pending', 0, '测试组', '2024-06-13 00:00:00.000000', '2024-06-28 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_3', 'PRJ-2024-001', '试验大纲编制', 'p4', 'sl6', 'pending', 0, '测试组', '2024-06-05 00:00:00.000000', '2024-06-20 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_4', '1111', '原型车试验', 'p4', 'sl6', 'pending', 0, '测试组', '2024-07-13 00:00:00.000000', '2024-08-28 00:00:00.000000', 'task', NULL, 362.487, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_4', 'PRJ-2024-001', '原型车试验', 'p4', 'sl6', 'pending', 0, '测试组', '2024-07-05 00:00:00.000000', '2024-08-20 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_5', '1111', '问题整改', 'p4', 'sl7', 'pending', 0, '各专业', '2024-08-30 00:00:00.000000', '2024-09-13 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_5', 'PRJ-2024-001', '问题整改', 'p4', 'sl7', 'pending', 0, '各专业', '2024-08-22 00:00:00.000000', '2024-09-05 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_6', '1111', '设计冻结', 'p4', 'sl1', 'pending', 0, '项目经理', '2024-09-18 00:00:00.000000', '2024-09-18 00:00:00.000000', 'milestone', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_6', 'PRJ-2024-001', '设计冻结', 'p4', 'sl1', 'pending', 0, '项目经理', '2024-09-10 00:00:00.000000', '2024-09-10 00:00:00.000000', 'milestone', NULL, 15, 15, NULL, NULL, 140);
+
+-- ----------------------------
 -- Table structure for sys_audit_log
 -- ----------------------------
 DROP TABLE IF EXISTS `sys_audit_log`;
@@ -330,7 +1000,7 @@ CREATE TABLE `sys_audit_log`  (
   `ExecutionDuration` bigint NOT NULL,
   `CreatedAt` datetime(6) NOT NULL,
   PRIMARY KEY (`Id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 633 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 851 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_audit_log
@@ -963,6 +1633,224 @@ INSERT INTO `sys_audit_log` VALUES (629, 1, 'admin', 'Login', '/api/auth/login',
 INSERT INTO `sys_audit_log` VALUES (630, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Linux; Android 12; HarmonyOS; ELS-AN00; HMSCore 6.15.4.322) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.196 HuaweiBrowser/16.0.11.301 Mobile Safari/537.36', NULL, 1, NULL, 188, '2025-12-27 09:30:34.527418');
 INSERT INTO `sys_audit_log` VALUES (631, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.66(0x18004237) NetType/WIFI Language/zh_CN', NULL, 1, NULL, 215, '2025-12-27 09:44:33.956760');
 INSERT INTO `sys_audit_log` VALUES (632, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1 Edg/143.0.0.0', NULL, 1, NULL, 249, '2025-12-27 10:15:10.529693');
+INSERT INTO `sys_audit_log` VALUES (633, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 589, '2025-12-27 12:03:06.060128');
+INSERT INTO `sys_audit_log` VALUES (634, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 49, '2025-12-27 12:04:05.428908');
+INSERT INTO `sys_audit_log` VALUES (635, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1010, '2025-12-27 12:10:19.869182');
+INSERT INTO `sys_audit_log` VALUES (636, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 7318, '2025-12-27 12:17:26.273794');
+INSERT INTO `sys_audit_log` VALUES (637, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Dalvik/2.1.0 (Linux; U; Android 12; JAD-AL80 Build/HUAWEIJAD-AL80)', NULL, 1, NULL, 267, '2025-12-27 12:47:30.572576');
+INSERT INTO `sys_audit_log` VALUES (638, 1, 'admin', 'omsapi.Controllers.InterfaceController.CreateCategory (omsapi)', '/api/interface/categories', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 502, '2025-12-27 13:38:00.632401');
+INSERT INTO `sys_audit_log` VALUES (639, 1, 'admin', 'omsapi.Controllers.InterfaceController.CreateCategory (omsapi)', '/api/interface/categories', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 210, '2025-12-27 13:38:18.653444');
+INSERT INTO `sys_audit_log` VALUES (640, 1, 'admin', 'omsapi.Controllers.InterfaceController.CreateInterface (omsapi)', '/api/interface', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 308, '2025-12-27 13:39:11.772806');
+INSERT INTO `sys_audit_log` VALUES (641, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 230, '2025-12-27 13:39:21.802375');
+INSERT INTO `sys_audit_log` VALUES (642, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateCategory (omsapi)', '/api/interface/categories/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 337, '2025-12-27 13:50:42.410906');
+INSERT INTO `sys_audit_log` VALUES (643, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateCategory (omsapi)', '/api/interface/categories/2', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 192, '2025-12-27 13:50:51.049921');
+INSERT INTO `sys_audit_log` VALUES (644, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 284, '2025-12-27 13:52:40.166033');
+INSERT INTO `sys_audit_log` VALUES (645, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateCategory (omsapi)', '/api/interface/categories/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 439, '2025-12-27 13:56:39.152005');
+INSERT INTO `sys_audit_log` VALUES (646, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateCategory (omsapi)', '/api/interface/categories/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 377, '2025-12-27 13:59:52.638868');
+INSERT INTO `sys_audit_log` VALUES (647, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 618, '2025-12-27 14:08:52.475275');
+INSERT INTO `sys_audit_log` VALUES (648, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 0, 'Cannot modify a published interface. Please take it offline first.', 101, '2025-12-27 14:13:52.528487');
+INSERT INTO `sys_audit_log` VALUES (649, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 0, 'Cannot modify a published interface. Please take it offline first.', 97, '2025-12-27 14:15:36.667278');
+INSERT INTO `sys_audit_log` VALUES (650, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 0, '已发布接口禁止修改，请先下线后再进行操作。', 440, '2025-12-27 14:17:09.329363');
+INSERT INTO `sys_audit_log` VALUES (651, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 211, '2025-12-27 14:20:26.123007');
+INSERT INTO `sys_audit_log` VALUES (652, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 191, '2025-12-27 14:21:23.255548');
+INSERT INTO `sys_audit_log` VALUES (653, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 182, '2025-12-27 14:21:37.233890');
+INSERT INTO `sys_audit_log` VALUES (654, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 189, '2025-12-27 14:23:35.914742');
+INSERT INTO `sys_audit_log` VALUES (655, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 182, '2025-12-27 14:23:49.435422');
+INSERT INTO `sys_audit_log` VALUES (656, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 185, '2025-12-27 14:27:37.326317');
+INSERT INTO `sys_audit_log` VALUES (657, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 180, '2025-12-27 14:27:48.264716');
+INSERT INTO `sys_audit_log` VALUES (658, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 179, '2025-12-27 14:27:52.335287');
+INSERT INTO `sys_audit_log` VALUES (659, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 178, '2025-12-27 14:27:58.204664');
+INSERT INTO `sys_audit_log` VALUES (660, 1, 'admin', 'omsapi.Controllers.InterfaceController.CreateInterface (omsapi)', '/api/interface', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 198, '2025-12-27 14:29:58.325457');
+INSERT INTO `sys_audit_log` VALUES (661, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 180, '2025-12-27 14:30:34.829584');
+INSERT INTO `sys_audit_log` VALUES (662, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 182, '2025-12-27 14:30:39.808901');
+INSERT INTO `sys_audit_log` VALUES (663, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 179, '2025-12-27 14:30:51.046411');
+INSERT INTO `sys_audit_log` VALUES (664, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 184, '2025-12-27 14:30:56.890682');
+INSERT INTO `sys_audit_log` VALUES (665, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 179, '2025-12-27 14:31:22.918272');
+INSERT INTO `sys_audit_log` VALUES (666, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 31, '2025-12-27 14:45:20.963480');
+INSERT INTO `sys_audit_log` VALUES (667, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 63, '2025-12-27 14:59:46.932432');
+INSERT INTO `sys_audit_log` VALUES (668, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 84, '2025-12-27 15:04:04.289495');
+INSERT INTO `sys_audit_log` VALUES (669, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 0, '2025-12-27 15:07:59.470161');
+INSERT INTO `sys_audit_log` VALUES (670, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 9, '2025-12-27 15:11:17.975763');
+INSERT INTO `sys_audit_log` VALUES (671, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1, '2025-12-27 15:11:53.192742');
+INSERT INTO `sys_audit_log` VALUES (672, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 78, '2025-12-27 15:18:01.603785');
+INSERT INTO `sys_audit_log` VALUES (673, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 0, '2025-12-27 15:18:58.765599');
+INSERT INTO `sys_audit_log` VALUES (674, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1, '2025-12-27 15:20:19.725547');
+INSERT INTO `sys_audit_log` VALUES (675, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 0, '2025-12-27 15:20:33.635830');
+INSERT INTO `sys_audit_log` VALUES (676, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1, '2025-12-27 15:22:29.391927');
+INSERT INTO `sys_audit_log` VALUES (677, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1, '2025-12-27 15:24:31.543416');
+INSERT INTO `sys_audit_log` VALUES (678, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 285, '2025-12-27 15:27:48.886787');
+INSERT INTO `sys_audit_log` VALUES (679, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 231, '2025-12-27 15:30:59.920064');
+INSERT INTO `sys_audit_log` VALUES (680, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 217, '2025-12-27 15:31:28.997332');
+INSERT INTO `sys_audit_log` VALUES (681, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 215, '2025-12-27 15:33:03.781686');
+INSERT INTO `sys_audit_log` VALUES (682, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 208, '2025-12-27 15:34:23.590217');
+INSERT INTO `sys_audit_log` VALUES (683, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 213, '2025-12-27 15:34:33.519388');
+INSERT INTO `sys_audit_log` VALUES (684, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 172, '2025-12-27 15:34:40.040687');
+INSERT INTO `sys_audit_log` VALUES (685, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 224, '2025-12-27 15:35:39.943979');
+INSERT INTO `sys_audit_log` VALUES (686, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 122, '2025-12-27 15:35:54.635281');
+INSERT INTO `sys_audit_log` VALUES (687, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 103, '2025-12-27 15:36:47.120273');
+INSERT INTO `sys_audit_log` VALUES (688, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 175, '2025-12-27 15:40:07.054338');
+INSERT INTO `sys_audit_log` VALUES (689, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 165, '2025-12-27 15:40:26.363953');
+INSERT INTO `sys_audit_log` VALUES (690, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 285, '2025-12-27 15:41:23.561910');
+INSERT INTO `sys_audit_log` VALUES (691, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 110, '2025-12-27 15:41:28.076295');
+INSERT INTO `sys_audit_log` VALUES (692, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 112, '2025-12-27 15:41:40.405698');
+INSERT INTO `sys_audit_log` VALUES (693, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 115, '2025-12-27 15:43:24.485562');
+INSERT INTO `sys_audit_log` VALUES (694, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 639, '2025-12-27 15:46:20.361412');
+INSERT INTO `sys_audit_log` VALUES (695, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 249, '2025-12-27 15:47:31.874548');
+INSERT INTO `sys_audit_log` VALUES (696, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Linux; Android 15; PGT-AN00 Build/HONORPGT-AN00; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/142.0.7444.173 Mobile Safari/537.36 XWEB/1420113 MMWEBSDK/20251006 MMWEBID/3037 MicroMessenger/8.0.66.2980(0x2800423E) WeChat/arm64 Weixin NetType/4G Language/zh_CN ABI/arm64', NULL, 1, NULL, 191, '2025-12-27 15:54:52.475214');
+INSERT INTO `sys_audit_log` VALUES (697, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 656, '2025-12-27 15:58:27.572660');
+INSERT INTO `sys_audit_log` VALUES (698, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 905, '2025-12-27 15:58:37.418098');
+INSERT INTO `sys_audit_log` VALUES (699, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 164, '2025-12-27 15:58:51.167419');
+INSERT INTO `sys_audit_log` VALUES (700, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 392, '2025-12-27 15:58:58.386591');
+INSERT INTO `sys_audit_log` VALUES (701, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 191, '2025-12-27 15:59:13.979200');
+INSERT INTO `sys_audit_log` VALUES (702, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 885, '2025-12-27 16:08:16.792708');
+INSERT INTO `sys_audit_log` VALUES (703, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 748, '2025-12-27 16:12:01.707055');
+INSERT INTO `sys_audit_log` VALUES (704, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 349, '2025-12-27 16:15:45.457446');
+INSERT INTO `sys_audit_log` VALUES (705, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 241, '2025-12-27 16:15:51.784048');
+INSERT INTO `sys_audit_log` VALUES (706, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 204, '2025-12-27 16:19:29.852099');
+INSERT INTO `sys_audit_log` VALUES (707, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 387, '2025-12-27 16:19:42.071552');
+INSERT INTO `sys_audit_log` VALUES (708, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 144, '2025-12-27 16:19:50.867316');
+INSERT INTO `sys_audit_log` VALUES (709, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 314, '2025-12-27 16:21:37.763050');
+INSERT INTO `sys_audit_log` VALUES (710, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 306, '2025-12-27 16:22:53.387536');
+INSERT INTO `sys_audit_log` VALUES (711, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 807, '2025-12-27 16:25:09.288658');
+INSERT INTO `sys_audit_log` VALUES (712, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 828, '2025-12-27 16:26:44.849606');
+INSERT INTO `sys_audit_log` VALUES (713, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 362, '2025-12-27 16:28:09.805142');
+INSERT INTO `sys_audit_log` VALUES (714, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 160, '2025-12-27 16:28:33.444296');
+INSERT INTO `sys_audit_log` VALUES (715, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 693, '2025-12-27 17:09:35.122486');
+INSERT INTO `sys_audit_log` VALUES (716, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 452, '2025-12-27 17:19:14.561984');
+INSERT INTO `sys_audit_log` VALUES (717, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 51, '2025-12-27 17:19:49.512942');
+INSERT INTO `sys_audit_log` VALUES (718, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 427, '2025-12-27 17:21:44.469909');
+INSERT INTO `sys_audit_log` VALUES (719, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 52, '2025-12-27 17:26:16.575977');
+INSERT INTO `sys_audit_log` VALUES (720, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 33, '2025-12-27 17:26:30.788342');
+INSERT INTO `sys_audit_log` VALUES (721, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 33, '2025-12-27 17:27:03.989289');
+INSERT INTO `sys_audit_log` VALUES (722, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 29, '2025-12-27 17:27:36.092220');
+INSERT INTO `sys_audit_log` VALUES (723, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 58, '2025-12-27 17:28:30.839676');
+INSERT INTO `sys_audit_log` VALUES (724, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 29, '2025-12-27 17:29:30.682873');
+INSERT INTO `sys_audit_log` VALUES (725, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 52, '2025-12-27 17:33:58.899446');
+INSERT INTO `sys_audit_log` VALUES (726, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Linux; Android 12; JAD-AL80 Build/HUAWEIJAD-AL80; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/142.0.7444.173 Mobile Safari/537.36 XWEB/1420113 MMWEBSDK/20251006 MMWEBID/4480 MicroMessenger/8.0.66.2980(0x28004234) WeChat/arm64 Weixin NetType/4G Language/zh_CN ABI/arm64', NULL, 1, NULL, 213, '2025-12-27 17:44:54.360909');
+INSERT INTO `sys_audit_log` VALUES (727, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 264, '2025-12-27 19:42:44.372190');
+INSERT INTO `sys_audit_log` VALUES (728, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1393, '2025-12-27 19:47:13.466372');
+INSERT INTO `sys_audit_log` VALUES (729, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 54, '2025-12-27 20:25:08.547170');
+INSERT INTO `sys_audit_log` VALUES (730, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1616, '2025-12-27 21:06:32.245195');
+INSERT INTO `sys_audit_log` VALUES (731, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 375, '2025-12-27 21:09:26.409394');
+INSERT INTO `sys_audit_log` VALUES (732, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 316, '2025-12-27 21:11:09.087370');
+INSERT INTO `sys_audit_log` VALUES (733, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 360, '2025-12-27 21:17:55.563119');
+INSERT INTO `sys_audit_log` VALUES (734, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 325, '2025-12-27 21:27:02.791219');
+INSERT INTO `sys_audit_log` VALUES (735, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 199, '2025-12-27 21:27:36.372827');
+INSERT INTO `sys_audit_log` VALUES (736, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 321, '2025-12-27 21:27:39.617603');
+INSERT INTO `sys_audit_log` VALUES (737, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 943, '2025-12-27 21:31:08.909229');
+INSERT INTO `sys_audit_log` VALUES (738, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 905, '2025-12-27 21:36:28.240300');
+INSERT INTO `sys_audit_log` VALUES (739, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 659, '2025-12-27 21:45:03.927139');
+INSERT INTO `sys_audit_log` VALUES (740, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 241, '2025-12-27 21:46:23.581795');
+INSERT INTO `sys_audit_log` VALUES (741, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 193, '2025-12-27 21:46:55.101516');
+INSERT INTO `sys_audit_log` VALUES (742, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1226, '2025-12-27 21:48:10.581013');
+INSERT INTO `sys_audit_log` VALUES (743, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 470, '2025-12-27 21:55:09.862694');
+INSERT INTO `sys_audit_log` VALUES (744, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 559, '2025-12-27 21:55:12.957771');
+INSERT INTO `sys_audit_log` VALUES (745, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1156, '2025-12-27 21:58:11.111235');
+INSERT INTO `sys_audit_log` VALUES (746, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 310, '2025-12-27 21:58:25.213219');
+INSERT INTO `sys_audit_log` VALUES (747, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 257, '2025-12-27 21:59:01.052198');
+INSERT INTO `sys_audit_log` VALUES (748, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 499, '2025-12-27 22:01:31.789261');
+INSERT INTO `sys_audit_log` VALUES (749, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 206, '2025-12-27 22:01:53.464032');
+INSERT INTO `sys_audit_log` VALUES (750, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 249, '2025-12-27 22:02:01.149024');
+INSERT INTO `sys_audit_log` VALUES (751, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 244, '2025-12-27 22:02:13.882754');
+INSERT INTO `sys_audit_log` VALUES (752, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 199, '2025-12-27 22:02:27.844545');
+INSERT INTO `sys_audit_log` VALUES (753, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 215, '2025-12-27 22:02:48.843672');
+INSERT INTO `sys_audit_log` VALUES (754, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1038, '2025-12-27 22:14:31.298414');
+INSERT INTO `sys_audit_log` VALUES (755, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 295, '2025-12-27 22:14:43.450328');
+INSERT INTO `sys_audit_log` VALUES (756, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 235, '2025-12-27 22:14:53.808773');
+INSERT INTO `sys_audit_log` VALUES (757, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 188, '2025-12-27 22:15:07.646256');
+INSERT INTO `sys_audit_log` VALUES (758, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 477, '2025-12-27 22:30:13.841860');
+INSERT INTO `sys_audit_log` VALUES (759, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 195, '2025-12-27 22:32:46.649532');
+INSERT INTO `sys_audit_log` VALUES (760, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 192, '2025-12-27 22:33:09.809460');
+INSERT INTO `sys_audit_log` VALUES (761, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 487, '2025-12-27 22:33:16.570832');
+INSERT INTO `sys_audit_log` VALUES (762, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 190, '2025-12-27 22:33:41.688930');
+INSERT INTO `sys_audit_log` VALUES (763, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 221, '2025-12-27 22:33:52.737537');
+INSERT INTO `sys_audit_log` VALUES (764, 1, 'admin', 'omsapi.Controllers.InterfaceController.UpdateInterface (omsapi)', '/api/interface/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 388, '2025-12-27 22:37:57.645460');
+INSERT INTO `sys_audit_log` VALUES (765, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 404, '2025-12-27 22:52:14.997394');
+INSERT INTO `sys_audit_log` VALUES (766, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 459, '2025-12-27 22:52:25.029407');
+INSERT INTO `sys_audit_log` VALUES (767, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1325, '2025-12-27 22:56:09.531591');
+INSERT INTO `sys_audit_log` VALUES (768, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 291, '2025-12-27 22:56:52.623673');
+INSERT INTO `sys_audit_log` VALUES (769, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 573, '2025-12-27 22:57:56.677702');
+INSERT INTO `sys_audit_log` VALUES (770, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1162, '2025-12-28 14:09:48.187282');
+INSERT INTO `sys_audit_log` VALUES (771, 1, 'admin', 'omsapi.Controllers.PermissionController.Create (omsapi)', '/api/permission', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 289, '2025-12-28 14:10:47.814236');
+INSERT INTO `sys_audit_log` VALUES (772, 1, 'admin', 'omsapi.Controllers.RoleController.AssignPermissions (omsapi)', '/api/role/3/permissions', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 773, '2025-12-28 14:11:05.061264');
+INSERT INTO `sys_audit_log` VALUES (773, 1, 'admin', 'omsapi.Controllers.PermissionController.Create (omsapi)', '/api/permission', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 267, '2025-12-28 14:11:33.541560');
+INSERT INTO `sys_audit_log` VALUES (774, 1, 'admin', 'omsapi.Controllers.RoleController.AssignPermissions (omsapi)', '/api/role/1/permissions', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 592, '2025-12-28 14:11:53.967436');
+INSERT INTO `sys_audit_log` VALUES (775, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 727, '2025-12-28 16:23:34.988604');
+INSERT INTO `sys_audit_log` VALUES (776, 1, 'admin', 'omsapi.Controllers.PageController.CreateCategory (omsapi)', '/api/page/categories', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 470, '2025-12-28 17:49:01.046290');
+INSERT INTO `sys_audit_log` VALUES (777, 1, 'admin', 'omsapi.Controllers.PageController.CreateCategory (omsapi)', '/api/page/categories', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 177, '2025-12-28 17:49:22.170203');
+INSERT INTO `sys_audit_log` VALUES (778, 1, 'admin', 'omsapi.Controllers.PageController.CreateCategory (omsapi)', '/api/page/categories', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 169, '2025-12-28 17:49:36.912557');
+INSERT INTO `sys_audit_log` VALUES (779, 1, 'admin', 'omsapi.Controllers.PageController.CreatePage (omsapi)', '/api/page', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 244, '2025-12-28 17:49:54.316061');
+INSERT INTO `sys_audit_log` VALUES (780, 1, 'admin', 'omsapi.Controllers.PageController.UpdatePage (omsapi)', '/api/page/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 181, '2025-12-28 17:54:26.789820');
+INSERT INTO `sys_audit_log` VALUES (781, 1, 'admin', 'omsapi.Controllers.PageController.UpdatePage (omsapi)', '/api/page/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 157, '2025-12-28 17:55:04.035280');
+INSERT INTO `sys_audit_log` VALUES (782, 1, 'admin', 'omsapi.Controllers.PageController.UpdatePage (omsapi)', '/api/page/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 155, '2025-12-28 17:56:31.125964');
+INSERT INTO `sys_audit_log` VALUES (783, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 484, '2025-12-28 18:22:28.268808');
+INSERT INTO `sys_audit_log` VALUES (784, 1, 'admin', 'omsapi.Controllers.PageController.UpdatePage (omsapi)', '/api/page/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 180, '2025-12-28 18:25:37.866478');
+INSERT INTO `sys_audit_log` VALUES (785, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 702, '2025-12-28 20:58:44.088788');
+INSERT INTO `sys_audit_log` VALUES (786, 1, 'admin', 'omsapi.Controllers.PageController.UpdatePage (omsapi)', '/api/page/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 388, '2025-12-28 21:06:45.382802');
+INSERT INTO `sys_audit_log` VALUES (787, 1, 'admin', 'omsapi.Controllers.PageController.UpdatePage (omsapi)', '/api/page/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 163, '2025-12-28 21:11:19.464734');
+INSERT INTO `sys_audit_log` VALUES (788, 1, 'admin', 'omsapi.Controllers.PageController.UpdateCategory (omsapi)', '/api/page/categories/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 133, '2025-12-28 21:12:31.196740');
+INSERT INTO `sys_audit_log` VALUES (789, 1, 'admin', 'omsapi.Controllers.PageController.UpdateCategory (omsapi)', '/api/page/categories/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 77, '2025-12-28 21:12:42.864840');
+INSERT INTO `sys_audit_log` VALUES (790, 1, 'admin', 'omsapi.Controllers.PageController.UpdateCategory (omsapi)', '/api/page/categories/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 155, '2025-12-28 21:13:16.111823');
+INSERT INTO `sys_audit_log` VALUES (791, 1, 'admin', 'omsapi.Controllers.PageController.UpdateCategory (omsapi)', '/api/page/categories/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 450, '2025-12-28 21:18:08.698856');
+INSERT INTO `sys_audit_log` VALUES (792, 1, 'admin', 'omsapi.Controllers.PageController.UpdateCategory (omsapi)', '/api/page/categories/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 341, '2025-12-28 21:18:14.456925');
+INSERT INTO `sys_audit_log` VALUES (793, 1, 'admin', 'omsapi.Controllers.PageController.UpdatePage (omsapi)', '/api/page/1', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 191, '2025-12-28 21:25:33.145950');
+INSERT INTO `sys_audit_log` VALUES (794, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 410, '2025-12-28 21:31:13.810002');
+INSERT INTO `sys_audit_log` VALUES (795, 1, 'admin', 'omsapi.Controllers.ContractController.CreateContract (omsapi)', '/api/contract', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 180, '2025-12-28 22:45:22.724870');
+INSERT INTO `sys_audit_log` VALUES (796, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 661, '2025-12-28 22:52:34.225530');
+INSERT INTO `sys_audit_log` VALUES (797, 1, 'admin', 'omsapi.Controllers.ContractController.CreateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 463, '2025-12-28 23:06:15.267781');
+INSERT INTO `sys_audit_log` VALUES (798, 1, 'admin', 'omsapi.Controllers.ContractController.CreateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 238, '2025-12-28 23:06:30.488883');
+INSERT INTO `sys_audit_log` VALUES (799, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories/15', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 172, '2025-12-28 23:20:28.938678');
+INSERT INTO `sys_audit_log` VALUES (800, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories/15', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 76, '2025-12-28 23:20:45.101536');
+INSERT INTO `sys_audit_log` VALUES (801, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories/15', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 450, '2025-12-28 23:22:54.835528');
+INSERT INTO `sys_audit_log` VALUES (802, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories/14', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 210, '2025-12-28 23:23:04.388450');
+INSERT INTO `sys_audit_log` VALUES (803, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories/2', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 176, '2025-12-28 23:24:30.201247');
+INSERT INTO `sys_audit_log` VALUES (804, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories/3', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 193, '2025-12-28 23:24:37.000151');
+INSERT INTO `sys_audit_log` VALUES (805, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories/4', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 178, '2025-12-28 23:24:41.359432');
+INSERT INTO `sys_audit_log` VALUES (806, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories/5', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 172, '2025-12-28 23:24:46.366003');
+INSERT INTO `sys_audit_log` VALUES (807, 1, 'admin', 'omsapi.Controllers.ContractController.DeleteKnowledgeCategory (omsapi)', '/api/contract/knowledge/categories/1', 'DELETE', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 193, '2025-12-28 23:24:53.710060');
+INSERT INTO `sys_audit_log` VALUES (808, 1, 'admin', 'omsapi.Controllers.ContractController.UploadKnowledgeFile (omsapi)', '/api/contract/knowledge/files', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 200, '2025-12-28 23:25:29.339837');
+INSERT INTO `sys_audit_log` VALUES (809, 1, 'admin', 'omsapi.Controllers.ContractController.UploadKnowledgeFile (omsapi)', '/api/contract/knowledge/files', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 563, '2025-12-28 23:31:26.559795');
+INSERT INTO `sys_audit_log` VALUES (810, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeFile (omsapi)', '/api/contract/knowledge/files/7', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 321, '2025-12-28 23:41:15.261703');
+INSERT INTO `sys_audit_log` VALUES (811, 1, 'admin', 'omsapi.Controllers.ContractController.DeleteKnowledgeFile (omsapi)', '/api/contract/knowledge/files/7', 'DELETE', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 195, '2025-12-28 23:42:23.389899');
+INSERT INTO `sys_audit_log` VALUES (812, 1, 'admin', 'omsapi.Controllers.ContractController.UploadKnowledgeFile (omsapi)', '/api/contract/knowledge/files', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 627, '2025-12-28 23:45:56.310090');
+INSERT INTO `sys_audit_log` VALUES (813, 1, 'admin', 'omsapi.Controllers.ContractController.DeleteKnowledgeFile (omsapi)', '/api/contract/knowledge/files/8', 'DELETE', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 320, '2025-12-28 23:46:26.054059');
+INSERT INTO `sys_audit_log` VALUES (814, 1, 'admin', 'omsapi.Controllers.ContractController.UpdateKnowledgeFile (omsapi)', '/api/contract/knowledge/files/5', 'PUT', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 162, '2025-12-28 23:46:36.205586');
+INSERT INTO `sys_audit_log` VALUES (815, 1, 'admin', 'omsapi.Controllers.ContractController.UploadKnowledgeFile (omsapi)', '/api/contract/knowledge/files', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 319, '2025-12-28 23:46:45.021217');
+INSERT INTO `sys_audit_log` VALUES (816, 1, 'admin', 'omsapi.Controllers.ContractController.DeleteKnowledgeFile (omsapi)', '/api/contract/knowledge/files/9', 'DELETE', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 498, '2025-12-28 23:51:58.881985');
+INSERT INTO `sys_audit_log` VALUES (817, 1, 'admin', 'omsapi.Controllers.ContractController.UploadKnowledgeFile (omsapi)', '/api/contract/knowledge/files', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 428, '2025-12-28 23:52:09.988912');
+INSERT INTO `sys_audit_log` VALUES (818, 1, 'admin', 'omsapi.Controllers.ContractController.UploadKnowledgeFile (omsapi)', '/api/contract/knowledge/files', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 357, '2025-12-29 00:24:33.208750');
+INSERT INTO `sys_audit_log` VALUES (819, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 308, '2025-12-29 09:47:50.112993');
+INSERT INTO `sys_audit_log` VALUES (820, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=true', 1, NULL, 100, '2025-12-29 10:12:54.052400');
+INSERT INTO `sys_audit_log` VALUES (821, 1, 'admin', 'omsapi.Controllers.InterfaceController.PublishInterface (omsapi)', '/api/interface/1/publish', 'PUT', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', '?isPublished=false', 1, NULL, 29, '2025-12-29 10:13:07.712658');
+INSERT INTO `sys_audit_log` VALUES (822, 1, 'admin', 'omsapi.Controllers.InterfaceController.DebugFlow (omsapi)', '/api/interface/debug-flow', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 236, '2025-12-29 10:14:03.015889');
+INSERT INTO `sys_audit_log` VALUES (823, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 381, '2025-12-29 11:42:41.512832');
+INSERT INTO `sys_audit_log` VALUES (824, 1, 'admin', 'omsapi.Controllers.DataSourceController.GetTableData (omsapi)', '/api/DataSource/1/databases/testdb/tables/test1/data', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 110, '2025-12-29 11:50:14.914668');
+INSERT INTO `sys_audit_log` VALUES (825, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 299, '2025-12-29 15:29:37.312581');
+INSERT INTO `sys_audit_log` VALUES (826, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 195, '2025-12-29 16:22:32.726879');
+INSERT INTO `sys_audit_log` VALUES (827, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 874, '2025-12-29 17:21:52.542543');
+INSERT INTO `sys_audit_log` VALUES (828, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.64(0x18004034) NetType/4G Language/zh_CN', NULL, 1, NULL, 159, '2025-12-29 18:48:54.225030');
+INSERT INTO `sys_audit_log` VALUES (829, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36', NULL, 1, NULL, 214, '2025-12-29 22:59:18.626040');
+INSERT INTO `sys_audit_log` VALUES (830, 1, 'admin', 'omsapi.Controllers.UserController.UpdateProfile (omsapi)', '/api/user/profile', 'PUT', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.95 Safari/537.36', NULL, 1, NULL, 27, '2025-12-29 23:13:32.777841');
+INSERT INTO `sys_audit_log` VALUES (831, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63090c37) XWEB/14185 Flue', NULL, 1, NULL, 215, '2025-12-30 09:56:35.687897');
+INSERT INTO `sys_audit_log` VALUES (832, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 242, '2025-12-30 18:37:32.527779');
+INSERT INTO `sys_audit_log` VALUES (833, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 242, '2025-12-31 09:32:33.613986');
+INSERT INTO `sys_audit_log` VALUES (834, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 NetType/WIFI MicroMessenger/7.0.20.1781(0x6700143B) WindowsWechat(0x63090a13) UnifiedPCWindowsWechat(0xf254151e) XWEB/17127 Flue', NULL, 1, NULL, 51, '2025-12-31 09:33:41.414397');
+INSERT INTO `sys_audit_log` VALUES (835, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Linux; Android 12; CET-AL00 Build/HUAWEICET-AL00; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/142.0.7444.173 Mobile Safari/537.36 XWEB/1420113 MMWEBSDK/20251006 MMWEBID/5590 MicroMessenger/8.0.66.2980(0x28004252) WeChat/arm64 Weixin NetType/4G Language/zh_CN ABI/arm64', NULL, 1, NULL, 197, '2025-12-31 11:22:51.218613');
+INSERT INTO `sys_audit_log` VALUES (836, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Linux; Android 12; CET-AL00 Build/HUAWEICET-AL00; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/142.0.7444.173 Mobile Safari/537.36 XWEB/1420113 MMWEBSDK/20251006 MMWEBID/5590 MicroMessenger/8.0.66.2980(0x28004252) WeChat/arm64 Weixin NetType/4G Language/zh_CN ABI/arm64', NULL, 1, NULL, 48, '2025-12-31 11:22:51.449627');
+INSERT INTO `sys_audit_log` VALUES (837, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 935, '2026-01-01 10:39:36.545984');
+INSERT INTO `sys_audit_log` VALUES (838, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 563, '2026-01-01 12:32:02.914724');
+INSERT INTO `sys_audit_log` VALUES (839, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36', NULL, 1, NULL, 265, '2026-01-01 19:12:05.801684');
+INSERT INTO `sys_audit_log` VALUES (840, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 872, '2026-01-01 20:34:35.843464');
+INSERT INTO `sys_audit_log` VALUES (841, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 492, '2026-01-01 21:59:59.853287');
+INSERT INTO `sys_audit_log` VALUES (842, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 177, '2026-01-02 21:32:04.770738');
+INSERT INTO `sys_audit_log` VALUES (843, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 899, '2026-01-02 21:59:08.235400');
+INSERT INTO `sys_audit_log` VALUES (844, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 769, '2026-01-04 09:36:28.997933');
+INSERT INTO `sys_audit_log` VALUES (845, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 727, '2026-01-04 14:41:08.628144');
+INSERT INTO `sys_audit_log` VALUES (846, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 975, '2026-01-04 14:54:42.087402');
+INSERT INTO `sys_audit_log` VALUES (847, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 850, '2026-01-04 14:55:02.591158');
+INSERT INTO `sys_audit_log` VALUES (848, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 755, '2026-01-04 14:55:40.915255');
+INSERT INTO `sys_audit_log` VALUES (849, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 732, '2026-01-04 14:57:45.781773');
+INSERT INTO `sys_audit_log` VALUES (850, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1063, '2026-01-04 16:01:54.044107');
 
 -- ----------------------------
 -- Table structure for sys_config
@@ -1114,7 +2002,7 @@ CREATE TABLE `sys_permission`  (
   `UpdatedAt` datetime(6) NULL DEFAULT NULL,
   PRIMARY KEY (`Id`) USING BTREE,
   UNIQUE INDEX `IX_sys_permission_Code`(`Code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 242 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 244 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_permission
@@ -1238,6 +2126,8 @@ INSERT INTO `sys_permission` VALUES (238, 42, '大屏设计', 'bi:design', 'MENU
 INSERT INTO `sys_permission` VALUES (239, 42, '大屏设计2', 'bi:design:1', 'MENU', '/bi/design', 'views/iframe/Index.vue', 'url=/bigview&id=1', '', 50, 1, '2025-12-25 00:51:31.583107', NULL);
 INSERT INTO `sys_permission` VALUES (240, 48, '表单设计', 'DataForm', 'MENU', '/data/forms', 'views/data/Forms/Index.vue', '', '', 50, 1, '2025-12-25 19:54:40.641835', NULL);
 INSERT INTO `sys_permission` VALUES (241, 240, '新建表单', 'form:create', 'BUTTON', '', '', '', '', 1, 1, '2025-12-26 21:55:41.548372', NULL);
+INSERT INTO `sys_permission` VALUES (242, 48, '页面设计', 'DataPages', 'MENU', '/data/pages', 'views/data/Pages/Index.vue', '', '', 60, 1, '2025-12-28 14:10:47.618833', NULL);
+INSERT INTO `sys_permission` VALUES (243, 242, '新建页面', 'page:create', 'BUTTON', '', '', '', '', 10, 1, '2025-12-28 14:11:33.364671', NULL);
 
 -- ----------------------------
 -- Table structure for sys_post
@@ -1324,130 +2214,133 @@ CREATE TABLE `sys_role_permission`  (
 -- ----------------------------
 -- Records of sys_role_permission
 -- ----------------------------
-INSERT INTO `sys_role_permission` VALUES (1, 1, '2025-12-25 19:54:54.748480');
-INSERT INTO `sys_role_permission` VALUES (1, 2, '2025-12-25 19:54:54.749741');
-INSERT INTO `sys_role_permission` VALUES (1, 3, '2025-12-25 19:54:54.749840');
-INSERT INTO `sys_role_permission` VALUES (1, 4, '2025-12-25 19:54:54.749851');
-INSERT INTO `sys_role_permission` VALUES (1, 5, '2025-12-25 19:54:54.749863');
-INSERT INTO `sys_role_permission` VALUES (1, 6, '2025-12-25 19:54:54.749871');
-INSERT INTO `sys_role_permission` VALUES (1, 7, '2025-12-25 19:54:54.749880');
-INSERT INTO `sys_role_permission` VALUES (1, 8, '2025-12-25 19:54:54.749891');
-INSERT INTO `sys_role_permission` VALUES (1, 9, '2025-12-25 19:54:54.749907');
-INSERT INTO `sys_role_permission` VALUES (1, 10, '2025-12-25 19:54:54.749939');
-INSERT INTO `sys_role_permission` VALUES (1, 11, '2025-12-25 19:54:54.749958');
-INSERT INTO `sys_role_permission` VALUES (1, 12, '2025-12-25 19:54:54.749968');
-INSERT INTO `sys_role_permission` VALUES (1, 13, '2025-12-25 19:54:54.749978');
-INSERT INTO `sys_role_permission` VALUES (1, 14, '2025-12-25 19:54:54.749987');
-INSERT INTO `sys_role_permission` VALUES (1, 15, '2025-12-25 19:54:54.749996');
-INSERT INTO `sys_role_permission` VALUES (1, 16, '2025-12-25 19:54:54.750005');
-INSERT INTO `sys_role_permission` VALUES (1, 17, '2025-12-25 19:54:54.750013');
-INSERT INTO `sys_role_permission` VALUES (1, 18, '2025-12-25 19:54:54.750021');
-INSERT INTO `sys_role_permission` VALUES (1, 19, '2025-12-25 19:54:54.750031');
-INSERT INTO `sys_role_permission` VALUES (1, 20, '2025-12-25 19:54:54.750043');
-INSERT INTO `sys_role_permission` VALUES (1, 21, '2025-12-25 19:54:54.750054');
-INSERT INTO `sys_role_permission` VALUES (1, 22, '2025-12-25 19:54:54.750062');
-INSERT INTO `sys_role_permission` VALUES (1, 23, '2025-12-25 19:54:54.750071');
-INSERT INTO `sys_role_permission` VALUES (1, 24, '2025-12-25 19:54:54.750079');
-INSERT INTO `sys_role_permission` VALUES (1, 25, '2025-12-25 19:54:54.750088');
-INSERT INTO `sys_role_permission` VALUES (1, 26, '2025-12-25 19:54:54.750097');
-INSERT INTO `sys_role_permission` VALUES (1, 27, '2025-12-25 19:54:54.750105');
-INSERT INTO `sys_role_permission` VALUES (1, 28, '2025-12-25 19:54:54.750114');
-INSERT INTO `sys_role_permission` VALUES (1, 29, '2025-12-25 19:54:54.750122');
-INSERT INTO `sys_role_permission` VALUES (1, 30, '2025-12-25 19:54:54.750135');
-INSERT INTO `sys_role_permission` VALUES (1, 31, '2025-12-25 19:54:54.750146');
-INSERT INTO `sys_role_permission` VALUES (1, 32, '2025-12-25 19:54:54.750157');
-INSERT INTO `sys_role_permission` VALUES (1, 33, '2025-12-25 19:54:54.750166');
-INSERT INTO `sys_role_permission` VALUES (1, 34, '2025-12-25 19:54:54.750174');
-INSERT INTO `sys_role_permission` VALUES (1, 35, '2025-12-25 19:54:54.750183');
-INSERT INTO `sys_role_permission` VALUES (1, 36, '2025-12-25 19:54:54.750192');
-INSERT INTO `sys_role_permission` VALUES (1, 37, '2025-12-25 19:54:54.750224');
-INSERT INTO `sys_role_permission` VALUES (1, 38, '2025-12-25 19:54:54.750232');
-INSERT INTO `sys_role_permission` VALUES (1, 39, '2025-12-25 19:54:54.750241');
-INSERT INTO `sys_role_permission` VALUES (1, 40, '2025-12-25 19:54:54.750250');
-INSERT INTO `sys_role_permission` VALUES (1, 41, '2025-12-25 19:54:54.750261');
-INSERT INTO `sys_role_permission` VALUES (1, 42, '2025-12-25 19:54:54.750270');
-INSERT INTO `sys_role_permission` VALUES (1, 43, '2025-12-25 19:54:54.750279');
-INSERT INTO `sys_role_permission` VALUES (1, 44, '2025-12-25 19:54:54.750288');
-INSERT INTO `sys_role_permission` VALUES (1, 45, '2025-12-25 19:54:54.750296');
-INSERT INTO `sys_role_permission` VALUES (1, 46, '2025-12-25 19:54:54.750305');
-INSERT INTO `sys_role_permission` VALUES (1, 47, '2025-12-25 19:54:54.750313');
-INSERT INTO `sys_role_permission` VALUES (1, 48, '2025-12-25 19:54:54.750321');
-INSERT INTO `sys_role_permission` VALUES (1, 49, '2025-12-25 19:54:54.750330');
-INSERT INTO `sys_role_permission` VALUES (1, 50, '2025-12-25 19:54:54.750338');
-INSERT INTO `sys_role_permission` VALUES (1, 51, '2025-12-25 19:54:54.750347');
-INSERT INTO `sys_role_permission` VALUES (1, 52, '2025-12-25 19:54:54.750355');
-INSERT INTO `sys_role_permission` VALUES (1, 53, '2025-12-25 19:54:54.750366');
-INSERT INTO `sys_role_permission` VALUES (1, 54, '2025-12-25 19:54:54.750375');
-INSERT INTO `sys_role_permission` VALUES (1, 55, '2025-12-25 19:54:54.750384');
-INSERT INTO `sys_role_permission` VALUES (1, 56, '2025-12-25 19:54:54.750392');
-INSERT INTO `sys_role_permission` VALUES (1, 57, '2025-12-25 19:54:54.750401');
-INSERT INTO `sys_role_permission` VALUES (1, 58, '2025-12-25 19:54:54.750409');
-INSERT INTO `sys_role_permission` VALUES (1, 59, '2025-12-25 19:54:54.750418');
-INSERT INTO `sys_role_permission` VALUES (1, 60, '2025-12-25 19:54:54.750426');
-INSERT INTO `sys_role_permission` VALUES (1, 61, '2025-12-25 19:54:54.750435');
-INSERT INTO `sys_role_permission` VALUES (1, 62, '2025-12-25 19:54:54.750443');
-INSERT INTO `sys_role_permission` VALUES (1, 63, '2025-12-25 19:54:54.750452');
-INSERT INTO `sys_role_permission` VALUES (1, 64, '2025-12-25 19:54:54.750460');
-INSERT INTO `sys_role_permission` VALUES (1, 65, '2025-12-25 19:54:54.750469');
-INSERT INTO `sys_role_permission` VALUES (1, 66, '2025-12-25 19:54:54.750480');
-INSERT INTO `sys_role_permission` VALUES (1, 67, '2025-12-25 19:54:54.750488');
-INSERT INTO `sys_role_permission` VALUES (1, 68, '2025-12-25 19:54:54.750513');
-INSERT INTO `sys_role_permission` VALUES (1, 69, '2025-12-25 19:54:54.750522');
-INSERT INTO `sys_role_permission` VALUES (1, 70, '2025-12-25 19:54:54.750531');
-INSERT INTO `sys_role_permission` VALUES (1, 71, '2025-12-25 19:54:54.750540');
-INSERT INTO `sys_role_permission` VALUES (1, 72, '2025-12-25 19:54:54.750548');
-INSERT INTO `sys_role_permission` VALUES (1, 73, '2025-12-25 19:54:54.750557');
-INSERT INTO `sys_role_permission` VALUES (1, 74, '2025-12-25 19:54:54.750566');
-INSERT INTO `sys_role_permission` VALUES (1, 102, '2025-12-25 19:54:54.750574');
-INSERT INTO `sys_role_permission` VALUES (1, 103, '2025-12-25 19:54:54.750583');
-INSERT INTO `sys_role_permission` VALUES (1, 104, '2025-12-25 19:54:54.750591');
-INSERT INTO `sys_role_permission` VALUES (1, 105, '2025-12-25 19:54:54.750602');
-INSERT INTO `sys_role_permission` VALUES (1, 106, '2025-12-25 19:54:54.750610');
-INSERT INTO `sys_role_permission` VALUES (1, 107, '2025-12-25 19:54:54.750619');
-INSERT INTO `sys_role_permission` VALUES (1, 108, '2025-12-25 19:54:54.750627');
-INSERT INTO `sys_role_permission` VALUES (1, 109, '2025-12-25 19:54:54.750636');
-INSERT INTO `sys_role_permission` VALUES (1, 110, '2025-12-25 19:54:54.750644');
-INSERT INTO `sys_role_permission` VALUES (1, 111, '2025-12-25 19:54:54.750653');
-INSERT INTO `sys_role_permission` VALUES (1, 201, '2025-12-25 19:54:54.750661');
-INSERT INTO `sys_role_permission` VALUES (1, 202, '2025-12-25 19:54:54.750669');
-INSERT INTO `sys_role_permission` VALUES (1, 203, '2025-12-25 19:54:54.750678');
-INSERT INTO `sys_role_permission` VALUES (1, 204, '2025-12-25 19:54:54.750686');
-INSERT INTO `sys_role_permission` VALUES (1, 205, '2025-12-25 19:54:54.750695');
-INSERT INTO `sys_role_permission` VALUES (1, 206, '2025-12-25 19:54:54.750703');
-INSERT INTO `sys_role_permission` VALUES (1, 207, '2025-12-25 19:54:54.750716');
-INSERT INTO `sys_role_permission` VALUES (1, 208, '2025-12-25 19:54:54.750724');
-INSERT INTO `sys_role_permission` VALUES (1, 209, '2025-12-25 19:54:54.750733');
-INSERT INTO `sys_role_permission` VALUES (1, 210, '2025-12-25 19:54:54.750741');
-INSERT INTO `sys_role_permission` VALUES (1, 211, '2025-12-25 19:54:54.750752');
-INSERT INTO `sys_role_permission` VALUES (1, 212, '2025-12-25 19:54:54.750760');
-INSERT INTO `sys_role_permission` VALUES (1, 213, '2025-12-25 19:54:54.750778');
-INSERT INTO `sys_role_permission` VALUES (1, 214, '2025-12-25 19:54:54.750788');
-INSERT INTO `sys_role_permission` VALUES (1, 215, '2025-12-25 19:54:54.750796');
-INSERT INTO `sys_role_permission` VALUES (1, 216, '2025-12-25 19:54:54.750805');
-INSERT INTO `sys_role_permission` VALUES (1, 217, '2025-12-25 19:54:54.750814');
-INSERT INTO `sys_role_permission` VALUES (1, 218, '2025-12-25 19:54:54.750859');
-INSERT INTO `sys_role_permission` VALUES (1, 219, '2025-12-25 19:54:54.750868');
-INSERT INTO `sys_role_permission` VALUES (1, 220, '2025-12-25 19:54:54.750877');
-INSERT INTO `sys_role_permission` VALUES (1, 221, '2025-12-25 19:54:54.750885');
-INSERT INTO `sys_role_permission` VALUES (1, 222, '2025-12-25 19:54:54.750893');
-INSERT INTO `sys_role_permission` VALUES (1, 223, '2025-12-25 19:54:54.750905');
-INSERT INTO `sys_role_permission` VALUES (1, 224, '2025-12-25 19:54:54.750913');
-INSERT INTO `sys_role_permission` VALUES (1, 225, '2025-12-25 19:54:54.750922');
-INSERT INTO `sys_role_permission` VALUES (1, 226, '2025-12-25 19:54:54.750930');
-INSERT INTO `sys_role_permission` VALUES (1, 227, '2025-12-25 19:54:54.750939');
-INSERT INTO `sys_role_permission` VALUES (1, 228, '2025-12-25 19:54:54.750947');
-INSERT INTO `sys_role_permission` VALUES (1, 229, '2025-12-25 19:54:54.750955');
-INSERT INTO `sys_role_permission` VALUES (1, 230, '2025-12-25 19:54:54.750963');
-INSERT INTO `sys_role_permission` VALUES (1, 231, '2025-12-25 19:54:54.750971');
-INSERT INTO `sys_role_permission` VALUES (1, 232, '2025-12-25 19:54:54.750980');
-INSERT INTO `sys_role_permission` VALUES (1, 233, '2025-12-25 19:54:54.750988');
-INSERT INTO `sys_role_permission` VALUES (1, 234, '2025-12-25 19:54:54.750997');
-INSERT INTO `sys_role_permission` VALUES (1, 235, '2025-12-25 19:54:54.751005');
-INSERT INTO `sys_role_permission` VALUES (1, 236, '2025-12-25 19:54:54.751016');
-INSERT INTO `sys_role_permission` VALUES (1, 237, '2025-12-25 19:54:54.751025');
-INSERT INTO `sys_role_permission` VALUES (1, 238, '2025-12-25 19:54:54.751033');
-INSERT INTO `sys_role_permission` VALUES (1, 239, '2025-12-25 19:54:54.751041');
-INSERT INTO `sys_role_permission` VALUES (1, 240, '2025-12-25 19:54:54.751049');
+INSERT INTO `sys_role_permission` VALUES (1, 1, '2025-12-28 14:11:53.620283');
+INSERT INTO `sys_role_permission` VALUES (1, 2, '2025-12-28 14:11:53.620394');
+INSERT INTO `sys_role_permission` VALUES (1, 3, '2025-12-28 14:11:53.620430');
+INSERT INTO `sys_role_permission` VALUES (1, 4, '2025-12-28 14:11:53.620461');
+INSERT INTO `sys_role_permission` VALUES (1, 5, '2025-12-28 14:11:53.620495');
+INSERT INTO `sys_role_permission` VALUES (1, 6, '2025-12-28 14:11:53.620525');
+INSERT INTO `sys_role_permission` VALUES (1, 7, '2025-12-28 14:11:53.620559');
+INSERT INTO `sys_role_permission` VALUES (1, 8, '2025-12-28 14:11:53.620590');
+INSERT INTO `sys_role_permission` VALUES (1, 9, '2025-12-28 14:11:53.620620');
+INSERT INTO `sys_role_permission` VALUES (1, 10, '2025-12-28 14:11:53.620651');
+INSERT INTO `sys_role_permission` VALUES (1, 11, '2025-12-28 14:11:53.620684');
+INSERT INTO `sys_role_permission` VALUES (1, 12, '2025-12-28 14:11:53.620716');
+INSERT INTO `sys_role_permission` VALUES (1, 13, '2025-12-28 14:11:53.620751');
+INSERT INTO `sys_role_permission` VALUES (1, 14, '2025-12-28 14:11:53.620786');
+INSERT INTO `sys_role_permission` VALUES (1, 15, '2025-12-28 14:11:53.620816');
+INSERT INTO `sys_role_permission` VALUES (1, 16, '2025-12-28 14:11:53.620848');
+INSERT INTO `sys_role_permission` VALUES (1, 17, '2025-12-28 14:11:53.620876');
+INSERT INTO `sys_role_permission` VALUES (1, 18, '2025-12-28 14:11:53.620906');
+INSERT INTO `sys_role_permission` VALUES (1, 19, '2025-12-28 14:11:53.620939');
+INSERT INTO `sys_role_permission` VALUES (1, 20, '2025-12-28 14:11:53.620968');
+INSERT INTO `sys_role_permission` VALUES (1, 21, '2025-12-28 14:11:53.620999');
+INSERT INTO `sys_role_permission` VALUES (1, 22, '2025-12-28 14:11:53.621028');
+INSERT INTO `sys_role_permission` VALUES (1, 23, '2025-12-28 14:11:53.621056');
+INSERT INTO `sys_role_permission` VALUES (1, 24, '2025-12-28 14:11:53.621085');
+INSERT INTO `sys_role_permission` VALUES (1, 25, '2025-12-28 14:11:53.621113');
+INSERT INTO `sys_role_permission` VALUES (1, 26, '2025-12-28 14:11:53.621141');
+INSERT INTO `sys_role_permission` VALUES (1, 27, '2025-12-28 14:11:53.621172');
+INSERT INTO `sys_role_permission` VALUES (1, 28, '2025-12-28 14:11:53.621202');
+INSERT INTO `sys_role_permission` VALUES (1, 29, '2025-12-28 14:11:53.621280');
+INSERT INTO `sys_role_permission` VALUES (1, 30, '2025-12-28 14:11:53.621329');
+INSERT INTO `sys_role_permission` VALUES (1, 31, '2025-12-28 14:11:53.622322');
+INSERT INTO `sys_role_permission` VALUES (1, 32, '2025-12-28 14:11:53.622405');
+INSERT INTO `sys_role_permission` VALUES (1, 33, '2025-12-28 14:11:53.622437');
+INSERT INTO `sys_role_permission` VALUES (1, 34, '2025-12-28 14:11:53.622466');
+INSERT INTO `sys_role_permission` VALUES (1, 35, '2025-12-28 14:11:53.622493');
+INSERT INTO `sys_role_permission` VALUES (1, 36, '2025-12-28 14:11:53.622519');
+INSERT INTO `sys_role_permission` VALUES (1, 37, '2025-12-28 14:11:53.622547');
+INSERT INTO `sys_role_permission` VALUES (1, 38, '2025-12-28 14:11:53.622573');
+INSERT INTO `sys_role_permission` VALUES (1, 39, '2025-12-28 14:11:53.622612');
+INSERT INTO `sys_role_permission` VALUES (1, 40, '2025-12-28 14:11:53.622639');
+INSERT INTO `sys_role_permission` VALUES (1, 41, '2025-12-28 14:11:53.622665');
+INSERT INTO `sys_role_permission` VALUES (1, 42, '2025-12-28 14:11:53.622692');
+INSERT INTO `sys_role_permission` VALUES (1, 43, '2025-12-28 14:11:53.622719');
+INSERT INTO `sys_role_permission` VALUES (1, 44, '2025-12-28 14:11:53.622747');
+INSERT INTO `sys_role_permission` VALUES (1, 45, '2025-12-28 14:11:53.622774');
+INSERT INTO `sys_role_permission` VALUES (1, 46, '2025-12-28 14:11:53.622802');
+INSERT INTO `sys_role_permission` VALUES (1, 47, '2025-12-28 14:11:53.622832');
+INSERT INTO `sys_role_permission` VALUES (1, 48, '2025-12-28 14:11:53.622859');
+INSERT INTO `sys_role_permission` VALUES (1, 49, '2025-12-28 14:11:53.622937');
+INSERT INTO `sys_role_permission` VALUES (1, 50, '2025-12-28 14:11:53.622967');
+INSERT INTO `sys_role_permission` VALUES (1, 51, '2025-12-28 14:11:53.623001');
+INSERT INTO `sys_role_permission` VALUES (1, 52, '2025-12-28 14:11:53.623029');
+INSERT INTO `sys_role_permission` VALUES (1, 53, '2025-12-28 14:11:53.623056');
+INSERT INTO `sys_role_permission` VALUES (1, 54, '2025-12-28 14:11:53.623084');
+INSERT INTO `sys_role_permission` VALUES (1, 55, '2025-12-28 14:11:53.623113');
+INSERT INTO `sys_role_permission` VALUES (1, 56, '2025-12-28 14:11:53.623140');
+INSERT INTO `sys_role_permission` VALUES (1, 57, '2025-12-28 14:11:53.623170');
+INSERT INTO `sys_role_permission` VALUES (1, 58, '2025-12-28 14:11:53.623198');
+INSERT INTO `sys_role_permission` VALUES (1, 59, '2025-12-28 14:11:53.623230');
+INSERT INTO `sys_role_permission` VALUES (1, 60, '2025-12-28 14:11:53.623260');
+INSERT INTO `sys_role_permission` VALUES (1, 61, '2025-12-28 14:11:53.623290');
+INSERT INTO `sys_role_permission` VALUES (1, 62, '2025-12-28 14:11:53.623322');
+INSERT INTO `sys_role_permission` VALUES (1, 63, '2025-12-28 14:11:53.623352');
+INSERT INTO `sys_role_permission` VALUES (1, 64, '2025-12-28 14:11:53.623390');
+INSERT INTO `sys_role_permission` VALUES (1, 65, '2025-12-28 14:11:53.623419');
+INSERT INTO `sys_role_permission` VALUES (1, 66, '2025-12-28 14:11:53.623446');
+INSERT INTO `sys_role_permission` VALUES (1, 67, '2025-12-28 14:11:53.623475');
+INSERT INTO `sys_role_permission` VALUES (1, 68, '2025-12-28 14:11:53.623506');
+INSERT INTO `sys_role_permission` VALUES (1, 69, '2025-12-28 14:11:53.623533');
+INSERT INTO `sys_role_permission` VALUES (1, 70, '2025-12-28 14:11:53.623561');
+INSERT INTO `sys_role_permission` VALUES (1, 71, '2025-12-28 14:11:53.623590');
+INSERT INTO `sys_role_permission` VALUES (1, 72, '2025-12-28 14:11:53.623619');
+INSERT INTO `sys_role_permission` VALUES (1, 73, '2025-12-28 14:11:53.623651');
+INSERT INTO `sys_role_permission` VALUES (1, 74, '2025-12-28 14:11:53.623683');
+INSERT INTO `sys_role_permission` VALUES (1, 102, '2025-12-28 14:11:53.623715');
+INSERT INTO `sys_role_permission` VALUES (1, 103, '2025-12-28 14:11:53.623752');
+INSERT INTO `sys_role_permission` VALUES (1, 104, '2025-12-28 14:11:53.623788');
+INSERT INTO `sys_role_permission` VALUES (1, 105, '2025-12-28 14:11:53.623821');
+INSERT INTO `sys_role_permission` VALUES (1, 106, '2025-12-28 14:11:53.623854');
+INSERT INTO `sys_role_permission` VALUES (1, 107, '2025-12-28 14:11:53.623886');
+INSERT INTO `sys_role_permission` VALUES (1, 108, '2025-12-28 14:11:53.623916');
+INSERT INTO `sys_role_permission` VALUES (1, 109, '2025-12-28 14:11:53.623945');
+INSERT INTO `sys_role_permission` VALUES (1, 110, '2025-12-28 14:11:53.624303');
+INSERT INTO `sys_role_permission` VALUES (1, 111, '2025-12-28 14:11:53.624346');
+INSERT INTO `sys_role_permission` VALUES (1, 201, '2025-12-28 14:11:53.624376');
+INSERT INTO `sys_role_permission` VALUES (1, 202, '2025-12-28 14:11:53.624404');
+INSERT INTO `sys_role_permission` VALUES (1, 203, '2025-12-28 14:11:53.624432');
+INSERT INTO `sys_role_permission` VALUES (1, 204, '2025-12-28 14:11:53.624458');
+INSERT INTO `sys_role_permission` VALUES (1, 205, '2025-12-28 14:11:53.624493');
+INSERT INTO `sys_role_permission` VALUES (1, 206, '2025-12-28 14:11:53.624519');
+INSERT INTO `sys_role_permission` VALUES (1, 207, '2025-12-28 14:11:53.624575');
+INSERT INTO `sys_role_permission` VALUES (1, 208, '2025-12-28 14:11:53.624603');
+INSERT INTO `sys_role_permission` VALUES (1, 209, '2025-12-28 14:11:53.624633');
+INSERT INTO `sys_role_permission` VALUES (1, 210, '2025-12-28 14:11:53.624661');
+INSERT INTO `sys_role_permission` VALUES (1, 211, '2025-12-28 14:11:53.624686');
+INSERT INTO `sys_role_permission` VALUES (1, 212, '2025-12-28 14:11:53.624711');
+INSERT INTO `sys_role_permission` VALUES (1, 213, '2025-12-28 14:11:53.624737');
+INSERT INTO `sys_role_permission` VALUES (1, 214, '2025-12-28 14:11:53.624765');
+INSERT INTO `sys_role_permission` VALUES (1, 215, '2025-12-28 14:11:53.624791');
+INSERT INTO `sys_role_permission` VALUES (1, 216, '2025-12-28 14:11:53.624818');
+INSERT INTO `sys_role_permission` VALUES (1, 217, '2025-12-28 14:11:53.624864');
+INSERT INTO `sys_role_permission` VALUES (1, 218, '2025-12-28 14:11:53.624892');
+INSERT INTO `sys_role_permission` VALUES (1, 219, '2025-12-28 14:11:53.624918');
+INSERT INTO `sys_role_permission` VALUES (1, 220, '2025-12-28 14:11:53.624944');
+INSERT INTO `sys_role_permission` VALUES (1, 221, '2025-12-28 14:11:53.624975');
+INSERT INTO `sys_role_permission` VALUES (1, 222, '2025-12-28 14:11:53.625001');
+INSERT INTO `sys_role_permission` VALUES (1, 223, '2025-12-28 14:11:53.625027');
+INSERT INTO `sys_role_permission` VALUES (1, 224, '2025-12-28 14:11:53.625052');
+INSERT INTO `sys_role_permission` VALUES (1, 225, '2025-12-28 14:11:53.625078');
+INSERT INTO `sys_role_permission` VALUES (1, 226, '2025-12-28 14:11:53.625104');
+INSERT INTO `sys_role_permission` VALUES (1, 227, '2025-12-28 14:11:53.625129');
+INSERT INTO `sys_role_permission` VALUES (1, 228, '2025-12-28 14:11:53.625156');
+INSERT INTO `sys_role_permission` VALUES (1, 229, '2025-12-28 14:11:53.625182');
+INSERT INTO `sys_role_permission` VALUES (1, 230, '2025-12-28 14:11:53.625209');
+INSERT INTO `sys_role_permission` VALUES (1, 231, '2025-12-28 14:11:53.625234');
+INSERT INTO `sys_role_permission` VALUES (1, 232, '2025-12-28 14:11:53.625260');
+INSERT INTO `sys_role_permission` VALUES (1, 233, '2025-12-28 14:11:53.625286');
+INSERT INTO `sys_role_permission` VALUES (1, 234, '2025-12-28 14:11:53.625316');
+INSERT INTO `sys_role_permission` VALUES (1, 235, '2025-12-28 14:11:53.625342');
+INSERT INTO `sys_role_permission` VALUES (1, 236, '2025-12-28 14:11:53.625367');
+INSERT INTO `sys_role_permission` VALUES (1, 237, '2025-12-28 14:11:53.625393');
+INSERT INTO `sys_role_permission` VALUES (1, 238, '2025-12-28 14:11:53.625419');
+INSERT INTO `sys_role_permission` VALUES (1, 239, '2025-12-28 14:11:53.625444');
+INSERT INTO `sys_role_permission` VALUES (1, 240, '2025-12-28 14:11:53.625469');
+INSERT INTO `sys_role_permission` VALUES (1, 241, '2025-12-28 14:11:53.625493');
+INSERT INTO `sys_role_permission` VALUES (1, 242, '2025-12-28 14:11:53.625517');
+INSERT INTO `sys_role_permission` VALUES (1, 243, '2025-12-28 14:11:53.625541');
 INSERT INTO `sys_role_permission` VALUES (2, 1, '2025-12-26 21:30:48.363705');
 INSERT INTO `sys_role_permission` VALUES (2, 2, '2025-12-26 21:30:48.364320');
 INSERT INTO `sys_role_permission` VALUES (2, 3, '2025-12-26 21:30:48.364355');
@@ -1457,115 +2350,116 @@ INSERT INTO `sys_role_permission` VALUES (2, 6, '2025-12-26 21:30:48.364395');
 INSERT INTO `sys_role_permission` VALUES (2, 7, '2025-12-26 21:30:48.364404');
 INSERT INTO `sys_role_permission` VALUES (2, 48, '2025-12-26 21:30:48.364424');
 INSERT INTO `sys_role_permission` VALUES (2, 240, '2025-12-26 21:30:48.364413');
-INSERT INTO `sys_role_permission` VALUES (3, 1, '2025-12-26 21:55:59.751649');
-INSERT INTO `sys_role_permission` VALUES (3, 2, '2025-12-26 21:55:59.753952');
-INSERT INTO `sys_role_permission` VALUES (3, 3, '2025-12-26 21:55:59.754099');
-INSERT INTO `sys_role_permission` VALUES (3, 4, '2025-12-26 21:55:59.754132');
-INSERT INTO `sys_role_permission` VALUES (3, 5, '2025-12-26 21:55:59.754163');
-INSERT INTO `sys_role_permission` VALUES (3, 6, '2025-12-26 21:55:59.754193');
-INSERT INTO `sys_role_permission` VALUES (3, 7, '2025-12-26 21:55:59.754220');
-INSERT INTO `sys_role_permission` VALUES (3, 8, '2025-12-26 21:55:59.754249');
-INSERT INTO `sys_role_permission` VALUES (3, 9, '2025-12-26 21:55:59.754277');
-INSERT INTO `sys_role_permission` VALUES (3, 10, '2025-12-26 21:55:59.754311');
-INSERT INTO `sys_role_permission` VALUES (3, 11, '2025-12-26 21:55:59.754337');
-INSERT INTO `sys_role_permission` VALUES (3, 12, '2025-12-26 21:55:59.754363');
-INSERT INTO `sys_role_permission` VALUES (3, 13, '2025-12-26 21:55:59.754396');
-INSERT INTO `sys_role_permission` VALUES (3, 14, '2025-12-26 21:55:59.754422');
-INSERT INTO `sys_role_permission` VALUES (3, 15, '2025-12-26 21:55:59.754448');
-INSERT INTO `sys_role_permission` VALUES (3, 16, '2025-12-26 21:55:59.754481');
-INSERT INTO `sys_role_permission` VALUES (3, 17, '2025-12-26 21:55:59.754507');
-INSERT INTO `sys_role_permission` VALUES (3, 18, '2025-12-26 21:55:59.754533');
-INSERT INTO `sys_role_permission` VALUES (3, 19, '2025-12-26 21:55:59.754561');
-INSERT INTO `sys_role_permission` VALUES (3, 20, '2025-12-26 21:55:59.754587');
-INSERT INTO `sys_role_permission` VALUES (3, 21, '2025-12-26 21:55:59.754613');
-INSERT INTO `sys_role_permission` VALUES (3, 22, '2025-12-26 21:55:59.754638');
-INSERT INTO `sys_role_permission` VALUES (3, 23, '2025-12-26 21:55:59.754664');
-INSERT INTO `sys_role_permission` VALUES (3, 24, '2025-12-26 21:55:59.754695');
-INSERT INTO `sys_role_permission` VALUES (3, 25, '2025-12-26 21:55:59.754749');
-INSERT INTO `sys_role_permission` VALUES (3, 26, '2025-12-26 21:55:59.754778');
-INSERT INTO `sys_role_permission` VALUES (3, 27, '2025-12-26 21:55:59.754807');
-INSERT INTO `sys_role_permission` VALUES (3, 28, '2025-12-26 21:55:59.754835');
-INSERT INTO `sys_role_permission` VALUES (3, 29, '2025-12-26 21:55:59.754862');
-INSERT INTO `sys_role_permission` VALUES (3, 30, '2025-12-26 21:55:59.754889');
-INSERT INTO `sys_role_permission` VALUES (3, 31, '2025-12-26 21:55:59.754922');
-INSERT INTO `sys_role_permission` VALUES (3, 32, '2025-12-26 21:55:59.754949');
-INSERT INTO `sys_role_permission` VALUES (3, 33, '2025-12-26 21:55:59.754977');
-INSERT INTO `sys_role_permission` VALUES (3, 34, '2025-12-26 21:55:59.755004');
-INSERT INTO `sys_role_permission` VALUES (3, 35, '2025-12-26 21:55:59.755031');
-INSERT INTO `sys_role_permission` VALUES (3, 36, '2025-12-26 21:55:59.755058');
-INSERT INTO `sys_role_permission` VALUES (3, 37, '2025-12-26 21:55:59.755090');
-INSERT INTO `sys_role_permission` VALUES (3, 38, '2025-12-26 21:55:59.755118');
-INSERT INTO `sys_role_permission` VALUES (3, 39, '2025-12-26 21:55:59.755146');
-INSERT INTO `sys_role_permission` VALUES (3, 40, '2025-12-26 21:55:59.755172');
-INSERT INTO `sys_role_permission` VALUES (3, 41, '2025-12-26 21:55:59.755199');
-INSERT INTO `sys_role_permission` VALUES (3, 42, '2025-12-26 21:55:59.755225');
-INSERT INTO `sys_role_permission` VALUES (3, 43, '2025-12-26 21:55:59.755252');
-INSERT INTO `sys_role_permission` VALUES (3, 44, '2025-12-26 21:55:59.755279');
-INSERT INTO `sys_role_permission` VALUES (3, 45, '2025-12-26 21:55:59.755309');
-INSERT INTO `sys_role_permission` VALUES (3, 46, '2025-12-26 21:55:59.755337');
-INSERT INTO `sys_role_permission` VALUES (3, 48, '2025-12-26 21:55:59.755364');
-INSERT INTO `sys_role_permission` VALUES (3, 49, '2025-12-26 21:55:59.755391');
-INSERT INTO `sys_role_permission` VALUES (3, 50, '2025-12-26 21:55:59.755419');
-INSERT INTO `sys_role_permission` VALUES (3, 51, '2025-12-26 21:55:59.755446');
-INSERT INTO `sys_role_permission` VALUES (3, 52, '2025-12-26 21:55:59.755473');
-INSERT INTO `sys_role_permission` VALUES (3, 53, '2025-12-26 21:55:59.755499');
-INSERT INTO `sys_role_permission` VALUES (3, 54, '2025-12-26 21:55:59.755526');
-INSERT INTO `sys_role_permission` VALUES (3, 55, '2025-12-26 21:55:59.755554');
-INSERT INTO `sys_role_permission` VALUES (3, 56, '2025-12-26 21:55:59.755579');
-INSERT INTO `sys_role_permission` VALUES (3, 57, '2025-12-26 21:55:59.755605');
-INSERT INTO `sys_role_permission` VALUES (3, 58, '2025-12-26 21:55:59.755633');
-INSERT INTO `sys_role_permission` VALUES (3, 59, '2025-12-26 21:55:59.755696');
-INSERT INTO `sys_role_permission` VALUES (3, 60, '2025-12-26 21:55:59.755727');
-INSERT INTO `sys_role_permission` VALUES (3, 61, '2025-12-26 21:55:59.755755');
-INSERT INTO `sys_role_permission` VALUES (3, 62, '2025-12-26 21:55:59.755781');
-INSERT INTO `sys_role_permission` VALUES (3, 63, '2025-12-26 21:55:59.755806');
-INSERT INTO `sys_role_permission` VALUES (3, 64, '2025-12-26 21:55:59.755832');
-INSERT INTO `sys_role_permission` VALUES (3, 65, '2025-12-26 21:55:59.755857');
-INSERT INTO `sys_role_permission` VALUES (3, 66, '2025-12-26 21:55:59.755881');
-INSERT INTO `sys_role_permission` VALUES (3, 67, '2025-12-26 21:55:59.755906');
-INSERT INTO `sys_role_permission` VALUES (3, 68, '2025-12-26 21:55:59.755931');
-INSERT INTO `sys_role_permission` VALUES (3, 69, '2025-12-26 21:55:59.755956');
-INSERT INTO `sys_role_permission` VALUES (3, 70, '2025-12-26 21:55:59.755982');
-INSERT INTO `sys_role_permission` VALUES (3, 71, '2025-12-26 21:55:59.756012');
-INSERT INTO `sys_role_permission` VALUES (3, 72, '2025-12-26 21:55:59.756038');
-INSERT INTO `sys_role_permission` VALUES (3, 73, '2025-12-26 21:55:59.756065');
-INSERT INTO `sys_role_permission` VALUES (3, 201, '2025-12-26 21:55:59.756092');
-INSERT INTO `sys_role_permission` VALUES (3, 202, '2025-12-26 21:55:59.756118');
-INSERT INTO `sys_role_permission` VALUES (3, 203, '2025-12-26 21:55:59.756145');
-INSERT INTO `sys_role_permission` VALUES (3, 204, '2025-12-26 21:55:59.756171');
-INSERT INTO `sys_role_permission` VALUES (3, 205, '2025-12-26 21:55:59.756196');
-INSERT INTO `sys_role_permission` VALUES (3, 210, '2025-12-26 21:55:59.756223');
-INSERT INTO `sys_role_permission` VALUES (3, 211, '2025-12-26 21:55:59.756248');
-INSERT INTO `sys_role_permission` VALUES (3, 212, '2025-12-26 21:55:59.756273');
-INSERT INTO `sys_role_permission` VALUES (3, 213, '2025-12-26 21:55:59.756298');
-INSERT INTO `sys_role_permission` VALUES (3, 214, '2025-12-26 21:55:59.756324');
-INSERT INTO `sys_role_permission` VALUES (3, 215, '2025-12-26 21:55:59.756355');
-INSERT INTO `sys_role_permission` VALUES (3, 216, '2025-12-26 21:55:59.756380');
-INSERT INTO `sys_role_permission` VALUES (3, 217, '2025-12-26 21:55:59.756407');
-INSERT INTO `sys_role_permission` VALUES (3, 218, '2025-12-26 21:55:59.756433');
-INSERT INTO `sys_role_permission` VALUES (3, 219, '2025-12-26 21:55:59.756458');
-INSERT INTO `sys_role_permission` VALUES (3, 220, '2025-12-26 21:55:59.756483');
-INSERT INTO `sys_role_permission` VALUES (3, 221, '2025-12-26 21:55:59.756508');
-INSERT INTO `sys_role_permission` VALUES (3, 222, '2025-12-26 21:55:59.756533');
-INSERT INTO `sys_role_permission` VALUES (3, 223, '2025-12-26 21:55:59.756566');
-INSERT INTO `sys_role_permission` VALUES (3, 224, '2025-12-26 21:55:59.756593');
-INSERT INTO `sys_role_permission` VALUES (3, 225, '2025-12-26 21:55:59.756619');
-INSERT INTO `sys_role_permission` VALUES (3, 226, '2025-12-26 21:55:59.756646');
-INSERT INTO `sys_role_permission` VALUES (3, 227, '2025-12-26 21:55:59.756672');
-INSERT INTO `sys_role_permission` VALUES (3, 228, '2025-12-26 21:55:59.756697');
-INSERT INTO `sys_role_permission` VALUES (3, 229, '2025-12-26 21:55:59.756724');
-INSERT INTO `sys_role_permission` VALUES (3, 230, '2025-12-26 21:55:59.756749');
-INSERT INTO `sys_role_permission` VALUES (3, 231, '2025-12-26 21:55:59.756777');
-INSERT INTO `sys_role_permission` VALUES (3, 232, '2025-12-26 21:55:59.756803');
-INSERT INTO `sys_role_permission` VALUES (3, 233, '2025-12-26 21:55:59.756829');
-INSERT INTO `sys_role_permission` VALUES (3, 234, '2025-12-26 21:55:59.756973');
-INSERT INTO `sys_role_permission` VALUES (3, 235, '2025-12-26 21:55:59.757000');
-INSERT INTO `sys_role_permission` VALUES (3, 236, '2025-12-26 21:55:59.757027');
-INSERT INTO `sys_role_permission` VALUES (3, 237, '2025-12-26 21:55:59.757053');
-INSERT INTO `sys_role_permission` VALUES (3, 238, '2025-12-26 21:55:59.757078');
-INSERT INTO `sys_role_permission` VALUES (3, 239, '2025-12-26 21:55:59.757104');
-INSERT INTO `sys_role_permission` VALUES (3, 240, '2025-12-26 21:55:59.757130');
-INSERT INTO `sys_role_permission` VALUES (3, 241, '2025-12-26 21:55:59.757155');
+INSERT INTO `sys_role_permission` VALUES (3, 1, '2025-12-28 14:11:04.602553');
+INSERT INTO `sys_role_permission` VALUES (3, 2, '2025-12-28 14:11:04.604822');
+INSERT INTO `sys_role_permission` VALUES (3, 3, '2025-12-28 14:11:04.605041');
+INSERT INTO `sys_role_permission` VALUES (3, 4, '2025-12-28 14:11:04.605103');
+INSERT INTO `sys_role_permission` VALUES (3, 5, '2025-12-28 14:11:04.605159');
+INSERT INTO `sys_role_permission` VALUES (3, 6, '2025-12-28 14:11:04.605210');
+INSERT INTO `sys_role_permission` VALUES (3, 7, '2025-12-28 14:11:04.605261');
+INSERT INTO `sys_role_permission` VALUES (3, 8, '2025-12-28 14:11:04.605307');
+INSERT INTO `sys_role_permission` VALUES (3, 9, '2025-12-28 14:11:04.605361');
+INSERT INTO `sys_role_permission` VALUES (3, 10, '2025-12-28 14:11:04.605421');
+INSERT INTO `sys_role_permission` VALUES (3, 11, '2025-12-28 14:11:04.605483');
+INSERT INTO `sys_role_permission` VALUES (3, 12, '2025-12-28 14:11:04.605534');
+INSERT INTO `sys_role_permission` VALUES (3, 13, '2025-12-28 14:11:04.605584');
+INSERT INTO `sys_role_permission` VALUES (3, 14, '2025-12-28 14:11:04.605639');
+INSERT INTO `sys_role_permission` VALUES (3, 15, '2025-12-28 14:11:04.605688');
+INSERT INTO `sys_role_permission` VALUES (3, 16, '2025-12-28 14:11:04.605741');
+INSERT INTO `sys_role_permission` VALUES (3, 17, '2025-12-28 14:11:04.605790');
+INSERT INTO `sys_role_permission` VALUES (3, 18, '2025-12-28 14:11:04.605837');
+INSERT INTO `sys_role_permission` VALUES (3, 19, '2025-12-28 14:11:04.605884');
+INSERT INTO `sys_role_permission` VALUES (3, 20, '2025-12-28 14:11:04.605933');
+INSERT INTO `sys_role_permission` VALUES (3, 21, '2025-12-28 14:11:04.605978');
+INSERT INTO `sys_role_permission` VALUES (3, 22, '2025-12-28 14:11:04.606024');
+INSERT INTO `sys_role_permission` VALUES (3, 23, '2025-12-28 14:11:04.606069');
+INSERT INTO `sys_role_permission` VALUES (3, 24, '2025-12-28 14:11:04.606118');
+INSERT INTO `sys_role_permission` VALUES (3, 25, '2025-12-28 14:11:04.606163');
+INSERT INTO `sys_role_permission` VALUES (3, 26, '2025-12-28 14:11:04.606211');
+INSERT INTO `sys_role_permission` VALUES (3, 27, '2025-12-28 14:11:04.606260');
+INSERT INTO `sys_role_permission` VALUES (3, 28, '2025-12-28 14:11:04.606308');
+INSERT INTO `sys_role_permission` VALUES (3, 29, '2025-12-28 14:11:04.606440');
+INSERT INTO `sys_role_permission` VALUES (3, 30, '2025-12-28 14:11:04.606491');
+INSERT INTO `sys_role_permission` VALUES (3, 31, '2025-12-28 14:11:04.606540');
+INSERT INTO `sys_role_permission` VALUES (3, 32, '2025-12-28 14:11:04.606590');
+INSERT INTO `sys_role_permission` VALUES (3, 33, '2025-12-28 14:11:04.606637');
+INSERT INTO `sys_role_permission` VALUES (3, 34, '2025-12-28 14:11:04.606684');
+INSERT INTO `sys_role_permission` VALUES (3, 35, '2025-12-28 14:11:04.606731');
+INSERT INTO `sys_role_permission` VALUES (3, 36, '2025-12-28 14:11:04.606777');
+INSERT INTO `sys_role_permission` VALUES (3, 37, '2025-12-28 14:11:04.606822');
+INSERT INTO `sys_role_permission` VALUES (3, 38, '2025-12-28 14:11:04.606867');
+INSERT INTO `sys_role_permission` VALUES (3, 39, '2025-12-28 14:11:04.606916');
+INSERT INTO `sys_role_permission` VALUES (3, 40, '2025-12-28 14:11:04.606966');
+INSERT INTO `sys_role_permission` VALUES (3, 41, '2025-12-28 14:11:04.607012');
+INSERT INTO `sys_role_permission` VALUES (3, 42, '2025-12-28 14:11:04.607056');
+INSERT INTO `sys_role_permission` VALUES (3, 43, '2025-12-28 14:11:04.607101');
+INSERT INTO `sys_role_permission` VALUES (3, 44, '2025-12-28 14:11:04.607147');
+INSERT INTO `sys_role_permission` VALUES (3, 45, '2025-12-28 14:11:04.607194');
+INSERT INTO `sys_role_permission` VALUES (3, 46, '2025-12-28 14:11:04.607239');
+INSERT INTO `sys_role_permission` VALUES (3, 48, '2025-12-28 14:11:04.607286');
+INSERT INTO `sys_role_permission` VALUES (3, 49, '2025-12-28 14:11:04.607331');
+INSERT INTO `sys_role_permission` VALUES (3, 50, '2025-12-28 14:11:04.607414');
+INSERT INTO `sys_role_permission` VALUES (3, 51, '2025-12-28 14:11:04.607460');
+INSERT INTO `sys_role_permission` VALUES (3, 52, '2025-12-28 14:11:04.607506');
+INSERT INTO `sys_role_permission` VALUES (3, 53, '2025-12-28 14:11:04.607554');
+INSERT INTO `sys_role_permission` VALUES (3, 54, '2025-12-28 14:11:04.607599');
+INSERT INTO `sys_role_permission` VALUES (3, 55, '2025-12-28 14:11:04.607644');
+INSERT INTO `sys_role_permission` VALUES (3, 56, '2025-12-28 14:11:04.607690');
+INSERT INTO `sys_role_permission` VALUES (3, 57, '2025-12-28 14:11:04.607734');
+INSERT INTO `sys_role_permission` VALUES (3, 58, '2025-12-28 14:11:04.607780');
+INSERT INTO `sys_role_permission` VALUES (3, 59, '2025-12-28 14:11:04.607826');
+INSERT INTO `sys_role_permission` VALUES (3, 60, '2025-12-28 14:11:04.607873');
+INSERT INTO `sys_role_permission` VALUES (3, 61, '2025-12-28 14:11:04.607919');
+INSERT INTO `sys_role_permission` VALUES (3, 62, '2025-12-28 14:11:04.607965');
+INSERT INTO `sys_role_permission` VALUES (3, 63, '2025-12-28 14:11:04.608009');
+INSERT INTO `sys_role_permission` VALUES (3, 64, '2025-12-28 14:11:04.608056');
+INSERT INTO `sys_role_permission` VALUES (3, 65, '2025-12-28 14:11:04.608105');
+INSERT INTO `sys_role_permission` VALUES (3, 66, '2025-12-28 14:11:04.608150');
+INSERT INTO `sys_role_permission` VALUES (3, 67, '2025-12-28 14:11:04.608195');
+INSERT INTO `sys_role_permission` VALUES (3, 68, '2025-12-28 14:11:04.608240');
+INSERT INTO `sys_role_permission` VALUES (3, 69, '2025-12-28 14:11:04.608286');
+INSERT INTO `sys_role_permission` VALUES (3, 70, '2025-12-28 14:11:04.608339');
+INSERT INTO `sys_role_permission` VALUES (3, 71, '2025-12-28 14:11:04.608416');
+INSERT INTO `sys_role_permission` VALUES (3, 72, '2025-12-28 14:11:04.608468');
+INSERT INTO `sys_role_permission` VALUES (3, 73, '2025-12-28 14:11:04.608513');
+INSERT INTO `sys_role_permission` VALUES (3, 201, '2025-12-28 14:11:04.608560');
+INSERT INTO `sys_role_permission` VALUES (3, 202, '2025-12-28 14:11:04.608605');
+INSERT INTO `sys_role_permission` VALUES (3, 203, '2025-12-28 14:11:04.608649');
+INSERT INTO `sys_role_permission` VALUES (3, 204, '2025-12-28 14:11:04.608697');
+INSERT INTO `sys_role_permission` VALUES (3, 205, '2025-12-28 14:11:04.608741');
+INSERT INTO `sys_role_permission` VALUES (3, 210, '2025-12-28 14:11:04.608786');
+INSERT INTO `sys_role_permission` VALUES (3, 211, '2025-12-28 14:11:04.608830');
+INSERT INTO `sys_role_permission` VALUES (3, 212, '2025-12-28 14:11:04.608874');
+INSERT INTO `sys_role_permission` VALUES (3, 213, '2025-12-28 14:11:04.608919');
+INSERT INTO `sys_role_permission` VALUES (3, 214, '2025-12-28 14:11:04.608963');
+INSERT INTO `sys_role_permission` VALUES (3, 215, '2025-12-28 14:11:04.609008');
+INSERT INTO `sys_role_permission` VALUES (3, 216, '2025-12-28 14:11:04.609053');
+INSERT INTO `sys_role_permission` VALUES (3, 217, '2025-12-28 14:11:04.609098');
+INSERT INTO `sys_role_permission` VALUES (3, 218, '2025-12-28 14:11:04.609143');
+INSERT INTO `sys_role_permission` VALUES (3, 219, '2025-12-28 14:11:04.609186');
+INSERT INTO `sys_role_permission` VALUES (3, 220, '2025-12-28 14:11:04.609235');
+INSERT INTO `sys_role_permission` VALUES (3, 221, '2025-12-28 14:11:04.609280');
+INSERT INTO `sys_role_permission` VALUES (3, 222, '2025-12-28 14:11:04.609327');
+INSERT INTO `sys_role_permission` VALUES (3, 223, '2025-12-28 14:11:04.609375');
+INSERT INTO `sys_role_permission` VALUES (3, 224, '2025-12-28 14:11:04.609423');
+INSERT INTO `sys_role_permission` VALUES (3, 225, '2025-12-28 14:11:04.609470');
+INSERT INTO `sys_role_permission` VALUES (3, 226, '2025-12-28 14:11:04.609515');
+INSERT INTO `sys_role_permission` VALUES (3, 227, '2025-12-28 14:11:04.609562');
+INSERT INTO `sys_role_permission` VALUES (3, 228, '2025-12-28 14:11:04.609609');
+INSERT INTO `sys_role_permission` VALUES (3, 229, '2025-12-28 14:11:04.609654');
+INSERT INTO `sys_role_permission` VALUES (3, 230, '2025-12-28 14:11:04.609699');
+INSERT INTO `sys_role_permission` VALUES (3, 231, '2025-12-28 14:11:04.609744');
+INSERT INTO `sys_role_permission` VALUES (3, 232, '2025-12-28 14:11:04.609789');
+INSERT INTO `sys_role_permission` VALUES (3, 233, '2025-12-28 14:11:04.609834');
+INSERT INTO `sys_role_permission` VALUES (3, 234, '2025-12-28 14:11:04.609992');
+INSERT INTO `sys_role_permission` VALUES (3, 235, '2025-12-28 14:11:04.610038');
+INSERT INTO `sys_role_permission` VALUES (3, 236, '2025-12-28 14:11:04.610087');
+INSERT INTO `sys_role_permission` VALUES (3, 237, '2025-12-28 14:11:04.610133');
+INSERT INTO `sys_role_permission` VALUES (3, 238, '2025-12-28 14:11:04.610178');
+INSERT INTO `sys_role_permission` VALUES (3, 239, '2025-12-28 14:11:04.610223');
+INSERT INTO `sys_role_permission` VALUES (3, 240, '2025-12-28 14:11:04.610268');
+INSERT INTO `sys_role_permission` VALUES (3, 241, '2025-12-28 14:11:04.610314');
+INSERT INTO `sys_role_permission` VALUES (3, 242, '2025-12-28 14:11:04.610360');
 
 -- ----------------------------
 -- Table structure for sys_user
@@ -1593,7 +2487,7 @@ CREATE TABLE `sys_user`  (
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', '管理员', NULL, NULL, 1, '2024-01-01 00:00:00.000000', '2025-12-27 10:15:10.492379', '/uploads/avatars/1_09f7e7b6-b435-4c3d-b58b-952aa2e8a1cb.jpg', 7, 'out');
+INSERT INTO `sys_user` VALUES (1, 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', NULL, NULL, NULL, 1, '2024-01-01 00:00:00.000000', '2026-01-04 14:41:08.121973', '/uploads/avatars/1_09f7e7b6-b435-4c3d-b58b-952aa2e8a1cb.jpg', 7, 'business');
 INSERT INTO `sys_user` VALUES (2, 'test', 'ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae', '测试用户', 'test@jinlan.info', '13333333333', 1, '2025-12-21 13:34:02.083370', '2025-12-26 21:57:51.860311', NULL, 1, NULL);
 INSERT INTO `sys_user` VALUES (4, 'superadmin', '54c51096a4299686282a734e240cf3e5382b709e40077f32633f86a74b72c39e', '超级管理员', 'raorong@jinlan.info', '13551252357', 1, '2025-12-26 21:22:47.372200', '2025-12-26 21:37:49.670183', '/uploads/avatars/4_43dfd44a-15b4-4a43-b1f1-c53b9182a90d.jpg', 7, 'online');
 
