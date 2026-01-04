@@ -47,10 +47,20 @@
             <a @click="viewDetail(record)">详情</a>
             <a-divider type="vertical" />
             <a @click="editProject(record)">编辑</a>
+            <a-divider type="vertical" />
+            <a @click="handleClone(record)">克隆</a>
           </template>
         </template>
       </a-table>
     </a-card>
+
+    <CloneProjectDialog
+      v-model:open="showCloneDialog"
+      :initialName="cloningProject?.name"
+      :initialManager="cloningProject?.manager"
+      :loading="cloneLoading"
+      @confirm="onCloneConfirm"
+    />
   </div>
 </template>
 
@@ -58,8 +68,9 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
-import { getProjects } from '@/api/project';
-import type { ProjectListItem } from '@/types/project';
+import { getProjects, getProject, saveProject } from '@/api/project';
+import type { ProjectListItem, ProjectFullDto } from '@/types/project';
+import CloneProjectDialog from './components/CloneProjectDialog.vue';
 
 const router = useRouter();
 
@@ -150,6 +161,80 @@ const viewDetail = (record: ProjectListItem) => {
 const editProject = (record: ProjectListItem) => {
   message.info(`编辑项目：${record.name}`);
 };
+
+const showCloneDialog = ref(false);
+const cloningProject = ref<ProjectListItem | null>(null);
+const cloneLoading = ref(false);
+
+const handleClone = (record: ProjectListItem) => {
+  cloningProject.value = record;
+  showCloneDialog.value = true;
+};
+
+const onCloneConfirm = async (values: { code: string, name: string, manager: string, startDate: string }) => {
+  if (!cloningProject.value) return;
+  cloneLoading.value = true;
+  try {
+    const fullProject = await getProject(cloningProject.value.code);
+    if (!fullProject) {
+      message.error('无法获取原项目详情');
+      return;
+    }
+
+    const newProject = cloneAndShiftProject(fullProject, values);
+    await saveProject(newProject);
+    message.success('克隆成功');
+    showCloneDialog.value = false;
+    fetchData();
+  } catch (error) {
+    console.error(error);
+    message.error('克隆失败');
+  } finally {
+    cloneLoading.value = false;
+  }
+};
+
+const cloneAndShiftProject = (source: ProjectFullDto, targetInfo: { code: string, name: string, manager: string, startDate: string }) => {
+  const newProject = JSON.parse(JSON.stringify(source));
+  
+  newProject.projectInfo.code = targetInfo.code;
+  newProject.projectInfo.name = targetInfo.name;
+  newProject.projectInfo.manager = targetInfo.manager;
+  
+  const oldStartStr = source.projectInfo.plannedStartDate;
+  const newStartStr = targetInfo.startDate;
+  
+  newProject.projectInfo.plannedStartDate = newStartStr;
+  
+  if (oldStartStr && newStartStr) {
+    const oldStart = new Date(oldStartStr);
+    const newStart = new Date(newStartStr);
+    const diffTime = newStart.getTime() - oldStart.getTime();
+    
+    const shift = (dateStr: string | undefined) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const nd = new Date(d.getTime() + diffTime);
+      const y = nd.getFullYear();
+      const m = String(nd.getMonth() + 1).padStart(2, '0');
+      const day = String(nd.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    
+    newProject.projectInfo.plannedEndDate = shift(source.projectInfo.plannedEndDate);
+    
+    if (newProject.tasks) {
+      newProject.tasks.forEach((t: any) => {
+        t.startDate = shift(t.startDate);
+        t.endDate = shift(t.endDate);
+      });
+    }
+  }
+  
+  return newProject;
+};
+
 </script>
 
 <style scoped>

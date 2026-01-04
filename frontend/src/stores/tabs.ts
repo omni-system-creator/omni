@@ -8,6 +8,7 @@ export interface TabItem {
   name: string;
   fullPath: string;
   meta: any;
+  tooltip?: string;
 }
 
 export const useTabsStore = defineStore('tabs', () => {
@@ -143,6 +144,16 @@ export const useTabsStore = defineStore('tabs', () => {
       .map((v) => v.name);
   }
 
+  function updateViewTitle(fullPath: string, title: string, tooltip?: string) {
+    const view = visitedViews.value.find((v) => v.fullPath === fullPath);
+    if (view) {
+      view.title = title;
+      if (tooltip) {
+        view.tooltip = tooltip;
+      }
+    }
+  }
+
   return {
     visitedViews,
     cachedViews,
@@ -155,6 +166,7 @@ export const useTabsStore = defineStore('tabs', () => {
     delAllViews,
     isWebFull,
     toggleWebFull,
-    getTabIdentity
+    getTabIdentity,
+    updateViewTitle
   };
 });

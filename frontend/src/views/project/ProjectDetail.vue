@@ -38,6 +38,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useProjectFlowStore } from '@/stores/projectFlowStore';
+import { useTabsStore } from '@/stores/tabs';
 import Controls from './components/Controls.vue';
 import LeaferCanvas from './components/LeaferCanvas.vue';
 import DetailPanel from './components/DetailPanel.vue';
@@ -47,6 +48,7 @@ import StatusBar from './components/StatusBar.vue';
 
 const route = useRoute();
 const store = useProjectFlowStore();
+const tabsStore = useTabsStore();
 const activeTab = ref('flowchart');
 
 onMounted(async () => {
@@ -54,6 +56,15 @@ onMounted(async () => {
   if (projectId) {
     console.log('Project Detail mounted for project:', projectId);
     await store.fetchProject(projectId);
+    
+    // Update tab title and tooltip
+    if (store.projectInfo) {
+      const title = `项目详情[${store.projectInfo.code}]`;
+      const managerPart = store.projectInfo.manager ? `（${store.projectInfo.manager}）` : '';
+      const tooltip = `【${store.projectInfo.code}】${store.projectInfo.name}${managerPart}`;
+      tabsStore.updateViewTitle(route.fullPath, title, tooltip);
+    }
+
     // Initialize real-time collaboration
     store.initSocket();
   }

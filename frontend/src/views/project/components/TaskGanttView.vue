@@ -1315,7 +1315,6 @@ const drawGantt = () => {
                      const rawNewX = startResizeGroupX + diff;
                      // Snap X to nearest day
                      const snappedX = Math.round(rawNewX / DAY_WIDTH.value) * DAY_WIDTH.value;
-                     const actualDiff = snappedX - startResizeGroupX;
                      
                      // Right edge must stay fixed relative to time (conceptually), but since we are changing X, we must adjust W.
                      // Original Right X = startResizeGroupX + startResizeW

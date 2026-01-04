@@ -3,6 +3,10 @@ import { useProjectFlowStore } from "@/stores/projectFlowStore";
 import { ref, computed } from "vue";
 import ProjectPropertiesDialog from './ProjectPropertiesDialog.vue';
 
+import { saveProject } from '@/api/project';
+import type { ProjectFullDto } from '@/types/project';
+import CloneProjectDialog from './CloneProjectDialog.vue';
+
 import { Modal, message } from 'ant-design-vue';
 import type { TaskStatus } from "@/types/project";
 import { onMounted, onUnmounted } from 'vue';
@@ -181,6 +185,9 @@ const handleFileSelect = ({ key }: { key: string }) => {
     case "new":
       showNewProjectDialog.value = true;
       break;
+    case "clone":
+      showCloneDialog.value = true;
+      break;
     case "properties":
       showProjectProperties.value = true;
       break;
@@ -256,6 +263,89 @@ const exportImage = async () => {
     await store.exportImageHandler();
   }
 };
+
+const showCloneDialog = ref(false);
+const cloneLoading = ref(false);
+
+const onCloneConfirm = async (values: { code: string, name: string, manager: string, startDate: string }) => {
+  cloneLoading.value = true;
+  try {
+    const tasksForSave = store.tasks.map(t => ({
+      ...t,
+      dependencies: t.dependencies.map((d: any) => {
+        if (typeof d === 'string') {
+          return { taskId: d };
+        }
+        return {
+          ...d,
+          controlPoints: (d.controlPoints && typeof d.controlPoints !== 'string')
+            ? JSON.stringify(d.controlPoints)
+            : d.controlPoints
+        };
+      })
+    }));
+
+    const fullProject: ProjectFullDto = {
+      projectInfo: store.projectInfo,
+      phases: store.phases,
+      swimlanes: store.swimlanes,
+      tasks: tasksForSave as any
+    };
+
+    const newProject = cloneAndShiftProject(fullProject, values);
+    await saveProject(newProject);
+    message.success('克隆成功');
+    showCloneDialog.value = false;
+    // Optional: Redirect to new project or stay
+  } catch (error) {
+    console.error(error);
+    message.error('克隆失败');
+  } finally {
+    cloneLoading.value = false;
+  }
+};
+
+const cloneAndShiftProject = (source: ProjectFullDto, targetInfo: { code: string, name: string, manager: string, startDate: string }) => {
+  const newProject = JSON.parse(JSON.stringify(source));
+  
+  newProject.projectInfo.code = targetInfo.code;
+  newProject.projectInfo.name = targetInfo.name;
+  newProject.projectInfo.manager = targetInfo.manager;
+  
+  const oldStartStr = source.projectInfo.plannedStartDate;
+  const newStartStr = targetInfo.startDate;
+  
+  newProject.projectInfo.plannedStartDate = newStartStr;
+  
+  if (oldStartStr && newStartStr) {
+    const oldStart = new Date(oldStartStr);
+    const newStart = new Date(newStartStr);
+    const diffTime = newStart.getTime() - oldStart.getTime();
+    
+    const shift = (dateStr: string | undefined) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const nd = new Date(d.getTime() + diffTime);
+      const y = nd.getFullYear();
+      const m = String(nd.getMonth() + 1).padStart(2, '0');
+      const day = String(nd.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    
+    newProject.projectInfo.plannedEndDate = shift(source.projectInfo.plannedEndDate);
+    
+    if (newProject.tasks) {
+      newProject.tasks.forEach((t: any) => {
+        t.startDate = shift(t.startDate);
+        t.endDate = shift(t.endDate);
+      });
+    }
+  }
+  
+  return newProject;
+};
+
 </script>
 
 <template>
@@ -276,6 +366,7 @@ const exportImage = async () => {
               <a-menu @click="handleFileSelect">
                 <a-menu-item key="new">新建项目</a-menu-item>
                 <a-menu-divider />
+                <a-menu-item key="clone">克隆项目</a-menu-item>
                 <a-menu-item key="properties">项目属性</a-menu-item>
                 <a-menu-divider />
                 <a-menu-item key="save">保存项目</a-menu-item>
@@ -407,6 +498,14 @@ const exportImage = async () => {
     <a-modal v-model:open="showNewProjectDialog" title="新建项目" @ok="confirmNewProject">
         <p>确定要新建项目吗？当前未保存的更改将会丢失。</p>
     </a-modal>
+
+    <CloneProjectDialog
+      v-model:open="showCloneDialog"
+      :initial-name="store.projectInfo.name + '_副本'"
+      :initial-manager="store.projectInfo.manager"
+      :initial-start-date="store.projectInfo.plannedStartDate"
+      @confirm="onCloneConfirm"
+    />
   </div>
 </template>
 

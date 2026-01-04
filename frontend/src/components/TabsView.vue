@@ -22,22 +22,24 @@
           >
             <template #item="{ element, index }">
               <a-dropdown :trigger="['contextmenu']">
-                <div
-                  class="ant-tabs-tab"
-                  :class="{ 'ant-tabs-tab-active': activeKey === element.fullPath }"
-                  @click="onChange(element.fullPath)"
-                >
-                  <div class="ant-tabs-tab-btn">
-                    {{ element.title }}
-                    <span
-                      v-if="!isAffix(element)"
-                      class="ant-tabs-tab-remove"
-                      @click.stop="removeTab(element.fullPath)"
-                    >
-                      <DynamicIcon icon="ant-design:close-outlined" />
-                    </span>
+                <a-tooltip :title="element.tooltip" placement="top" :mouseEnterDelay="0.5" :destroyTooltipOnHide="true">
+                  <div
+                    class="ant-tabs-tab"
+                    :class="{ 'ant-tabs-tab-active': activeKey === element.fullPath }"
+                    @click="onChange(element.fullPath)"
+                  >
+                    <div class="ant-tabs-tab-btn">
+                      {{ element.title }}
+                      <span
+                        v-if="!isAffix(element)"
+                        class="ant-tabs-tab-remove"
+                        @click.stop="removeTab(element.fullPath)"
+                      >
+                        <DynamicIcon icon="ant-design:close-outlined" />
+                      </span>
+                    </div>
                   </div>
-                </div>
+                </a-tooltip>
                 <template #overlay>
                   <a-menu>
                     <a-menu-item
