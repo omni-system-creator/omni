@@ -3,6 +3,9 @@ using omsapi.Models.Common;
 
 namespace omsapi.Controllers
 {
+    /// <summary>
+    /// 大屏公共控制器
+    /// </summary>
     [Route("api/bigview")]
     [ApiController]
     public class BigViewCommonController : ControllerBase
@@ -14,6 +17,9 @@ namespace omsapi.Controllers
             _environment = environment;
         }
 
+        /// <summary>
+        /// 获取OSS信息
+        /// </summary>
         [HttpGet("getOssInfo")]
         public ApiResponse<object> GetOssInfo()
         {
@@ -25,6 +31,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(new { bucketURL = baseUrl });
         }
 
+        /// <summary>
+        /// 上传文件
+        /// </summary>
         [HttpPost("upload")]
         public async Task<ApiResponse<object>> Upload([FromForm] IFormFile file, [FromForm] string? projectId)
         {

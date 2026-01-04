@@ -14,6 +14,9 @@ namespace omsapi.Data
             // 初始化合同模块数据
             await SeedContractDataAsync(context);
 
+            // 初始化销售模块数据
+            await SeedSalesDataAsync(context);
+
             // 如果已经有权限数据，则跳过
             if (await context.Permissions.AnyAsync())
             {
@@ -190,6 +193,270 @@ namespace omsapi.Data
             if (newRolePerms.Any())
             {
                 context.RolePermissions.AddRange(newRolePerms);
+                await context.SaveChangesAsync();
+            }
+        }
+
+        private static async Task SeedSalesDataAsync(OmsContext context)
+        {
+            var now = DateTime.Now;
+
+            // 1. 客户数据
+            if (!await context.SalesCustomers.AnyAsync())
+            {
+                context.SalesCustomers.AddRange(
+                    new omsapi.Models.Entities.Sales.SalesCustomer
+                    {
+                        Name = "杭州金兰科技有限公司",
+                        Contact = "张总",
+                        Phone = "13800138000",
+                        Email = "zhang@jinlan.com",
+                        Industry = "IT/互联网",
+                        Level = "A", // A类客户
+                        Status = "potential", // 潜在客户
+                        Address = "浙江省杭州市西湖区科技园",
+                        Source = "网络推广",
+                        Description = "对ERP系统有强烈需求，预计下月启动招标",
+                        Owner = "admin",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesCustomer
+                    {
+                        Name = "上海未来智造有限公司",
+                        Contact = "李经理",
+                        Phone = "13900139000",
+                        Email = "li@futuremfg.com",
+                        Industry = "智能制造",
+                        Level = "B",
+                        Status = "existing", // 现有客户
+                        Address = "上海市浦东新区张江高科",
+                        Source = "老客户推荐",
+                        Description = "已购买一期产品，目前在谈二期扩容",
+                        Owner = "admin",
+                        CreatedAt = now.AddDays(-10),
+                        UpdatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesCustomer
+                    {
+                        Name = "北京云端网络技术部",
+                        Contact = "王工",
+                        Phone = "13700137000",
+                        Email = "wang@cloudnet.bj",
+                        Industry = "云计算",
+                        Level = "A",
+                        Status = "high_intent", // 高意向
+                        Address = "北京市海淀区中关村",
+                        Source = "展会",
+                        Description = "技术负责人非常认可我们的架构",
+                        Owner = "admin",
+                        CreatedAt = now.AddDays(-5),
+                        UpdatedAt = now
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            // 2. 商机数据
+            // 需要先获取客户ID
+            var customers = await context.SalesCustomers.ToListAsync();
+            if (!await context.SalesOpportunities.AnyAsync() && customers.Any())
+            {
+                var cust1 = customers.FirstOrDefault(c => c.Name.Contains("金兰"));
+                var cust2 = customers.FirstOrDefault(c => c.Name.Contains("未来智造"));
+
+                if (cust1 != null)
+                {
+                    context.SalesOpportunities.Add(new omsapi.Models.Entities.Sales.SalesOpportunity
+                    {
+                        Title = "金兰科技ERP系统采购项目",
+                        CustomerId = cust1.Id,
+                        Customer = cust1.Name,
+                        Amount = 500000,
+                        Stage = "negotiation", // 商务谈判
+                        WinRate = 80,
+                        EstimatedCloseDate = now.AddMonths(1),
+                        Owner = "admin",
+                        Description = "竞争对手只有一家，我方优势明显",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    });
+                }
+
+                if (cust2 != null)
+                {
+                    context.SalesOpportunities.Add(new omsapi.Models.Entities.Sales.SalesOpportunity
+                    {
+                        Title = "未来智造CRM升级服务",
+                        CustomerId = cust2.Id,
+                        Customer = cust2.Name,
+                        Amount = 200000,
+                        Stage = "proposal", // 方案制定
+                        WinRate = 50,
+                        EstimatedCloseDate = now.AddMonths(2),
+                        Owner = "admin",
+                        Description = "需定制开发部分功能模块",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    });
+                }
+                
+                // 添加更多商机以丰富看板
+                if (cust1 != null)
+                {
+                     context.SalesOpportunities.Add(new omsapi.Models.Entities.Sales.SalesOpportunity
+                    {
+                        Title = "金兰科技数据中台咨询",
+                        CustomerId = cust1.Id,
+                        Customer = cust1.Name,
+                        Amount = 150000,
+                        Stage = "initial", // 初步接触
+                        WinRate = 20,
+                        EstimatedCloseDate = now.AddMonths(3),
+                        Owner = "admin",
+                        Description = "初步意向沟通",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    });
+                }
+
+                // 添加一个已成交的商机
+                 if (cust2 != null)
+                {
+                     context.SalesOpportunities.Add(new omsapi.Models.Entities.Sales.SalesOpportunity
+                    {
+                        Title = "未来智造一期项目增补",
+                        CustomerId = cust2.Id,
+                        Customer = cust2.Name,
+                        Amount = 80000,
+                        Stage = "won", // 已成交
+                        WinRate = 100,
+                        EstimatedCloseDate = now.AddDays(-2),
+                        Owner = "admin",
+                        Description = "增补许可授权",
+                        CreatedAt = now.AddDays(-5),
+                        UpdatedAt = now
+                    });
+                }
+
+                await context.SaveChangesAsync();
+            }
+
+            // 3. 销售话术
+            if (!await context.SalesScripts.AnyAsync())
+            {
+                context.SalesScripts.AddRange(
+                    new omsapi.Models.Entities.Sales.SalesScript
+                    {
+                        Title = "通用电话开场白",
+                        Category = "初次接触",
+                        Content = "您好，我是[公司名]的销售顾问[姓名]，打扰您两分钟。我们公司专注于为企业提供数字化转型解决方案，近期我们服务了[知名同行企业]，帮助他们提升了30%的运营效率。想请教一下贵公司在信息化管理方面目前主要关注哪些领域呢？",
+                        CreatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesScript
+                    {
+                        Title = "产品核心优势介绍（30秒电梯演讲）",
+                        Category = "产品介绍",
+                        Content = "我们的OMS系统有三大核心优势：第一是全流程一体化，打通了从CRM到ERP再到财务的全链路；第二是高度可配置，90%的业务变更无需写代码；第三是极致的用户体验，界面简洁易用，员工上手无需培训。这能直接为您解决数据孤岛和系统维护成本高的问题。",
+                        CreatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesScript
+                    {
+                        Title = "价格异议处理话术",
+                        Category = "异议处理",
+                        Content = "非常理解您对预算的考量。不过，单纯看价格可能不够全面，我们更建议看投入产出比（ROI）。我们的系统虽然初期投入稍高，但由于采用了自动化流程，预计每年能为您节省人工成本约50万元，系统上线半年即可收回成本。我们可以为您做一个详细的ROI分析报告。",
+                        CreatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesScript
+                    {
+                        Title = "竞品对比回应（针对某友商）",
+                        Category = "竞品分析",
+                        Content = "友商在财务软件领域确实很知名，但在业务运营（OMS）这块，我们的架构更灵活，更贴合当下互联网+的业务模式。例如在多渠道订单归集和复杂的库存调度策略上，我们是原生支持的，而他们可能需要大量的二次开发。",
+                        CreatedAt = now
+                    },
+                     new omsapi.Models.Entities.Sales.SalesScript
+                    {
+                        Title = "邀约客户考察话术",
+                        Category = "客户邀约",
+                        Content = "为了让您更直观地了解系统如何落地，诚挚邀请您下周二来我们公司参观考察。届时我们的技术总监会亲自为您演示最新版本，并且您可以和我们的产品团队直接交流您的定制化需求。您看上午10点还是下午2点比较方便？",
+                        CreatedAt = now
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            // 4. 产品资料
+            if (!await context.SalesProductDocs.AnyAsync())
+            {
+                context.SalesProductDocs.AddRange(
+                    new omsapi.Models.Entities.Sales.SalesProductDoc
+                    {
+                        Title = "OMS智能管理系统_产品白皮书_v3.0.pdf",
+                        Size = "5.2 MB",
+                        Url = "/files/docs/oms_whitepaper_v3.pdf", // 示例路径
+                        UploadDate = now.AddDays(-30)
+                    },
+                    new omsapi.Models.Entities.Sales.SalesProductDoc
+                    {
+                        Title = "企业数字化转型解决方案(制造业版).pptx",
+                        Size = "15.8 MB",
+                        Url = "/files/docs/solution_manufacturing.pptx",
+                        UploadDate = now.AddDays(-20)
+                    },
+                    new omsapi.Models.Entities.Sales.SalesProductDoc
+                    {
+                        Title = "OMS系统客户成功案例集锦.pdf",
+                        Size = "8.4 MB",
+                        Url = "/files/docs/success_cases.pdf",
+                        UploadDate = now.AddDays(-15)
+                    },
+                    new omsapi.Models.Entities.Sales.SalesProductDoc
+                    {
+                        Title = "SaaS版报价单及服务清单_2024Q1.xlsx",
+                        Size = "45 KB",
+                        Url = "/files/docs/price_list_2024q1.xlsx",
+                        UploadDate = now.AddDays(-5)
+                    },
+                    new omsapi.Models.Entities.Sales.SalesProductDoc
+                    {
+                        Title = "系统操作手册(管理员版).docx",
+                        Size = "3.2 MB",
+                        Url = "/files/docs/manual_admin.docx",
+                        UploadDate = now.AddDays(-60)
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            // 5. 流程规则
+            if (!await context.SalesProcessRules.AnyAsync())
+            {
+                context.SalesProcessRules.AddRange(
+                    new omsapi.Models.Entities.Sales.SalesProcessRule
+                    {
+                        Title = "商机报备与保护制度",
+                        Content = "1. 所有新接触客户必须在24小时内录入CRM系统，否则视为公共资源。\n2. 报备有效期为3个月，期间其他销售人员不得跟进。\n3. 若3个月内无实质性进展（阶段未推进），系统将自动释放至公海池。\n4. 跨区域撞单情况，以系统最早录入时间为准。",
+                        CreatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesProcessRule
+                    {
+                        Title = "合同审批及盖章规范",
+                        Content = "1. 标准合同（金额<50万）：销售经理审批 -> 财务审批 -> 法务备案 -> 用印。\n2. 非标合同或金额>=50万：销售总监审批 -> 财务总监审批 -> 法务总监审批 -> 总经理审批 -> 用印。\n3. 所有合同必须附带技术协议附件。\n4. 严禁先盖章后签字。",
+                        CreatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesProcessRule
+                    {
+                        Title = "销售提成发放细则",
+                        Content = "1. 提成计算基数：以实际回款金额为准（不含税）。\n2. 发放节点：回款次月发放50%，项目验收后发放剩余50%。\n3. 离职员工未结提成：已回款部分按正常比例发放，未回款部分不再计提。\n4. 季度销售冠军额外奖励1%提成点。",
+                        CreatedAt = now
+                    },
+                     new omsapi.Models.Entities.Sales.SalesProcessRule
+                    {
+                        Title = "客户接待标准流程",
+                        Content = "1. 预约：确认客户来访人数、职位、关注点，提前预定会议室。\n2. 接待：前台登记，引导至会议室，提供茶水（矿泉水/茶/咖啡）。\n3. 演示：连接投影仪，准备好演示环境，演示时长控制在30分钟内。\n4. 送别：送至电梯口或公司门口，并在当天发送感谢短信/邮件。",
+                        CreatedAt = now
+                    }
+                );
                 await context.SaveChangesAsync();
             }
         }

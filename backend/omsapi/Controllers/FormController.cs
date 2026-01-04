@@ -7,6 +7,9 @@ using omsapi.Infrastructure.Attributes;
 
 namespace omsapi.Controllers
 {
+    /// <summary>
+    /// 表单管理控制器
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [AutoInject]
@@ -23,6 +26,9 @@ namespace omsapi.Controllers
 
         // Categories
 
+        /// <summary>
+        /// 获取分类树
+        /// </summary>
         [HttpGet("categories/tree")]
         public async Task<ActionResult<ApiResponse<List<FormCategoryDto>>>> GetCategoryTree()
         {
@@ -30,6 +36,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<List<FormCategoryDto>>.Success(result));
         }
 
+        /// <summary>
+        /// 创建分类
+        /// </summary>
         [HttpPost("categories")]
         public async Task<ActionResult<ApiResponse<FormCategoryDto>>> CreateCategory([FromBody] CreateFormCategoryDto dto)
         {
@@ -37,6 +46,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<FormCategoryDto>.Success(result, "Created successfully"));
         }
 
+        /// <summary>
+        /// 更新分类
+        /// </summary>
         [HttpPut("categories/{id}")]
         public async Task<ActionResult<ApiResponse<FormCategoryDto>>> UpdateCategory(long id, [FromBody] UpdateFormCategoryDto dto)
         {
@@ -45,6 +57,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<FormCategoryDto>.Success(result, "Updated successfully"));
         }
 
+        /// <summary>
+        /// 删除分类
+        /// </summary>
         [HttpDelete("categories/{id}")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteCategory(long id)
         {
@@ -55,6 +70,9 @@ namespace omsapi.Controllers
 
         // Forms
 
+        /// <summary>
+        /// 获取表单定义列表
+        /// </summary>
         [HttpGet("definitions")]
         public async Task<ActionResult<ApiResponse<PagedResult<FormDefinitionDto>>>> GetForms(
             [FromQuery] long? categoryId, 
@@ -68,6 +86,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<PagedResult<FormDefinitionDto>>.Success(result));
         }
 
+        /// <summary>
+        /// 获取表单定义详情
+        /// </summary>
         [HttpGet("definitions/{id}")]
         public async Task<ActionResult<ApiResponse<FormDefinitionDto>>> GetForm(long id)
         {
@@ -78,6 +99,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<FormDefinitionDto>.Success(result));
         }
 
+        /// <summary>
+        /// 创建表单定义
+        /// </summary>
         [HttpPost("definitions")]
         public async Task<ActionResult<ApiResponse<FormDefinitionDto>>> CreateForm([FromBody] CreateFormDefinitionDto dto)
         {
@@ -85,6 +109,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<FormDefinitionDto>.Success(result, "Created successfully"));
         }
 
+        /// <summary>
+        /// 更新表单定义
+        /// </summary>
         [HttpPut("definitions/{id}")]
         public async Task<ActionResult<ApiResponse<FormDefinitionDto>>> UpdateForm(long id, [FromBody] UpdateFormDefinitionDto dto)
         {
@@ -93,6 +120,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<FormDefinitionDto>.Success(result, "Updated successfully"));
         }
 
+        /// <summary>
+        /// 删除表单定义
+        /// </summary>
         [HttpDelete("definitions/{id}")]
         public async Task<ActionResult<ApiResponse<bool>>> DeleteForm(long id)
         {
@@ -101,6 +131,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<bool>.Success(true, "Deleted successfully"));
         }
 
+        /// <summary>
+        /// 提交表单
+        /// </summary>
         [HttpPost("submit")]
         public async Task<ActionResult<ApiResponse<FormResultDto>>> SubmitForm([FromBody] CreateFormResultDto dto)
         {
@@ -131,6 +164,9 @@ namespace omsapi.Controllers
             }
         }
 
+        /// <summary>
+        /// 获取表单结果列表
+        /// </summary>
         [HttpGet("results/{formId}")]
         public async Task<ActionResult<ApiResponse<PagedResult<FormResultDto>>>> GetFormResults(
             long formId,

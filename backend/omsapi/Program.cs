@@ -42,6 +42,9 @@ builder.Services.AddControllers(options =>
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient(); // Add HttpClient
 
+// Register Sales Service
+builder.Services.AddScoped<omsapi.Services.Interfaces.ISalesService, omsapi.Services.SalesService>();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 

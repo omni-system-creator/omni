@@ -6,6 +6,9 @@ using omsapi.Services.Interfaces;
 
 namespace omsapi.Controllers
 {
+    /// <summary>
+    /// 页面管理控制器
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -20,6 +23,9 @@ namespace omsapi.Controllers
 
         #region Categories
 
+        /// <summary>
+        /// 获取页面分类列表
+        /// </summary>
         [HttpGet("categories")]
         public async Task<ActionResult<ApiResponse<List<PageCategoryDto>>>> GetCategories()
         {
@@ -27,6 +33,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<List<PageCategoryDto>>.Success(data));
         }
 
+        /// <summary>
+        /// 创建页面分类
+        /// </summary>
         [HttpPost("categories")]
         public async Task<ActionResult<ApiResponse<PageCategoryDto>>> CreateCategory([FromBody] CreatePageCategoryDto dto)
         {
@@ -35,6 +44,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<PageCategoryDto>.Success(data));
         }
 
+        /// <summary>
+        /// 更新页面分类
+        /// </summary>
         [HttpPut("categories/{id}")]
         public async Task<ActionResult<ApiResponse<PageCategoryDto>>> UpdateCategory(long id, [FromBody] UpdatePageCategoryDto dto)
         {
@@ -43,6 +55,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<PageCategoryDto>.Success(data));
         }
 
+        /// <summary>
+        /// 删除页面分类
+        /// </summary>
         [HttpDelete("categories/{id}")]
         public async Task<ActionResult<ApiResponse<object>>> DeleteCategory(long id)
         {
@@ -55,6 +70,9 @@ namespace omsapi.Controllers
 
         #region Pages
 
+        /// <summary>
+        /// 获取页面列表
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult<ApiResponse<PagedResult<PageDefinitionDto>>>> GetPages(
             [FromQuery] long? categoryId,
@@ -66,6 +84,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<PagedResult<PageDefinitionDto>>.Success(data));
         }
 
+        /// <summary>
+        /// 获取页面详情
+        /// </summary>
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse<PageDefinitionDto>>> GetPage(long id)
         {
@@ -74,6 +95,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<PageDefinitionDto>.Success(data));
         }
 
+        /// <summary>
+        /// 创建页面
+        /// </summary>
         [HttpPost]
         public async Task<ActionResult<ApiResponse<PageDefinitionDto>>> CreatePage([FromBody] CreatePageDefinitionDto dto)
         {
@@ -81,6 +105,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<PageDefinitionDto>.Success(data));
         }
 
+        /// <summary>
+        /// 更新页面
+        /// </summary>
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse<PageDefinitionDto>>> UpdatePage(long id, [FromBody] UpdatePageDefinitionDto dto)
         {
@@ -89,6 +116,9 @@ namespace omsapi.Controllers
             return Ok(ApiResponse<PageDefinitionDto>.Success(data));
         }
 
+        /// <summary>
+        /// 删除页面
+        /// </summary>
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse<object>>> DeletePage(long id)
         {

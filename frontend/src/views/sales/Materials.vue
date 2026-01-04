@@ -3,15 +3,8 @@
     <a-tabs v-model:activeKey="activeTab">
       <a-tab-pane key="1" tab="话术库">
         <div class="material-list">
-          <a-card title="初次接触话术" class="material-card">
-            <p>适用于电话或面谈初次接触客户...</p>
-            <template #actions>
-              <CopyOutlined key="copy" />
-              <EditOutlined key="edit" />
-            </template>
-          </a-card>
-          <a-card title="产品介绍话术" class="material-card">
-            <p>针对不同痛点的产品价值阐述...</p>
+          <a-card v-for="script in salesScripts" :key="script.id" :title="script.title" class="material-card">
+            <p>{{ script.content }}</p>
             <template #actions>
               <CopyOutlined key="copy" />
               <EditOutlined key="edit" />
@@ -24,7 +17,7 @@
           <template #renderItem="{ item }">
             <a-list-item>
               <a-card :title="item.title">
-                <template #extra><a href="#">下载</a></template>
+                <template #extra><a :href="item.url" target="_blank">下载</a></template>
                 <FilePdfOutlined style="font-size: 48px; color: #ff4d4f; display: block; margin: 0 auto 16px" />
                 <div style="text-align: center">{{ item.size }}</div>
               </a-card>
@@ -34,11 +27,8 @@
       </a-tab-pane>
       <a-tab-pane key="3" tab="流程规则">
         <a-collapse v-model:activeKey="activeKey">
-          <a-collapse-panel key="1" header="销售提成制度">
-            <p>详细的销售提成计算规则...</p>
-          </a-collapse-panel>
-          <a-collapse-panel key="2" header="合同审批流程">
-            <p>合同审批的各级节点和要求...</p>
+          <a-collapse-panel v-for="rule in processRules" :key="rule.id" :header="rule.title">
+            <p>{{ rule.content }}</p>
           </a-collapse-panel>
         </a-collapse>
       </a-tab-pane>
@@ -47,18 +37,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { CopyOutlined, EditOutlined, FilePdfOutlined } from '@ant-design/icons-vue';
+import { getSalesScripts, getProductDocs, getProcessRules, type SalesScriptDto, type ProductDocDto, type ProcessRuleDto } from '@/api/sales';
 
 const activeTab = ref('1');
 const activeKey = ref(['1']);
 
-const productDocs = [
-  { title: '产品白皮书.pdf', size: '2.5MB' },
-  { title: '功能清单.pdf', size: '1.2MB' },
-  { title: '竞品分析报告.pdf', size: '3.8MB' },
-  { title: '用户操作手册.pdf', size: '5.0MB' },
-];
+const salesScripts = ref<SalesScriptDto[]>([]);
+const productDocs = ref<ProductDocDto[]>([]);
+const processRules = ref<ProcessRuleDto[]>([]);
+
+const loadData = async () => {
+    try {
+        const [scripts, docs, rules] = await Promise.all([
+            getSalesScripts(),
+            getProductDocs(),
+            getProcessRules()
+        ]);
+        salesScripts.value = scripts;
+        productDocs.value = docs;
+        processRules.value = rules;
+    } catch (e) {
+        console.error(e);
+    }
+};
+
+onMounted(() => {
+    loadData();
+});
 </script>
 
 <style scoped>

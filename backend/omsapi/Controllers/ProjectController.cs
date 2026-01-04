@@ -4,6 +4,9 @@ using omsapi.Services.Interfaces;
 
 namespace omsapi.Controllers
 {
+    /// <summary>
+    /// 项目管理控制器
+    /// </summary>
     [ApiController]
     [Route("api/project")]
     public class ProjectController : ControllerBase
@@ -15,6 +18,9 @@ namespace omsapi.Controllers
             _service = service;
         }
 
+        /// <summary>
+        /// 获取项目列表
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult<List<ProjectListItemDto>>> GetProjects()
         {
@@ -22,6 +28,9 @@ namespace omsapi.Controllers
             return Ok(projects);
         }
 
+        /// <summary>
+        /// 获取项目详情
+        /// </summary>
         [HttpGet("{code}")]
         public async Task<ActionResult<ProjectFullDto>> GetProject(string code)
         {
@@ -30,6 +39,9 @@ namespace omsapi.Controllers
             return Ok(project);
         }
 
+        /// <summary>
+        /// 保存项目
+        /// </summary>
         [HttpPost]
         public async Task<ActionResult> SaveProject([FromBody] ProjectFullDto dto)
         {

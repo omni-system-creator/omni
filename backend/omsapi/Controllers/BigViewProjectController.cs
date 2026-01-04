@@ -7,6 +7,9 @@ using System.Security.Claims;
 
 namespace omsapi.Controllers
 {
+    /// <summary>
+    /// 大屏项目管理控制器
+    /// </summary>
     [Route("api/bigview/project")]
     [ApiController]
     public class BigViewProjectController : ControllerBase
@@ -18,6 +21,9 @@ namespace omsapi.Controllers
             _service = service;
         }
 
+        /// <summary>
+        /// 获取项目列表
+        /// </summary>
         [HttpGet("list")]
         public async Task<ApiResponse<object>> GetList([FromQuery] int page = 1, [FromQuery] int limit = 10, [FromQuery] string? keyword = null)
         {
@@ -27,6 +33,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(new { rows = data, total = total });
         }
 
+        /// <summary>
+        /// 获取项目详情
+        /// </summary>
         [HttpGet("detail")]
         public async Task<ApiResponse<BigViewProjectDto>> GetDetail([FromQuery] long id)
         {
@@ -35,6 +44,9 @@ namespace omsapi.Controllers
             return ApiResponse<BigViewProjectDto>.Success(data!);
         }
 
+        /// <summary>
+        /// 创建项目
+        /// </summary>
         [HttpPost("create")]
         public async Task<ApiResponse<long>> Create([FromBody] CreateBigViewProjectDto dto)
         {
@@ -47,6 +59,9 @@ namespace omsapi.Controllers
             return ApiResponse<long>.Success(id);
         }
 
+        /// <summary>
+        /// 更新项目
+        /// </summary>
         [HttpPost("update")]
         public async Task<ApiResponse<object>> Update([FromBody] UpdateBigViewProjectDto dto)
         {
@@ -55,6 +70,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(null);
         }
 
+        /// <summary>
+        /// 删除项目
+        /// </summary>
         [HttpDelete("delete")]
         public async Task<ApiResponse<object>> Delete([FromQuery] string? ids, [FromQuery] long? id)
         {
@@ -73,6 +91,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(null);
         }
         
+        /// <summary>
+        /// 发布/取消发布项目
+        /// </summary>
         [HttpPost("publish")]
         public async Task<ApiResponse<object>> Publish([FromBody] PublishBigViewProjectDto dto)
         {

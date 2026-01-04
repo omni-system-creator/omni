@@ -8,21 +8,24 @@
         </a-radio-group>
       </div>
       <div class="right-actions">
-        <a-button type="primary">
+        <a-button type="primary" @click="handleAdd">
           <template #icon><PlusOutlined /></template>
           新建商机
         </a-button>
       </div>
     </div>
 
-    <div v-if="viewMode === 'kanban'" class="kanban-board">
+    <div v-if="loading" style="text-align: center; padding: 50px;">
+      <a-spin />
+    </div>
+    <div v-else-if="viewMode === 'kanban'" class="kanban-board">
       <div class="kanban-column" v-for="stage in stages" :key="stage.key">
         <div class="column-header">
           <span class="stage-name">{{ stage.name }}</span>
           <span class="stage-count">{{ getOpportunitiesByStage(stage.key).length }}</span>
         </div>
         <div class="column-content">
-          <div class="opportunity-card" v-for="opp in getOpportunitiesByStage(stage.key)" :key="opp.id">
+          <div class="opportunity-card" v-for="opp in getOpportunitiesByStage(stage.key)" :key="opp.id" @click="handleEdit(opp)">
             <div class="card-title">{{ opp.title }}</div>
             <div class="card-customer">{{ opp.customer }}</div>
             <div class="card-amount">¥ {{ opp.amount.toLocaleString() }}</div>
@@ -36,22 +39,57 @@
     </div>
 
     <div v-else class="list-view">
-      <a-table :columns="columns" :data-source="opportunities">
+      <a-table :columns="columns" :data-source="opportunities" row-key="id">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'stage'">
             <a-tag :color="getStageColor(record.stage)">{{ getStageName(record.stage) }}</a-tag>
           </template>
+          <template v-else-if="column.key === 'action'">
+             <a @click="handleEdit(record)">编辑</a>
+             <a-divider type="vertical" />
+             <a @click="handleDelete(record.id)" style="color: red">删除</a>
+          </template>
         </template>
       </a-table>
     </div>
+
+    <a-modal v-model:visible="modalVisible" :title="modalTitle" @ok="handleModalOk">
+      <a-form :model="formData" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+          <a-form-item label="商机名称" required>
+              <a-input v-model:value="formData.title" />
+          </a-form-item>
+          <a-form-item label="客户名称">
+              <a-input v-model:value="formData.customer" />
+          </a-form-item>
+          <a-form-item label="预计金额">
+              <a-input-number v-model:value="formData.amount" style="width: 100%" :min="0" />
+          </a-form-item>
+          <a-form-item label="阶段">
+               <a-select v-model:value="formData.stage">
+                  <a-select-option v-for="s in stages" :key="s.key" :value="s.key">{{s.name}}</a-select-option>
+               </a-select>
+          </a-form-item>
+          <a-form-item label="负责人">
+               <a-input v-model:value="formData.owner" />
+          </a-form-item>
+          <a-form-item label="预计成交日期">
+               <a-date-picker v-model:value="formData.date" style="width: 100%" />
+          </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import { AppstoreOutlined, BarsOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { message, Modal } from 'ant-design-vue';
+import dayjs, { type Dayjs } from 'dayjs';
+import { getOpportunities, createOpportunity, updateOpportunity, deleteOpportunity, type OpportunityDto, type CreateOpportunityDto } from '@/api/sales';
 
 const viewMode = ref('kanban');
+const opportunities = ref<OpportunityDto[]>([]);
+const loading = ref(false);
 
 const stages = [
   { key: 'new', name: '初步接洽', color: 'blue' },
@@ -61,12 +99,25 @@ const stages = [
   { key: 'lost', name: '输单', color: 'red' },
 ];
 
-const opportunities = ref([
-  { id: 1, title: 'XX系统采购项目', customer: '某某科技', amount: 500000, stage: 'new', owner: '张三', date: '2025-12-01' },
-  { id: 2, title: '年度维保服务', customer: '上海贸易', amount: 120000, stage: 'proposition', owner: '李四', date: '2025-12-05' },
-  { id: 3, title: '私有云部署', customer: '北京咨询', amount: 800000, stage: 'negotiation', owner: '王五', date: '2025-12-10' },
-  { id: 4, title: '硬件设备采购', customer: '广州制造', amount: 300000, stage: 'won', owner: '赵六', date: '2025-11-20' },
-]);
+const loadData = async () => {
+    loading.value = true;
+    try {
+        const res = await getOpportunities();
+        opportunities.value = res.map(o => ({
+            ...o,
+            date: o.date ? dayjs(o.date).format('YYYY-MM-DD') : ''
+        }));
+    } catch (e) {
+        console.error(e);
+        message.error('获取商机列表失败');
+    } finally {
+        loading.value = false;
+    }
+};
+
+onMounted(() => {
+    loadData();
+});
 
 const columns = [
   { title: '商机名称', dataIndex: 'title', key: 'title' },
@@ -75,6 +126,7 @@ const columns = [
   { title: '阶段', dataIndex: 'stage', key: 'stage' },
   { title: '负责人', dataIndex: 'owner', key: 'owner' },
   { title: '预计成交日期', dataIndex: 'date', key: 'date' },
+  { title: '操作', key: 'action', width: 150 },
 ];
 
 const getOpportunitiesByStage = (stageKey: string) => {
@@ -87,6 +139,99 @@ const getStageColor = (key: string) => {
 
 const getStageName = (key: string) => {
   return stages.find(s => s.key === key)?.name || key;
+};
+
+// Modal Logic
+const modalVisible = ref(false);
+const modalTitle = ref('新建商机');
+
+interface FormState {
+    title: string;
+    customer: string;
+    amount: number;
+    stage: string;
+    owner: string;
+    date: Dayjs | undefined;
+}
+
+const formData = reactive<FormState>({
+    title: '',
+    customer: '',
+    amount: 0,
+    stage: 'new',
+    owner: '',
+    date: undefined
+});
+let currentId = '';
+
+const handleAdd = () => {
+    modalTitle.value = '新建商机';
+    currentId = '';
+    Object.assign(formData, {
+        title: '', customer: '', amount: 0, stage: 'new', owner: '', date: undefined
+    });
+    modalVisible.value = true;
+};
+
+const handleEdit = (record: OpportunityDto) => {
+    modalTitle.value = '编辑商机';
+    currentId = record.id;
+    Object.assign(formData, {
+        title: record.title,
+        customer: record.customer,
+        amount: record.amount,
+        stage: record.stage,
+        owner: record.owner,
+        date: record.date ? dayjs(record.date) : undefined
+    });
+    modalVisible.value = true;
+};
+
+const handleDelete = (id: string) => {
+    Modal.confirm({
+        title: '确认删除',
+        content: '确定要删除这个商机吗？',
+        onOk: async () => {
+            try {
+                await deleteOpportunity(id);
+                message.success('删除成功');
+                loadData();
+            } catch(e) {
+                console.error(e);
+                message.error('删除失败');
+            }
+        }
+    });
+};
+
+const handleModalOk = async () => {
+    if(!formData.title) {
+        message.warning('请输入商机名称');
+        return;
+    }
+    const payload: CreateOpportunityDto = {
+        title: formData.title,
+        customer: formData.customer,
+        amount: Number(formData.amount),
+        stage: formData.stage as any,
+        owner: formData.owner,
+        date: formData.date ? formData.date.format('YYYY-MM-DD') : ''
+    };
+    
+    try {
+        if(currentId) {
+            await updateOpportunity(currentId, payload);
+             message.success('更新成功');
+        } else {
+            await createOpportunity(payload);
+             message.success('创建成功');
+        }
+        modalVisible.value = false;
+        loadData();
+    } catch(e) {
+        console.error(e);
+        message.error('保存失败');
+    }
 };
 </script>
 

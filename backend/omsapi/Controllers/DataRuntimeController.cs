@@ -8,6 +8,9 @@ using System.Text.Json;
 namespace omsapi.Controllers
 {
     // This controller handles the actual runtime execution of published interfaces
+    /// <summary>
+    /// 数据运行时控制器
+    /// </summary>
     [Route("api/data")]
     [ApiController]
     public class DataRuntimeController : ControllerBase
@@ -26,6 +29,9 @@ namespace omsapi.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// 处理Options请求
+        /// </summary>
         [AllowAnonymous] // We handle auth manually inside based on interface config, or use policy
         // For now, let's allow anonymous to reach here, and check interface.RequiresAuth
         [HttpOptions("{**path}")]
@@ -34,6 +40,9 @@ namespace omsapi.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// 处理运行时请求
+        /// </summary>
         [HttpGet("{**path}")]
         [HttpPost("{**path}")]
         [HttpPut("{**path}")]

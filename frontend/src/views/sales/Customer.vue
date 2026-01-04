@@ -8,7 +8,7 @@
           style="width: 250px"
           @search="onSearch"
         />
-        <a-select v-model:value="filterStatus" style="width: 120px; margin-left: 8px">
+        <a-select v-model:value="filterStatus" style="width: 120px; margin-left: 8px" @change="onSearch">
           <a-select-option value="all">所有状态</a-select-option>
           <a-select-option value="active">活跃</a-select-option>
           <a-select-option value="potential">潜在</a-select-option>
@@ -16,7 +16,7 @@
         </a-select>
       </div>
       <div class="btn-area">
-        <a-button type="primary">
+        <a-button type="primary" @click="handleAdd">
           <template #icon><PlusOutlined /></template>
           新增客户
         </a-button>
@@ -27,7 +27,14 @@
       </div>
     </div>
 
-    <a-table :columns="columns" :data-source="customerList" :pagination="pagination">
+    <a-table 
+      :columns="columns" 
+      :data-source="customerList" 
+      :pagination="pagination"
+      :loading="loading"
+      @change="handleTableChange"
+      row-key="id"
+    >
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'status'">
           <a-tag :color="getStatusColor(record.status)">
@@ -37,22 +44,69 @@
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a>详情</a>
-            <a>编辑</a>
+            <a @click="handleEdit(record)">编辑</a>
             <a-divider type="vertical" />
-            <a class="delete-btn">删除</a>
+            <a class="delete-btn" @click="onDelete(record.id)">删除</a>
           </a-space>
         </template>
       </template>
     </a-table>
+
+    <!-- Create/Edit Modal -->
+    <a-modal v-model:visible="modalVisible" :title="modalTitle" @ok="handleModalOk">
+      <a-form :model="formData" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+        <a-form-item label="客户名称" required>
+          <a-input v-model:value="formData.name" />
+        </a-form-item>
+        <a-form-item label="行业">
+          <a-input v-model:value="formData.industry" />
+        </a-form-item>
+        <a-form-item label="联系人">
+          <a-input v-model:value="formData.contact" />
+        </a-form-item>
+        <a-form-item label="电话">
+          <a-input v-model:value="formData.phone" />
+        </a-form-item>
+        <a-form-item label="客户等级">
+          <a-select v-model:value="formData.level">
+            <a-select-option value="A级">A级</a-select-option>
+            <a-select-option value="B级">B级</a-select-option>
+            <a-select-option value="C级">C级</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="状态">
+          <a-select v-model:value="formData.status">
+            <a-select-option value="active">活跃</a-select-option>
+            <a-select-option value="potential">潜在</a-select-option>
+            <a-select-option value="lost">流失</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item label="负责人">
+          <a-input v-model:value="formData.owner" />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import { PlusOutlined, ExportOutlined } from '@ant-design/icons-vue';
+import { message, Modal } from 'ant-design-vue';
+import { getCustomers, deleteCustomer, createCustomer, updateCustomer, type CustomerDto, type CreateCustomerDto } from '@/api/sales';
 
 const searchText = ref('');
 const filterStatus = ref('all');
+const loading = ref(false);
+const customerList = ref<CustomerDto[]>([]);
+
+const pagination = reactive({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showSizeChanger: true,
+  showQuickJumper: true,
+});
 
 const columns = [
   { title: '客户名称', dataIndex: 'name', key: 'name' },
@@ -65,20 +119,120 @@ const columns = [
   { title: '操作', key: 'action', width: 200 },
 ];
 
-const customerList = ref([
-  { key: '1', name: '某某科技股份有限公司', industry: '互联网', contact: '张总', phone: '13800138000', level: 'A级', status: 'active', owner: '李四' },
-  { key: '2', name: '上海某某贸易有限公司', industry: '零售', contact: '王经理', phone: '13900139000', level: 'B级', status: 'potential', owner: '王五' },
-  { key: '3', name: '北京某某咨询中心', industry: '咨询', contact: '赵老师', phone: '13700137000', level: 'C级', status: 'lost', owner: '赵六' },
-]);
-
-const pagination = {
-  total: 100,
-  showSizeChanger: true,
-  showQuickJumper: true,
+const loadData = async () => {
+  loading.value = true;
+  try {
+    const res = await getCustomers({
+      searchText: searchText.value,
+      status: filterStatus.value === 'all' ? undefined : filterStatus.value,
+      page: pagination.current,
+      pageSize: pagination.pageSize
+    });
+    customerList.value = res.items;
+    pagination.total = res.total;
+  } catch (error) {
+    console.error(error);
+    message.error('获取客户列表失败');
+  } finally {
+    loading.value = false;
+  }
 };
 
+onMounted(() => {
+  loadData();
+});
+
 const onSearch = () => {
-  console.log('search');
+  pagination.current = 1;
+  loadData();
+};
+
+const handleTableChange = (pag: any) => {
+  pagination.current = pag.current;
+  pagination.pageSize = pag.pageSize;
+  loadData();
+};
+
+const onDelete = (id: string) => {
+  Modal.confirm({
+    title: '确认删除',
+    content: '确定要删除这个客户吗？',
+    onOk: async () => {
+      try {
+        await deleteCustomer(id);
+        message.success('删除成功');
+        loadData();
+      } catch (error) {
+        console.error(error);
+        message.error('删除失败');
+      }
+    }
+  });
+};
+
+// Modal Logic
+const modalVisible = ref(false);
+const modalTitle = ref('新增客户');
+const formData = reactive<CreateCustomerDto>({
+  name: '',
+  industry: '',
+  contact: '',
+  phone: '',
+  level: 'C级',
+  status: 'active',
+  owner: ''
+});
+let currentId = '';
+
+const handleAdd = () => {
+  modalTitle.value = '新增客户';
+  currentId = '';
+  Object.assign(formData, { 
+    name: '', 
+    industry: '', 
+    contact: '', 
+    phone: '', 
+    level: 'C级', 
+    status: 'active', 
+    owner: '' 
+  });
+  modalVisible.value = true;
+};
+
+const handleEdit = (record: CustomerDto) => {
+  modalTitle.value = '编辑客户';
+  currentId = record.id;
+  Object.assign(formData, {
+    name: record.name,
+    industry: record.industry,
+    contact: record.contact,
+    phone: record.phone,
+    level: record.level,
+    status: record.status,
+    owner: record.owner
+  });
+  modalVisible.value = true;
+};
+
+const handleModalOk = async () => {
+  if (!formData.name) {
+    message.warning('请输入客户名称');
+    return;
+  }
+  try {
+    if (currentId) {
+      await updateCustomer(currentId, formData);
+      message.success('更新成功');
+    } else {
+      await createCustomer(formData);
+      message.success('创建成功');
+    }
+    modalVisible.value = false;
+    loadData();
+  } catch (error) {
+    console.error(error);
+    message.error('保存失败');
+  }
 };
 
 const getStatusColor = (status: string) => {

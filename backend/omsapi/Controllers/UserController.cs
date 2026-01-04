@@ -7,6 +7,9 @@ using System.Security.Claims;
 
 namespace omsapi.Controllers
 {
+    /// <summary>
+    /// 用户管理控制器
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [Authorize] // 需要登录
@@ -19,6 +22,9 @@ namespace omsapi.Controllers
             _userService = userService;
         }
 
+        /// <summary>
+        /// 上传头像
+        /// </summary>
         [HttpPost("avatar")]
         public async Task<ApiResponse<object>> UploadAvatar(IFormFile file)
         {
@@ -39,6 +45,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(new { avatarUrl }, message);
         }
 
+        /// <summary>
+        /// 获取当前用户
+        /// </summary>
         [HttpGet("me")]
         public async Task<ApiResponse<object>> GetCurrentUser()
         {
@@ -58,6 +67,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(data);
         }
 
+        /// <summary>
+        /// 更新个人资料
+        /// </summary>
         [HttpPut("profile")]
         public async Task<ApiResponse<object>> UpdateProfile([FromBody] UpdateProfileDto dto)
         {
@@ -77,6 +89,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(null, message);
         }
 
+        /// <summary>
+        /// 修改密码
+        /// </summary>
         [HttpPost("change-password")]
         public async Task<ApiResponse<object>> ChangePassword([FromBody] ChangePasswordDto dto)
         {
@@ -98,6 +113,9 @@ namespace omsapi.Controllers
 
         // --- 管理员接口 ---
 
+        /// <summary>
+        /// 获取所有用户
+        /// </summary>
         [HttpGet]
         //[Authorize(Roles = "ADMIN")] // 暂不开启严格的角色验证，方便调试
         public async Task<ApiResponse<List<UserListDto>>> GetAll()
@@ -107,6 +125,9 @@ namespace omsapi.Controllers
             return ApiResponse<List<UserListDto>>.Success(data!);
         }
 
+        /// <summary>
+        /// 获取用户详情
+        /// </summary>
         [HttpGet("{id}")]
         public async Task<ApiResponse<UserListDto>> GetById(long id)
         {
@@ -115,6 +136,9 @@ namespace omsapi.Controllers
             return ApiResponse<UserListDto>.Success(data!);
         }
 
+        /// <summary>
+        /// 创建用户
+        /// </summary>
         [HttpPost]
         public async Task<ApiResponse<object>> Create([FromBody] CreateUserDto dto)
         {
@@ -123,6 +147,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(null, message);
         }
 
+        /// <summary>
+        /// 更新用户
+        /// </summary>
         [HttpPut("{id}")]
         public async Task<ApiResponse<object>> Update(long id, [FromBody] UpdateUserDto dto)
         {
@@ -131,6 +158,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(null, message);
         }
 
+        /// <summary>
+        /// 删除用户
+        /// </summary>
         [HttpDelete("{id}")]
         public async Task<ApiResponse<object>> Delete(long id)
         {
@@ -139,6 +169,9 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(null, message);
         }
 
+        /// <summary>
+        /// 重置密码
+        /// </summary>
         [HttpPost("{id}/reset-password")]
         public async Task<ApiResponse<object>> ResetPassword(long id, [FromBody] ResetPasswordDto dto)
         {

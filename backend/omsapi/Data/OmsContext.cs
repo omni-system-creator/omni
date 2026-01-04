@@ -77,6 +77,13 @@ namespace omsapi.Data
         public DbSet<ProjectTaskDependency> ProjectTaskDependencies { get; set; }
         public DbSet<ProjectAttachment> ProjectAttachments { get; set; }
 
+        // Sales Entities
+        public DbSet<omsapi.Models.Entities.Sales.SalesCustomer> SalesCustomers { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesOpportunity> SalesOpportunities { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesScript> SalesScripts { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesProductDoc> SalesProductDocs { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesProcessRule> SalesProcessRules { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
