@@ -18,6 +18,27 @@ import "@leafer-in/find"; // Import find plugin
 import { useProjectFlowStore } from "@/stores/projectFlowStore";
 
 const store = useProjectFlowStore();
+
+// Helper to convert hex to rgb
+const hexToRgb = (hex: string) => {
+    if (!hex) return null;
+    let h = hex.trim();
+    if (h.startsWith('#')) h = h.slice(1);
+    
+    if (h.length === 3) {
+        h = h.split('').map(c => c + c).join('');
+    }
+    
+    if (h.length === 6 || h.length === 8) {
+        return {
+            r: parseInt(h.substring(0, 2), 16),
+            g: parseInt(h.substring(2, 4), 16),
+            b: parseInt(h.substring(4, 6), 16)
+        };
+    }
+    return null;
+}
+
 // const dialog = useDialog();
 const containerRef = ref<HTMLElement | null>(null);
 let leaferApp: App | null = null;
@@ -1867,12 +1888,41 @@ const drawChart = () => {
       const cellWidth = phaseWidths[index] || 0;
 
       // Cell Background
+      let cellFill = "white";
+      const phaseColor = phase.color;
+      const laneColor = lane.color;
+      
+      if (phaseColor || laneColor) {
+        const base = { r: 255, g: 255, b: 255 };
+        let r = base.r, g = base.g, b = base.b;
+
+        const pRgb = phaseColor ? hexToRgb(phaseColor) : null;
+        const lRgb = laneColor ? hexToRgb(laneColor) : null;
+        
+        if (pRgb && lRgb) {
+             // 10% Phase, 10% Lane, 80% White
+             r = pRgb.r * 0.1 + lRgb.r * 0.1 + 255 * 0.8;
+             g = pRgb.g * 0.1 + lRgb.g * 0.1 + 255 * 0.8;
+             b = pRgb.b * 0.1 + lRgb.b * 0.1 + 255 * 0.8;
+        } else if (pRgb) {
+             r = pRgb.r * 0.1 + 255 * 0.9;
+             g = pRgb.g * 0.1 + 255 * 0.9;
+             b = pRgb.b * 0.1 + 255 * 0.9;
+        } else if (lRgb) {
+             r = lRgb.r * 0.1 + 255 * 0.9;
+             g = lRgb.g * 0.1 + 255 * 0.9;
+             b = lRgb.b * 0.1 + 255 * 0.9;
+        }
+        
+        cellFill = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+      }
+
       const cell = new Rect({
         x: cellX,
         y: laneY,
         width: cellWidth,
         height: laneHeight,
-        fill: "white", // Changed from transparent to white
+        fill: cellFill,
         stroke: "#eee",
         dashPattern: [5, 5],
       });
@@ -2784,10 +2834,24 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
   };
   const color = statusColors[task.status] || "#9E9E9E";
 
+  const progressPct = (task.progress || 0) / 100;
+  const startColor = task.startColor || 'white';
+  const endColor = task.endColor || '#B3E5FC';
+
   const bg = new Box({
     width: TASK_WIDTH,
     height: TASK_HEIGHT,
-    fill: "white",
+    fill: {
+      type: 'linear',
+      from: { x: 0, y: 0 },
+      to: { x: TASK_WIDTH, y: 0 },
+      stops: [
+        { offset: 0, color: startColor },
+        { offset: progressPct, color: endColor },
+        { offset: progressPct, color: 'white' },
+        { offset: 1, color: 'white' }
+      ]
+    },
     stroke: isSelected ? "#000" : color,
     strokeWidth: isSelected ? 3 : 2,
     cornerRadius: 5,
@@ -2846,32 +2910,11 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
     fill: "#888",
   });
 
-  // Progress Bar
-  const progressBg = new Rect({
-    x: 8,
-    y: 65,
-    width: TASK_WIDTH - 16,
-    height: 4,
-    fill: "#eee",
-    cornerRadius: 2,
-  });
-
-  const progressFill = new Rect({
-    x: 8,
-    y: 65,
-    width: (TASK_WIDTH - 16) * (task.progress / 100),
-    height: 4,
-    fill: color,
-    cornerRadius: 2,
-  });
-
   nodeGroup.add(bg);
   nodeGroup.add(indicator);
   nodeGroup.add(idText);
   nodeGroup.add(nameText);
   nodeGroup.add(ownerText);
-  nodeGroup.add(progressBg);
-  nodeGroup.add(progressFill);
 
   // --- Connection Ports ---
   const allPorts: Ellipse[] = [];
