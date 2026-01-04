@@ -2988,8 +2988,8 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
       ]
     },
     stroke: isSelected ? "#000" : color,
-    strokeWidth: isSelected ? 3 : 2,
-    cornerRadius: 5,
+    strokeWidth: isSelected ? 2 : 1,
+    cornerRadius: 4,
     shadow: { x: 0, y: 2, blur: 4, color: "rgba(0,0,0,0.1)" },
   });
 

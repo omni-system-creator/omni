@@ -1142,11 +1142,12 @@ const drawGantt = () => {
                     ]
                 }
                 
+                const isSelected = selectedTaskId.value === row.id
                 const bar = new Rect({
                     x: 0, y: 0, width: barW, height: barHeight,
                     fill: fill as any,
-                    stroke: color,
-                    strokeWidth: 1,
+                    stroke: isSelected ? "#000" : color,
+                    strokeWidth: isSelected ? 2 : 1,
                     cornerRadius: 4,
                     cursor: 'pointer'
                 })
