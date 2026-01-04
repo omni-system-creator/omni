@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using omsapi.Data;
+using omsapi.Models.Common;
 using omsapi.Models.Dtos.Sales;
 using omsapi.Models.Entities.Sales;
-using omsapi.Models.Common;
 using omsapi.Services.Interfaces;
+using omsapi.Infrastructure.Attributes;
 
 namespace omsapi.Services
 {
+    [AutoInject(ServiceLifetime.Scoped)]
     public class SalesService : ISalesService
     {
         private readonly OmsContext _context;

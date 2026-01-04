@@ -11,7 +11,7 @@
  Target Server Version : 80036 (8.0.36)
  File Encoding         : 65001
 
- Date: 04/01/2026 16:12:48
+ Date: 04/01/2026 21:23:37
 */
 
 SET NAMES utf8mb4;
@@ -53,6 +53,8 @@ INSERT INTO `__efmigrationshistory` VALUES ('20251228141345_AddContractDetails',
 INSERT INTO `__efmigrationshistory` VALUES ('20251228153824_AddContentTypeToKnowledgeFile', '9.0.0');
 INSERT INTO `__efmigrationshistory` VALUES ('20251228154949_ChangeKnowledgeFileSizeToLong', '9.0.0');
 INSERT INTO `__efmigrationshistory` VALUES ('20260101030353_RenameProjectFlowToProject', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20260104124733_UpdateSalesSchema', '9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20260104130149_AddDictEntities', '9.0.0');
 
 -- ----------------------------
 -- Table structure for api_category
@@ -710,7 +712,8 @@ CREATE TABLE `project_attachments`  (
 -- Records of project_attachments
 -- ----------------------------
 INSERT INTO `project_attachments` VALUES ('a1', 't1_1', 'PRJ-2024-001', '项目章程.pdf', '#', 'pdf', '2023-12-23 00:00:00.000000');
-INSERT INTO `project_attachments` VALUES ('a1767202033775', 't1766980097523', 'crrc-2025', '基于数据分析平台接口开发技术研究技术条件20251231.docx', '/pm/project/crrc-2025/t1766980097523/%E5%9F%BA%E4%BA%8E%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%8F%A3%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%A0%94%E7%A9%B6%E6%8A%80%E6%9C%AF%E6%9D%A1%E4%BB%B620251231.docx', 'file', '2025-12-31 00:00:00.000000');
+INSERT INTO `project_attachments` VALUES ('a1767202033775', 't1766980097523', 'crrc-2025', '基于数据分析平台接口开发技术研究技术条件20251231.docx', '/pm/project/crrc-2025/t1766980097523/%E5%9F%BA%E4%BA%8E%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%8F%A3%E5%BC%80%E5%8F%91%E6%8A%80%E6%9C%AF%E7%A0%94%E7%A9%B6%E6%8A%80%E6%9C%AF%E6%9D%A1%E4%BB%B620251231.docx', 'file', '2025-12-28 00:00:00.000000');
+INSERT INTO `project_attachments` VALUES ('a1767493382440', 't1767493010615', 'crrc-2025', '工作流疑问(1).docx', '/pm/project/crrc-2025/t1767493010615/%E5%B7%A5%E4%BD%9C%E6%B5%81%E7%96%91%E9%97%AE(1).docx', 'file', '2026-01-02 00:00:00.000000');
 INSERT INTO `project_attachments` VALUES ('a2', 't1_1', 'PRJ-2024-001', '需求规格说明书_v1.0.docx', '#', 'doc', '2023-12-26 00:00:00.000000');
 INSERT INTO `project_attachments` VALUES ('a3', 't1_2', 'PRJ-2024-001', '总体方案汇报.pptx', '#', 'ppt', '2024-01-10 00:00:00.000000');
 
@@ -732,9 +735,11 @@ CREATE TABLE `project_info`  (
 -- ----------------------------
 -- Records of project_info
 -- ----------------------------
-INSERT INTO `project_info` VALUES ('1111', '地铁车辆设计项目', NULL, NULL, NULL, NULL, NULL);
-INSERT INTO `project_info` VALUES ('crrc-2025', '多维数据分析平台2025', '通用', '', '', '2025-11-03 00:00:00.000000', NULL);
+INSERT INTO `project_info` VALUES ('1111', '地铁车辆设计项目', NULL, NULL, '张三', '2026-01-04 00:00:00.000000', '2026-01-31 00:00:00.000000');
+INSERT INTO `project_info` VALUES ('crrc-2025', '多维数据分析平台2025', '通用', '', '', '2025-10-31 00:00:00.000000', NULL);
 INSERT INTO `project_info` VALUES ('PRJ-2024-001', '地铁车辆设计项目', '车辆工程', '地铁车辆全生命周期设计项目', '张三', '2023-12-22 00:00:00.000000', '2024-12-21 00:00:00.000000');
+INSERT INTO `project_info` VALUES ('xxxx', '地铁车辆设计项目_copy', NULL, NULL, '张三', '2026-01-08 00:00:00.000000', NULL);
+INSERT INTO `project_info` VALUES ('yyyy', '地铁车辆设计项目_copy', NULL, NULL, '张三', '2026-01-10 00:00:00.000000', '2026-02-06 00:00:00.000000');
 
 -- ----------------------------
 -- Table structure for project_phases
@@ -754,6 +759,8 @@ CREATE TABLE `project_phases`  (
 INSERT INTO `project_phases` VALUES ('p1', '1111', '概念设计阶段', '#E3F2FD');
 INSERT INTO `project_phases` VALUES ('p1', 'crrc-2025', '2026-01', '#E3F2FD');
 INSERT INTO `project_phases` VALUES ('p1', 'PRJ-2024-001', '概念设计阶段', '#E3F2FD');
+INSERT INTO `project_phases` VALUES ('p1', 'xxxx', '概念设计阶段', '#E3F2FD');
+INSERT INTO `project_phases` VALUES ('p1', 'yyyy', '概念设计阶段', '#E3F2FD');
 INSERT INTO `project_phases` VALUES ('p1766984086654', 'crrc-2025', '2026-02', '#e1feef');
 INSERT INTO `project_phases` VALUES ('p1766984103220', 'crrc-2025', '2026-03', '#F5F5F5');
 INSERT INTO `project_phases` VALUES ('p1766984110676', 'crrc-2025', '2026-04', '#F5F5F5');
@@ -761,10 +768,16 @@ INSERT INTO `project_phases` VALUES ('p1766984123106', 'crrc-2025', '2026-05', '
 INSERT INTO `project_phases` VALUES ('p1766984133676', 'crrc-2025', '2026-06', '#F5F5F5');
 INSERT INTO `project_phases` VALUES ('p2', '1111', '方案设计阶段', '#E8F5E9');
 INSERT INTO `project_phases` VALUES ('p2', 'PRJ-2024-001', '方案设计阶段', '#E8F5E9');
+INSERT INTO `project_phases` VALUES ('p2', 'xxxx', '方案设计阶段', '#E8F5E9');
+INSERT INTO `project_phases` VALUES ('p2', 'yyyy', '方案设计阶段', '#E8F5E9');
 INSERT INTO `project_phases` VALUES ('p3', '1111', '详细设计阶段', '#FFF3E0');
 INSERT INTO `project_phases` VALUES ('p3', 'PRJ-2024-001', '详细设计阶段', '#FFF3E0');
+INSERT INTO `project_phases` VALUES ('p3', 'xxxx', '详细设计阶段', '#FFF3E0');
+INSERT INTO `project_phases` VALUES ('p3', 'yyyy', '详细设计阶段', '#FFF3E0');
 INSERT INTO `project_phases` VALUES ('p4', '1111', '设计验证阶段', '#F3E5F5');
 INSERT INTO `project_phases` VALUES ('p4', 'PRJ-2024-001', '设计验证阶段', '#F3E5F5');
+INSERT INTO `project_phases` VALUES ('p4', 'xxxx', '设计验证阶段', '#F3E5F5');
+INSERT INTO `project_phases` VALUES ('p4', 'yyyy', '设计验证阶段', '#F3E5F5');
 
 -- ----------------------------
 -- Table structure for project_swimlanes
@@ -784,22 +797,36 @@ CREATE TABLE `project_swimlanes`  (
 INSERT INTO `project_swimlanes` VALUES ('sl1', '1111', '项目管理', '#F5F5F5');
 INSERT INTO `project_swimlanes` VALUES ('sl1', 'crrc-2025', '任务', '#3d4a8a');
 INSERT INTO `project_swimlanes` VALUES ('sl1', 'PRJ-2024-001', '项目管理', '#F5F5F5');
+INSERT INTO `project_swimlanes` VALUES ('sl1', 'xxxx', '项目管理', '#F5F5F5');
+INSERT INTO `project_swimlanes` VALUES ('sl1', 'yyyy', '项目管理', '#F5F5F5');
 INSERT INTO `project_swimlanes` VALUES ('sl1767086258904', 'crrc-2025', 'bug', '#ffcccc');
 INSERT INTO `project_swimlanes` VALUES ('sl1767144942000', 'crrc-2025', '后端', '#46eca4');
 INSERT INTO `project_swimlanes` VALUES ('sl1767144988697', 'crrc-2025', '前端', '#b8f3ff');
 INSERT INTO `project_swimlanes` VALUES ('sl1767146103244', 'crrc-2025', '大屏', '#62bcba');
 INSERT INTO `project_swimlanes` VALUES ('sl2', '1111', '机械设计专业', '#E1F5FE');
 INSERT INTO `project_swimlanes` VALUES ('sl2', 'PRJ-2024-001', '机械设计专业', '#E1F5FE');
+INSERT INTO `project_swimlanes` VALUES ('sl2', 'xxxx', '机械设计专业', '#E1F5FE');
+INSERT INTO `project_swimlanes` VALUES ('sl2', 'yyyy', '机械设计专业', '#E1F5FE');
 INSERT INTO `project_swimlanes` VALUES ('sl3', '1111', '电气设计专业', '#FFF3E0');
 INSERT INTO `project_swimlanes` VALUES ('sl3', 'PRJ-2024-001', '电气设计专业', '#FFF3E0');
+INSERT INTO `project_swimlanes` VALUES ('sl3', 'xxxx', '电气设计专业', '#FFF3E0');
+INSERT INTO `project_swimlanes` VALUES ('sl3', 'yyyy', '电气设计专业', '#FFF3E0');
 INSERT INTO `project_swimlanes` VALUES ('sl4', '1111', '软件与控制专业', '#E8F5E9');
 INSERT INTO `project_swimlanes` VALUES ('sl4', 'PRJ-2024-001', '软件与控制专业', '#E8F5E9');
+INSERT INTO `project_swimlanes` VALUES ('sl4', 'xxxx', '软件与控制专业', '#E8F5E9');
+INSERT INTO `project_swimlanes` VALUES ('sl4', 'yyyy', '软件与控制专业', '#E8F5E9');
 INSERT INTO `project_swimlanes` VALUES ('sl5', '1111', '工业设计专业', '#F3E5F5');
 INSERT INTO `project_swimlanes` VALUES ('sl5', 'PRJ-2024-001', '工业设计专业', '#F3E5F5');
+INSERT INTO `project_swimlanes` VALUES ('sl5', 'xxxx', '工业设计专业', '#F3E5F5');
+INSERT INTO `project_swimlanes` VALUES ('sl5', 'yyyy', '工业设计专业', '#F3E5F5');
 INSERT INTO `project_swimlanes` VALUES ('sl6', '1111', '系统集成与验证', '#EFEBE9');
 INSERT INTO `project_swimlanes` VALUES ('sl6', 'PRJ-2024-001', '系统集成与验证', '#EFEBE9');
+INSERT INTO `project_swimlanes` VALUES ('sl6', 'xxxx', '系统集成与验证', '#EFEBE9');
+INSERT INTO `project_swimlanes` VALUES ('sl6', 'yyyy', '系统集成与验证', '#EFEBE9');
 INSERT INTO `project_swimlanes` VALUES ('sl7', '1111', '质量管理', '#FFEBEE');
 INSERT INTO `project_swimlanes` VALUES ('sl7', 'PRJ-2024-001', '质量管理', '#FFEBEE');
+INSERT INTO `project_swimlanes` VALUES ('sl7', 'xxxx', '质量管理', '#FFEBEE');
+INSERT INTO `project_swimlanes` VALUES ('sl7', 'yyyy', '质量管理', '#FFEBEE');
 
 -- ----------------------------
 -- Table structure for project_task_dependencies
@@ -816,7 +843,7 @@ CREATE TABLE `project_task_dependencies`  (
   `controlPoints` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
   `controlPointCount` int NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 5443 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 6325 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of project_task_dependencies
@@ -853,27 +880,69 @@ INSERT INTO `project_task_dependencies` VALUES (4478, 't4_3', 't4_1', 'PRJ-2024-
 INSERT INTO `project_task_dependencies` VALUES (4479, 't4_4', 't4_3', 'PRJ-2024-001', 'curve', 'right', 'left', NULL, 0);
 INSERT INTO `project_task_dependencies` VALUES (4480, 't4_5', 't4_4', 'PRJ-2024-001', 'curve', 'left', 'right', NULL, 0);
 INSERT INTO `project_task_dependencies` VALUES (4481, 't4_6', 't4_5', 'PRJ-2024-001', 'curve', 'top', 'bottom', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5422, 't1_3', 't1_2', '1111', 'polyline', 'top', 'bottom', '[{\"x\":0,\"y\":-20},{\"x\":2,\"y\":-357},{\"x\":72,\"y\":-196},{\"x\":155,\"y\":-450}]', NULL);
-INSERT INTO `project_task_dependencies` VALUES (5423, 't1765987308084', 't2_9', '1111', 'polyline', 'left', 'right', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5424, 't2_1', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5425, 't2_10', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5426, 't2_2', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5427, 't2_3', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5428, 't2_4', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5429, 't2_5', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5430, 't2_6', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5431, 't2_7', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5432, 't2_8', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5433, 't2_9', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5434, 't3_10', 't2_1', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5435, 't3_10', 't2_4', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5436, 't3_11', 't3_1', '1111', 'polyline', 'bottom', 'top', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5437, 't3_11', 't3_4', '1111', 'polyline', 'bottom', 'top', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5438, 't3_3', 't2_10', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5439, 't4_1', 't3_1', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5440, 't4_1', 't3_4', '1111', 'polyline', 'right', 'left', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5441, 't4_5', 't4_4', '1111', 'polyline', 'left', 'right', NULL, 0);
-INSERT INTO `project_task_dependencies` VALUES (5442, 't4_6', 't4_5', '1111', 'polyline', 'top', 'bottom', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6220, 't1_3', 't1_2', 'xxxx', 'polyline', 'top', 'bottom', '[{\"x\":0,\"y\":-20},{\"x\":0.44141975308605197,\"y\":-329.5020987654323},{\"x\":155,\"y\":-450}]', NULL);
+INSERT INTO `project_task_dependencies` VALUES (6221, 't1765987308084', 't2_9', 'xxxx', 'polyline', 'left', 'right', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6222, 't2_1', 't1_3', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6223, 't2_10', 't1_3', 'xxxx', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6224, 't2_2', 't1_3', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6225, 't2_3', 't1_3', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6226, 't2_4', 't1_3', 'xxxx', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6227, 't2_5', 't1_3', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6228, 't2_6', 't1_3', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6229, 't2_7', 't1_3', 'xxxx', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6230, 't2_8', 't1_3', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6231, 't2_9', 't1_3', 'xxxx', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6232, 't3_10', 't2_1', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6233, 't3_10', 't2_4', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6234, 't3_11', 't3_1', 'xxxx', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6235, 't3_11', 't3_4', 'xxxx', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6236, 't3_3', 't2_10', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6237, 't4_1', 't3_1', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6238, 't4_1', 't3_4', 'xxxx', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6239, 't4_5', 't4_4', 'xxxx', 'polyline', 'left', 'right', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6240, 't4_6', 't4_5', 'xxxx', 'polyline', 'top', 'bottom', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6262, 't1_3', 't1_2', '1111', 'polyline', 'top', 'bottom', '[{\"x\":0,\"y\":-20},{\"x\":0.44141975308605197,\"y\":-329.5020987654323},{\"x\":155,\"y\":-450}]', NULL);
+INSERT INTO `project_task_dependencies` VALUES (6263, 't1765987308084', 't2_9', '1111', 'polyline', 'left', 'right', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6264, 't2_1', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6265, 't2_10', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6266, 't2_2', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6267, 't2_3', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6268, 't2_4', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6269, 't2_5', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6270, 't2_6', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6271, 't2_7', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6272, 't2_8', 't1_3', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6273, 't2_9', 't1_3', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6274, 't3_10', 't2_1', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6275, 't3_10', 't2_4', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6276, 't3_11', 't3_1', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6277, 't3_11', 't3_4', '1111', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6278, 't3_3', 't2_10', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6279, 't4_1', 't3_1', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6280, 't4_1', 't3_4', '1111', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6281, 't4_5', 't4_4', '1111', 'polyline', 'left', 'right', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6282, 't4_6', 't4_5', '1111', 'polyline', 'top', 'bottom', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6304, 't1_3', 't1_2', 'yyyy', 'polyline', 'top', 'bottom', '[{\"x\":0,\"y\":-20},{\"x\":0.44141975308605197,\"y\":-329.5020987654323},{\"x\":155,\"y\":-450}]', NULL);
+INSERT INTO `project_task_dependencies` VALUES (6305, 't1765987308084', 't2_9', 'yyyy', 'polyline', 'left', 'right', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6306, 't2_1', 't1_3', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6307, 't2_10', 't1_3', 'yyyy', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6308, 't2_2', 't1_3', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6309, 't2_3', 't1_3', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6310, 't2_4', 't1_3', 'yyyy', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6311, 't2_5', 't1_3', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6312, 't2_6', 't1_3', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6313, 't2_7', 't1_3', 'yyyy', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6314, 't2_8', 't1_3', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6315, 't2_9', 't1_3', 'yyyy', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6316, 't3_10', 't2_1', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6317, 't3_10', 't2_4', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6318, 't3_11', 't3_1', 'yyyy', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6319, 't3_11', 't3_4', 'yyyy', 'polyline', 'bottom', 'top', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6320, 't3_3', 't2_10', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6321, 't4_1', 't3_1', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6322, 't4_1', 't3_4', 'yyyy', 'polyline', 'right', 'left', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6323, 't4_5', 't4_4', 'yyyy', 'polyline', 'left', 'right', NULL, 0);
+INSERT INTO `project_task_dependencies` VALUES (6324, 't4_6', 't4_5', 'yyyy', 'polyline', 'top', 'bottom', NULL, 0);
 
 -- ----------------------------
 -- Table structure for project_tasks
@@ -905,81 +974,269 @@ CREATE TABLE `project_tasks`  (
 -- ----------------------------
 INSERT INTO `project_tasks` VALUES ('t1_1', '1111', '项目启动与需求分析', 'p1', 'sl1', 'completed', 100, '项目经理', '2023-12-30 00:00:00.000000', '2024-01-08 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t1_1', 'PRJ-2024-001', '项目启动与需求分析', 'p1', 'sl1', 'completed', 100, '项目经理', '2023-12-22 00:00:00.000000', '2024-01-01 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_1', 'xxxx', '项目启动与需求分析', 'p1', 'sl1', 'completed', 100, '项目经理', '2023-12-30 00:00:00.000000', '2024-01-08 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_1', 'yyyy', '项目启动与需求分析', 'p1', 'sl1', 'completed', 100, '项目经理', '2024-01-05 00:00:00.000000', '2024-01-14 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t1_2', '1111', '总体方案设计', 'p1', 'sl6', 'completed', 100, '总工', '2024-01-09 00:00:00.000000', '2024-01-23 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t1_2', 'PRJ-2024-001', '总体方案设计', 'p1', 'sl6', 'completed', 100, '总工', '2024-01-01 00:00:00.000000', '2024-01-09 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1_3', '1111', '概念评审与冻结', 'p1', 'sl1', 'completed', 100, '项目经理', '2024-01-24 00:00:00.000000', '2024-01-24 00:00:00.000000', 'milestone', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_2', 'xxxx', '总体方案设计', 'p1', 'sl6', 'completed', 100, '总工', '2024-01-09 00:00:00.000000', '2024-01-23 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_2', 'yyyy', '总体方案设计', 'p1', 'sl6', 'completed', 100, '总工', '2024-01-15 00:00:00.000000', '2024-01-29 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_3', '1111', '概念评审与冻结', 'p1', 'sl1', 'completed', 100, '项目经理', '2024-01-18 00:00:00.000000', '2024-01-25 00:00:00.000000', 'milestone', NULL, 174.203, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t1_3', 'PRJ-2024-001', '概念评审与冻结', 'p1', 'sl1', 'completed', 64, '项目经理', '2024-01-15 00:00:00.000000', '2024-01-19 00:00:00.000000', 'milestone', NULL, 170, 15, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1765987308084', '1111', '新任务', 'p1', 'sl7', 'in_progress', 45, '我', '2025-12-15 00:00:00.000000', '2025-12-15 00:00:00.000000', 'task', NULL, 68, 13, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1766980097523', 'crrc-2025', '项目需求-需求文件', 'p1', 'sl1', 'completed', 100, '饶荣', '2025-11-04 00:00:00.000000', '2025-11-09 00:00:00.000000', 'task', '', 60, 15, '#ffffff', '#B3E5FC', 140);
-INSERT INTO `project_tasks` VALUES ('t1767059425440', 'crrc-2025', '文件数据自定义裁剪', 'p1', 'sl1767146103244', 'pending', 0, '黄亮', '2025-10-29 00:00:00.000000', '2025-11-03 00:00:00.000000', 'task', '修改自定义高级地图', 130, 23.2085, '#F3E5F5', '#ECA9F8FF', 144.514);
-INSERT INTO `project_tasks` VALUES ('t1767059614944', 'crrc-2025', '数据展示由后端生成图片', 'p1766984086654', 'sl1767146103244', 'pending', 0, '待定', '2025-11-05 00:00:00.000000', '2025-11-09 00:00:00.000000', 'task', '', 106.57, 23.2085, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767059627136', 'crrc-2025', '算子添加自定义配置项', 'p1766984133676', 'sl1767144942000', 'pending', 0, '', '2025-11-02 00:00:00.000000', '2025-11-08 00:00:00.000000', 'task', '', 43.5673, 22.988, '#ffffff', '#B3E5FC', 140);
-INSERT INTO `project_tasks` VALUES ('t1767059628865', 'crrc-2025', '新增回收站机制', 'p1766984110676', 'sl1767144988697', 'pending', 9, '待定', '2025-11-05 00:00:00.000000', '2025-11-08 00:00:00.000000', 'task', '', 32.0539, 21.954, '#FFEBEE', '#EF5350', 140);
-INSERT INTO `project_tasks` VALUES ('t1767059630624', 'crrc-2025', '报告模版在线编辑', 'p1', 'sl1767144988697', 'pending', 0, '黄亮', '2025-11-05 00:00:00.000000', '2025-11-09 00:00:00.000000', 'task', '', 276.024, 21.954, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767059645544', 'crrc-2025', '车辆数据溯源', 'p1', 'sl1767144942000', 'pending', 0, '待定', '2025-11-04 00:00:00.000000', '2025-11-08 00:00:00.000000', 'task', '各种数据和车辆之间的关系', 277.685, 22.988, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767059647128', 'crrc-2025', '提供快速获取结果数据API接口', 'p1766984110676', 'sl1767144942000', 'pending', 0, '王子恒', '2025-11-03 00:00:00.000000', '2025-11-08 00:00:00.000000', 'task', '', 32.0539, 22.988, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767086268029', 'crrc-2025', '文件保存节点保存csv格式为doris存储格式', 'p1766984086654', 'sl1767144942000', 'pending', 15, '待定', '2026-02-19 00:00:00.000000', '2026-02-25 00:00:00.000000', 'task', '', 23.6673, 22.988, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767086305845', 'crrc-2025', '文件保存节点没有保存tdms文件代码', 'p1766984086654', 'sl1767144942000', 'pending', 0, '待定', '2025-11-12 00:00:00.000000', '2025-11-17 00:00:00.000000', 'task', '', 201.045, 22.988, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767086331997', 'crrc-2025', 'AI助手优化代码报错(token too lager for edit)', 'p1', 'sl1767086258904', 'pending', 0, '待定', '2025-11-22 00:00:00.000000', '2025-11-28 00:00:00.000000', 'task', '', 60, 25.6625, NULL, NULL, 186.879);
-INSERT INTO `project_tasks` VALUES ('t1767086356700', 'crrc-2025', '在线debug失败', 'p1', 'sl1767086258904', 'pending', 0, '待定', '2025-11-18 00:00:00.000000', '2025-11-23 00:00:00.000000', 'task', '', 277.685, 25.6625, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767086385356', 'crrc-2025', '提供文件保存方法', 'p1', 'sl1767144942000', 'pending', 0, '待定', '2025-11-10 00:00:00.000000', '2025-11-14 00:00:00.000000', 'task', '通过文件保存方法自定义保存文件(文件类型未知)', 57.685, 22.988, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767086575965', 'crrc-2025', '高级图表支持工作流文件保存节点的文件', 'p1766984103220', 'sl1767146103244', 'pending', 0, '待定', '2025-11-10 00:00:00.000000', '2025-11-16 00:00:00.000000', 'task', '工作流添加tdms数据', 44.5235, 23.2085, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767147161314', 'crrc-2025', '算子添加自定义配置项', 'p1766984086654', 'sl1767144988697', 'pending', 0, '黄亮', '2025-12-13 00:00:00.000000', '2025-12-16 00:00:00.000000', 'task', '', 93.6673, 21.954, NULL, NULL, 140);
-INSERT INTO `project_tasks` VALUES ('t1767147346473', 'crrc-2025', '车辆数据溯源', 'p1766984123106', 'sl1767144988697', 'pending', 0, '待定', '2025-12-13 00:00:00.000000', '2025-12-15 00:00:00.000000', 'task', '', 42.9921, 21.954, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_3', 'xxxx', '概念评审与冻结', 'p1', 'sl1', 'completed', 100, '项目经理', '2024-01-18 00:00:00.000000', '2024-01-25 00:00:00.000000', 'milestone', NULL, 174.203, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1_3', 'yyyy', '概念评审与冻结', 'p1', 'sl1', 'completed', 100, '项目经理', '2024-01-24 00:00:00.000000', '2024-01-31 00:00:00.000000', 'milestone', NULL, 174.203, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1765987308084', '1111', '新任务', 'p1', 'sl7', 'in_progress', 45, '我', '2025-12-09 00:00:00.000000', '2025-12-16 00:00:00.000000', 'task', NULL, 68, 13, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1765987308084', 'xxxx', '新任务', 'p1', 'sl7', 'in_progress', 45, '我', '2025-12-09 00:00:00.000000', '2025-12-16 00:00:00.000000', 'task', NULL, 68, 13, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1765987308084', 'yyyy', '新任务', 'p1', 'sl7', 'in_progress', 45, '我', '2025-12-15 00:00:00.000000', '2025-12-22 00:00:00.000000', 'task', NULL, 68, 13, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1766980097523', 'crrc-2025', '项目需求-需求文件', 'p1', 'sl1', 'completed', 100, '饶荣', '2025-11-01 00:00:00.000000', '2025-11-06 00:00:00.000000', 'task', '', 60, 15, '#ffffff', '#B3E5FC', 140);
+INSERT INTO `project_tasks` VALUES ('t1767059425440', 'crrc-2025', '文件数据自定义裁剪', 'p1', 'sl1767146103244', 'pending', 0, '范新悦', '2025-10-26 00:00:00.000000', '2025-10-31 00:00:00.000000', 'task', '修改自定义高级地图', 104.622, 23.2085, '#F3E5F5', '#ECA9F8FF', 144.514);
+INSERT INTO `project_tasks` VALUES ('t1767059614944', 'crrc-2025', '数据展示由后端生成图片', 'p1766984086654', 'sl1767146103244', 'pending', 0, '黄亮', '2025-11-02 00:00:00.000000', '2025-11-06 00:00:00.000000', 'task', '', 93.6673, 23.2085, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767059627136', 'crrc-2025', '算子添加自定义配置项', 'p1766984133676', 'sl1767144942000', 'pending', 0, '', '2025-10-30 00:00:00.000000', '2025-11-05 00:00:00.000000', 'task', '', 43.5673, 22.988, '#ffffff', '#B3E5FC', 140);
+INSERT INTO `project_tasks` VALUES ('t1767059628865', 'crrc-2025', '新增回收站机制', 'p1766984103220', 'sl1767144988697', 'pending', 9, '黄亮', '2025-11-02 00:00:00.000000', '2025-11-05 00:00:00.000000', 'task', '', 62.5774, 21.954, '#FFEBEE', '#EF5350', 140);
+INSERT INTO `project_tasks` VALUES ('t1767059630624', 'crrc-2025', '报告模版在线编辑', 'p1', 'sl1767144988697', 'pending', 0, '黄亮', '2025-11-02 00:00:00.000000', '2025-11-06 00:00:00.000000', 'task', '', 106.879, 21.954, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767059645544', 'crrc-2025', '车辆数据溯源', 'p1', 'sl1767144942000', 'pending', 0, '待定', '2025-11-01 00:00:00.000000', '2025-11-05 00:00:00.000000', 'task', '各种数据和车辆之间的关系', 277.685, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767059647128', 'crrc-2025', '提供快速获取结果数据API接口', 'p1766984110676', 'sl1767144942000', 'pending', 0, '王子恒', '2025-10-31 00:00:00.000000', '2025-11-05 00:00:00.000000', 'task', '', 32.0539, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086268029', 'crrc-2025', '文件保存节点保存csv格式为doris存储格式', 'p1766984086654', 'sl1767144942000', 'pending', 15, '待定', '2026-02-16 00:00:00.000000', '2026-02-22 00:00:00.000000', 'task', '', 23.6673, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086305845', 'crrc-2025', '文件保存节点没有保存tdms文件代码', 'p1766984086654', 'sl1767144942000', 'pending', 0, '待定', '2025-11-10 00:00:00.000000', '2025-11-15 00:00:00.000000', 'task', '', 201.045, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086331997', 'crrc-2025', 'AI助手优化代码报错(token too lager for edit)', 'p1', 'sl1767086258904', 'pending', 0, '待定', '2025-11-19 00:00:00.000000', '2025-11-25 00:00:00.000000', 'task', '', 60, 25.6625, NULL, NULL, 186.879);
+INSERT INTO `project_tasks` VALUES ('t1767086356700', 'crrc-2025', '在线debug失败', 'p1', 'sl1767086258904', 'pending', 0, '待定', '2025-11-15 00:00:00.000000', '2025-11-20 00:00:00.000000', 'task', '', 277.685, 25.6625, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086385356', 'crrc-2025', '提供文件保存方法', 'p1', 'sl1767144942000', 'pending', 0, '待定', '2025-11-07 00:00:00.000000', '2025-11-11 00:00:00.000000', 'task', '通过文件保存方法自定义保存文件(文件类型未知)', 57.685, 22.988, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767086575965', 'crrc-2025', '高级图表支持工作流文件保存节点的文件', 'p1766984103220', 'sl1767146103244', 'pending', 0, '黄亮', '2025-11-07 00:00:00.000000', '2025-11-12 00:00:00.000000', 'task', '工作流添加tdms数据', 49.5235, 23.2085, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767147161314', 'crrc-2025', '算子添加自定义配置项', 'p1766984086654', 'sl1767144988697', 'pending', 0, '黄亮', '2025-12-10 00:00:00.000000', '2025-12-13 00:00:00.000000', 'task', '', 93.6673, 21.954, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767147346473', 'crrc-2025', '车辆数据溯源', 'p1766984110676', 'sl1767144988697', 'pending', 0, '黄亮', '2025-12-10 00:00:00.000000', '2025-12-12 00:00:00.000000', 'task', '', 70, 21.954, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767493010615', 'crrc-2025', '错误日志只有一个No match found，报错信息较为抽象', 'p1766984086654', 'sl1767086258904', 'pending', 0, '待定', '2026-01-03 00:00:00.000000', '2026-01-05 00:00:00.000000', 'task', '错误日志只有一个No match found，报错信息较为抽象\n在某些语句报错时，直接没有日志。现在算子如下，可以看到是运行异常的状态\n', 23.6673, 25.6625, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767493098019', 'crrc-2025', '当执行完流程实例后，就没有左侧的抽屉了', 'p1766984086654', 'sl1767086258904', 'pending', 0, '待定', '2026-01-02 00:00:00.000000', '2026-01-02 00:00:00.000000', 'task', '当执行完流程实例后，就没有左侧的抽屉了。但是这个设计器界面是和编辑界面是一致的，运行完却不能编辑了，会产生割裂感，要么把这个勾勾叉叉都放到实例中，要么开放编辑权限，方便继续运行', 201.045, 25.6625, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767493462405', 'crrc-2025', '不能在main函数名的同一行加注释', 'p1766984103220', 'sl1767086258904', 'pending', 0, '待定', '2026-01-02 00:00:00.000000', '2026-01-02 00:00:00.000000', 'task', NULL, 49.5235, 25.6625, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767493793444', 'crrc-2025', '在输入是list的情况下，代码中仍然使用dict的方式获取数据：', 'p1766984110676', 'sl1767086258904', 'pending', 0, '待定', '2026-01-02 00:00:00.000000', '2026-01-02 00:00:00.000000', 'task', '本应该报错的，实际上没有任何报错【bug】', 0, 25.6625, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t1767493942360', 'crrc-2025', '只有当右击标签页-重新加载的时候才会正常显示（不过勾勾叉叉都消失了）', 'p1766984123106', 'sl1767086258904', 'pending', 0, '待定', '2026-01-02 00:00:00.000000', '2026-01-02 00:00:00.000000', 'task', '用起来太不方便【待优化】', 0, 25.6625, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_1', '1111', '车体方案设计', 'p2', 'sl2', 'completed', 100, '张工', '2024-01-30 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_1', 'PRJ-2024-001', '车体方案设计', 'p2', 'sl2', 'completed', 100, '张工', '2024-01-23 00:00:00.000000', '2024-02-11 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_1', 'xxxx', '车体方案设计', 'p2', 'sl2', 'completed', 100, '张工', '2024-01-30 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_1', 'yyyy', '车体方案设计', 'p2', 'sl2', 'completed', 100, '张工', '2024-02-05 00:00:00.000000', '2024-02-24 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_10', '1111', '内饰方案设计', 'p2', 'sl5', 'in_progress', 60, '郑工', '2024-02-13 00:00:00.000000', '2024-03-08 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_10', 'PRJ-2024-001', '内饰方案设计', 'p2', 'sl5', 'in_progress', 60, '郑工', '2024-02-05 00:00:00.000000', '2024-02-29 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_10', 'xxxx', '内饰方案设计', 'p2', 'sl5', 'in_progress', 60, '郑工', '2024-02-13 00:00:00.000000', '2024-03-08 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_10', 'yyyy', '内饰方案设计', 'p2', 'sl5', 'in_progress', 60, '郑工', '2024-02-19 00:00:00.000000', '2024-03-14 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_2', '1111', '转向架方案', 'p2', 'sl2', 'completed', 100, '陈工', '2024-01-30 00:00:00.000000', '2026-01-31 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_2', 'PRJ-2024-001', '转向架方案', 'p2', 'sl2', 'completed', 100, '陈工', '2024-01-22 00:00:00.000000', '2024-02-15 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_2', 'xxxx', '转向架方案', 'p2', 'sl2', 'completed', 100, '陈工', '2024-01-30 00:00:00.000000', '2026-01-31 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_2', 'yyyy', '转向架方案', 'p2', 'sl2', 'completed', 100, '陈工', '2024-02-05 00:00:00.000000', '2026-02-06 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_3', '1111', '连接装置设计', 'p2', 'sl2', 'completed', 100, '王工', '2024-02-03 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_3', 'PRJ-2024-001', '连接装置设计', 'p2', 'sl2', 'completed', 100, '王工', '2024-01-26 00:00:00.000000', '2024-02-10 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_3', 'xxxx', '连接装置设计', 'p2', 'sl2', 'completed', 100, '王工', '2024-02-03 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_3', 'yyyy', '连接装置设计', 'p2', 'sl2', 'completed', 100, '王工', '2024-02-09 00:00:00.000000', '2024-02-24 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_4', '1111', '牵引系统方案', 'p2', 'sl3', 'in_progress', 80, '李工', '2024-01-30 00:00:00.000000', '2024-02-26 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_4', 'PRJ-2024-001', '牵引系统方案', 'p2', 'sl3', 'in_progress', 80, '李工', '2024-01-22 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_4', 'xxxx', '牵引系统方案', 'p2', 'sl3', 'in_progress', 80, '李工', '2024-01-30 00:00:00.000000', '2024-02-26 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_4', 'yyyy', '牵引系统方案', 'p2', 'sl3', 'in_progress', 80, '李工', '2024-02-05 00:00:00.000000', '2024-03-03 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_5', '1111', '辅助供电系统', 'p2', 'sl3', 'in_progress', 70, '周工', '2024-02-03 00:00:00.000000', '2024-02-23 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_5', 'PRJ-2024-001', '辅助供电系统', 'p2', 'sl3', 'in_progress', 70, '周工', '2024-01-26 00:00:00.000000', '2024-02-15 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_5', 'xxxx', '辅助供电系统', 'p2', 'sl3', 'in_progress', 70, '周工', '2024-02-03 00:00:00.000000', '2024-02-23 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_5', 'yyyy', '辅助供电系统', 'p2', 'sl3', 'in_progress', 70, '周工', '2024-02-09 00:00:00.000000', '2024-02-29 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_6', '1111', '车载电气布置', 'p2', 'sl3', 'pending', 0, '吴工', '2024-02-08 00:00:00.000000', '2024-02-28 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_6', 'PRJ-2024-001', '车载电气布置', 'p2', 'sl3', 'pending', 0, '吴工', '2024-01-31 00:00:00.000000', '2024-02-20 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_6', 'xxxx', '车载电气布置', 'p2', 'sl3', 'pending', 0, '吴工', '2024-02-08 00:00:00.000000', '2024-02-28 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_6', 'yyyy', '车载电气布置', 'p2', 'sl3', 'pending', 0, '吴工', '2024-02-14 00:00:00.000000', '2024-03-05 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_7', '1111', '网络控制系统方案', 'p2', 'sl4', 'in_progress', 50, '赵工', '2024-01-30 00:00:00.000000', '2024-02-26 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_7', 'PRJ-2024-001', '网络控制系统方案', 'p2', 'sl4', 'in_progress', 50, '赵工', '2024-01-22 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_7', 'xxxx', '网络控制系统方案', 'p2', 'sl4', 'in_progress', 50, '赵工', '2024-01-30 00:00:00.000000', '2024-02-26 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_7', 'yyyy', '网络控制系统方案', 'p2', 'sl4', 'in_progress', 50, '赵工', '2024-02-05 00:00:00.000000', '2024-03-03 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_8', '1111', '车载软件框架', 'p2', 'sl4', 'pending', 0, '钱工', '2024-02-08 00:00:00.000000', '2024-03-03 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_8', 'PRJ-2024-001', '车载软件框架', 'p2', 'sl4', 'pending', 0, '钱工', '2024-01-31 00:00:00.000000', '2024-02-24 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_8', 'xxxx', '车载软件框架', 'p2', 'sl4', 'pending', 0, '钱工', '2024-02-08 00:00:00.000000', '2024-03-03 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_8', 'yyyy', '车载软件框架', 'p2', 'sl4', 'pending', 0, '钱工', '2024-02-14 00:00:00.000000', '2024-03-09 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_9', '1111', '外观造型设计', 'p2', 'sl5', 'completed', 100, '孙工', '2024-01-30 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t2_9', 'PRJ-2024-001', '外观造型设计', 'p2', 'sl5', 'completed', 100, '孙工', '2024-01-22 00:00:00.000000', '2024-02-10 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_9', 'xxxx', '外观造型设计', 'p2', 'sl5', 'completed', 100, '孙工', '2024-01-30 00:00:00.000000', '2024-02-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t2_9', 'yyyy', '外观造型设计', 'p2', 'sl5', 'completed', 100, '孙工', '2024-02-05 00:00:00.000000', '2024-02-24 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_1', '1111', '车体详细设计', 'p3', 'sl2', 'pending', 0, '张工', '2024-02-28 00:00:00.000000', '2024-04-28 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_1', 'PRJ-2024-001', '车体详细设计', 'p3', 'sl2', 'pending', 0, '张工', '2024-02-20 00:00:00.000000', '2024-04-20 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_1', 'xxxx', '车体详细设计', 'p3', 'sl2', 'pending', 0, '张工', '2024-02-28 00:00:00.000000', '2024-04-28 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_1', 'yyyy', '车体详细设计', 'p3', 'sl2', 'pending', 0, '张工', '2024-03-05 00:00:00.000000', '2024-05-04 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_10', '1111', '机电接口设计', 'p3', 'sl6', 'pending', 0, '总工', '2024-02-28 00:00:00.000000', '2024-03-30 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_10', 'PRJ-2024-001', '机电接口设计', 'p3', 'sl6', 'pending', 0, '总工', '2024-02-20 00:00:00.000000', '2024-03-22 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_10', 'xxxx', '机电接口设计', 'p3', 'sl6', 'pending', 0, '总工', '2024-02-28 00:00:00.000000', '2024-03-30 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_10', 'yyyy', '机电接口设计', 'p3', 'sl6', 'pending', 0, '总工', '2024-03-05 00:00:00.000000', '2024-04-05 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_11', '1111', 'BOM清单编制', 'p3', 'sl6', 'pending', 0, '管理员', '2024-04-29 00:00:00.000000', '2024-05-28 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_11', 'PRJ-2024-001', 'BOM清单编制', 'p3', 'sl6', 'pending', 0, '管理员', '2024-04-21 00:00:00.000000', '2024-05-20 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_11', 'xxxx', 'BOM清单编制', 'p3', 'sl6', 'pending', 0, '管理员', '2024-04-29 00:00:00.000000', '2024-05-28 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_11', 'yyyy', 'BOM清单编制', 'p3', 'sl6', 'pending', 0, '管理员', '2024-05-05 00:00:00.000000', '2024-06-03 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_2', '1111', '转向架详细设计转向架详细设计转向架详细设计转向架详细设计转向架详细设计', 'p3', 'sl2', 'pending', 0, '陈工', '2024-02-28 00:00:00.000000', '2024-05-13 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_2', 'PRJ-2024-001', '转向架详细设计', 'p3', 'sl2', 'pending', 0, '陈工', '2024-02-20 00:00:00.000000', '2024-05-05 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_2', 'xxxx', '转向架详细设计转向架详细设计转向架详细设计转向架详细设计转向架详细设计', 'p3', 'sl2', 'pending', 0, '陈工', '2024-02-28 00:00:00.000000', '2024-05-13 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_2', 'yyyy', '转向架详细设计转向架详细设计转向架详细设计转向架详细设计转向架详细设计', 'p3', 'sl2', 'pending', 0, '陈工', '2024-03-05 00:00:00.000000', '2024-05-19 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_3', '1111', '内装详细设计', 'p3', 'sl2', 'pending', 0, '郑工', '2024-03-13 00:00:00.000000', '2024-04-29 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_3', 'PRJ-2024-001', '内装详细设计', 'p3', 'sl2', 'pending', 0, '郑工', '2024-03-05 00:00:00.000000', '2024-04-21 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_3', 'xxxx', '内装详细设计', 'p3', 'sl2', 'pending', 0, '郑工', '2024-03-13 00:00:00.000000', '2024-04-29 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_3', 'yyyy', '内装详细设计', 'p3', 'sl2', 'pending', 0, '郑工', '2024-03-19 00:00:00.000000', '2024-05-05 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_4', '1111', '电气原理设计', 'p3', 'sl3', 'pending', 0, '李工', '2024-02-28 00:00:00.000000', '2024-04-13 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_4', 'PRJ-2024-001', '电气原理设计', 'p3', 'sl3', 'pending', 0, '李工', '2024-02-20 00:00:00.000000', '2024-04-05 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_4', 'xxxx', '电气原理设计', 'p3', 'sl3', 'pending', 0, '李工', '2024-02-28 00:00:00.000000', '2024-04-13 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_4', 'yyyy', '电气原理设计', 'p3', 'sl3', 'pending', 0, '李工', '2024-03-05 00:00:00.000000', '2024-04-19 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_5', '1111', '线束设计', 'p3', 'sl3', 'pending', 0, '吴工', '2024-03-13 00:00:00.000000', '2024-04-29 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_5', 'PRJ-2024-001', '线束设计', 'p3', 'sl3', 'pending', 0, '吴工', '2024-03-05 00:00:00.000000', '2024-04-21 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_5', 'xxxx', '线束设计', 'p3', 'sl3', 'pending', 0, '吴工', '2024-03-13 00:00:00.000000', '2024-04-29 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_5', 'yyyy', '线束设计', 'p3', 'sl3', 'pending', 0, '吴工', '2024-03-19 00:00:00.000000', '2024-05-05 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_6', '1111', '电气柜详细设计', 'p3', 'sl3', 'pending', 0, '周工', '2024-03-08 00:00:00.000000', '2024-04-28 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_6', 'PRJ-2024-001', '电气柜详细设计', 'p3', 'sl3', 'pending', 0, '周工', '2024-02-29 00:00:00.000000', '2024-04-20 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_6', 'xxxx', '电气柜详细设计', 'p3', 'sl3', 'pending', 0, '周工', '2024-03-08 00:00:00.000000', '2024-04-28 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_6', 'yyyy', '电气柜详细设计', 'p3', 'sl3', 'pending', 0, '周工', '2024-03-14 00:00:00.000000', '2024-05-04 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_7', '1111', '软件模块设计', 'p3', 'sl4', 'pending', 0, '钱工', '2024-03-08 00:00:00.000000', '2024-05-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_7', 'PRJ-2024-001', '软件模块设计', 'p3', 'sl4', 'pending', 0, '钱工', '2024-02-29 00:00:00.000000', '2024-05-10 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_7', 'xxxx', '软件模块设计', 'p3', 'sl4', 'pending', 0, '钱工', '2024-03-08 00:00:00.000000', '2024-05-18 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_7', 'yyyy', '软件模块设计', 'p3', 'sl4', 'pending', 0, '钱工', '2024-03-14 00:00:00.000000', '2024-05-24 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_8', '1111', 'HMI界面设计', 'p3', 'sl4', 'pending', 0, '孙工', '2024-03-13 00:00:00.000000', '2024-04-29 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_8', 'PRJ-2024-001', 'HMI界面设计', 'p3', 'sl4', 'pending', 0, '孙工', '2024-03-05 00:00:00.000000', '2024-04-21 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_8', 'xxxx', 'HMI界面设计', 'p3', 'sl4', 'pending', 0, '孙工', '2024-03-13 00:00:00.000000', '2024-04-29 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_8', 'yyyy', 'HMI界面设计', 'p3', 'sl4', 'pending', 0, '孙工', '2024-03-19 00:00:00.000000', '2024-05-05 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_9', '1111', '通信协议实现', 'p3', 'sl4', 'pending', 0, '赵工', '2024-03-03 00:00:00.000000', '2024-04-18 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t3_9', 'PRJ-2024-001', '通信协议实现', 'p3', 'sl4', 'pending', 0, '赵工', '2024-02-24 00:00:00.000000', '2024-04-10 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_9', 'xxxx', '通信协议实现', 'p3', 'sl4', 'pending', 0, '赵工', '2024-03-03 00:00:00.000000', '2024-04-18 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t3_9', 'yyyy', '通信协议实现', 'p3', 'sl4', 'pending', 0, '赵工', '2024-03-09 00:00:00.000000', '2024-04-24 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_1', '1111', '仿真分析验证', 'p4', 'sl6', 'pending', 0, '仿真组', '2024-05-30 00:00:00.000000', '2024-06-29 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_1', 'PRJ-2024-001', '仿真分析验证', 'p4', 'sl6', 'pending', 0, '仿真组', '2024-05-22 00:00:00.000000', '2024-06-21 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_1', 'xxxx', '仿真分析验证', 'p4', 'sl6', 'pending', 0, '仿真组', '2024-05-30 00:00:00.000000', '2024-06-29 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_1', 'yyyy', '仿真分析验证', 'p4', 'sl6', 'pending', 0, '仿真组', '2024-06-05 00:00:00.000000', '2024-07-05 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_2', '1111', '设计评审', 'p4', 'sl7', 'pending', 0, '质量部', '2024-07-03 00:00:00.000000', '2024-07-08 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_2', 'PRJ-2024-001', '设计评审', 'p4', 'sl7', 'pending', 0, '质量部', '2024-06-25 00:00:00.000000', '2024-06-30 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_2', 'xxxx', '设计评审', 'p4', 'sl7', 'pending', 0, '质量部', '2024-07-03 00:00:00.000000', '2024-07-08 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_2', 'yyyy', '设计评审', 'p4', 'sl7', 'pending', 0, '质量部', '2024-07-09 00:00:00.000000', '2024-07-14 00:00:00.000000', 'task', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_3', '1111', '试验大纲编制', 'p4', 'sl6', 'pending', 0, '测试组', '2024-06-13 00:00:00.000000', '2024-06-28 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_3', 'PRJ-2024-001', '试验大纲编制', 'p4', 'sl6', 'pending', 0, '测试组', '2024-06-05 00:00:00.000000', '2024-06-20 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_3', 'xxxx', '试验大纲编制', 'p4', 'sl6', 'pending', 0, '测试组', '2024-06-13 00:00:00.000000', '2024-06-28 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_3', 'yyyy', '试验大纲编制', 'p4', 'sl6', 'pending', 0, '测试组', '2024-06-19 00:00:00.000000', '2024-07-04 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_4', '1111', '原型车试验', 'p4', 'sl6', 'pending', 0, '测试组', '2024-07-13 00:00:00.000000', '2024-08-28 00:00:00.000000', 'task', NULL, 362.487, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_4', 'PRJ-2024-001', '原型车试验', 'p4', 'sl6', 'pending', 0, '测试组', '2024-07-05 00:00:00.000000', '2024-08-20 00:00:00.000000', 'task', NULL, 325, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_4', 'xxxx', '原型车试验', 'p4', 'sl6', 'pending', 0, '测试组', '2024-07-13 00:00:00.000000', '2024-08-28 00:00:00.000000', 'task', NULL, 362.487, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_4', 'yyyy', '原型车试验', 'p4', 'sl6', 'pending', 0, '测试组', '2024-07-19 00:00:00.000000', '2024-09-03 00:00:00.000000', 'task', NULL, 362.487, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_5', '1111', '问题整改', 'p4', 'sl7', 'pending', 0, '各专业', '2024-08-30 00:00:00.000000', '2024-09-13 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_5', 'PRJ-2024-001', '问题整改', 'p4', 'sl7', 'pending', 0, '各专业', '2024-08-22 00:00:00.000000', '2024-09-05 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_5', 'xxxx', '问题整改', 'p4', 'sl7', 'pending', 0, '各专业', '2024-08-30 00:00:00.000000', '2024-09-13 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_5', 'yyyy', '问题整改', 'p4', 'sl7', 'pending', 0, '各专业', '2024-09-05 00:00:00.000000', '2024-09-19 00:00:00.000000', 'task', NULL, 170, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_6', '1111', '设计冻结', 'p4', 'sl1', 'pending', 0, '项目经理', '2024-09-18 00:00:00.000000', '2024-09-18 00:00:00.000000', 'milestone', NULL, 15, 15, NULL, NULL, 140);
 INSERT INTO `project_tasks` VALUES ('t4_6', 'PRJ-2024-001', '设计冻结', 'p4', 'sl1', 'pending', 0, '项目经理', '2024-09-10 00:00:00.000000', '2024-09-10 00:00:00.000000', 'milestone', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_6', 'xxxx', '设计冻结', 'p4', 'sl1', 'pending', 0, '项目经理', '2024-09-18 00:00:00.000000', '2024-09-18 00:00:00.000000', 'milestone', NULL, 15, 15, NULL, NULL, 140);
+INSERT INTO `project_tasks` VALUES ('t4_6', 'yyyy', '设计冻结', 'p4', 'sl1', 'pending', 0, '项目经理', '2024-09-24 00:00:00.000000', '2024-09-24 00:00:00.000000', 'milestone', NULL, 15, 15, NULL, NULL, 140);
+
+-- ----------------------------
+-- Table structure for sales_customer
+-- ----------------------------
+DROP TABLE IF EXISTS `sales_customer`;
+CREATE TABLE `sales_customer`  (
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `industry` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `contact` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `phone` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `email` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `level` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `status` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `address` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `source` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `owner` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sales_customer
+-- ----------------------------
+INSERT INTO `sales_customer` VALUES ('1ee23a0aa1a2457a9118bf60a3446871', '北京云端网络技术部', '云计算', '王工', '13700137000', 'wang@cloudnet.bj', 'A', 'high_intent', '北京市海淀区中关村', '展会', '技术负责人非常认可我们的架构', 'admin', '2025-12-30 20:48:21.933347', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_customer` VALUES ('64d6340e89dd4b8ebcda58259b789c4f', '上海未来智造有限公司', '智能制造', '李经理', '13900139000', 'li@futuremfg.com', 'B', 'existing', '上海市浦东新区张江高科', '老客户推荐', '已购买一期产品，目前在谈二期扩容', 'admin', '2025-12-25 20:48:21.933347', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_customer` VALUES ('f5d7e5e5fedb488dac443c97a275fd21', '杭州金兰科技有限公司', 'IT/互联网', '张总', '13800138000', 'zhang@jinlan.com', 'A', 'potential', '浙江省杭州市西湖区科技园', '网络推广', '对ERP系统有强烈需求，预计下月启动招标', 'admin', '2026-01-04 20:48:21.933347', '2026-01-04 20:48:21.933347');
+
+-- ----------------------------
+-- Table structure for sales_opportunity
+-- ----------------------------
+DROP TABLE IF EXISTS `sales_opportunity`;
+CREATE TABLE `sales_opportunity`  (
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `customer` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `customer_id` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `amount` decimal(65, 30) NOT NULL,
+  `stage` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `win_rate` int NOT NULL,
+  `owner` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `description` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `estimated_close_date` datetime(6) NULL DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `updated_at` datetime(6) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sales_opportunity
+-- ----------------------------
+INSERT INTO `sales_opportunity` VALUES ('25d705ccf64b4c5fb46e770baf507522', '未来智造一期项目增补', '上海未来智造有限公司', '64d6340e89dd4b8ebcda58259b789c4f', 80000.000000000000000000000000000000, 'won', 100, 'admin', '增补许可授权', '2026-01-02 20:48:21.933347', '2025-12-30 20:48:21.933347', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_opportunity` VALUES ('385458562fd44e72841f9c0f666ce9a0', '未来智造CRM升级服务', '上海未来智造有限公司', '64d6340e89dd4b8ebcda58259b789c4f', 200000.000000000000000000000000000000, 'proposal', 50, 'admin', '需定制开发部分功能模块', '2026-03-04 20:48:21.933347', '2026-01-04 20:48:21.933347', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_opportunity` VALUES ('76e2661f2923457cbf63f39c348007c3', '金兰科技数据中台咨询', '杭州金兰科技有限公司', 'f5d7e5e5fedb488dac443c97a275fd21', 150000.000000000000000000000000000000, 'initial', 20, 'admin', '初步意向沟通', '2026-04-04 20:48:21.933347', '2026-01-04 20:48:21.933347', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_opportunity` VALUES ('f9be29934173427a844ec33f1a8e1448', '金兰科技ERP系统采购项目', '杭州金兰科技有限公司', 'f5d7e5e5fedb488dac443c97a275fd21', 500000.000000000000000000000000000000, 'negotiation', 80, 'admin', '竞争对手只有一家，我方优势明显', '2026-02-04 20:48:21.933347', '2026-01-04 20:48:21.933347', '2026-01-04 20:48:21.933347');
+
+-- ----------------------------
+-- Table structure for sales_process_rule
+-- ----------------------------
+DROP TABLE IF EXISTS `sales_process_rule`;
+CREATE TABLE `sales_process_rule`  (
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sales_process_rule
+-- ----------------------------
+INSERT INTO `sales_process_rule` VALUES ('59c9a479870040e484e3dc5076243bed', '商机报备与保护制度', '1. 所有新接触客户必须在24小时内录入CRM系统，否则视为公共资源。\n2. 报备有效期为3个月，期间其他销售人员不得跟进。\n3. 若3个月内无实质性进展（阶段未推进），系统将自动释放至公海池。\n4. 跨区域撞单情况，以系统最早录入时间为准。', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_process_rule` VALUES ('796b4323847e4032862c49a434d63e97', '客户接待标准流程', '1. 预约：确认客户来访人数、职位、关注点，提前预定会议室。\n2. 接待：前台登记，引导至会议室，提供茶水（矿泉水/茶/咖啡）。\n3. 演示：连接投影仪，准备好演示环境，演示时长控制在30分钟内。\n4. 送别：送至电梯口或公司门口，并在当天发送感谢短信/邮件。', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_process_rule` VALUES ('def3b01c3d2f4c9c92b366c275c3cf8b', '合同审批及盖章规范', '1. 标准合同（金额<50万）：销售经理审批 -> 财务审批 -> 法务备案 -> 用印。\n2. 非标合同或金额>=50万：销售总监审批 -> 财务总监审批 -> 法务总监审批 -> 总经理审批 -> 用印。\n3. 所有合同必须附带技术协议附件。\n4. 严禁先盖章后签字。', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_process_rule` VALUES ('f047edd100c742bcab7408229039774a', '销售提成发放细则', '1. 提成计算基数：以实际回款金额为准（不含税）。\n2. 发放节点：回款次月发放50%，项目验收后发放剩余50%。\n3. 离职员工未结提成：已回款部分按正常比例发放，未回款部分不再计提。\n4. 季度销售冠军额外奖励1%提成点。', '2026-01-04 20:48:21.933347');
+
+-- ----------------------------
+-- Table structure for sales_product_doc
+-- ----------------------------
+DROP TABLE IF EXISTS `sales_product_doc`;
+CREATE TABLE `sales_product_doc`  (
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `size` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `upload_date` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sales_product_doc
+-- ----------------------------
+INSERT INTO `sales_product_doc` VALUES ('5d69efe6604b467ba2025396c16f5f14', 'OMS系统客户成功案例集锦.pdf', '8.4 MB', '/files/docs/success_cases.pdf', '2025-12-20 20:48:21.933347');
+INSERT INTO `sales_product_doc` VALUES ('6d581a4617004de595e5dffbe32b4a13', 'OMS智能管理系统_产品白皮书_v3.0.pdf', '5.2 MB', '/files/docs/oms_whitepaper_v3.pdf', '2025-12-05 20:48:21.933347');
+INSERT INTO `sales_product_doc` VALUES ('89e48c6ee98641fbad1530f3ef30e826', '系统操作手册(管理员版).docx', '3.2 MB', '/files/docs/manual_admin.docx', '2025-11-05 20:48:21.933347');
+INSERT INTO `sales_product_doc` VALUES ('8eafa22f609e4c3c800bc66cc680ac03', 'SaaS版报价单及服务清单_2024Q1.xlsx', '45 KB', '/files/docs/price_list_2024q1.xlsx', '2025-12-30 20:48:21.933347');
+INSERT INTO `sales_product_doc` VALUES ('a415a11eae2c4ad28e4adfc726485c65', '企业数字化转型解决方案(制造业版).pptx', '15.8 MB', '/files/docs/solution_manufacturing.pptx', '2025-12-15 20:48:21.933347');
+
+-- ----------------------------
+-- Table structure for sales_script
+-- ----------------------------
+DROP TABLE IF EXISTS `sales_script`;
+CREATE TABLE `sales_script`  (
+  `id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `category` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sales_script
+-- ----------------------------
+INSERT INTO `sales_script` VALUES ('259d889848ed432384a5e87f7c045cd6', '产品核心优势介绍（30秒电梯演讲）', '我们的OMS系统有三大核心优势：第一是全流程一体化，打通了从CRM到ERP再到财务的全链路；第二是高度可配置，90%的业务变更无需写代码；第三是极致的用户体验，界面简洁易用，员工上手无需培训。这能直接为您解决数据孤岛和系统维护成本高的问题。', '产品介绍', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_script` VALUES ('80a2f3d2f7b74490960a2e7433297cf4', '邀约客户考察话术', '为了让您更直观地了解系统如何落地，诚挚邀请您下周二来我们公司参观考察。届时我们的技术总监会亲自为您演示最新版本，并且您可以和我们的产品团队直接交流您的定制化需求。您看上午10点还是下午2点比较方便？', '客户邀约', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_script` VALUES ('a65d2081f7844f439f326e0d10c6452b', '通用电话开场白', '您好，我是[公司名]的销售顾问[姓名]，打扰您两分钟。我们公司专注于为企业提供数字化转型解决方案，近期我们服务了[知名同行企业]，帮助他们提升了30%的运营效率。想请教一下贵公司在信息化管理方面目前主要关注哪些领域呢？', '初次接触', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_script` VALUES ('fca4d42742d3462daadbc543e2385cf0', '竞品对比回应（针对某友商）', '友商在财务软件领域确实很知名，但在业务运营（OMS）这块，我们的架构更灵活，更贴合当下互联网+的业务模式。例如在多渠道订单归集和复杂的库存调度策略上，我们是原生支持的，而他们可能需要大量的二次开发。', '竞品分析', '2026-01-04 20:48:21.933347');
+INSERT INTO `sales_script` VALUES ('fd86fbc73dbd4352aae3d48aad3b4e8f', '价格异议处理话术', '非常理解您对预算的考量。不过，单纯看价格可能不够全面，我们更建议看投入产出比（ROI）。我们的系统虽然初期投入稍高，但由于采用了自动化流程，预计每年能为您节省人工成本约50万元，系统上线半年即可收回成本。我们可以为您做一个详细的ROI分析报告。', '异议处理', '2026-01-04 20:48:21.933347');
 
 -- ----------------------------
 -- Table structure for sys_audit_log
@@ -1000,7 +1257,7 @@ CREATE TABLE `sys_audit_log`  (
   `ExecutionDuration` bigint NOT NULL,
   `CreatedAt` datetime(6) NOT NULL,
   PRIMARY KEY (`Id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 851 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 920 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_audit_log
@@ -1851,6 +2108,75 @@ INSERT INTO `sys_audit_log` VALUES (847, 1, 'admin', 'omsapi.Controllers.Project
 INSERT INTO `sys_audit_log` VALUES (848, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 755, '2026-01-04 14:55:40.915255');
 INSERT INTO `sys_audit_log` VALUES (849, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 732, '2026-01-04 14:57:45.781773');
 INSERT INTO `sys_audit_log` VALUES (850, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1063, '2026-01-04 16:01:54.044107');
+INSERT INTO `sys_audit_log` VALUES (851, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 341, '2026-01-04 16:15:25.007387');
+INSERT INTO `sys_audit_log` VALUES (852, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 268, '2026-01-04 16:17:01.526832');
+INSERT INTO `sys_audit_log` VALUES (853, 1, 'admin', 'omsapi.Controllers.UserController.Create (omsapi)', '/api/user', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 136, '2026-01-04 16:19:18.808086');
+INSERT INTO `sys_audit_log` VALUES (854, 1, 'admin', 'omsapi.Controllers.RoleController.Create (omsapi)', '/api/role', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 100, '2026-01-04 16:19:45.463439');
+INSERT INTO `sys_audit_log` VALUES (855, 1, 'admin', 'omsapi.Controllers.RoleController.AssignPermissions (omsapi)', '/api/role/4/permissions', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 81, '2026-01-04 16:20:13.786735');
+INSERT INTO `sys_audit_log` VALUES (856, 1, 'admin', 'omsapi.Controllers.UserController.Update (omsapi)', '/api/user/5', 'PUT', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 393, '2026-01-04 16:45:58.169328');
+INSERT INTO `sys_audit_log` VALUES (857, 1, 'admin', 'omsapi.Controllers.UserController.Create (omsapi)', '/api/user', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 101, '2026-01-04 16:46:32.047869');
+INSERT INTO `sys_audit_log` VALUES (858, 1, 'admin', 'omsapi.Controllers.UserController.Create (omsapi)', '/api/user', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 71, '2026-01-04 16:47:03.320673');
+INSERT INTO `sys_audit_log` VALUES (859, 1, 'admin', 'omsapi.Controllers.UserController.Create (omsapi)', '/api/user', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 66, '2026-01-04 16:47:42.611486');
+INSERT INTO `sys_audit_log` VALUES (860, 1, 'admin', 'omsapi.Controllers.UserController.Create (omsapi)', '/api/user', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 79, '2026-01-04 16:48:04.100740');
+INSERT INTO `sys_audit_log` VALUES (861, 7, 'rr', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 112, '2026-01-04 16:48:32.256679');
+INSERT INTO `sys_audit_log` VALUES (862, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 715, '2026-01-04 17:00:57.975619');
+INSERT INTO `sys_audit_log` VALUES (863, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1998, '2026-01-04 18:13:29.083854');
+INSERT INTO `sys_audit_log` VALUES (864, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 810, '2026-01-04 18:13:30.635518');
+INSERT INTO `sys_audit_log` VALUES (865, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 731, '2026-01-04 18:13:37.275852');
+INSERT INTO `sys_audit_log` VALUES (866, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 735, '2026-01-04 18:13:41.515012');
+INSERT INTO `sys_audit_log` VALUES (867, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 733, '2026-01-04 18:13:47.715033');
+INSERT INTO `sys_audit_log` VALUES (868, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 722, '2026-01-04 18:13:57.331917');
+INSERT INTO `sys_audit_log` VALUES (869, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 727, '2026-01-04 18:14:00.947055');
+INSERT INTO `sys_audit_log` VALUES (870, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1452, '2026-01-04 18:16:24.680479');
+INSERT INTO `sys_audit_log` VALUES (871, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1066, '2026-01-04 18:19:56.776057');
+INSERT INTO `sys_audit_log` VALUES (872, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1907, '2026-01-04 18:19:57.620580');
+INSERT INTO `sys_audit_log` VALUES (873, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 805, '2026-01-04 18:20:00.397177');
+INSERT INTO `sys_audit_log` VALUES (874, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 784, '2026-01-04 18:20:02.993337');
+INSERT INTO `sys_audit_log` VALUES (875, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 803, '2026-01-04 18:20:07.030522');
+INSERT INTO `sys_audit_log` VALUES (876, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1254, '2026-01-04 18:20:07.938829');
+INSERT INTO `sys_audit_log` VALUES (877, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1243, '2026-01-04 18:40:39.759296');
+INSERT INTO `sys_audit_log` VALUES (878, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 871, '2026-01-04 18:40:42.077592');
+INSERT INTO `sys_audit_log` VALUES (879, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 929, '2026-01-04 18:40:59.331483');
+INSERT INTO `sys_audit_log` VALUES (880, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 786, '2026-01-04 18:41:13.074889');
+INSERT INTO `sys_audit_log` VALUES (881, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 677, '2026-01-04 18:41:21.754150');
+INSERT INTO `sys_audit_log` VALUES (882, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 702, '2026-01-04 18:41:23.946344');
+INSERT INTO `sys_audit_log` VALUES (883, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 856, '2026-01-04 18:41:54.956499');
+INSERT INTO `sys_audit_log` VALUES (884, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 853, '2026-01-04 18:41:57.453149');
+INSERT INTO `sys_audit_log` VALUES (885, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 848, '2026-01-04 18:42:59.056623');
+INSERT INTO `sys_audit_log` VALUES (886, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 844, '2026-01-04 18:43:22.319907');
+INSERT INTO `sys_audit_log` VALUES (887, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 764, '2026-01-04 18:45:24.906574');
+INSERT INTO `sys_audit_log` VALUES (888, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 685, '2026-01-04 18:45:29.502436');
+INSERT INTO `sys_audit_log` VALUES (889, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 915, '2026-01-04 19:06:22.935527');
+INSERT INTO `sys_audit_log` VALUES (890, 1, 'admin', 'Login', '/api/auth/login', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 895, '2026-01-04 19:14:09.453835');
+INSERT INTO `sys_audit_log` VALUES (891, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 158, '2026-01-04 19:17:50.580038');
+INSERT INTO `sys_audit_log` VALUES (892, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 185, '2026-01-04 19:17:50.636598');
+INSERT INTO `sys_audit_log` VALUES (893, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 112, '2026-01-04 19:18:07.898312');
+INSERT INTO `sys_audit_log` VALUES (894, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 114, '2026-01-04 19:18:07.973359');
+INSERT INTO `sys_audit_log` VALUES (895, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 97, '2026-01-04 19:18:10.213912');
+INSERT INTO `sys_audit_log` VALUES (896, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 99, '2026-01-04 19:18:10.294651');
+INSERT INTO `sys_audit_log` VALUES (897, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 104, '2026-01-04 19:18:16.847902');
+INSERT INTO `sys_audit_log` VALUES (898, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 112, '2026-01-04 19:18:16.922678');
+INSERT INTO `sys_audit_log` VALUES (899, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 101, '2026-01-04 19:18:30.124164');
+INSERT INTO `sys_audit_log` VALUES (900, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '::ffff:172.17.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 105, '2026-01-04 19:18:30.188984');
+INSERT INTO `sys_audit_log` VALUES (901, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1059, '2026-01-04 19:22:21.518750');
+INSERT INTO `sys_audit_log` VALUES (902, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 877, '2026-01-04 19:22:25.448909');
+INSERT INTO `sys_audit_log` VALUES (903, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 805, '2026-01-04 19:22:34.866343');
+INSERT INTO `sys_audit_log` VALUES (904, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 942, '2026-01-04 19:22:37.051157');
+INSERT INTO `sys_audit_log` VALUES (905, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 862, '2026-01-04 19:25:07.224378');
+INSERT INTO `sys_audit_log` VALUES (906, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 806, '2026-01-04 19:25:29.149104');
+INSERT INTO `sys_audit_log` VALUES (907, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 891, '2026-01-04 19:25:40.675952');
+INSERT INTO `sys_audit_log` VALUES (908, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 941, '2026-01-04 19:27:10.941527');
+INSERT INTO `sys_audit_log` VALUES (909, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 878, '2026-01-04 19:27:37.772477');
+INSERT INTO `sys_audit_log` VALUES (910, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 928, '2026-01-04 19:27:45.675202');
+INSERT INTO `sys_audit_log` VALUES (911, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 877, '2026-01-04 19:27:49.377498');
+INSERT INTO `sys_audit_log` VALUES (912, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 1056, '2026-01-04 19:39:43.884447');
+INSERT INTO `sys_audit_log` VALUES (913, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 870, '2026-01-04 19:41:04.964307');
+INSERT INTO `sys_audit_log` VALUES (914, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 764, '2026-01-04 19:41:12.628551');
+INSERT INTO `sys_audit_log` VALUES (915, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 701, '2026-01-04 19:42:12.217275');
+INSERT INTO `sys_audit_log` VALUES (916, 1, 'admin', 'omsapi.Controllers.ProjectController.SaveProject (omsapi)', '/api/project', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 750, '2026-01-04 19:42:41.566809');
+INSERT INTO `sys_audit_log` VALUES (917, 1, 'admin', 'Login', '/api/auth/login', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 809, '2026-01-04 21:17:23.631614');
+INSERT INTO `sys_audit_log` VALUES (918, 1, 'admin', 'omsapi.Controllers.PermissionController.Create (omsapi)', '/api/permission', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 299, '2026-01-04 21:18:35.713892');
+INSERT INTO `sys_audit_log` VALUES (919, 1, 'admin', 'omsapi.Controllers.RoleController.AssignPermissions (omsapi)', '/api/role/3/permissions', 'POST', '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0', NULL, 1, NULL, 826, '2026-01-04 21:19:03.570352');
 
 -- ----------------------------
 -- Table structure for sys_config
@@ -1919,6 +2245,90 @@ INSERT INTO `sys_dept` VALUES (16, 7, '二级单位：海则滩煤矿', '', '', 
 INSERT INTO `sys_dept` VALUES (17, 16, 'XX科室', '', '', '', '', 0, 1, '2025-12-27 01:28:42.879539', '2025-12-27 01:31:46.675732', 3, 1288.540289243329, 401.3466613003879);
 INSERT INTO `sys_dept` VALUES (18, 16, 'XX区队', '', '', '', '', 1, 1, '2025-12-27 01:29:20.397411', '2025-12-27 01:31:51.085331', 3, 1488.280915982194, 401.3466613003879);
 INSERT INTO `sys_dept` VALUES (19, 18, 'XX班组', '', '', '', '', 0, 1, '2025-12-27 01:29:38.104220', '2025-12-27 01:31:55.893569', 3, 1488.280915982194, 529.2120735097611);
+
+-- ----------------------------
+-- Table structure for sys_dict_category
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_dict_category`;
+CREATE TABLE `sys_dict_category`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `parent_id` bigint NULL DEFAULT NULL,
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `code` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `sort` int NOT NULL,
+  `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `CreatedAt` datetime(6) NOT NULL,
+  `UpdatedAt` datetime(6) NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  INDEX `IX_sys_dict_category_parent_id`(`parent_id` ASC) USING BTREE,
+  CONSTRAINT `FK_sys_dict_category_sys_dict_category_parent_id` FOREIGN KEY (`parent_id`) REFERENCES `sys_dict_category` (`Id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sys_dict_category
+-- ----------------------------
+INSERT INTO `sys_dict_category` VALUES (1, NULL, '系统通用', 'sys_common', 1, '系统通用的字典数据', '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_category` VALUES (2, NULL, '业务模块', 'biz_module', 2, '业务模块相关的字典数据', '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+
+-- ----------------------------
+-- Table structure for sys_dict_data
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_dict_data`;
+CREATE TABLE `sys_dict_data`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `dict_type_id` bigint NOT NULL,
+  `label` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `value` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `sort` int NOT NULL,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `is_default` tinyint(1) NOT NULL,
+  `css_class` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `list_class` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `CreatedAt` datetime(6) NOT NULL,
+  `UpdatedAt` datetime(6) NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  UNIQUE INDEX `IX_sys_dict_data_dict_type_id_value`(`dict_type_id` ASC, `value` ASC) USING BTREE,
+  CONSTRAINT `FK_sys_dict_data_sys_dict_type_dict_type_id` FOREIGN KEY (`dict_type_id`) REFERENCES `sys_dict_type` (`Id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sys_dict_data
+-- ----------------------------
+INSERT INTO `sys_dict_data` VALUES (1, 1, '正常', '1', 1, 'normal', 1, NULL, NULL, NULL, '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_data` VALUES (2, 1, '停用', '0', 2, 'normal', 0, NULL, NULL, NULL, '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_data` VALUES (3, 2, '男', '1', 1, 'normal', 1, NULL, NULL, NULL, '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_data` VALUES (4, 2, '女', '2', 2, 'normal', 0, NULL, NULL, NULL, '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_data` VALUES (5, 2, '未知', '0', 3, 'normal', 0, NULL, NULL, NULL, '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_data` VALUES (6, 3, '重点客户', 'A', 1, 'normal', 0, NULL, NULL, NULL, '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_data` VALUES (7, 3, '普通客户', 'B', 2, 'normal', 1, NULL, NULL, NULL, '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_data` VALUES (8, 3, '低价值客户', 'C', 3, 'normal', 0, NULL, NULL, NULL, '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+
+-- ----------------------------
+-- Table structure for sys_dict_type
+-- ----------------------------
+DROP TABLE IF EXISTS `sys_dict_type`;
+CREATE TABLE `sys_dict_type`  (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `category_id` bigint NULL DEFAULT NULL,
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `code` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `CreatedAt` datetime(6) NOT NULL,
+  `UpdatedAt` datetime(6) NULL DEFAULT NULL,
+  PRIMARY KEY (`Id`) USING BTREE,
+  UNIQUE INDEX `IX_sys_dict_type_code`(`code` ASC) USING BTREE,
+  INDEX `IX_sys_dict_type_category_id`(`category_id` ASC) USING BTREE,
+  CONSTRAINT `FK_sys_dict_type_sys_dict_category_category_id` FOREIGN KEY (`category_id`) REFERENCES `sys_dict_category` (`Id`) ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of sys_dict_type
+-- ----------------------------
+INSERT INTO `sys_dict_type` VALUES (1, 1, '用户状态', 'sys_user_status', 'normal', '系统用户的状态', '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_type` VALUES (2, 1, '用户性别', 'sys_user_gender', 'normal', '用户的性别', '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
+INSERT INTO `sys_dict_type` VALUES (3, 2, '客户等级', 'crm_customer_level', 'normal', 'CRM客户等级分类', '2026-01-04 21:10:46.164598', '2026-01-04 21:10:46.164598');
 
 -- ----------------------------
 -- Table structure for sys_file
@@ -2002,7 +2412,7 @@ CREATE TABLE `sys_permission`  (
   `UpdatedAt` datetime(6) NULL DEFAULT NULL,
   PRIMARY KEY (`Id`) USING BTREE,
   UNIQUE INDEX `IX_sys_permission_Code`(`Code` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 244 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 245 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_permission
@@ -2128,6 +2538,7 @@ INSERT INTO `sys_permission` VALUES (240, 48, '表单设计', 'DataForm', 'MENU'
 INSERT INTO `sys_permission` VALUES (241, 240, '新建表单', 'form:create', 'BUTTON', '', '', '', '', 1, 1, '2025-12-26 21:55:41.548372', NULL);
 INSERT INTO `sys_permission` VALUES (242, 48, '页面设计', 'DataPages', 'MENU', '/data/pages', 'views/data/Pages/Index.vue', '', '', 60, 1, '2025-12-28 14:10:47.618833', NULL);
 INSERT INTO `sys_permission` VALUES (243, 242, '新建页面', 'page:create', 'BUTTON', '', '', '', '', 10, 1, '2025-12-28 14:11:33.364671', NULL);
+INSERT INTO `sys_permission` VALUES (244, 53, '数据字典', 'SysDict', 'MENU', '/system/dict', 'views/dict/Index.vue', '', '', 55, 1, '2026-01-04 21:18:35.513801', NULL);
 
 -- ----------------------------
 -- Table structure for sys_post
@@ -2173,7 +2584,7 @@ CREATE TABLE `sys_role`  (
   UNIQUE INDEX `IX_sys_role_Code`(`Code` ASC) USING BTREE,
   INDEX `IX_sys_role_DeptId`(`DeptId` ASC) USING BTREE,
   CONSTRAINT `FK_sys_role_sys_dept_DeptId` FOREIGN KEY (`DeptId`) REFERENCES `sys_dept` (`Id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_role
@@ -2181,6 +2592,7 @@ CREATE TABLE `sys_role`  (
 INSERT INTO `sys_role` VALUES (1, '超级管理员', 'SuperAdmin', '系统最高权限', 1, '2024-01-01 00:00:00.000000', '2025-12-26 21:28:38.725631', NULL);
 INSERT INTO `sys_role` VALUES (2, '测试角色', 'TestUser', '', 0, '2025-12-21 13:34:16.829274', '2025-12-21 16:41:45.800604', 7);
 INSERT INTO `sys_role` VALUES (3, '管理员', 'Admin', '', 1, '2025-12-26 21:24:13.196386', NULL, 7);
+INSERT INTO `sys_role` VALUES (4, '普通用户', 'USERS', '', 0, '2026-01-04 16:19:45.384732', NULL, 7);
 
 -- ----------------------------
 -- Table structure for sys_role_inheritance
@@ -2350,116 +2762,137 @@ INSERT INTO `sys_role_permission` VALUES (2, 6, '2025-12-26 21:30:48.364395');
 INSERT INTO `sys_role_permission` VALUES (2, 7, '2025-12-26 21:30:48.364404');
 INSERT INTO `sys_role_permission` VALUES (2, 48, '2025-12-26 21:30:48.364424');
 INSERT INTO `sys_role_permission` VALUES (2, 240, '2025-12-26 21:30:48.364413');
-INSERT INTO `sys_role_permission` VALUES (3, 1, '2025-12-28 14:11:04.602553');
-INSERT INTO `sys_role_permission` VALUES (3, 2, '2025-12-28 14:11:04.604822');
-INSERT INTO `sys_role_permission` VALUES (3, 3, '2025-12-28 14:11:04.605041');
-INSERT INTO `sys_role_permission` VALUES (3, 4, '2025-12-28 14:11:04.605103');
-INSERT INTO `sys_role_permission` VALUES (3, 5, '2025-12-28 14:11:04.605159');
-INSERT INTO `sys_role_permission` VALUES (3, 6, '2025-12-28 14:11:04.605210');
-INSERT INTO `sys_role_permission` VALUES (3, 7, '2025-12-28 14:11:04.605261');
-INSERT INTO `sys_role_permission` VALUES (3, 8, '2025-12-28 14:11:04.605307');
-INSERT INTO `sys_role_permission` VALUES (3, 9, '2025-12-28 14:11:04.605361');
-INSERT INTO `sys_role_permission` VALUES (3, 10, '2025-12-28 14:11:04.605421');
-INSERT INTO `sys_role_permission` VALUES (3, 11, '2025-12-28 14:11:04.605483');
-INSERT INTO `sys_role_permission` VALUES (3, 12, '2025-12-28 14:11:04.605534');
-INSERT INTO `sys_role_permission` VALUES (3, 13, '2025-12-28 14:11:04.605584');
-INSERT INTO `sys_role_permission` VALUES (3, 14, '2025-12-28 14:11:04.605639');
-INSERT INTO `sys_role_permission` VALUES (3, 15, '2025-12-28 14:11:04.605688');
-INSERT INTO `sys_role_permission` VALUES (3, 16, '2025-12-28 14:11:04.605741');
-INSERT INTO `sys_role_permission` VALUES (3, 17, '2025-12-28 14:11:04.605790');
-INSERT INTO `sys_role_permission` VALUES (3, 18, '2025-12-28 14:11:04.605837');
-INSERT INTO `sys_role_permission` VALUES (3, 19, '2025-12-28 14:11:04.605884');
-INSERT INTO `sys_role_permission` VALUES (3, 20, '2025-12-28 14:11:04.605933');
-INSERT INTO `sys_role_permission` VALUES (3, 21, '2025-12-28 14:11:04.605978');
-INSERT INTO `sys_role_permission` VALUES (3, 22, '2025-12-28 14:11:04.606024');
-INSERT INTO `sys_role_permission` VALUES (3, 23, '2025-12-28 14:11:04.606069');
-INSERT INTO `sys_role_permission` VALUES (3, 24, '2025-12-28 14:11:04.606118');
-INSERT INTO `sys_role_permission` VALUES (3, 25, '2025-12-28 14:11:04.606163');
-INSERT INTO `sys_role_permission` VALUES (3, 26, '2025-12-28 14:11:04.606211');
-INSERT INTO `sys_role_permission` VALUES (3, 27, '2025-12-28 14:11:04.606260');
-INSERT INTO `sys_role_permission` VALUES (3, 28, '2025-12-28 14:11:04.606308');
-INSERT INTO `sys_role_permission` VALUES (3, 29, '2025-12-28 14:11:04.606440');
-INSERT INTO `sys_role_permission` VALUES (3, 30, '2025-12-28 14:11:04.606491');
-INSERT INTO `sys_role_permission` VALUES (3, 31, '2025-12-28 14:11:04.606540');
-INSERT INTO `sys_role_permission` VALUES (3, 32, '2025-12-28 14:11:04.606590');
-INSERT INTO `sys_role_permission` VALUES (3, 33, '2025-12-28 14:11:04.606637');
-INSERT INTO `sys_role_permission` VALUES (3, 34, '2025-12-28 14:11:04.606684');
-INSERT INTO `sys_role_permission` VALUES (3, 35, '2025-12-28 14:11:04.606731');
-INSERT INTO `sys_role_permission` VALUES (3, 36, '2025-12-28 14:11:04.606777');
-INSERT INTO `sys_role_permission` VALUES (3, 37, '2025-12-28 14:11:04.606822');
-INSERT INTO `sys_role_permission` VALUES (3, 38, '2025-12-28 14:11:04.606867');
-INSERT INTO `sys_role_permission` VALUES (3, 39, '2025-12-28 14:11:04.606916');
-INSERT INTO `sys_role_permission` VALUES (3, 40, '2025-12-28 14:11:04.606966');
-INSERT INTO `sys_role_permission` VALUES (3, 41, '2025-12-28 14:11:04.607012');
-INSERT INTO `sys_role_permission` VALUES (3, 42, '2025-12-28 14:11:04.607056');
-INSERT INTO `sys_role_permission` VALUES (3, 43, '2025-12-28 14:11:04.607101');
-INSERT INTO `sys_role_permission` VALUES (3, 44, '2025-12-28 14:11:04.607147');
-INSERT INTO `sys_role_permission` VALUES (3, 45, '2025-12-28 14:11:04.607194');
-INSERT INTO `sys_role_permission` VALUES (3, 46, '2025-12-28 14:11:04.607239');
-INSERT INTO `sys_role_permission` VALUES (3, 48, '2025-12-28 14:11:04.607286');
-INSERT INTO `sys_role_permission` VALUES (3, 49, '2025-12-28 14:11:04.607331');
-INSERT INTO `sys_role_permission` VALUES (3, 50, '2025-12-28 14:11:04.607414');
-INSERT INTO `sys_role_permission` VALUES (3, 51, '2025-12-28 14:11:04.607460');
-INSERT INTO `sys_role_permission` VALUES (3, 52, '2025-12-28 14:11:04.607506');
-INSERT INTO `sys_role_permission` VALUES (3, 53, '2025-12-28 14:11:04.607554');
-INSERT INTO `sys_role_permission` VALUES (3, 54, '2025-12-28 14:11:04.607599');
-INSERT INTO `sys_role_permission` VALUES (3, 55, '2025-12-28 14:11:04.607644');
-INSERT INTO `sys_role_permission` VALUES (3, 56, '2025-12-28 14:11:04.607690');
-INSERT INTO `sys_role_permission` VALUES (3, 57, '2025-12-28 14:11:04.607734');
-INSERT INTO `sys_role_permission` VALUES (3, 58, '2025-12-28 14:11:04.607780');
-INSERT INTO `sys_role_permission` VALUES (3, 59, '2025-12-28 14:11:04.607826');
-INSERT INTO `sys_role_permission` VALUES (3, 60, '2025-12-28 14:11:04.607873');
-INSERT INTO `sys_role_permission` VALUES (3, 61, '2025-12-28 14:11:04.607919');
-INSERT INTO `sys_role_permission` VALUES (3, 62, '2025-12-28 14:11:04.607965');
-INSERT INTO `sys_role_permission` VALUES (3, 63, '2025-12-28 14:11:04.608009');
-INSERT INTO `sys_role_permission` VALUES (3, 64, '2025-12-28 14:11:04.608056');
-INSERT INTO `sys_role_permission` VALUES (3, 65, '2025-12-28 14:11:04.608105');
-INSERT INTO `sys_role_permission` VALUES (3, 66, '2025-12-28 14:11:04.608150');
-INSERT INTO `sys_role_permission` VALUES (3, 67, '2025-12-28 14:11:04.608195');
-INSERT INTO `sys_role_permission` VALUES (3, 68, '2025-12-28 14:11:04.608240');
-INSERT INTO `sys_role_permission` VALUES (3, 69, '2025-12-28 14:11:04.608286');
-INSERT INTO `sys_role_permission` VALUES (3, 70, '2025-12-28 14:11:04.608339');
-INSERT INTO `sys_role_permission` VALUES (3, 71, '2025-12-28 14:11:04.608416');
-INSERT INTO `sys_role_permission` VALUES (3, 72, '2025-12-28 14:11:04.608468');
-INSERT INTO `sys_role_permission` VALUES (3, 73, '2025-12-28 14:11:04.608513');
-INSERT INTO `sys_role_permission` VALUES (3, 201, '2025-12-28 14:11:04.608560');
-INSERT INTO `sys_role_permission` VALUES (3, 202, '2025-12-28 14:11:04.608605');
-INSERT INTO `sys_role_permission` VALUES (3, 203, '2025-12-28 14:11:04.608649');
-INSERT INTO `sys_role_permission` VALUES (3, 204, '2025-12-28 14:11:04.608697');
-INSERT INTO `sys_role_permission` VALUES (3, 205, '2025-12-28 14:11:04.608741');
-INSERT INTO `sys_role_permission` VALUES (3, 210, '2025-12-28 14:11:04.608786');
-INSERT INTO `sys_role_permission` VALUES (3, 211, '2025-12-28 14:11:04.608830');
-INSERT INTO `sys_role_permission` VALUES (3, 212, '2025-12-28 14:11:04.608874');
-INSERT INTO `sys_role_permission` VALUES (3, 213, '2025-12-28 14:11:04.608919');
-INSERT INTO `sys_role_permission` VALUES (3, 214, '2025-12-28 14:11:04.608963');
-INSERT INTO `sys_role_permission` VALUES (3, 215, '2025-12-28 14:11:04.609008');
-INSERT INTO `sys_role_permission` VALUES (3, 216, '2025-12-28 14:11:04.609053');
-INSERT INTO `sys_role_permission` VALUES (3, 217, '2025-12-28 14:11:04.609098');
-INSERT INTO `sys_role_permission` VALUES (3, 218, '2025-12-28 14:11:04.609143');
-INSERT INTO `sys_role_permission` VALUES (3, 219, '2025-12-28 14:11:04.609186');
-INSERT INTO `sys_role_permission` VALUES (3, 220, '2025-12-28 14:11:04.609235');
-INSERT INTO `sys_role_permission` VALUES (3, 221, '2025-12-28 14:11:04.609280');
-INSERT INTO `sys_role_permission` VALUES (3, 222, '2025-12-28 14:11:04.609327');
-INSERT INTO `sys_role_permission` VALUES (3, 223, '2025-12-28 14:11:04.609375');
-INSERT INTO `sys_role_permission` VALUES (3, 224, '2025-12-28 14:11:04.609423');
-INSERT INTO `sys_role_permission` VALUES (3, 225, '2025-12-28 14:11:04.609470');
-INSERT INTO `sys_role_permission` VALUES (3, 226, '2025-12-28 14:11:04.609515');
-INSERT INTO `sys_role_permission` VALUES (3, 227, '2025-12-28 14:11:04.609562');
-INSERT INTO `sys_role_permission` VALUES (3, 228, '2025-12-28 14:11:04.609609');
-INSERT INTO `sys_role_permission` VALUES (3, 229, '2025-12-28 14:11:04.609654');
-INSERT INTO `sys_role_permission` VALUES (3, 230, '2025-12-28 14:11:04.609699');
-INSERT INTO `sys_role_permission` VALUES (3, 231, '2025-12-28 14:11:04.609744');
-INSERT INTO `sys_role_permission` VALUES (3, 232, '2025-12-28 14:11:04.609789');
-INSERT INTO `sys_role_permission` VALUES (3, 233, '2025-12-28 14:11:04.609834');
-INSERT INTO `sys_role_permission` VALUES (3, 234, '2025-12-28 14:11:04.609992');
-INSERT INTO `sys_role_permission` VALUES (3, 235, '2025-12-28 14:11:04.610038');
-INSERT INTO `sys_role_permission` VALUES (3, 236, '2025-12-28 14:11:04.610087');
-INSERT INTO `sys_role_permission` VALUES (3, 237, '2025-12-28 14:11:04.610133');
-INSERT INTO `sys_role_permission` VALUES (3, 238, '2025-12-28 14:11:04.610178');
-INSERT INTO `sys_role_permission` VALUES (3, 239, '2025-12-28 14:11:04.610223');
-INSERT INTO `sys_role_permission` VALUES (3, 240, '2025-12-28 14:11:04.610268');
-INSERT INTO `sys_role_permission` VALUES (3, 241, '2025-12-28 14:11:04.610314');
-INSERT INTO `sys_role_permission` VALUES (3, 242, '2025-12-28 14:11:04.610360');
+INSERT INTO `sys_role_permission` VALUES (3, 1, '2026-01-04 21:19:03.086346');
+INSERT INTO `sys_role_permission` VALUES (3, 2, '2026-01-04 21:19:03.088844');
+INSERT INTO `sys_role_permission` VALUES (3, 3, '2026-01-04 21:19:03.088971');
+INSERT INTO `sys_role_permission` VALUES (3, 4, '2026-01-04 21:19:03.088995');
+INSERT INTO `sys_role_permission` VALUES (3, 5, '2026-01-04 21:19:03.089022');
+INSERT INTO `sys_role_permission` VALUES (3, 6, '2026-01-04 21:19:03.089047');
+INSERT INTO `sys_role_permission` VALUES (3, 7, '2026-01-04 21:19:03.089081');
+INSERT INTO `sys_role_permission` VALUES (3, 8, '2026-01-04 21:19:03.089140');
+INSERT INTO `sys_role_permission` VALUES (3, 9, '2026-01-04 21:19:03.089169');
+INSERT INTO `sys_role_permission` VALUES (3, 10, '2026-01-04 21:19:03.089196');
+INSERT INTO `sys_role_permission` VALUES (3, 11, '2026-01-04 21:19:03.089225');
+INSERT INTO `sys_role_permission` VALUES (3, 12, '2026-01-04 21:19:03.089250');
+INSERT INTO `sys_role_permission` VALUES (3, 13, '2026-01-04 21:19:03.089275');
+INSERT INTO `sys_role_permission` VALUES (3, 14, '2026-01-04 21:19:03.089306');
+INSERT INTO `sys_role_permission` VALUES (3, 15, '2026-01-04 21:19:03.089347');
+INSERT INTO `sys_role_permission` VALUES (3, 16, '2026-01-04 21:19:03.089369');
+INSERT INTO `sys_role_permission` VALUES (3, 17, '2026-01-04 21:19:03.089391');
+INSERT INTO `sys_role_permission` VALUES (3, 18, '2026-01-04 21:19:03.089411');
+INSERT INTO `sys_role_permission` VALUES (3, 19, '2026-01-04 21:19:03.089432');
+INSERT INTO `sys_role_permission` VALUES (3, 20, '2026-01-04 21:19:03.089454');
+INSERT INTO `sys_role_permission` VALUES (3, 21, '2026-01-04 21:19:03.089474');
+INSERT INTO `sys_role_permission` VALUES (3, 22, '2026-01-04 21:19:03.089495');
+INSERT INTO `sys_role_permission` VALUES (3, 23, '2026-01-04 21:19:03.089515');
+INSERT INTO `sys_role_permission` VALUES (3, 24, '2026-01-04 21:19:03.089537');
+INSERT INTO `sys_role_permission` VALUES (3, 25, '2026-01-04 21:19:03.089559');
+INSERT INTO `sys_role_permission` VALUES (3, 26, '2026-01-04 21:19:03.089580');
+INSERT INTO `sys_role_permission` VALUES (3, 27, '2026-01-04 21:19:03.089604');
+INSERT INTO `sys_role_permission` VALUES (3, 28, '2026-01-04 21:19:03.089621');
+INSERT INTO `sys_role_permission` VALUES (3, 29, '2026-01-04 21:19:03.089662');
+INSERT INTO `sys_role_permission` VALUES (3, 30, '2026-01-04 21:19:03.089692');
+INSERT INTO `sys_role_permission` VALUES (3, 31, '2026-01-04 21:19:03.089715');
+INSERT INTO `sys_role_permission` VALUES (3, 32, '2026-01-04 21:19:03.089749');
+INSERT INTO `sys_role_permission` VALUES (3, 33, '2026-01-04 21:19:03.089785');
+INSERT INTO `sys_role_permission` VALUES (3, 34, '2026-01-04 21:19:03.089818');
+INSERT INTO `sys_role_permission` VALUES (3, 35, '2026-01-04 21:19:03.089861');
+INSERT INTO `sys_role_permission` VALUES (3, 36, '2026-01-04 21:19:03.089892');
+INSERT INTO `sys_role_permission` VALUES (3, 37, '2026-01-04 21:19:03.089923');
+INSERT INTO `sys_role_permission` VALUES (3, 38, '2026-01-04 21:19:03.089957');
+INSERT INTO `sys_role_permission` VALUES (3, 39, '2026-01-04 21:19:03.089990');
+INSERT INTO `sys_role_permission` VALUES (3, 40, '2026-01-04 21:19:03.090019');
+INSERT INTO `sys_role_permission` VALUES (3, 41, '2026-01-04 21:19:03.090049');
+INSERT INTO `sys_role_permission` VALUES (3, 42, '2026-01-04 21:19:03.090078');
+INSERT INTO `sys_role_permission` VALUES (3, 43, '2026-01-04 21:19:03.090107');
+INSERT INTO `sys_role_permission` VALUES (3, 44, '2026-01-04 21:19:03.090138');
+INSERT INTO `sys_role_permission` VALUES (3, 45, '2026-01-04 21:19:03.090168');
+INSERT INTO `sys_role_permission` VALUES (3, 46, '2026-01-04 21:19:03.090197');
+INSERT INTO `sys_role_permission` VALUES (3, 48, '2026-01-04 21:19:03.090235');
+INSERT INTO `sys_role_permission` VALUES (3, 49, '2026-01-04 21:19:03.090266');
+INSERT INTO `sys_role_permission` VALUES (3, 50, '2026-01-04 21:19:03.090318');
+INSERT INTO `sys_role_permission` VALUES (3, 51, '2026-01-04 21:19:03.090346');
+INSERT INTO `sys_role_permission` VALUES (3, 52, '2026-01-04 21:19:03.090374');
+INSERT INTO `sys_role_permission` VALUES (3, 53, '2026-01-04 21:19:03.090397');
+INSERT INTO `sys_role_permission` VALUES (3, 54, '2026-01-04 21:19:03.090420');
+INSERT INTO `sys_role_permission` VALUES (3, 55, '2026-01-04 21:19:03.090525');
+INSERT INTO `sys_role_permission` VALUES (3, 56, '2026-01-04 21:19:03.090551');
+INSERT INTO `sys_role_permission` VALUES (3, 57, '2026-01-04 21:19:03.090574');
+INSERT INTO `sys_role_permission` VALUES (3, 58, '2026-01-04 21:19:03.090597');
+INSERT INTO `sys_role_permission` VALUES (3, 59, '2026-01-04 21:19:03.090619');
+INSERT INTO `sys_role_permission` VALUES (3, 60, '2026-01-04 21:19:03.090646');
+INSERT INTO `sys_role_permission` VALUES (3, 61, '2026-01-04 21:19:03.090670');
+INSERT INTO `sys_role_permission` VALUES (3, 62, '2026-01-04 21:19:03.090693');
+INSERT INTO `sys_role_permission` VALUES (3, 63, '2026-01-04 21:19:03.090715');
+INSERT INTO `sys_role_permission` VALUES (3, 64, '2026-01-04 21:19:03.090737');
+INSERT INTO `sys_role_permission` VALUES (3, 65, '2026-01-04 21:19:03.090759');
+INSERT INTO `sys_role_permission` VALUES (3, 66, '2026-01-04 21:19:03.090780');
+INSERT INTO `sys_role_permission` VALUES (3, 67, '2026-01-04 21:19:03.090803');
+INSERT INTO `sys_role_permission` VALUES (3, 68, '2026-01-04 21:19:03.090825');
+INSERT INTO `sys_role_permission` VALUES (3, 69, '2026-01-04 21:19:03.090853');
+INSERT INTO `sys_role_permission` VALUES (3, 70, '2026-01-04 21:19:03.090882');
+INSERT INTO `sys_role_permission` VALUES (3, 71, '2026-01-04 21:19:03.090911');
+INSERT INTO `sys_role_permission` VALUES (3, 72, '2026-01-04 21:19:03.090942');
+INSERT INTO `sys_role_permission` VALUES (3, 73, '2026-01-04 21:19:03.090976');
+INSERT INTO `sys_role_permission` VALUES (3, 201, '2026-01-04 21:19:03.091006');
+INSERT INTO `sys_role_permission` VALUES (3, 202, '2026-01-04 21:19:03.091036');
+INSERT INTO `sys_role_permission` VALUES (3, 203, '2026-01-04 21:19:03.091066');
+INSERT INTO `sys_role_permission` VALUES (3, 204, '2026-01-04 21:19:03.091095');
+INSERT INTO `sys_role_permission` VALUES (3, 205, '2026-01-04 21:19:03.091159');
+INSERT INTO `sys_role_permission` VALUES (3, 210, '2026-01-04 21:19:03.091190');
+INSERT INTO `sys_role_permission` VALUES (3, 211, '2026-01-04 21:19:03.091220');
+INSERT INTO `sys_role_permission` VALUES (3, 212, '2026-01-04 21:19:03.091249');
+INSERT INTO `sys_role_permission` VALUES (3, 213, '2026-01-04 21:19:03.091277');
+INSERT INTO `sys_role_permission` VALUES (3, 214, '2026-01-04 21:19:03.091306');
+INSERT INTO `sys_role_permission` VALUES (3, 215, '2026-01-04 21:19:03.091335');
+INSERT INTO `sys_role_permission` VALUES (3, 216, '2026-01-04 21:19:03.091368');
+INSERT INTO `sys_role_permission` VALUES (3, 217, '2026-01-04 21:19:03.091397');
+INSERT INTO `sys_role_permission` VALUES (3, 218, '2026-01-04 21:19:03.091427');
+INSERT INTO `sys_role_permission` VALUES (3, 219, '2026-01-04 21:19:03.091455');
+INSERT INTO `sys_role_permission` VALUES (3, 220, '2026-01-04 21:19:03.091483');
+INSERT INTO `sys_role_permission` VALUES (3, 221, '2026-01-04 21:19:03.091506');
+INSERT INTO `sys_role_permission` VALUES (3, 222, '2026-01-04 21:19:03.091528');
+INSERT INTO `sys_role_permission` VALUES (3, 223, '2026-01-04 21:19:03.091557');
+INSERT INTO `sys_role_permission` VALUES (3, 224, '2026-01-04 21:19:03.091579');
+INSERT INTO `sys_role_permission` VALUES (3, 225, '2026-01-04 21:19:03.091601');
+INSERT INTO `sys_role_permission` VALUES (3, 226, '2026-01-04 21:19:03.091623');
+INSERT INTO `sys_role_permission` VALUES (3, 227, '2026-01-04 21:19:03.091645');
+INSERT INTO `sys_role_permission` VALUES (3, 228, '2026-01-04 21:19:03.091667');
+INSERT INTO `sys_role_permission` VALUES (3, 229, '2026-01-04 21:19:03.091689');
+INSERT INTO `sys_role_permission` VALUES (3, 230, '2026-01-04 21:19:03.091711');
+INSERT INTO `sys_role_permission` VALUES (3, 231, '2026-01-04 21:19:03.091733');
+INSERT INTO `sys_role_permission` VALUES (3, 232, '2026-01-04 21:19:03.091756');
+INSERT INTO `sys_role_permission` VALUES (3, 233, '2026-01-04 21:19:03.091781');
+INSERT INTO `sys_role_permission` VALUES (3, 234, '2026-01-04 21:19:03.091872');
+INSERT INTO `sys_role_permission` VALUES (3, 235, '2026-01-04 21:19:03.091891');
+INSERT INTO `sys_role_permission` VALUES (3, 236, '2026-01-04 21:19:03.091910');
+INSERT INTO `sys_role_permission` VALUES (3, 237, '2026-01-04 21:19:03.091929');
+INSERT INTO `sys_role_permission` VALUES (3, 238, '2026-01-04 21:19:03.091946');
+INSERT INTO `sys_role_permission` VALUES (3, 239, '2026-01-04 21:19:03.091964');
+INSERT INTO `sys_role_permission` VALUES (3, 240, '2026-01-04 21:19:03.091983');
+INSERT INTO `sys_role_permission` VALUES (3, 241, '2026-01-04 21:19:03.092002');
+INSERT INTO `sys_role_permission` VALUES (3, 242, '2026-01-04 21:19:03.092021');
+INSERT INTO `sys_role_permission` VALUES (3, 244, '2026-01-04 21:19:03.092040');
+INSERT INTO `sys_role_permission` VALUES (4, 1, '2026-01-04 16:20:13.747943');
+INSERT INTO `sys_role_permission` VALUES (4, 2, '2026-01-04 16:20:13.755748');
+INSERT INTO `sys_role_permission` VALUES (4, 3, '2026-01-04 16:20:13.755837');
+INSERT INTO `sys_role_permission` VALUES (4, 4, '2026-01-04 16:20:13.755871');
+INSERT INTO `sys_role_permission` VALUES (4, 5, '2026-01-04 16:20:13.755861');
+INSERT INTO `sys_role_permission` VALUES (4, 6, '2026-01-04 16:20:13.755867');
+INSERT INTO `sys_role_permission` VALUES (4, 7, '2026-01-04 16:20:13.755854');
+INSERT INTO `sys_role_permission` VALUES (4, 13, '2026-01-04 16:20:13.755922');
+INSERT INTO `sys_role_permission` VALUES (4, 14, '2026-01-04 16:20:13.755927');
+INSERT INTO `sys_role_permission` VALUES (4, 15, '2026-01-04 16:20:13.755942');
+INSERT INTO `sys_role_permission` VALUES (4, 16, '2026-01-04 16:20:13.755948');
+INSERT INTO `sys_role_permission` VALUES (4, 211, '2026-01-04 16:20:13.755952');
+INSERT INTO `sys_role_permission` VALUES (4, 230, '2026-01-04 16:20:13.755885');
+INSERT INTO `sys_role_permission` VALUES (4, 231, '2026-01-04 16:20:13.755889');
+INSERT INTO `sys_role_permission` VALUES (4, 232, '2026-01-04 16:20:13.755896');
+INSERT INTO `sys_role_permission` VALUES (4, 233, '2026-01-04 16:20:13.755900');
+INSERT INTO `sys_role_permission` VALUES (4, 234, '2026-01-04 16:20:13.755904');
+INSERT INTO `sys_role_permission` VALUES (4, 235, '2026-01-04 16:20:13.755912');
+INSERT INTO `sys_role_permission` VALUES (4, 236, '2026-01-04 16:20:13.755917');
+INSERT INTO `sys_role_permission` VALUES (4, 237, '2026-01-04 16:20:13.755878');
 
 -- ----------------------------
 -- Table structure for sys_user
@@ -2482,14 +2915,19 @@ CREATE TABLE `sys_user`  (
   UNIQUE INDEX `IX_sys_user_Username`(`Username` ASC) USING BTREE,
   INDEX `IX_sys_user_DeptId`(`DeptId` ASC) USING BTREE,
   CONSTRAINT `FK_sys_user_sys_dept_DeptId` FOREIGN KEY (`DeptId`) REFERENCES `sys_dept` (`Id`) ON DELETE RESTRICT ON UPDATE RESTRICT
-) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', NULL, NULL, NULL, 1, '2024-01-01 00:00:00.000000', '2026-01-04 14:41:08.121973', '/uploads/avatars/1_09f7e7b6-b435-4c3d-b58b-952aa2e8a1cb.jpg', 7, 'business');
+INSERT INTO `sys_user` VALUES (1, 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', NULL, NULL, NULL, 1, '2024-01-01 00:00:00.000000', '2026-01-04 21:17:23.085847', '/uploads/avatars/1_09f7e7b6-b435-4c3d-b58b-952aa2e8a1cb.jpg', 7, 'business');
 INSERT INTO `sys_user` VALUES (2, 'test', 'ecd71870d1963316a97e3ac3408c9835ad8cf0f3c1bc703527c30265534f75ae', '测试用户', 'test@jinlan.info', '13333333333', 1, '2025-12-21 13:34:02.083370', '2025-12-26 21:57:51.860311', NULL, 1, NULL);
 INSERT INTO `sys_user` VALUES (4, 'superadmin', '54c51096a4299686282a734e240cf3e5382b709e40077f32633f86a74b72c39e', '超级管理员', 'raorong@jinlan.info', '13551252357', 1, '2025-12-26 21:22:47.372200', '2025-12-26 21:37:49.670183', '/uploads/avatars/4_43dfd44a-15b4-4a43-b1f1-c53b9182a90d.jpg', 7, 'online');
+INSERT INTO `sys_user` VALUES (5, 'hl', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '黄亮', '', '', 1, '2026-01-04 16:19:18.691068', NULL, NULL, 7, 'online');
+INSERT INTO `sys_user` VALUES (6, 'wzh', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '王子恒', NULL, NULL, 1, '2026-01-04 16:46:31.972521', NULL, NULL, 7, 'online');
+INSERT INTO `sys_user` VALUES (7, 'rr', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '饶荣', NULL, NULL, 1, '2026-01-04 16:47:03.262534', '2026-01-04 16:48:32.164669', NULL, 7, 'online');
+INSERT INTO `sys_user` VALUES (8, 'fxy', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '范新悦', NULL, NULL, 1, '2026-01-04 16:47:42.557470', NULL, NULL, 7, 'online');
+INSERT INTO `sys_user` VALUES (9, 'ljf', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', '李俊锋', NULL, NULL, 1, '2026-01-04 16:48:04.037904', NULL, NULL, 7, 'online');
 
 -- ----------------------------
 -- Table structure for sys_user_post
@@ -2532,5 +2970,10 @@ CREATE TABLE `sys_user_role`  (
 INSERT INTO `sys_user_role` VALUES (1, 3, '2025-12-21 18:06:14.190891');
 INSERT INTO `sys_user_role` VALUES (2, 2, '2025-12-21 17:58:48.113620');
 INSERT INTO `sys_user_role` VALUES (4, 1, '2025-12-26 21:22:47.532953');
+INSERT INTO `sys_user_role` VALUES (5, 4, '2026-01-04 16:45:57.976050');
+INSERT INTO `sys_user_role` VALUES (6, 4, '2026-01-04 16:46:32.021583');
+INSERT INTO `sys_user_role` VALUES (7, 4, '2026-01-04 16:47:03.294699');
+INSERT INTO `sys_user_role` VALUES (8, 4, '2026-01-04 16:47:42.586647');
+INSERT INTO `sys_user_role` VALUES (9, 4, '2026-01-04 16:48:04.071436');
 
 SET FOREIGN_KEY_CHECKS = 1;

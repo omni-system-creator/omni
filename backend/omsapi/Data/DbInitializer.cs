@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using omsapi.Models.Entities;
 using omsapi.Models.Entities.Contract;
+using omsapi.Models.Entities.Dict;
 
 namespace omsapi.Data
 {
@@ -16,6 +17,9 @@ namespace omsapi.Data
 
             // 初始化销售模块数据
             await SeedSalesDataAsync(context);
+
+            // 初始化字典模块数据
+            await SeedDictDataAsync(context);
 
             // 如果已经有权限数据，则跳过
             if (await context.Permissions.AnyAsync())
@@ -195,6 +199,293 @@ namespace omsapi.Data
                 context.RolePermissions.AddRange(newRolePerms);
                 await context.SaveChangesAsync();
             }
+        }
+
+        private static async Task SeedDictDataAsync(OmsContext context)
+        {
+            var now = DateTime.Now;
+
+            // 1. 字典分类 (SysDictCategory)
+            var categories = new List<SysDictCategory>
+            {
+                new SysDictCategory { Code = "sys_common", Name = "系统通用", Sort = 1, Remark = "系统通用的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "biz_module", Name = "业务模块", Sort = 2, Remark = "业务模块相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "contract_mgmt", Name = "合同管理", Sort = 3, Remark = "合同管理相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "project_mgmt", Name = "项目管理", Sort = 4, Remark = "项目管理相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "finance_mgmt", Name = "财务管理", Sort = 5, Remark = "财务管理相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "scm_mgmt", Name = "供应链管理", Sort = 6, Remark = "采购与库存相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "asset_mgmt", Name = "资产管理", Sort = 7, Remark = "固定资产相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "bpm_mgmt", Name = "流程管理", Sort = 8, Remark = "工作流相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "archive_mgmt", Name = "档案管理", Sort = 9, Remark = "档案资料相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "data_mgmt", Name = "数据管理", Sort = 10, Remark = "数据集成与治理相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "sys_security", Name = "系统安全", Sort = 11, Remark = "系统安全相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "sales_mgmt", Name = "销售管理", Sort = 12, Remark = "销售与CRM相关的字典数据", CreatedAt = now, UpdatedAt = now },
+                new SysDictCategory { Code = "personal_mgmt", Name = "个人办公", Sort = 13, Remark = "个人办公与消息相关的字典数据", CreatedAt = now, UpdatedAt = now }
+            };
+
+            foreach (var cat in categories)
+            {
+                if (!await context.DictCategories.AnyAsync(c => c.Code == cat.Code))
+                {
+                    context.DictCategories.Add(cat);
+                }
+            }
+            await context.SaveChangesAsync();
+
+            // 重新获取分类以获取ID
+            var dbCategories = await context.DictCategories.ToListAsync();
+            
+            // 辅助方法：获取分类ID
+            long? GetCatId(string code) => dbCategories.FirstOrDefault(c => c.Code == code)?.Id;
+
+            // 2. 字典类型 (SysDictType)
+            var types = new List<SysDictType>();
+
+            void AddType(string catCode, string code, string name, string remark)
+            {
+                var catId = GetCatId(catCode);
+                if (catId.HasValue)
+                {
+                    types.Add(new SysDictType { CategoryId = catId.Value, Code = code, Name = name, Status = "normal", Remark = remark, CreatedAt = now, UpdatedAt = now });
+                }
+            }
+
+            AddType("sys_common", "sys_user_status", "用户状态", "系统用户的状态");
+            AddType("sys_common", "sys_user_gender", "用户性别", "用户的性别");
+            AddType("sales_mgmt", "crm_customer_level", "客户等级", "CRM客户等级分类");
+            AddType("contract_mgmt", "contract_type", "合同类型", "合同的业务类型");
+            AddType("contract_mgmt", "contract_status", "合同状态", "合同的生命周期状态");
+            AddType("project_mgmt", "project_status", "项目状态", "项目的当前状态");
+            AddType("project_mgmt", "project_priority", "项目优先级", "项目的紧急程度");
+            AddType("finance_mgmt", "finance_invoice_type", "发票类型", "增值税发票类型");
+            AddType("finance_mgmt", "finance_payment_method", "支付方式", "收付款的方式");
+            AddType("scm_mgmt", "scm_supplier_level", "供应商等级", "供应商的重要性分级");
+            AddType("scm_mgmt", "scm_warehouse_type", "仓库类型", "仓库的功能分类");
+            AddType("asset_mgmt", "asset_status", "资产状态", "固定资产的使用状态");
+            AddType("bpm_mgmt", "bpm_urgency", "紧急程度", "流程任务的紧急程度");
+            AddType("archive_mgmt", "archive_type", "档案类型", "档案的分类");
+            AddType("archive_mgmt", "archive_security_level", "密级", "档案的保密级别");
+            AddType("data_mgmt", "data_source_type", "数据源类型", "数据库或接口类型");
+            AddType("data_mgmt", "etl_status", "ETL状态", "ETL任务的执行状态");
+            AddType("sys_security", "sys_login_status", "登录状态", "用户登录的结果状态");
+            AddType("sys_security", "sys_oper_type", "操作类型", "系统操作日志的操作类型");
+            AddType("sales_mgmt", "sales_opportunity_stage", "商机阶段", "销售商机的进展阶段");
+            AddType("sales_mgmt", "sales_customer_source", "客户来源", "客户信息的获取渠道");
+            AddType("personal_mgmt", "personal_todo_priority", "待办优先级", "个人待办事项的优先级");
+            AddType("personal_mgmt", "personal_msg_type", "消息类型", "站内消息的类型");
+
+            foreach (var t in types)
+            {
+                if (!await context.DictTypes.AnyAsync(x => x.Code == t.Code))
+                {
+                    context.DictTypes.Add(t);
+                }
+            }
+            await context.SaveChangesAsync();
+
+            // 3. 字典数据 (SysDictData)
+            var dbTypes = await context.DictTypes.ToListAsync();
+
+            async Task AddData(string typeCode, List<SysDictData> datas)
+            {
+                var type = dbTypes.FirstOrDefault(t => t.Code == typeCode);
+                if (type != null && !await context.DictDatas.AnyAsync(d => d.DictTypeId == type.Id))
+                {
+                    foreach (var data in datas)
+                    {
+                        data.DictTypeId = type.Id;
+                        data.CreatedAt = now;
+                        data.UpdatedAt = now;
+                    }
+                    context.DictDatas.AddRange(datas);
+                }
+            }
+
+            // 系统通用
+            await AddData("sys_user_status", new List<SysDictData>
+            {
+                new SysDictData { Label = "正常", Value = "1", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "停用", Value = "0", Sort = 2, IsDefault = false, Status = "normal" }
+            });
+            await AddData("sys_user_gender", new List<SysDictData>
+            {
+                new SysDictData { Label = "男", Value = "1", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "女", Value = "2", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "未知", Value = "0", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+
+            // 业务模块
+            await AddData("crm_customer_level", new List<SysDictData>
+            {
+                new SysDictData { Label = "重点客户", Value = "A", Sort = 1, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "普通客户", Value = "B", Sort = 2, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "低价值客户", Value = "C", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+
+            // 合同管理
+            await AddData("contract_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "销售合同", Value = "sales", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "采购合同", Value = "purchase", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "服务合同", Value = "service", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "劳动合同", Value = "labor", Sort = 4, IsDefault = false, Status = "normal" }
+            });
+            await AddData("contract_status", new List<SysDictData>
+            {
+                new SysDictData { Label = "草稿", Value = "draft", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "审核中", Value = "review", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "执行中", Value = "active", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "已完成", Value = "completed", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "已终止", Value = "terminated", Sort = 5, IsDefault = false, Status = "normal" }
+            });
+
+            // 项目管理
+            await AddData("project_status", new List<SysDictData>
+            {
+                new SysDictData { Label = "规划中", Value = "planning", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "进行中", Value = "in_progress", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "暂停", Value = "on_hold", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "已完成", Value = "completed", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "已归档", Value = "archived", Sort = 5, IsDefault = false, Status = "normal" }
+            });
+            await AddData("project_priority", new List<SysDictData>
+            {
+                new SysDictData { Label = "高", Value = "high", Sort = 1, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "中", Value = "medium", Sort = 2, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "低", Value = "low", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+
+            // 财务管理
+            await AddData("finance_invoice_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "增值税专用发票", Value = "vat_special", Sort = 1, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "增值税普通发票", Value = "vat_normal", Sort = 2, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "电子发票", Value = "electronic", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+            await AddData("finance_payment_method", new List<SysDictData>
+            {
+                new SysDictData { Label = "银行转账", Value = "bank", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "现金", Value = "cash", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "支票", Value = "check", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "支付宝", Value = "alipay", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "微信支付", Value = "wechat", Sort = 5, IsDefault = false, Status = "normal" }
+            });
+
+            // 供应链管理
+            await AddData("scm_supplier_level", new List<SysDictData>
+            {
+                new SysDictData { Label = "战略供应商", Value = "strategic", Sort = 1, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "核心供应商", Value = "core", Sort = 2, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "备选供应商", Value = "backup", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+            await AddData("scm_warehouse_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "成品库", Value = "finished", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "原料库", Value = "raw", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "中转库", Value = "transit", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "废品库", Value = "defective", Sort = 4, IsDefault = false, Status = "normal" }
+            });
+
+            // 资产管理
+            await AddData("asset_status", new List<SysDictData>
+            {
+                new SysDictData { Label = "使用中", Value = "in_use", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "闲置", Value = "idle", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "维修中", Value = "maintenance", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "已报废", Value = "scrapped", Sort = 4, IsDefault = false, Status = "normal" }
+            });
+
+            // 流程管理
+            await AddData("bpm_urgency", new List<SysDictData>
+            {
+                new SysDictData { Label = "紧急", Value = "urgent", Sort = 1, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "普通", Value = "normal", Sort = 2, IsDefault = true, Status = "normal" }
+            });
+
+            // 档案管理
+            await AddData("archive_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "合同档案", Value = "contract", Sort = 1, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "人事档案", Value = "personnel", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "财务档案", Value = "finance", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "项目档案", Value = "project", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "行政档案", Value = "admin", Sort = 5, IsDefault = true, Status = "normal" }
+            });
+            await AddData("archive_security_level", new List<SysDictData>
+            {
+                new SysDictData { Label = "公开", Value = "public", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "内部", Value = "internal", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "秘密", Value = "secret", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "机密", Value = "top_secret", Sort = 4, IsDefault = false, Status = "normal" }
+            });
+
+            // 数据管理
+            await AddData("data_source_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "MySQL", Value = "mysql", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "PostgreSQL", Value = "postgresql", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "Oracle", Value = "oracle", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "SQL Server", Value = "sqlserver", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "REST API", Value = "api", Sort = 5, IsDefault = false, Status = "normal" }
+            });
+            await AddData("etl_status", new List<SysDictData>
+            {
+                new SysDictData { Label = "运行中", Value = "running", Sort = 1, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "成功", Value = "success", Sort = 2, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "失败", Value = "failed", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "等待中", Value = "pending", Sort = 4, IsDefault = false, Status = "normal" }
+            });
+
+            // 系统安全
+            await AddData("sys_login_status", new List<SysDictData>
+            {
+                new SysDictData { Label = "成功", Value = "success", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "失败", Value = "failed", Sort = 2, IsDefault = false, Status = "normal" }
+            });
+            await AddData("sys_oper_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "查询", Value = "query", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "新增", Value = "insert", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "修改", Value = "update", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "删除", Value = "delete", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "导出", Value = "export", Sort = 5, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "导入", Value = "import", Sort = 6, IsDefault = false, Status = "normal" }
+            });
+
+            // 销售管理
+            await AddData("sales_opportunity_stage", new List<SysDictData>
+            {
+                new SysDictData { Label = "初步接触", Value = "discovery", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "需求分析", Value = "needs_analysis", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "方案报价", Value = "proposal", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "商务谈判", Value = "negotiation", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "赢单", Value = "won", Sort = 5, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "输单", Value = "lost", Sort = 6, IsDefault = false, Status = "normal" }
+            });
+            await AddData("sales_customer_source", new List<SysDictData>
+            {
+                new SysDictData { Label = "公司资源", Value = "company", Sort = 1, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "网络推广", Value = "web", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "客户介绍", Value = "referral", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "电话销售", Value = "cold_call", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "展会活动", Value = "exhibition", Sort = 5, IsDefault = false, Status = "normal" }
+            });
+
+            // 个人办公
+            await AddData("personal_todo_priority", new List<SysDictData>
+            {
+                new SysDictData { Label = "高", Value = "high", Sort = 1, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "中", Value = "medium", Sort = 2, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "低", Value = "low", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+            await AddData("personal_msg_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "系统通知", Value = "system", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "私人消息", Value = "private", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "任务提醒", Value = "task", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+
+            await context.SaveChangesAsync();
         }
 
         private static async Task SeedSalesDataAsync(OmsContext context)

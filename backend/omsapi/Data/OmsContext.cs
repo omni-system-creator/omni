@@ -84,9 +84,25 @@ namespace omsapi.Data
         public DbSet<omsapi.Models.Entities.Sales.SalesProductDoc> SalesProductDocs { get; set; }
         public DbSet<omsapi.Models.Entities.Sales.SalesProcessRule> SalesProcessRules { get; set; }
 
+        // Dict Entities
+        public DbSet<omsapi.Models.Entities.Dict.SysDictCategory> DictCategories { get; set; }
+        public DbSet<omsapi.Models.Entities.Dict.SysDictType> DictTypes { get; set; }
+        public DbSet<omsapi.Models.Entities.Dict.SysDictData> DictDatas { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Configure Dict Entities
+            modelBuilder.Entity<omsapi.Models.Entities.Dict.SysDictType>(entity =>
+            {
+                entity.HasIndex(e => e.Code).IsUnique();
+            });
+
+            modelBuilder.Entity<omsapi.Models.Entities.Dict.SysDictData>(entity =>
+            {
+                entity.HasIndex(e => new { e.DictTypeId, e.Value }).IsUnique();
+            });
 
             // 配置 SystemConfig
             modelBuilder.Entity<SystemConfig>(entity =>

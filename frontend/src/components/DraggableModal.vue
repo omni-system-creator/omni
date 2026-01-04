@@ -5,7 +5,7 @@
       <div class="draggable-modal-header" @mousedown="startDrag" @dblclick="toggleMaximize">
         <div class="modal-title">{{ title }}</div>
         <div class="modal-actions">
-          <div class="modal-header-btn" @click="toggleMaximize">
+          <div class="modal-header-btn" @click="toggleMaximize" v-if="maximizable">
             <CompressOutlined v-if="isMaximized" />
             <ExpandOutlined v-else />
           </div>
@@ -17,10 +17,13 @@
       <div class="draggable-modal-body" :style="{ padding: bodyPadding }">
         <slot></slot>
       </div>
-      <div v-if="$slots.footer" class="draggable-modal-footer">
-        <slot name="footer"></slot>
+      <div class="draggable-modal-footer" v-if="footer || $slots.footer">
+        <slot name="footer">
+          <a-button @click="close">{{ cancelText }}</a-button>
+          <a-button type="primary" :loading="confirmLoading" @click="handleOk" style="margin-left: 8px">{{ okText }}</a-button>
+        </slot>
       </div>
-      <div v-if="!isMaximized" class="draggable-modal-resize-handle" @mousedown="startResize"></div>
+      <div v-if="!isMaximized && resizable" class="draggable-modal-resize-handle" @mousedown="startResize"></div>
     </div>
   </Teleport>
 </template>
@@ -53,6 +56,30 @@ const props = defineProps({
   bodyPadding: {
     type: String,
     default: '10px'
+  },
+  resizable: {
+    type: Boolean,
+    default: true
+  },
+  maximizable: {
+    type: Boolean,
+    default: true
+  },
+  confirmLoading: {
+    type: Boolean,
+    default: false
+  },
+  okText: {
+    type: String,
+    default: '确定'
+  },
+  cancelText: {
+    type: String,
+    default: '取消'
+  },
+  footer: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -72,27 +99,30 @@ watch(() => props.visible, (newVal) => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    // Parse width/height if they are percentages or numbers
-    let targetWidth = 800;
-    let targetHeight = 600;
+    const parseSize = (val: number | string, viewportSize: number, defaultVal: number) => {
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') {
+        if (val.endsWith('%')) {
+          return viewportSize * (parseFloat(val) / 100);
+        }
+        if (val.endsWith('px')) {
+          return parseFloat(val);
+        }
+        const parsed = parseFloat(val);
+        return isNaN(parsed) ? defaultVal : parsed;
+      }
+      return defaultVal;
+    };
 
-    // Handle percentage strings like "80%"
-    if (typeof props.width === 'string' && props.width.endsWith('%')) {
-      targetWidth = viewportWidth * (parseFloat(props.width) / 100);
-    } else {
-      targetWidth = Number(props.width);
-    }
-
-    if (typeof props.height === 'string' && props.height.endsWith('%')) {
-      targetHeight = viewportHeight * (parseFloat(props.height) / 100);
-    } else {
-      targetHeight = Number(props.height);
-    }
+    const targetWidth = parseSize(props.width, viewportWidth, 800);
+    const targetHeight = parseSize(props.height, viewportHeight, 600);
 
     modalState.value.width = targetWidth;
     modalState.value.height = targetHeight;
-    modalState.value.x = (viewportWidth - targetWidth) / 2;
-    modalState.value.y = (viewportHeight - targetHeight) / 2;
+    
+    // Ensure the modal is centered
+    modalState.value.x = Math.max(0, (viewportWidth - targetWidth) / 2);
+    modalState.value.y = Math.max(0, (viewportHeight - targetHeight) / 2);
   }
 }, { immediate: true });
 
@@ -102,6 +132,10 @@ const handleMaskClick = () => {
   }
 };
 
+const handleOk = () => {
+  emit('ok');
+};
+
 const close = () => {
   emit('update:visible', false);
   emit('close');
@@ -109,6 +143,7 @@ const close = () => {
 };
 
 const toggleMaximize = () => {
+  if (!props.maximizable) return;
   isMaximized.value = !isMaximized.value;
 };
 
