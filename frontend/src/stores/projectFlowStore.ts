@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Phase, Swimlane, Task, ViewSettings, TaskDependency, ProjectInfo, TaskPort, ProjectFullDto } from '../types/project'
+import type { Phase, Swimlane, Task, ViewSettings, TaskDependency, ProjectInfo, TaskPort } from '../types/project'
 import { getProject, saveProject } from '../api/project'
 
 interface User {
@@ -52,7 +52,12 @@ export const useProjectFlowStore = defineStore('projectFlow', {
           this.swimlanes = data.swimlanes || []
           this.tasks = (data.tasks || []).map((t: any) => ({
              ...t,
-             dependencies: t.dependencies || [],
+             dependencies: (t.dependencies || []).map((d: any) => ({
+                ...d,
+                controlPoints: d.controlPoints && typeof d.controlPoints === 'string' 
+                  ? JSON.parse(d.controlPoints) 
+                  : d.controlPoints
+             })),
              attachments: t.attachments || []
           }))
         }
@@ -62,15 +67,30 @@ export const useProjectFlowStore = defineStore('projectFlow', {
     },
     async saveProject() {
        try {
-           const payload: ProjectFullDto = {
+           // Prepare payload with serialized controlPoints
+           const tasksForSave = this.tasks.map(t => ({
+               ...t,
+               dependencies: t.dependencies.map(d => {
+                   if (typeof d === 'string') {
+                       return { taskId: d }
+                   }
+                   return {
+                       ...d,
+                       controlPoints: d.controlPoints ? JSON.stringify(d.controlPoints) : undefined
+                   }
+               })
+           }))
+
+           const payload: any = {
                projectInfo: this.projectInfo,
                phases: this.phases,
                swimlanes: this.swimlanes,
-               tasks: this.tasks
+               tasks: tasksForSave
            }
            await saveProject(payload)
        } catch (error) {
            console.error("Failed to save project", error)
+           throw error
        }
     },
     setExportImageHandler(handler: () => Promise<void> | void) {

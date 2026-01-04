@@ -7,7 +7,12 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // Force single instance of leafer packages
+      'leafer-ui': fileURLToPath(new URL('./node_modules/leafer-ui', import.meta.url)),
+      '@leafer/core': fileURLToPath(new URL('./node_modules/@leafer/core', import.meta.url)),
+      '@leafer/interface': fileURLToPath(new URL('./node_modules/@leafer/interface', import.meta.url)),
+      '@leafer/partner': fileURLToPath(new URL('./node_modules/@leafer/partner', import.meta.url))
     }
   },
   server: {

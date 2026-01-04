@@ -5,7 +5,7 @@
       <a href="#">更多</a>
     </div>
     <div class="projects-container">
-      <a-table :dataSource="projects" :columns="columns" pagination="false" size="small">
+      <a-table :dataSource="projects" :columns="columns" :pagination="false" size="small">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
             <a-tag :color="getStatusColor(record.status)">

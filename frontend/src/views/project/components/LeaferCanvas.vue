@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from "vue";
-import { Modal, Empty } from "ant-design-vue";
+import { onMounted, onUnmounted, ref, watch, computed, nextTick } from "vue";
+import { Modal, Empty, Menu, MenuItem, SubMenu, MenuDivider, message, Input } from "ant-design-vue";
 import {
   App,
   Rect,
@@ -94,6 +94,288 @@ let chartGroup: Group | null = null;
 let currentGuideGroup: Group | null = null;
 let lastContentWidth = 0;
 let lastContentHeight = 0;
+
+// Context Menu Logic
+const showContextMenu = ref(false);
+const x = ref(0);
+const y = ref(0);
+const fileInput = ref<HTMLInputElement | null>(null);
+
+const menuOptions = computed(() => {
+  const selected = store.selectedElement;
+
+  if (selected) {
+    if (selected.type === 'task') {
+      return [
+        { label: "属性", key: "element_properties" },
+        { label: "删除", key: "element_delete" }
+      ];
+    }
+    if (selected.type === 'phase') {
+      return [
+        { label: "属性", key: "element_properties" },
+        { label: "删除", key: "element_delete" }
+      ];
+    }
+    if (selected.type === 'swimlane') {
+      return [
+        { label: "属性", key: "element_properties" },
+        { label: "删除", key: "element_delete" }
+      ];
+    }
+  }
+
+  const fileOpts = [
+    { label: "新建项目", key: "new" },
+    { type: "divider", key: "d1" },
+    // { label: "项目属性", key: "properties" },
+    { type: "divider", key: "d2" },
+    { label: "保存项目", key: "save" },
+    { label: "导出文件", key: "exportFile" },
+    { label: "加载项目", key: "load" },
+    { type: "divider", key: "d3" },
+    { label: "导出图片", key: "export" },
+  ];
+
+  const isClipboardSupported = typeof window !== 'undefined' && 
+                             window.isSecureContext && 
+                             navigator.clipboard && 
+                             typeof ClipboardItem !== 'undefined';
+
+  if (isClipboardSupported) {
+    fileOpts.push({ label: "复制为图片", key: "copyImage" });
+  }
+
+  const addOpts = [
+    { label: "新增任务", key: "task" },
+    { label: "新增阶段", key: "phase" },
+    { label: "新增专业", key: "swimlane" },
+  ];
+
+  return [
+    {
+      label: '文件',
+      key: 'file',
+      children: fileOpts
+    },
+    {
+      label: '新增',
+      key: 'add',
+      children: addOpts
+    }
+  ];
+});
+
+const handleContextMenu = (e: MouseEvent) => {
+  e.preventDefault();
+
+  if (leaferApp && leaferApp.tree) {
+    const currentX = leaferApp.tree.x || 0;
+    const currentY = leaferApp.tree.y || 0;
+    const scale = leaferApp.tree.scaleX || 1;
+    const worldX = (e.offsetX - currentX) / scale;
+    const worldY = (e.offsetY - currentY) / scale;
+    
+    const result = leaferApp.tree.pick({ x: worldX, y: worldY });
+    
+    if (result && result.target) {
+        let current: any = result.target;
+        let found = false;
+        while (current) {
+            if (current.data) {
+                if (current.data.type === 'task') {
+                    store.selectElement('task', current.data.id);
+                    found = true;
+                    break;
+                } else if (current.data.type === 'phase') {
+                    store.selectElement('phase', current.data.id);
+                    found = true;
+                    break;
+                } else if (current.data.type === 'swimlane') {
+                    store.selectElement('swimlane', current.data.id);
+                    found = true;
+                    break;
+                }
+            }
+            current = current.parent;
+        }
+        
+        if (!found) {
+             store.clearSelection();
+        }
+    } else {
+        store.clearSelection();
+    }
+  }
+
+  showContextMenu.value = false;
+  nextTick().then(() => {
+    showContextMenu.value = true;
+    x.value = e.clientX;
+    y.value = e.clientY;
+  });
+};
+
+const closeContextMenu = () => {
+  showContextMenu.value = false;
+};
+
+
+
+const handleMenuSelect = ({ key }: { key: string | number }) => {
+  showContextMenu.value = false;
+  const keyStr = String(key);
+  switch (keyStr) {
+    case "new":
+      Modal.confirm({
+        title: "确认",
+        content: "确定要新建项目吗？当前未保存的内容将丢失。",
+        okText: "确定",
+        cancelText: "取消",
+        onOk: () => {
+          store.newProject();
+          setTimeout(() => store.fitView(), 100);
+        }
+      });
+      break;
+    case "properties":
+      message.warning("功能开发中");
+      break;
+    case "save":
+      saveProject();
+      break;
+    case "exportFile":
+      exportProjectFile();
+      break;
+    case "load":
+      fileInput.value?.click();
+      break;
+    case "export":
+      exportImage();
+      break;
+    case "copyImage":
+      store.copyImageHandler?.();
+      break;
+    case "element_properties":
+      break;
+    case "element_delete":
+      initiateDelete();
+      break;
+    case "task":
+      openInputModal("新增任务", "新任务", (val) => {
+        const newTask = {
+          id: "t" + Date.now(),
+          name: val || "新任务",
+          phaseId: store.phases[0]?.id || "p1",
+          swimlaneId: store.swimlanes[0]?.id || "sl1",
+          status: "pending" as const,
+          progress: 0,
+          owner: "待定",
+          startDate: new Date().toISOString().split("T")[0] || "",
+          endDate: new Date().toISOString().split("T")[0] || "",
+          dependencies: [],
+          type: "task" as const,
+        };
+        store.addTask(newTask);
+        store.selectElement("task", newTask.id);
+      });
+      break;
+    case "phase":
+      openInputModal("新增阶段", "", (val) => {
+        store.addPhase({
+          id: "p" + Date.now(),
+          name: val,
+          color: "#E3F2FD",
+        });
+      });
+      break;
+    case "swimlane":
+      openInputModal("新增专业", "", (val) => {
+        store.addSwimlane({
+          id: "sl" + Date.now(),
+          name: val,
+          color: "#F5F5F5",
+        });
+      });
+      break;
+  }
+};
+
+const saveProject = async () => {
+  try {
+      await store.saveProject();
+      message.success("保存成功");
+  } catch (e) {
+      message.error("保存失败");
+  }
+};
+
+const exportProjectFile = () => {
+  const data = store.exportProjectData();
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `project-${store.projectInfo.code}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+const exportImage = async () => {
+  if (store.exportImageHandler) {
+    await store.exportImageHandler();
+  } else {
+    message.warning("导出功能未就绪");
+  }
+};
+
+// Input Modal State
+const showInputModal = ref(false);
+const inputModalTitle = ref("");
+const inputValue = ref("");
+const inputConfirmAction = ref<((val: string) => void) | null>(null);
+
+const openInputModal = (
+  title: string,
+  defaultValue: string,
+  confirmAction: (val: string) => void
+) => {
+  inputModalTitle.value = title;
+  inputValue.value = defaultValue;
+  inputConfirmAction.value = confirmAction;
+  showInputModal.value = true;
+};
+
+const handleInputConfirm = () => {
+  if (inputConfirmAction.value && inputValue.value) {
+    inputConfirmAction.value(inputValue.value);
+  }
+  showInputModal.value = false;
+};
+
+const handleFileSelect = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const success = store.importProjectData(e.target?.result as string);
+        if (success) {
+            message.success("项目加载成功");
+            setTimeout(() => store.fitView(), 100);
+        } else {
+            message.error("文件格式错误");
+        }
+      } catch (err) {
+        message.error("文件格式错误");
+      }
+    };
+    reader.readAsText(file);
+  }
+  input.value = ""; // Reset input
+};
+
 
 onUnmounted(() => {
   if (leaferApp) {
@@ -3590,23 +3872,54 @@ const showError = (title: string, content: string) => {
 };
 
 const initiateDelete = () => {
-  if (store.selectedElement?.type === "task") {
-    const taskId = store.selectedElement.id;
+  if (!store.selectedElement) return;
+
+  const { type, id } = store.selectedElement;
+
+  if (type === "task") {
     Modal.confirm({
       title: "确认删除",
       content: "确定删除该任务吗？",
       okText: "确定",
       cancelText: "取消",
       onOk() {
-        store.deleteTask(taskId);
+        store.deleteTask(id);
         store.clearSelection();
       },
     });
     return;
   }
 
-  if (store.selectedElement?.type === "dependency") {
-    const [sourceId, targetId] = store.selectedElement.id.split("|");
+  if (type === "phase") {
+    Modal.confirm({
+      title: "确认删除",
+      content: "确定删除该阶段吗？",
+      okText: "确定",
+      cancelText: "取消",
+      onOk() {
+        store.deletePhase(id);
+        store.clearSelection();
+      },
+    });
+    return;
+  }
+
+  if (type === "swimlane") {
+    Modal.confirm({
+      title: "确认删除",
+      content: "确定删除该专业吗？",
+      okText: "确定",
+      cancelText: "取消",
+      onOk() {
+        store.deleteSwimlane(id);
+        store.clearSelection();
+      },
+    });
+    return;
+  }
+
+  if (type === "dependency") {
+    const [sourceId, targetId] = id.split("|");
     if (sourceId && targetId) {
       Modal.confirm({
         title: "确认删除",
@@ -3622,10 +3935,10 @@ const initiateDelete = () => {
     return;
   }
 
-  if (store.selectedElement?.type === "port") {
+  if (type === "port") {
     if (store.selectedElement.taskId) {
       const taskId = store.selectedElement.taskId;
-      const portId = store.selectedElement.id;
+      const portId = id;
       Modal.confirm({
         title: "确认删除",
         content: "确定删除该连接点吗？",
@@ -3937,7 +4250,7 @@ onMounted(() => {
                      [result.data.type]: result.data
                  })
              ]);
-             showError("成功", "已复制到剪贴板");
+             message.success("已复制到剪贴板");
          } catch (clipboardError: any) {
              console.error(clipboardError);
              showError("复制失败", "无法写入剪贴板: " + clipboardError.message);
@@ -4056,10 +4369,45 @@ watch(
 </script>
 
 <template>
-  <div class="leafer-container" ref="containerRef"></div>
+  <div class="leafer-container" ref="containerRef" @contextmenu="handleContextMenu"></div>
   <div v-if="store.tasks.length === 0" class="empty-state">
     <Empty description="暂无泳道图数据" />
   </div>
+
+  <!-- Custom Context Menu -->
+  <div v-if="showContextMenu" class="context-menu-wrapper">
+     <div class="context-menu-mask" @click="closeContextMenu" @contextmenu.prevent="closeContextMenu"></div>
+     <div class="context-menu-content" :style="{ left: x + 'px', top: y + 'px' }">
+        <Menu
+          mode="vertical"
+          :selectable="false"
+          @click="handleMenuSelect"
+          style="border: none; width: 160px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border-radius: 4px;"
+        >
+           <template v-for="item in (menuOptions as any[])" :key="item.key">
+              <SubMenu v-if="item.children" :key="item.key" :title="item.label">
+                  <template v-for="child in item.children" :key="child.key">
+                      <MenuDivider v-if="child.type === 'divider'" />
+                      <MenuItem v-else :key="child.key">{{ child.label }}</MenuItem>
+                  </template>
+              </SubMenu>
+              <MenuItem v-else :key="item.key">{{ item.label }}</MenuItem>
+           </template>
+        </Menu>
+     </div>
+  </div>
+
+  <Modal v-model:open="showInputModal" :title="inputModalTitle" @ok="handleInputConfirm">
+      <Input v-model:value="inputValue" placeholder="请输入名称" @pressEnter="handleInputConfirm" />
+  </Modal>
+
+  <input
+    type="file"
+    ref="fileInput"
+    style="display: none"
+    accept=".json"
+    @change="handleFileSelect"
+  />
 </template>
 
 <style scoped>
@@ -4076,5 +4424,29 @@ watch(
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 10;
+}
+
+.context-menu-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 900;
+}
+
+.context-menu-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.context-menu-content {
+  position: absolute;
+  z-index: 2;
+  background: white;
 }
 </style>

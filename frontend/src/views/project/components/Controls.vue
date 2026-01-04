@@ -3,7 +3,7 @@ import { useProjectFlowStore } from "@/stores/projectFlowStore";
 import { ref, computed } from "vue";
 import ProjectPropertiesDialog from './ProjectPropertiesDialog.vue';
 
-import { Modal } from 'ant-design-vue';
+import { Modal, message } from 'ant-design-vue';
 import type { TaskStatus } from "@/types/project";
 import { onMounted } from 'vue';
 
@@ -166,7 +166,10 @@ const handleFileSelect = ({ key }: { key: string }) => {
       showProjectProperties.value = true;
       break;
     case "save":
-      saveProject();
+      handleSaveProject();
+      break;
+    case "exportJson":
+      exportJson();
       break;
     case "export":
       exportImage();
@@ -180,7 +183,16 @@ const handleFileSelect = ({ key }: { key: string }) => {
   }
 };
 
-const saveProject = () => {
+const handleSaveProject = async () => {
+  try {
+    await store.saveProject();
+    message.success('保存成功');
+  } catch (e) {
+    message.error('保存失败');
+  }
+};
+
+const exportJson = () => {
   const json = store.exportProjectData();
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -227,7 +239,7 @@ const exportImage = async () => {
     <Teleport to="#tab-toolbar-target" v-if="mounted">
       <div class="controls-toolbar" v-show="isActive">
         <div class="project-info">
-          <div class="project-code">{{ store.projectInfo.code }}</div>
+          <div class="project-code">【{{ store.projectInfo.code }}】</div>
           <div class="project-name">{{ store.projectInfo.name }}</div>
         </div>
         
@@ -245,6 +257,7 @@ const exportImage = async () => {
                 <a-menu-item key="save">保存项目</a-menu-item>
                 <a-menu-item key="load">加载项目</a-menu-item>
                 <a-menu-divider />
+                <a-menu-item key="exportJson">导出 JSON</a-menu-item>
                 <a-menu-item key="export">导出图片</a-menu-item>
                 <a-menu-item key="copyImage">复制为图片</a-menu-item>
               </a-menu>
@@ -388,7 +401,7 @@ const exportImage = async () => {
 }
 
 .project-code {
-  font-size: 14px;
+  font-size: 16px;
   color: #666;
   font-weight: 500;
 }

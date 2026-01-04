@@ -1,13 +1,13 @@
 <template>
   <div class="project-detail-container">
+    <Controls :isActive="true" />
     <div class="main-content">
       <a-tabs v-model:activeKey="activeTab" type="card" class="project-tabs" :tabBarStyle="{ margin: 0, padding: '8px 8px 0' }">
-        <template #rightExtra>
-          <div id="tab-toolbar-target" style="display: flex; align-items: center; min-width: 200px; justify-content: flex-end;"></div>
+        <template #leftExtra>
+          <div id="tab-toolbar-target" style="display: flex; align-items: center; min-width: 200px; margin-right: 16px;"></div>
         </template>
         <a-tab-pane key="flowchart" tab="泳道图">
           <div class="tab-view-container">
-            <Controls :isActive="activeTab === 'flowchart'" />
             <div class="canvas-area">
               <LeaferCanvas />
             </div>
@@ -98,6 +98,16 @@ watch(activeTab, () => {
 
 :deep(.ant-tabs-tabpane) {
   height: 100%;
+}
+
+:deep(.ant-tabs-nav) {
+  width: 100%;
+}
+
+:deep(.ant-tabs-nav-wrap) {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .tab-view-container {

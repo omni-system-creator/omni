@@ -2,10 +2,11 @@
   <div class="gantt-view">
     <!-- Toolbar -->
     <Teleport to="#tab-toolbar-target" v-if="mounted">
-      <div class="gantt-toolbar" v-show="isActive">
+      <div class="gantt-toolbar" v-show="isActive" style="display: flex; align-items: center;">
+        <div style="width: 1px; height: 16px; background: #eee; margin: 0 8px;"></div>
         <a-space>
           <a-select v-model:value="zoomLevel" style="width: 120px" :options="zoomOptions" size="small" />
-          <a-button @click="scrollToToday" size="small">回到今天</a-button>
+          <a-button @click="scrollToToday" size="small">今天</a-button>
         </a-space>
       </div>
     </Teleport>
@@ -109,10 +110,18 @@
           @scroll="handleRightScroll"
           @wheel="handleWheel"
         >
+          <div class="spacer" :style="{ width: totalWidth + 'px', height: totalHeight + 'px' }"></div>
           <div 
             class="canvas-container" 
             ref="ganttContainerRef" 
-            :style="{ width: totalWidth + 'px', height: totalHeight + 'px' }"
+            :style="{ 
+                width: viewportWidth + 'px', 
+                height: viewportHeight + 'px',
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                transform: `translate(${scrollLeft}px, ${scrollTop}px)`
+            }"
           ></div>
         </div>
         
@@ -132,7 +141,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, onActivated, onDeactivated } from 'vue'
 import { useProjectFlowStore } from '@/stores/projectFlowStore'
-import { App, Rect, Text, Group, Path, Line, PointerEvent as LeaferPointerEvent, DragEvent, Leafer } from 'leafer-ui'
+import { App, Rect, Text, Group, Path, Line, PointerEvent as LeaferPointerEvent, DragEvent } from 'leafer-ui'
 import '@leafer-in/find'
 import '@leafer-in/animate'
 import { holiday } from '@kang8/chinese-holidays'
@@ -462,6 +471,10 @@ const visibleRows = computed(() => {
     return rows
 })
 
+watch([visibleRows, zoomLevel], () => {
+    drawGantt()
+})
+
 const totalWidth = computed(() => days.value.length * DAY_WIDTH.value)
 const totalHeight = computed(() => Math.max(visibleRows.value.length * ROW_HEIGHT, 1))
 
@@ -473,6 +486,9 @@ const timeRange = computed(() => {
     let dates = store.tasks.flatMap(t => [parseLocalDate(t.startDate), parseLocalDate(t.endDate)])
         .filter(d => !isNaN(d.getTime()));
     
+    // Ensure Today is included
+    dates.push(new Date());
+
     dates = dates.filter(d => d.getFullYear() >= 2000 && d.getFullYear() <= 2100);
 
     if (dates.length === 0) {
@@ -754,6 +770,11 @@ const handleRightScroll = (e: Event) => {
     if (rightHeaderRef.value) {
         rightHeaderRef.value.scrollLeft = target.scrollLeft
     }
+
+    if (chartGroup) {
+        chartGroup.x = -target.scrollLeft
+        chartGroup.y = -target.scrollTop
+    }
 }
 
 const handleLeftScroll = (e: Event) => {
@@ -776,9 +797,45 @@ const handleLeftScroll = (e: Event) => {
 
 // --- Leafer UI ---
 let leaferApp: App | null = null
-let staticLayer: Leafer | null = null
-let animateLayer: Leafer | null = null
+let chartGroup: Group | null = null
+const animatingLines: any[] = []
+let animationFrameId: number
 const selectedTaskId = ref<string | null>(null)
+
+// Panning State
+const isPanning = ref(false)
+const startPanX = ref(0)
+const startPanY = ref(0)
+const startScrollLeft = ref(0)
+const startScrollTop = ref(0)
+
+const handleGlobalMouseMove = (e: MouseEvent) => {
+    if (!isPanning.value || !rightScrollRef.value) return
+    const dx = e.screenX - startPanX.value
+    const dy = e.screenY - startPanY.value
+    rightScrollRef.value.scrollLeft = startScrollLeft.value - dx
+    rightScrollRef.value.scrollTop = startScrollTop.value - dy
+}
+
+const handleGlobalMouseUp = () => {
+    if (isPanning.value) {
+        isPanning.value = false
+        document.body.style.cursor = ''
+    }
+}
+
+const startAnimationLoop = () => {
+    const animate = () => {
+        if (animatingLines.length > 0) {
+            animatingLines.forEach(line => {
+                const current = line.dashOffset || 0
+                line.dashOffset = current - 0.5 // Flow speed
+            })
+        }
+        animationFrameId = requestAnimationFrame(animate)
+    }
+    animate()
+}
 
 const initLeafer = () => {
     if (!ganttContainerRef.value) return
@@ -794,35 +851,77 @@ const initLeafer = () => {
         type: 'user' as any
     })
     
-    // Layer 1: Static Content (Grid, Tasks, Normal Lines)
-    staticLayer = new Leafer({ type: 'user' as any })
-    leaferApp.add(staticLayer)
-    
-    // Layer 2: Animation Content (Selected Lines, Interactions)
-    animateLayer = new Leafer({ type: 'user' as any })
-    leaferApp.add(animateLayer)
+    // Use chartGroup for all content to support panning sync
+    chartGroup = new Group()
+    leaferApp.tree.add(chartGroup)
     
     drawGantt()
 }
 
+const taskPositions = new Map<string, { x: number, y: number, width: number, height: number }>();
+let lineGroup: Group | null = null;
+
+const updateDependencies = () => {
+    const lg = lineGroup;
+    if (!lg) return;
+    lg.clear();
+    animatingLines.length = 0;
+
+    visibleRows.value.forEach(row => {
+        if (row.type === 'task' && row.data && row.data.dependencies) {
+            row.data.dependencies.forEach((depOrObj: any) => {
+                const depId = typeof depOrObj === 'string' ? depOrObj : depOrObj.taskId;
+                const source = taskPositions.get(depId);
+                const target = taskPositions.get(row.id);
+                
+                if (source && target) {
+                     const startX = source.x + source.width;
+                     const startY = source.y + source.height / 2;
+                     const endX = target.x;
+                     const endY = target.y + target.height / 2;
+                     
+                     const points = getPolylinePoints(startX, startY, endX, endY);
+                     const pathData = pointsToRoundedPath(points, 5);
+                     
+                     const isSelected = selectedTaskId.value && (selectedTaskId.value === row.id || selectedTaskId.value === depId);
+                     
+                     const line = new Path({
+                         path: pathData,
+                         stroke: isSelected ? '#2196f3' : '#999',
+                         strokeWidth: isSelected ? 2 : 1,
+                         dashPattern: isSelected ? [5, 5] : undefined
+                     });
+                     
+                     if (isSelected) {
+                         animatingLines.push(line);
+                     }
+                     lg.add(line);
+                }
+            })
+        }
+    })
+}
+
 const drawGantt = () => {
-    if (!leaferApp || !staticLayer || !animateLayer) return
+    if (!leaferApp || !chartGroup) return
     
     // Reset tooltip when redrawing to prevent stuck tooltips
     tooltip.value.visible = false;
     
-    staticLayer.clear()
-    animateLayer.clear()
+    const group = chartGroup
+    group.clear()
+    animatingLines.length = 0
     
     const { start: minDate } = timeRange.value
     if (!minDate) return
 
     const gridGroup = new Group()
-    const lineGroup = new Group()
+    lineGroup = new Group()
     const taskGroup = new Group()
+    taskPositions.clear()
     
-    // Static Layer Structure: Grid -> Lines (Unselected) -> Tasks
-    staticLayer.add(gridGroup)
+    // Layering
+    group.add(gridGroup)
     
     // Background for panning
     const bgRect = new Rect({
@@ -831,14 +930,42 @@ const drawGantt = () => {
         height: Math.max(totalHeight.value, viewportHeight.value),
         fill: 'transparent'
     })
-    staticLayer.add(bgRect)
+
+    bgRect.on(LeaferPointerEvent.DOWN, (e: LeaferPointerEvent) => {
+        const native = e.origin as MouseEvent
+        if (native && typeof native.screenX === 'number') {
+            isPanning.value = true
+            startPanX.value = native.screenX
+            startPanY.value = native.screenY
+            if (rightScrollRef.value) {
+                startScrollLeft.value = rightScrollRef.value.scrollLeft
+                startScrollTop.value = rightScrollRef.value.scrollTop
+            }
+            document.body.style.cursor = 'grabbing'
+        }
+    })
+
+    group.add(bgRect)
     
-    staticLayer.add(lineGroup)
-    staticLayer.add(taskGroup)
-    
-    // Animation Layer Structure: Selected Lines
-    const activeLineGroup = new Group()
-    animateLayer.add(activeLineGroup)
+    group.add(lineGroup)
+    group.add(taskGroup)
+
+    // Today Line (Top Layer)
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const offsetTime = today.getTime() - minDate.getTime();
+    if (offsetTime >= 0) {
+        const daysFromStart = offsetTime / (1000 * 3600 * 24);
+        const x = daysFromStart * DAY_WIDTH.value;
+        
+        group.add(new Line({
+            points: [x, 0, x, totalHeight.value],
+            stroke: 'red',
+            strokeWidth: 1,
+            dashPattern: [5, 5],
+            opacity: 0.6
+        }));
+    }
     
     // Draw Holidays
     if (zoomLevel.value !== 'year') {
@@ -879,26 +1006,10 @@ const drawGantt = () => {
          }))
     })
 
-    // Today Line
-    const today = new Date();
-    const offsetTime = today.getTime() - minDate.getTime();
-    // Only draw if today is after start date. 
-    // We don't strictly check end date because the canvas might extend or it doesn't hurt to draw outside.
-    if (offsetTime >= 0) {
-        const daysFromStart = offsetTime / (1000 * 3600 * 24);
-        const x = daysFromStart * DAY_WIDTH.value;
-        
-        gridGroup.add(new Line({
-            points: [x, 0, x, totalHeight.value],
-            stroke: 'red',
-            strokeWidth: 1,
-            dashPattern: [5, 5],
-            opacity: 0.6
-        }));
-    }
+
     
     // Rows
-    const taskPositions = new Map<string, { x: number, y: number, width: number, height: number }>();
+    // const taskPositions = new Map<string, { x: number, y: number, width: number, height: number }>();
     
     visibleRows.value.forEach((row, index) => {
         const y = index * ROW_HEIGHT
@@ -922,6 +1033,100 @@ const drawGantt = () => {
                 const barHeight = ROW_HEIGHT - 16;
                 const barY = y + 8;
                 
+                // Item Group for Dragging
+                const itemGroup = new Group({
+                    x: barX,
+                    y: barY,
+                    draggable: true,
+                    cursor: 'grab',
+                    zIndex: 10
+                })
+                taskGroup.add(itemGroup)
+
+                let startDragX = 0;
+                let isTaskResizing = false;
+                let startResizeW = 0;
+                let startResizeClientX = 0;
+                let startResizeGroupX = 0;
+
+                itemGroup.on(DragEvent.START, (e: DragEvent) => {
+                    if (isTaskResizing) {
+                        e.stop()
+                        return
+                    }
+                    startDragX = itemGroup.x || 0
+                    document.body.style.cursor = 'grabbing'
+                })
+
+                itemGroup.on(DragEvent.DRAG, (e: DragEvent) => {
+                    if (isTaskResizing) return
+                    // Lock Y axis
+                    itemGroup.y = barY
+
+                    taskPositions.set(row.id, { x: itemGroup.x || 0, y: barY, width: bar.width || 0, height: barHeight })
+                    updateDependencies()
+                    
+                    // Tooltip update during drag
+                    const currentX = itemGroup.x || 0
+                    const daysDiff = (currentX - barX) / DAY_WIDTH.value
+                    
+                    const newStartMs = start.getTime() + daysDiff * msPerDay
+                    const newEndMs = end.getTime() + daysDiff * msPerDay
+                    
+                    const newS = new Date(newStartMs)
+                    const newE = new Date(newEndMs)
+                    
+                    const sStr = formatDate(newS.toISOString().split('T')[0] || '')
+                    const eStr = formatDate(newE.toISOString().split('T')[0] || '')
+                    
+                    tooltip.value.visible = true
+                    tooltip.value.text = `${row.name}: ${sStr} - ${eStr}`
+                    if (e.origin) {
+                        tooltip.value.x = e.origin.clientX + 10
+                        tooltip.value.y = e.origin.clientY + 10
+                    }
+                })
+
+                itemGroup.on(DragEvent.END, () => {
+                    document.body.style.cursor = ''
+                    if (isTaskResizing) {
+                        isTaskResizing = false
+                        return
+                    }
+                    
+                    tooltip.value.visible = false
+                    
+                    const currentX = itemGroup.x || 0
+                    const diffX = currentX - startDragX
+                    
+                    // Snap to day
+                    const dayDiff = Math.round(diffX / DAY_WIDTH.value)
+                    
+                    if (dayDiff !== 0) {
+                        const newStart = new Date(start)
+                        newStart.setDate(newStart.getDate() + dayDiff)
+                        
+                        const newEnd = new Date(end)
+                        newEnd.setDate(newEnd.getDate() + dayDiff)
+                        
+                        const y1 = newStart.getFullYear()
+                        const m1 = String(newStart.getMonth() + 1).padStart(2, '0')
+                        const d1 = String(newStart.getDate()).padStart(2, '0')
+                        
+                        const y2 = newEnd.getFullYear()
+                        const m2 = String(newEnd.getMonth() + 1).padStart(2, '0')
+                        const d2 = String(newEnd.getDate()).padStart(2, '0')
+                        
+                        store.updateTask(row.id, {
+                            startDate: `${y1}-${m1}-${d1}`,
+                            endDate: `${y2}-${m2}-${d2}`
+                        })
+                    } else {
+                        // Snap back
+                        itemGroup.x = startDragX
+                    }
+                })
+                
                 const color = statusColors[row.data.status] || "#9E9E9E";
                 const progressPct = (row.data.progress || 0) / 100;
                 
@@ -938,8 +1143,8 @@ const drawGantt = () => {
                 }
                 
                 const bar = new Rect({
-                    x: barX, y: barY, width: barW, height: barHeight,
-                    fill: fill as any, // Cast to any to avoid strict type checking on gradient
+                    x: 0, y: 0, width: barW, height: barHeight,
+                    fill: fill as any,
                     stroke: color,
                     strokeWidth: 1,
                     cornerRadius: 4,
@@ -950,11 +1155,11 @@ const drawGantt = () => {
                     scrollToTask(row)
                 })
 
-                taskGroup.add(bar)
+                itemGroup.add(bar)
                 
                 // Text
                 const text = new Text({
-                    x: barX + 5, y: barY + 4,
+                    x: 5, y: 4,
                     text: row.name,
                     fontSize: 12,
                     fill: '#333',
@@ -990,27 +1195,19 @@ const drawGantt = () => {
                 text.on(LeaferPointerEvent.MOVE, moveTooltip)
                 text.on(LeaferPointerEvent.LEAVE, hideTooltip)
                 
-                // Also add tooltip to bar for better UX? 
-                // User said "task text exceeding box... mouse enter show tooltip".
-                // Often it's better if the whole bar shows tooltip, but let's stick to text or both.
-                // If I add to bar, it might be redundant or conflict.
-                // Let's add to bar as well because sometimes text is short but user still hovers bar.
-                // Wait, if text is short, user might not need tooltip, but consistency is good.
-                // However, the request specifically mentioned "text exceeding box".
-                // I'll add to both to be safe and provide better UX.
                 bar.on(LeaferPointerEvent.ENTER, showTooltip)
                 bar.on(LeaferPointerEvent.MOVE, moveTooltip)
                 bar.on(LeaferPointerEvent.LEAVE, hideTooltip)
 
-                taskGroup.add(text)
+                itemGroup.add(text)
 
                 // Resize Handles
                 const handleWidth = 8;
                 
                 // Left Handle
                 const leftHandle = new Rect({
-                    x: barX - handleWidth/2,
-                    y: barY,
+                    x: -handleWidth/2,
+                    y: 0,
                     width: handleWidth,
                     height: barHeight,
                     fill: 'transparent',
@@ -1020,8 +1217,8 @@ const drawGantt = () => {
 
                 // Right Handle
                 const rightHandle = new Rect({
-                    x: barX + barW - handleWidth/2,
-                    y: barY,
+                    x: barW - handleWidth/2,
+                    y: 0,
                     width: handleWidth,
                     height: barHeight,
                     fill: 'transparent',
@@ -1030,106 +1227,134 @@ const drawGantt = () => {
                 });
 
                 // Right Resize Logic
-                rightHandle.on(DragEvent.START, () => {
-                     // No op
+                rightHandle.on(DragEvent.START, (e: DragEvent) => {
+                     e.stop()
+                     isTaskResizing = true
+                     itemGroup.draggable = false
+                     startResizeW = bar.width || 0
+                     if (e.origin) startResizeClientX = e.origin.clientX
                 });
 
                 rightHandle.on(DragEvent.DRAG, (e: DragEvent) => {
-                     const currentW = bar.width ?? 0;
-                     const newW = Math.max(DAY_WIDTH.value, currentW + e.moveX);
-                     bar.width = newW;
+                     e.stop()
+                     if (!e.origin) return
+                     const diff = e.origin.clientX - startResizeClientX
+                     const newW = Math.max(DAY_WIDTH.value, startResizeW + diff)
+                     bar.width = newW
                      
-                     rightHandle.x = (bar.x ?? 0) + (bar.width ?? 0) - handleWidth/2;
+                     rightHandle.x = newW - handleWidth/2
                      
                      // Update Text
-                     text.width = Math.max(0, (bar.width ?? 0) - 10);
+                     text.width = Math.max(0, newW - 10)
+
+                     taskPositions.set(row.id, { x: itemGroup.x || 0, y: barY, width: newW, height: barHeight })
+                     updateDependencies()
                      
                      // Tooltip
-                     const days = (bar.width ?? 0) / DAY_WIDTH.value;
-                     const startOffsetMs = ((bar.x ?? 0) / DAY_WIDTH.value) * (24*3600*1000);
-                     const startDate = new Date(minDate.getTime() + startOffsetMs);
-                     const endDate = new Date(startDate.getTime() + (days - 1) * (24*3600*1000));
+                     const days = newW / DAY_WIDTH.value
+                     const visualStartX = itemGroup.x ?? 0
+                     const startOffsetMs = (visualStartX / DAY_WIDTH.value) * msPerDay
+                     const startDate = new Date(minDate.getTime() + startOffsetMs)
+                     const endDate = new Date(startDate.getTime() + (days - 1) * msPerDay)
                      
-                     const sY = startDate.getFullYear();
-                     const sM = String(startDate.getMonth() + 1).padStart(2, '0');
-                     const sD = String(startDate.getDate()).padStart(2, '0');
-                     const sStr = `${sY}-${sM}-${sD}`;
+                     const sStr = formatDate(startDate.toISOString().split('T')[0] || '')
+                     const eStr = formatDate(endDate.toISOString().split('T')[0] || '')
                      
-                     const eY = endDate.getFullYear();
-                     const eM = String(endDate.getMonth() + 1).padStart(2, '0');
-                     const eD = String(endDate.getDate()).padStart(2, '0');
-                     const eStr = `${eY}-${eM}-${eD}`;
-                     
-                     tooltip.value.visible = true;
-                     tooltip.value.text = `${row.name}: ${sStr} - ${eStr}`;
+                     tooltip.value.visible = true
+                     tooltip.value.text = `${row.name}: ${sStr} - ${eStr}`
                      
                      if (e.origin) {
-                        tooltip.value.x = e.origin.clientX + 10;
-                        tooltip.value.y = e.origin.clientY + 10;
+                        tooltip.value.x = e.origin.clientX + 10
+                        tooltip.value.y = e.origin.clientY + 10
                      }
                 });
 
-                rightHandle.on(DragEvent.END, () => {
-                     tooltip.value.visible = false;
+                rightHandle.on(DragEvent.END, (e: DragEvent) => {
+                     e.stop()
+                     tooltip.value.visible = false
+                     isTaskResizing = false
+                     itemGroup.draggable = true
                      
-                     const days = (bar.width ?? 0) / DAY_WIDTH.value;
-                     const startOffsetMs = ((bar.x ?? 0) / DAY_WIDTH.value) * (24*3600*1000);
-                     const startDate = new Date(minDate.getTime() + startOffsetMs);
-                     const newEndDate = new Date(startDate.getTime() + (days - 1) * (24*3600*1000));
-                     // Adjust for timezone issues if any, but toISOString().split('T')[0] is UTC.
-                     // We should use local date string.
-                     const y = newEndDate.getFullYear();
-                     const m = String(newEndDate.getMonth() + 1).padStart(2, '0');
-                     const d = String(newEndDate.getDate()).padStart(2, '0');
-                     const dateStr = `${y}-${m}-${d}`;
+                     const visualStartX = itemGroup.x ?? 0
+                     const newW = bar.width ?? 0
+                     const days = Math.round(newW / DAY_WIDTH.value)
+                     
+                     const startOffsetMs = (visualStartX / DAY_WIDTH.value) * msPerDay
+                     const startDate = new Date(minDate.getTime() + startOffsetMs)
+                     const newEndDate = new Date(startDate.getTime() + (days - 1) * msPerDay)
+                     
+                     const y = newEndDate.getFullYear()
+                     const m = String(newEndDate.getMonth() + 1).padStart(2, '0')
+                     const d = String(newEndDate.getDate()).padStart(2, '0')
+                     const dateStr = `${y}-${m}-${d}`
                      
                      if (row.endDate !== dateStr) {
-                         store.updateTask(row.id, { endDate: dateStr });
+                         store.updateTask(row.id, { endDate: dateStr })
                      }
-                     // drawGantt(); // Watcher will trigger
                 });
 
                 // Left Resize Logic
+                leftHandle.on(DragEvent.START, (e: DragEvent) => {
+                     e.stop();
+                     isTaskResizing = true;
+                     itemGroup.draggable = false;
+                     startResizeW = bar.width || 0;
+                     if (e.origin) startResizeClientX = e.origin.clientX;
+                     startResizeGroupX = itemGroup.x || 0;
+                });
+
                 leftHandle.on(DragEvent.DRAG, (e: DragEvent) => {
-                     const currentRight = (bar.x ?? 0) + (bar.width ?? 0);
+                     e.stop();
+                     if (!e.origin) return;
+                     const diff = e.origin.clientX - startResizeClientX;
                      
-                     let newX = (bar.x ?? 0) + e.moveX;
-                     let newW = (bar.width ?? 0) - e.moveX;
+                     // Calculate new width first
+                     let newW = startResizeW - diff;
+                     let actualDiff = diff;
                      
                      if (newW < DAY_WIDTH.value) {
                          newW = DAY_WIDTH.value;
-                         newX = currentRight - newW;
+                         actualDiff = startResizeW - DAY_WIDTH.value;
                      }
                      
-                     bar.x = newX;
+                     itemGroup.x = startResizeGroupX + actualDiff;
                      bar.width = newW;
                      
-                     leftHandle.x = (bar.x ?? 0) - handleWidth/2;
-                     text.x = (bar.x ?? 0) + 5;
-                     text.width = Math.max(0, (bar.width ?? 0) - 10);
+                     rightHandle.x = newW - handleWidth/2;
+                     text.width = Math.max(0, newW - 10);
+                     
+                     taskPositions.set(row.id, { x: itemGroup.x || 0, y: barY, width: newW, height: barHeight });
+                     updateDependencies();
                      
                      // Tooltip
-                     const startOffsetMs = ((bar.x ?? 0) / DAY_WIDTH.value) * (24*3600*1000);
+                     const visualStartX = itemGroup.x ?? 0;
+                     const startOffsetMs = (visualStartX / DAY_WIDTH.value) * msPerDay;
                      const startDate = new Date(minDate.getTime() + startOffsetMs);
                      
-                     const sY = startDate.getFullYear();
-                     const sM = String(startDate.getMonth() + 1).padStart(2, '0');
-                     const sD = String(startDate.getDate()).padStart(2, '0');
-                     const sStr = `${sY}-${sM}-${sD}`;
+                     const sStr = formatDate(startDate.toISOString().split('T')[0] || '');
+                     
+                     const days = newW / DAY_WIDTH.value;
+                     const endDate = new Date(startDate.getTime() + (days - 1) * msPerDay);
+                     const eStr = formatDate(endDate.toISOString().split('T')[0] || '');
                      
                      tooltip.value.visible = true;
-                     tooltip.value.text = `${row.name}: ${sStr} - ${formatDate(row.endDate)}`;
+                     tooltip.value.text = `${row.name}: ${sStr} - ${eStr}`;
+
                      if (e.origin) {
                         tooltip.value.x = e.origin.clientX + 10;
                         tooltip.value.y = e.origin.clientY + 10;
                      }
                 });
                 
-                leftHandle.on(DragEvent.END, () => {
+                leftHandle.on(DragEvent.END, (e: DragEvent) => {
+                     e.stop();
                      tooltip.value.visible = false;
+                     isTaskResizing = false;
+                     itemGroup.draggable = true;
                      
-                     const startOffsetMs = ((bar.x ?? 0) / DAY_WIDTH.value) * (24*3600*1000);
-                     const newStartDate = new Date(minDate.getTime() + startOffsetMs);
+                     const visualStartX = itemGroup.x ?? 0;
+                     const startDays = Math.round(visualStartX / DAY_WIDTH.value);
+                     const newStartDate = new Date(minDate.getTime() + startDays * msPerDay);
                      
                      const y = newStartDate.getFullYear();
                      const m = String(newStartDate.getMonth() + 1).padStart(2, '0');
@@ -1139,11 +1364,10 @@ const drawGantt = () => {
                      if (row.startDate !== dateStr) {
                          store.updateTask(row.id, { startDate: dateStr });
                      }
-                     // drawGantt(); // Watcher will trigger
                 });
 
-                taskGroup.add(leftHandle);
-                taskGroup.add(rightHandle);
+                itemGroup.add(leftHandle);
+                itemGroup.add(rightHandle);
                 
                 taskPositions.set(row.id, { x: barX, y: barY, width: barW, height: barHeight })
             }
@@ -1151,41 +1375,7 @@ const drawGantt = () => {
     })
     
     // Dependency Lines
-    visibleRows.value.forEach(row => {
-        if (row.type === 'task' && row.data && row.data.dependencies) {
-            row.data.dependencies.forEach((depOrObj: any) => {
-                const depId = typeof depOrObj === 'string' ? depOrObj : depOrObj.taskId;
-                const source = taskPositions.get(depId);
-                const target = taskPositions.get(row.id);
-                
-                if (source && target) {
-                     const startX = source.x + source.width;
-                     const startY = source.y + source.height / 2;
-                     const endX = target.x;
-                     const endY = target.y + target.height / 2;
-                     
-                     const points = getPolylinePoints(startX, startY, endX, endY);
-                     const pathData = pointsToRoundedPath(points, 5);
-                     
-                     const isSelected = selectedTaskId.value && (selectedTaskId.value === row.id || selectedTaskId.value === depId);
-                     
-                     const line = new Path({
-                         path: pathData,
-                         stroke: isSelected ? '#2196f3' : '#999',
-                         strokeWidth: isSelected ? 2 : 1,
-                         dashPattern: isSelected ? [5, 5] : undefined
-                     });
-                     
-                     if (isSelected) {
-                         activeLineGroup.add(line);
-                         (line as any).animate({ dashOffset: -10 }, { duration: 1000, loop: true })
-                     } else {
-                         lineGroup.add(line);
-                     }
-                }
-            })
-        }
-    })
+    updateDependencies()
 }
 
 // --- Interactions ---
@@ -1208,18 +1398,80 @@ const scrollToTask = (row: any) => {
     if (!rightScrollRef.value || !row.startDate || !row.endDate) return;
     const { start } = timeRange.value;
     const taskStart = parseLocalDate(row.startDate);
+    const taskEnd = parseLocalDate(row.endDate);
+    
+    if (isNaN(taskStart.getTime()) || isNaN(taskEnd.getTime())) return;
+
+    const msPerDay = 1000 * 3600 * 24;
     const diffTimeStart = taskStart.getTime() - start.getTime();
-    const diffDaysStart = diffTimeStart / (1000 * 3600 * 24);
+    const diffDaysStart = diffTimeStart / msPerDay;
     const startX = diffDaysStart * DAY_WIDTH.value;
-    const targetScrollX = startX - 50;
+    
+    // Calculate Task Width
+    const durationMs = taskEnd.getTime() - taskStart.getTime();
+    const durationDays = durationMs / msPerDay + 1;
+    const taskWidth = durationDays * DAY_WIDTH.value;
+    
+    const viewportW = rightScrollRef.value.clientWidth;
+    let targetScrollX;
+
+    // If task is wider than viewport, align to left with padding
+    if (taskWidth > viewportW) {
+        targetScrollX = startX - 20;
+    } else {
+        // Center the task in the viewport
+        const taskCenterX = startX + taskWidth / 2;
+        targetScrollX = taskCenterX - viewportW / 2;
+    }
     
     rightScrollRef.value.scrollTo({ left: Math.max(0, targetScrollX), behavior: 'smooth' });
 }
 
-const handleWheel = (e: WheelEvent) => {
+const handleWheel = async (e: WheelEvent) => {
     if (e.ctrlKey) {
-        e.preventDefault();
-        // Zoom logic can be implemented here if needed
+        e.preventDefault()
+        
+        // Zoom levels from narrowest (year) to widest (month/day view)
+        const levels: ZoomLevel[] = ['year', 'quarter', 'week', 'month']
+        
+        const currentIndex = levels.indexOf(zoomLevel.value)
+        let newIndex = currentIndex
+        
+        // Scroll Up (negative deltaY) -> Zoom In -> Move towards 'month'
+        if (e.deltaY < 0) {
+             newIndex++
+        } else {
+             newIndex--
+        }
+        
+        if (newIndex < 0) newIndex = 0
+        if (newIndex >= levels.length) newIndex = levels.length - 1
+        
+        if (newIndex !== currentIndex && rightScrollRef.value) {
+            const nextZoom = levels[newIndex]
+            
+            const rect = rightScrollRef.value.getBoundingClientRect()
+            const mouseX = e.clientX - rect.left
+            const absoluteX = mouseX + rightScrollRef.value.scrollLeft
+            
+            const { start } = timeRange.value
+            const currentDayW = DAY_WIDTH.value
+            const daysFromStart = absoluteX / currentDayW
+            const timeAtMouse = start.getTime() + daysFromStart * 24 * 3600 * 1000
+            
+            if (nextZoom) zoomLevel.value = nextZoom
+            
+            await nextTick()
+            
+            const newDayW = DAY_WIDTH.value
+            const { start: newStart } = timeRange.value
+            
+            const newDaysFromStart = (timeAtMouse - newStart.getTime()) / (24 * 3600 * 1000)
+            const newAbsoluteX = newDaysFromStart * newDayW
+            const newScrollLeft = newAbsoluteX - mouseX
+            
+            rightScrollRef.value.scrollLeft = newScrollLeft
+        }
     }
 }
 
@@ -1233,10 +1485,6 @@ const handleHeaderMouseLeave = () => {
     tooltip.value.visible = false;
 }
 
-const handleWindowResize = () => {
-    initLeafer();
-    updateSpacer();
-}
 
 const togglePageScroll = (disable: boolean) => {
     const content = document.querySelector('.site-layout-content') as HTMLElement
@@ -1253,19 +1501,54 @@ onDeactivated(() => {
     togglePageScroll(false)
 })
 
+let resizeObserver: ResizeObserver | null = null
+
 onMounted(() => {
+    // Add global mouse listeners for panning
+    window.addEventListener('mousemove', handleGlobalMouseMove)
+    window.addEventListener('mouseup', handleGlobalMouseUp)
+
     if (rightScrollRef.value) {
+        resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                viewportWidth.value = entry.contentRect.width
+                viewportHeight.value = entry.contentRect.height
+                // Force Leafer resize
+                if (leaferApp) {
+                    leaferApp.resize({ width: viewportWidth.value, height: viewportHeight.value })
+                    // Redraw to update background rect size
+                    drawGantt()
+                }
+            }
+        })
+        resizeObserver.observe(rightScrollRef.value)
+        
+        // Initial values
         viewportWidth.value = rightScrollRef.value.clientWidth
         viewportHeight.value = rightScrollRef.value.clientHeight
     }
+
     initLeafer()
-    window.addEventListener('resize', handleWindowResize)
+    // Sync initial scroll
+    if (rightScrollRef.value) {
+        rightScrollRef.value.scrollTop = 0
+        scrollToToday()
+    }
+    
+    startAnimationLoop()
     togglePageScroll(true)
 })
 
 onUnmounted(() => {
-    if (leaferApp) leaferApp.destroy()
-    window.removeEventListener('resize', handleWindowResize)
+    window.removeEventListener('mousemove', handleGlobalMouseMove)
+    window.removeEventListener('mouseup', handleGlobalMouseUp)
+
+    if (animationFrameId) cancelAnimationFrame(animationFrameId)
+    if (resizeObserver) resizeObserver.disconnect()
+    if (leaferApp) {
+        leaferApp.destroy()
+        leaferApp = null
+    }
     togglePageScroll(false)
 })
 
@@ -1345,15 +1628,13 @@ watch([() => store.tasks, () => store.phases, zoomLevel], () => {
   background: #fafafa;
   font-weight: bold;
   overflow: hidden; /* Hide scrollbar but allow programmatic scroll */
+  min-width: fit-content;
 }
 
 .sidebar-body {
   flex: 1;
   overflow-y: auto; /* Allow native scroll */
   overflow-x: auto;
-}
-.sidebar-body::-webkit-scrollbar {
-    width: 0;
 }
 
 .sidebar-row {
@@ -1362,6 +1643,7 @@ watch([() => store.tasks, () => store.phases, zoomLevel], () => {
   align-items: center;
   border-bottom: 1px solid #eee;
   cursor: pointer;
+  min-width: fit-content;
 }
 .sidebar-row:hover {
   background-color: #f5f5f5;

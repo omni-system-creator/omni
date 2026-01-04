@@ -1,0 +1,413 @@
+[vite] connecting...
+client:827 [vite] connected.
+:5173/login:1 [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://www.chromium.org/developers/design-documents/create-amazing-password-forms)
+runtime-core.esm-bundler.js:51  [Vue warn]: Invalid prop: type check failed for prop "pagination". Expected Boolean | Object, got String with value "false". 
+  at <ATable dataSource= Array(5) columns= Array(4) pagination="false"  ... > 
+  at <ProjectList> 
+  at <AsyncComponentWrapper> 
+  at <GridItem key="projects" x=0 y=20  ... > 
+  at <GridLayout key=0 layout= Array(10) onUpdate:layout=fn  ... > 
+  at <HomeView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > 
+  at <RouterView key="/?" > 
+  at <Anonymous hasSider=undefined prefixCls="ant-layout-content" tagName="main"  ... > 
+  at <ALayoutContent style= Object > 
+  at <Anonymous hasSider=undefined prefixCls="ant-layout" tagName="section"  ... > 
+  at <ALayout style= Object > 
+  at <Anonymous hasSider=undefined prefixCls="ant-layout" tagName="section"  ... > 
+  at <ALayout style= Object > 
+  at <MainLayout onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > 
+  at <RouterView> 
+  at <ALocaleProvider locale= Object ANT_MARK__="internalMark" > 
+  at <LocaleReceiver children=fn<children> > 
+  at <AConfigProvider locale= Object > 
+  at <App>
+warn$1 @ runtime-core.esm-bundler.js:51
+runtime-core.esm-bundler.js:51  [Vue warn]: Invalid prop: type check failed for prop "pagination". Expected Boolean | Object, got String with value "false". 
+  at <InternalTable ref=Ref< undefined > prefixCls=undefined columns= Array(4)  ... > 
+  at <ATable dataSource= Array(5) columns= Array(4) pagination="false"  ... > 
+  at <ProjectList> 
+  at <AsyncComponentWrapper> 
+  at <GridItem key="projects" x=0 y=20  ... > 
+  at <GridLayout key=0 layout= Array(10) onUpdate:layout=fn  ... > 
+  at <HomeView onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > 
+  at <RouterView key="/?" > 
+  at <Anonymous hasSider=undefined prefixCls="ant-layout-content" tagName="main"  ... > 
+  at <ALayoutContent style= Object > 
+  at <Anonymous hasSider=undefined prefixCls="ant-layout" tagName="section"  ... > 
+  at <ALayout style= Object > 
+  at <Anonymous hasSider=undefined prefixCls="ant-layout" tagName="section"  ... > 
+  at <ALayout style= Object > 
+  at <MainLayout onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > 
+  at <RouterView> 
+  at <ALocaleProvider locale= Object ANT_MARK__="internalMark" > 
+  at <LocaleReceiver children=fn<children> > 
+  at <AConfigProvider locale= Object > 
+  at <App>
+warn$1 @ runtime-core.esm-bundler.js:51
+Debug.ts:68  UICreator repeat:Group
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Leafer
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Rect
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Box
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Frame
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Ellipse
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Polygon
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Star
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Line
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Image
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Canvas
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Text
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Path
+warn @ Debug.ts:68
+Debug.ts:68  UICreator repeat:Pen
+warn @ Debug.ts:68
+ProjectDetail.vue:53 Project Detail mounted for project: 1111
+Debug.ts:82  Layouter TypeError: Et2.getShadowRenderSpread is not a function
+    at Be2.__updateRenderSpread (UIBounds.ts:42:37)
+    at Be2.__updateRenderSpread (Box.ts:60:62)
+    at Be2.__updateLocalBounds (LeafBounds.ts:84:40)
+    at updateBounds (LeafHelper.ts:43:40)
+    at updateBoundsByBranchStack (BranchHelper.ts:80:13)
+    at Object.updateBounds (BranchHelper.ts:68:9)
+    at __t.fullLayout (Layouter.ts:156:43)
+    at __t.fullLayout (Layouter.ts:142:18)
+    at __t.layoutOnce (Layouter.ts:92:18)
+    at __t.layout (Layouter.ts:61:18) Error
+    at _$t.error (Debug.ts:80:19)
+    at __t.layout (Layouter.ts:64:19)
+    at ye2.emit (Eventer.ts:145:26)
+    at _mt.requestLayout (Renderer.ts:64:21)
+    at _mt.renderOnce (Renderer.ts:131:18)
+    at _mt.render (Renderer.ts:95:18)
+    at ye2.start (Leafer.ts:175:44)
+    at App.ts:57:39
+    at Array.forEach (<anonymous>)
+    at F2.forEach (App.ts:100:23)
+error @ Debug.ts:82
+Debug.ts:82  Renderer TypeError: Pt2.fill is not a function
+    at le2 (UIRender.ts:126:21)
+    at Be2.__drawFast (UIRender.ts:32:9)
+    at Be2.__draw (UIRender.ts:92:23)
+    at Be2.__render (LeafRender.ts:35:22)
+    at Be2.__render (Box.ts:154:18)
+    at ge2.__renderBranch (BranchRender.ts:68:74)
+    at ge2.__render (BranchRender.ts:51:22)
+    at ge2.__renderBranch (BranchRender.ts:68:74)
+    at ge2.__render (BranchRender.ts:51:22)
+    at ge2.__renderBranch (BranchRender.ts:68:74) Error
+    at _$t.error (Debug.ts:80:19)
+    at _mt.render (Renderer.ts:101:19)
+    at ye2.start (Leafer.ts:175:44)
+    at App.ts:57:39
+    at Array.forEach (<anonymous>)
+    at F2.forEach (App.ts:100:23)
+    at F2.start (App.ts:57:14)
+error @ Debug.ts:82
+3Debug.ts:82  Renderer TypeError: Pt2.fill is not a function
+    at le2 (UIRender.ts:126:21)
+    at Be2.__drawFast (UIRender.ts:32:9)
+    at Be2.__draw (UIRender.ts:92:23)
+    at Be2.__render (LeafRender.ts:35:22)
+    at Be2.__render (Box.ts:154:18)
+    at ge2.__renderBranch (BranchRender.ts:68:74)
+    at ge2.__render (BranchRender.ts:51:22)
+    at ge2.__renderBranch (BranchRender.ts:68:74)
+    at ge2.__render (BranchRender.ts:51:22)
+    at ge2.__renderBranch (BranchRender.ts:68:74) Error
+    at _$t.error (Debug.ts:80:19)
+    at _mt.render (Renderer.ts:101:19)
+    at _mt.checkRender (Renderer.ts:79:56)
+    at Renderer.ts:74:37
+    at Array.forEach (<anonymous>)
+    at _mt.checkRender (Renderer.ts:72:52)
+    at e2 (Renderer.ts:252:18)
+error @ Debug.ts:82
+Debug.ts:82  Layouter TypeError: Pt2.compute is not a function
+    at $t2.__computePaint (UIData.ts:136:25)
+    at we2.__onUpdateSize (UI.ts:457:108)
+    at we2.__updateWorldBounds (LeafBounds.ts:22:52)
+    at updateBounds (LeafHelper.ts:44:42)
+    at updateBoundsByBranchStack (BranchHelper.ts:77:17)
+    at Object.updateBounds (BranchHelper.ts:68:9)
+    at __t.fullLayout (Layouter.ts:156:43)
+    at __t.fullLayout (Layouter.ts:142:18)
+    at __t.layoutOnce (Layouter.ts:92:18)
+    at __t.layout (Layouter.ts:61:18) Error
+    at _$t.error (Debug.ts:80:19)
+    at __t.layout (Layouter.ts:64:19)
+    at ye2.emit (Eventer.ts:145:26)
+    at _mt.requestLayout (Renderer.ts:64:21)
+    at _mt.renderOnce (Renderer.ts:131:18)
+    at _mt.render (Renderer.ts:95:18)
+    at ye2.start (Leafer.ts:175:44)
+    at App.ts:57:39
+    at Array.forEach (<anonymous>)
+    at F2.forEach (App.ts:100:23)
+error @ Debug.ts:82
+Debug.ts:82  Renderer TypeError: Pt2.stroke is not a function
+    at le2 (UIRender.ts:129:45)
+    at Ze2.__drawFast (UIRender.ts:32:9)
+    at Ze2.__draw (UIRender.ts:92:23)
+    at Ze2.__render (LeafRender.ts:35:22)
+    at ge2.__renderBranch (BranchRender.ts:68:74)
+    at ge2.__render (BranchRender.ts:51:22)
+    at ye2.__renderBranch (BranchRender.ts:68:74)
+    at ye2.__render (BranchRender.ts:51:22)
+    at m.render (index.ts:27:12)
+    at _mt.__render (Renderer.ts:203:18) Error
+    at _$t.error (Debug.ts:80:19)
+    at _mt.render (Renderer.ts:101:19)
+    at ye2.start (Leafer.ts:175:44)
+    at App.ts:57:39
+    at Array.forEach (<anonymous>)
+    at F2.forEach (App.ts:100:23)
+    at F2.start (App.ts:57:14)
+error @ Debug.ts:82
+Interaction.ts:81 [Violation]Added non-passive event listener to a scroll-blocking 'touchstart' event. Consider marking event handler as 'passive' to make the page more responsive. See https://www.chromestatus.com/feature/5745543795965952
+__listenEvents @ Interaction.ts:81
+Mt3 @ Interaction.ts:80
+Lt4 @ Interaction.ts:18
+interaction @ index.ts:17
+init @ Leafer.ts:136
+init @ App.ts:29
+ye2 @ Leafer.ts:96
+F2 @ App.ts:25
+initLeafer @ TaskGanttView.vue:790
+handleWindowResize @ TaskGanttView.vue:1236
+Interaction.ts:81 [Violation]Added non-passive event listener to a scroll-blocking 'wheel' event. Consider marking event handler as 'passive' to make the page more responsive. See https://www.chromestatus.com/feature/5745543795965952
+__listenEvents @ Interaction.ts:81
+Mt3 @ Interaction.ts:80
+Lt4 @ Interaction.ts:18
+interaction @ index.ts:17
+init @ Leafer.ts:136
+init @ App.ts:29
+ye2 @ Leafer.ts:96
+F2 @ App.ts:25
+initLeafer @ TaskGanttView.vue:790
+handleWindowResize @ TaskGanttView.vue:1236
+[Violation]Forced reflow while executing JavaScript took 32ms
+Debug.ts:82  Layouter TypeError: Pt2.compute is not a function
+    at $t2.__computePaint (UIData.ts:136:25)
+    at we2.__onUpdateSize (UI.ts:457:108)
+    at we2.__updateWorldBounds (LeafBounds.ts:22:52)
+    at updateBounds (LeafHelper.ts:44:42)
+    at updateBoundsByBranchStack (BranchHelper.ts:77:17)
+    at Object.updateBounds (BranchHelper.ts:68:9)
+    at __t.fullLayout (Layouter.ts:156:43)
+    at __t.fullLayout (Layouter.ts:142:18)
+    at __t.layoutOnce (Layouter.ts:92:18)
+    at __t.layout (Layouter.ts:61:18) Error
+    at _$t.error (Debug.ts:80:19)
+    at __t.layout (Layouter.ts:64:19)
+    at ye2.emit (Eventer.ts:145:26)
+    at _mt.requestLayout (Renderer.ts:64:21)
+    at _mt.renderOnce (Renderer.ts:131:18)
+    at _mt.render (Renderer.ts:95:18)
+    at ye2.start (Leafer.ts:175:44)
+    at App.ts:57:39
+    at Array.forEach (<anonymous>)
+    at F2.forEach (App.ts:100:23)
+error @ Debug.ts:82
+layout @ Layouter.ts:64
+emit @ Eventer.ts:145
+requestLayout @ Renderer.ts:64
+renderOnce @ Renderer.ts:131
+render @ Renderer.ts:95
+start @ Leafer.ts:175
+(匿名) @ App.ts:57
+forEach @ App.ts:100
+start @ App.ts:57
+setTimeout
+init @ Leafer.ts:155
+init @ App.ts:29
+ye2 @ Leafer.ts:96
+F2 @ App.ts:25
+initLeafer @ TaskGanttView.vue:790
+handleWindowResize @ TaskGanttView.vue:1236
+Debug.ts:82  Renderer TypeError: Pt2.stroke is not a function
+    at le2 (UIRender.ts:129:45)
+    at Ze2.__drawFast (UIRender.ts:32:9)
+    at Ze2.__draw (UIRender.ts:92:23)
+    at Ze2.__render (LeafRender.ts:35:22)
+    at ge2.__renderBranch (BranchRender.ts:68:74)
+    at ge2.__render (BranchRender.ts:51:22)
+    at ye2.__renderBranch (BranchRender.ts:68:74)
+    at ye2.__render (BranchRender.ts:51:22)
+    at m.render (index.ts:27:12)
+    at _mt.__render (Renderer.ts:203:18) Error
+    at _$t.error (Debug.ts:80:19)
+    at _mt.render (Renderer.ts:101:19)
+    at ye2.start (Leafer.ts:175:44)
+    at App.ts:57:39
+    at Array.forEach (<anonymous>)
+    at F2.forEach (App.ts:100:23)
+    at F2.start (App.ts:57:14)
+error @ Debug.ts:82
+render @ Renderer.ts:101
+start @ Leafer.ts:175
+(匿名) @ App.ts:57
+forEach @ App.ts:100
+start @ App.ts:57
+setTimeout
+init @ Leafer.ts:155
+init @ App.ts:29
+ye2 @ Leafer.ts:96
+F2 @ App.ts:25
+initLeafer @ TaskGanttView.vue:790
+handleWindowResize @ TaskGanttView.vue:1236
+Debug.ts:82  Leafer TypeError: Ft2.recycleImage is not a function
+    at $t2.__removePaint (UIData.ts:169:20)
+    at $t2.setFill [as fill] (UIData.ts:89:36)
+    at we2.__realSetAttr (LeafDataProxy.ts:62:14)
+    at we2.__setAttr (LeafDataProxy.ts:47:18)
+    at we2.set [as fill] (data.ts:148:18)
+    at we2.destroy (UI.ts:546:14)
+    at Branch.ts:122:36
+    at Array.forEach (<anonymous>)
+    at ge2.removeAll (Branch.ts:120:22)
+    at ge2.clear (Branch.ts:128:14) Error
+    at _$t.error (Debug.ts:80:19)
+    at e2 (Leafer.ts:476:27)
+error @ Debug.ts:82
+e2 @ Leafer.ts:476
+setTimeout
+destroy @ Leafer.ts:480
+(匿名) @ Branch.ts:122
+removeAll @ Branch.ts:120
+clear @ Branch.ts:128
+destroy @ Leaf.ts:701
+destroy @ UI.ts:548
+e2 @ Leafer.ts:472
+setTimeout
+destroy @ Leafer.ts:480
+initLeafer @ TaskGanttView.vue:788
+handleWindowResize @ TaskGanttView.vue:1236
+Interaction.ts:81 [Violation]Added non-passive event listener to a scroll-blocking 'touchstart' event. Consider marking event handler as 'passive' to make the page more responsive. See https://www.chromestatus.com/feature/5745543795965952
+__listenEvents @ Interaction.ts:81
+Mt3 @ Interaction.ts:80
+Lt4 @ Interaction.ts:18
+interaction @ index.ts:17
+init @ Leafer.ts:136
+init @ App.ts:29
+ye2 @ Leafer.ts:96
+F2 @ App.ts:25
+initLeafer @ TaskGanttView.vue:790
+handleWindowResize @ TaskGanttView.vue:1236
+Interaction.ts:81 [Violation]Added non-passive event listener to a scroll-blocking 'wheel' event. Consider marking event handler as 'passive' to make the page more responsive. See https://www.chromestatus.com/feature/5745543795965952
+__listenEvents @ Interaction.ts:81
+Mt3 @ Interaction.ts:80
+Lt4 @ Interaction.ts:18
+interaction @ index.ts:17
+init @ Leafer.ts:136
+init @ App.ts:29
+ye2 @ Leafer.ts:96
+F2 @ App.ts:25
+initLeafer @ TaskGanttView.vue:790
+handleWindowResize @ TaskGanttView.vue:1236
+Debug.ts:82  Layouter TypeError: Pt2.compute is not a function
+    at $t2.__computePaint (UIData.ts:136:25)
+    at we2.__onUpdateSize (UI.ts:457:108)
+    at we2.__updateWorldBounds (LeafBounds.ts:22:52)
+    at updateBounds (LeafHelper.ts:44:42)
+    at updateBoundsByBranchStack (BranchHelper.ts:77:17)
+    at Object.updateBounds (BranchHelper.ts:68:9)
+    at __t.fullLayout (Layouter.ts:156:43)
+    at __t.fullLayout (Layouter.ts:142:18)
+    at __t.layoutOnce (Layouter.ts:92:18)
+    at __t.layout (Layouter.ts:61:18) Error
+    at _$t.error (Debug.ts:80:19)
+    at __t.layout (Layouter.ts:64:19)
+    at ye2.emit (Eventer.ts:145:26)
+    at _mt.requestLayout (Renderer.ts:64:21)
+    at _mt.renderOnce (Renderer.ts:131:18)
+    at _mt.render (Renderer.ts:95:18)
+    at ye2.start (Leafer.ts:175:44)
+    at App.ts:57:39
+    at Array.forEach (<anonymous>)
+    at F2.forEach (App.ts:100:23)
+error @ Debug.ts:82
+layout @ Layouter.ts:64
+emit @ Eventer.ts:145
+requestLayout @ Renderer.ts:64
+renderOnce @ Renderer.ts:131
+render @ Renderer.ts:95
+start @ Leafer.ts:175
+(匿名) @ App.ts:57
+forEach @ App.ts:100
+start @ App.ts:57
+setTimeout
+init @ Leafer.ts:155
+init @ App.ts:29
+ye2 @ Leafer.ts:96
+F2 @ App.ts:25
+initLeafer @ TaskGanttView.vue:790
+handleWindowResize @ TaskGanttView.vue:1236
+Debug.ts:82  Renderer TypeError: Pt2.stroke is not a function
+    at le2 (UIRender.ts:129:45)
+    at Ze2.__drawFast (UIRender.ts:32:9)
+    at Ze2.__draw (UIRender.ts:92:23)
+    at Ze2.__render (LeafRender.ts:35:22)
+    at ge2.__renderBranch (BranchRender.ts:68:74)
+    at ge2.__render (BranchRender.ts:51:22)
+    at ye2.__renderBranch (BranchRender.ts:68:74)
+    at ye2.__render (BranchRender.ts:51:22)
+    at m.render (index.ts:27:12)
+    at _mt.__render (Renderer.ts:203:18) Error
+    at _$t.error (Debug.ts:80:19)
+    at _mt.render (Renderer.ts:101:19)
+    at ye2.start (Leafer.ts:175:44)
+    at App.ts:57:39
+    at Array.forEach (<anonymous>)
+    at F2.forEach (App.ts:100:23)
+    at F2.start (App.ts:57:14)
+error @ Debug.ts:82
+render @ Renderer.ts:101
+start @ Leafer.ts:175
+(匿名) @ App.ts:57
+forEach @ App.ts:100
+start @ App.ts:57
+setTimeout
+init @ Leafer.ts:155
+init @ App.ts:29
+ye2 @ Leafer.ts:96
+F2 @ App.ts:25
+initLeafer @ TaskGanttView.vue:790
+handleWindowResize @ TaskGanttView.vue:1236
+Debug.ts:82  Leafer TypeError: Ft2.recycleImage is not a function
+    at $t2.__removePaint (UIData.ts:169:20)
+    at $t2.setFill [as fill] (UIData.ts:89:36)
+    at we2.__realSetAttr (LeafDataProxy.ts:62:14)
+    at we2.__setAttr (LeafDataProxy.ts:47:18)
+    at we2.set [as fill] (data.ts:148:18)
+    at we2.destroy (UI.ts:546:14)
+    at Branch.ts:122:36
+    at Array.forEach (<anonymous>)
+    at ge2.removeAll (Branch.ts:120:22)
+    at ge2.clear (Branch.ts:128:14) Error
+    at _$t.error (Debug.ts:80:19)
+    at e2 (Leafer.ts:476:27)
+error @ Debug.ts:82
+e2 @ Leafer.ts:476
+setTimeout
+destroy @ Leafer.ts:480
+(匿名) @ Branch.ts:122
+removeAll @ Branch.ts:120
+clear @ Branch.ts:128
+destroy @ Leaf.ts:701
+destroy @ UI.ts:548
+e2 @ Leafer.ts:472
+setTimeout
+destroy @ Leafer.ts:480
+initLeafer @ TaskGanttView.vue:788
+handleWindowResize @ TaskGanttView.vue:1236
