@@ -5,14 +5,33 @@ import ProjectPropertiesDialog from './ProjectPropertiesDialog.vue';
 
 import { Modal, message } from 'ant-design-vue';
 import type { TaskStatus } from "@/types/project";
-import { onMounted } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
 
 const mounted = ref(false);
-  onMounted(() => {
-    setTimeout(() => {
-      mounted.value = true;
-    }, 100);
-  });
+
+const handleKeydown = async (e: KeyboardEvent) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    await handleSaveProject();
+  }
+};
+
+const isClipboardSupported = typeof window !== 'undefined' && 
+                           window.isSecureContext && 
+                           navigator.clipboard && 
+                           typeof ClipboardItem !== 'undefined';
+console.log('Clipboard Support:', isClipboardSupported);
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown);
+  setTimeout(() => {
+    mounted.value = true;
+  }, 100);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
+});
 
 const props = defineProps<{
   isActive: boolean;
@@ -193,14 +212,19 @@ const handleSaveProject = async () => {
 };
 
 const exportJson = () => {
-  const json = store.exportProjectData();
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${store.projectInfo.code}_${store.projectInfo.name}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  try {
+    const json = store.exportProjectData();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${store.projectInfo.code}_${store.projectInfo.name}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    message.success('导出成功');
+  } catch (e) {
+    message.error('导出失败');
+  }
 };
 
 const loadProject = () => {

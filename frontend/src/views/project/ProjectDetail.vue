@@ -24,6 +24,7 @@
           </div>
         </a-tab-pane>
       </a-tabs>
+      <StatusBar />
     </div>
 
     <!-- Global Detail Panel (Right Side) -->
@@ -42,21 +43,26 @@ import LeaferCanvas from './components/LeaferCanvas.vue';
 import DetailPanel from './components/DetailPanel.vue';
 import TaskGanttView from './components/TaskGanttView.vue';
 import KanbanView from './components/KanbanView.vue';
+import StatusBar from './components/StatusBar.vue';
 
 const route = useRoute();
 const store = useProjectFlowStore();
 const activeTab = ref('flowchart');
 
-onMounted(() => {
+onMounted(async () => {
   const projectId = route.params.id as string;
   if (projectId) {
     console.log('Project Detail mounted for project:', projectId);
-    store.fetchProject(projectId);
+    await store.fetchProject(projectId);
+    // Initialize real-time collaboration
+    store.initSocket();
   }
 });
 
 onUnmounted(() => {
-  // Optional cleanup
+    if (store.socket) {
+        store.socket.stop();
+    }
 });
 
 // Clear selection when switching tabs to avoid context confusion (optional)

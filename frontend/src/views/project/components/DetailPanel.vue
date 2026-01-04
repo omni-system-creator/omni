@@ -7,8 +7,6 @@ import { UploadOutlined } from '@ant-design/icons-vue';
 
 const store = useProjectFlowStore();
 
-// Delete Modal State handled by Modal.confirm
-
 const selectedElement = computed(() => store.selectedElement)
 
 const task = computed(() => {
@@ -59,9 +57,54 @@ const port = computed(() => {
     return null
 })
 
+const gradientPresets = [
+  { name: '默认蓝', start: '#ffffff', end: '#B3E5FC' },
+  { name: '清新绿', start: '#E8F5E9', end: '#66BB6A' },
+  { name: '活力橙', start: '#FFF3E0', end: '#FFA726' },
+  { name: '热情红', start: '#FFEBEE', end: '#EF5350' },
+  { name: '高贵紫', start: '#F3E5F5', end: '#AB47BC' },
+  { name: '天空蓝', start: '#E3F2FD', end: '#42A5F5' },
+  { name: '优雅灰', start: '#F5F5F5', end: '#BDBDBD' },
+  { name: '柠檬黄', start: '#FFFDE7', end: '#FFEE58' },
+];
+
+const quickColors = [
+  '#ffffff', '#f0f0f0', '#cccccc', '#999999', '#333333', '#000000', // Grayscale
+  '#B3E5FC', '#2196F3', '#0D47A1', // Blues
+  '#C8E6C9', '#4CAF50', '#1B5E20', // Greens
+  '#FFE0B2', '#FF9800', '#E65100', // Oranges
+  '#FFCDD2', '#F44336', '#B71C1C', // Reds
+  '#E1BEE7', '#9C27B0', '#4A148C', // Purples
+  '#FFF9C4', '#FFEB3B', '#FBC02D', // Yellows
+];
+
 const close = () => {
   store.clearSelection()
 }
+
+const saveTaskChange = () => {
+  if (task.value) {
+    store.updateTask(task.value.id, {
+      name: task.value.name,
+      owner: task.value.owner,
+      status: task.value.status,
+      progress: task.value.progress,
+      startDate: task.value.startDate,
+      endDate: task.value.endDate,
+      description: task.value.description,
+      startColor: task.value.startColor,
+      endColor: task.value.endColor
+    });
+  }
+};
+
+const applyGradient = (preset: { start: string, end: string }) => {
+  if (task.value) {
+    task.value.startColor = preset.start;
+    task.value.endColor = preset.end;
+    saveTaskChange();
+  }
+};
 
 const deleteTask = () => {
   if (task.value) {
@@ -114,31 +157,24 @@ const deleteSwimlane = () => {
   }
 }
 
-const removeAttachment = async (attId: string) => {
+const removeAttachment = async (attId: string, attName: string) => {
   if (task.value) {
-    // 1. Get Project ID from URL
-    // const path = window.location.pathname
-    // const match = path.match(/\/project\/([^/]+)/)
-    // const projectId = match && match[1] ? match[1] : store.projectInfo.code; // Unused
+    // 1. Get Project ID from URL or store
+    const projectId = store.projectInfo.code;
 
     try {
         // 2. Call Delete API
-        // Using mock success for now as backend might not be ready
-        // const response = await fetch(`/api/project/${projectId}/task/${task.value.id}/attachment/${encodeURIComponent(attName)}`, {
-        //     method: 'DELETE'
-        // });
+        const response = await fetch(`/api/project/${projectId}/task/${task.value.id}/attachment/${encodeURIComponent(attName)}`, {
+            method: 'DELETE'
+        });
 
-        // if (response.ok) {
+        if (response.ok) {
              // 3. Remove from store
-             // store.removeAttachment(task.value.id, attId) // This method is missing in store, need to implement or assume it exists
-             // For now just manually filter
-             if (task.value.attachments) {
-               task.value.attachments = task.value.attachments.filter(a => a.id !== attId)
-             }
+             store.removeAttachment(task.value.id, attId)
              message.success('附件删除成功')
-        // } else {
-        //      message.error('附件删除失败')
-        // }
+        } else {
+             message.error('附件删除失败')
+        }
     } catch (e) {
         console.error(e);
         message.error('附件删除出错')
@@ -149,39 +185,11 @@ const removeAttachment = async (attId: string) => {
 const customUploadRequest = async ({ file, onSuccess, onError }: UploadRequestOption) => {
     if (!task.value) return;
     
-    // Simulate upload
-    setTimeout(() => {
-        if (task.value) {
-             if (!task.value.attachments) task.value.attachments = []
-             task.value.attachments.push({
-                id: 'a' + Date.now(),
-                name: (file as File).name,
-                url: '#',
-                type: 'file',
-                uploadDate: new Date().toISOString().split('T')[0] || ''
-             })
-             message.success('上传成功');
-             if (onSuccess) onSuccess("ok");
-        } else {
-             message.error('上传失败');
-             if (onError) onError(new Error("No task"));
-        }
-    }, 1000)
-    
-    /* 
-    // Real implementation
     const formData = new FormData();
-    if (data) {
-        Object.keys(data).forEach((key) => {
-            formData.append(key, (data as any)[key]);
-        });
-    }
     formData.append('file', file as File);
 
     // Get Project ID
-    const path = window.location.pathname
-    const match = path.match(/\/project\/([^/]+)/)
-    const projectId = match && match[1] ? match[1] : store.projectInfo.code;
+    const projectId = store.projectInfo.code;
 
     try {
         const response = await fetch(`/api/project/${projectId}/task/${task.value.id}/attachment`, {
@@ -196,7 +204,13 @@ const customUploadRequest = async ({ file, onSuccess, onError }: UploadRequestOp
         const result = await response.json();
         
         // Add to store
-        // store.addAttachment(...)
+        store.addAttachment(task.value.id, {
+            id: 'a' + Date.now(),
+            name: result.file.name,
+            url: result.file.url,
+            type: 'file', 
+            uploadDate: new Date().toISOString().split('T')[0] || ''
+        });
         
         message.success('上传成功');
         if (onSuccess) onSuccess(result);
@@ -205,21 +219,19 @@ const customUploadRequest = async ({ file, onSuccess, onError }: UploadRequestOp
         message.error('上传失败');
         if (onError) onError(e as Error);
     }
-    */
 };
 
 const updateDependencyType = (val: 'straight' | 'polyline' | 'curve') => {
     const newType = val
     if (dependency.value && dependency.value.sourceId && dependency.value.targetId) {
-        const depVal = dependency.value
-        store.updateDependencyControlPoints(depVal.sourceId!, depVal.targetId!, [], 2, newType)
+        store.updateDependencyType(dependency.value.sourceId!, dependency.value.targetId!, newType)
     }
 }
 
 const updateDependencyControlPointCount = (val: number) => {
     const count = val
     if (dependency.value && dependency.value.sourceId && dependency.value.targetId) {
-        store.updateDependencyControlPoints(dependency.value.sourceId!, dependency.value.targetId!, [], count)
+        store.updateDependencyControlPointCount(dependency.value.sourceId!, dependency.value.targetId!, count)
     }
 }
 
@@ -281,15 +293,16 @@ const updatePortPercentage = (e: Event) => {
         </div>
         <div class="field">
           <label>名称:</label>
-          <a-input v-model:value="task.name" />
+          <a-input v-model:value="task.name" @change="saveTaskChange" />
         </div>
+
         <div class="field">
           <label>负责人:</label>
-          <a-input v-model:value="task.owner" />
+          <a-input v-model:value="task.owner" @change="saveTaskChange" />
         </div>
         <div class="field">
           <label>状态:</label>
-          <a-select v-model:value="task.status" style="width: 100%">
+          <a-select v-model:value="task.status" @change="saveTaskChange" style="width: 100%">
             <a-select-option value="pending">未开始</a-select-option>
             <a-select-option value="in_progress">进行中</a-select-option>
             <a-select-option value="completed">已完成</a-select-option>
@@ -299,25 +312,53 @@ const updatePortPercentage = (e: Event) => {
         <div class="field">
           <label>进度:</label>
           <div style="display: flex; align-items: center; gap: 10px;">
-              <input type="range" v-model.number="task.progress" min="0" max="100" style="flex:1" />
+              <input type="range" v-model.number="task.progress" min="0" max="100" @change="saveTaskChange" style="flex:1" />
               <span>{{ task.progress }}%</span>
           </div>
         </div>
         <div class="field">
           <label>开始时间:</label>
-          <a-input v-model:value="task.startDate" type="date" />
+          <a-input v-model:value="task.startDate" type="date" @change="saveTaskChange" />
         </div>
         <div class="field">
           <label>结束时间:</label>
-          <a-input v-model:value="task.endDate" type="date" />
+          <a-input v-model:value="task.endDate" type="date" @change="saveTaskChange" />
         </div>
         
+        <div class="field">
+          <label>进度条样式:</label>
+          <div class="color-picker-group">
+            <div class="color-input">
+               <span>起始色:</span>
+               <div class="color-control">
+                  <input type="color" v-model="task.startColor" @change="saveTaskChange" />
+               </div>
+            </div>
+            <div class="color-input">
+               <span>结束色:</span>
+               <div class="color-control">
+                  <input type="color" v-model="task.endColor" @change="saveTaskChange" />
+               </div>
+            </div>
+          </div>
+          <div class="preset-colors">
+             <div 
+               v-for="(preset, index) in gradientPresets" 
+               :key="index" 
+               class="preset-swatch"
+               :style="{ background: `linear-gradient(to right, ${preset.start}, ${preset.end})` }"
+               @click="applyGradient(preset)"
+               :title="preset.name"
+             ></div>
+          </div>
+        </div>
+
         <div class="field">
           <label>附件:</label>
           <ul class="attachment-list">
             <li v-for="att in task.attachments" :key="att.id">
               <a :href="att.url" target="_blank">{{ att.name }}</a>
-              <span class="remove-att" @click="removeAttachment(att.id)" title="删除附件">×</span>
+              <span class="remove-att" @click="removeAttachment(att.id, att.name)" title="删除附件">×</span>
             </li>
           </ul>
           
@@ -330,6 +371,11 @@ const updatePortPercentage = (e: Event) => {
                 上传附件
             </a-button>
           </a-upload>
+        </div>
+
+        <div class="field">
+          <label>备注:</label>
+          <textarea v-model="task.description" @change="saveTaskChange" placeholder="请输入备注信息"></textarea>
         </div>
 
         <div class="actions">
@@ -352,6 +398,15 @@ const updatePortPercentage = (e: Event) => {
         <div class="field">
           <label>颜色:</label>
           <input type="color" v-model="phase.color" style="width: 100%; height: 32px; padding: 2px;" />
+          <div class="preset-colors">
+             <div 
+               v-for="(color, index) in quickColors" 
+               :key="index" 
+               class="preset-swatch"
+               :style="{ background: color }"
+               @click="phase.color = color"
+             ></div>
+          </div>
         </div>
         <div class="actions">
             <a-button danger @click="deletePhase">删除阶段</a-button>
@@ -373,6 +428,15 @@ const updatePortPercentage = (e: Event) => {
         <div class="field">
           <label>颜色:</label>
           <input type="color" v-model="swimlane.color" style="width: 100%; height: 32px; padding: 2px;" />
+          <div class="preset-colors">
+             <div 
+               v-for="(color, index) in quickColors" 
+               :key="index" 
+               class="preset-swatch"
+               :style="{ background: color }"
+               @click="swimlane.color = color"
+             ></div>
+          </div>
         </div>
         <div class="actions">
             <a-button danger @click="deleteSwimlane">删除专业</a-button>
@@ -533,5 +597,60 @@ label {
 }
 .remove-att:hover {
   color: red;
+}
+
+.color-picker-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.color-input {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.color-input span {
+  font-size: 12px;
+  color: #666;
+}
+
+.color-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+}
+
+.preset-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.preset-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid #ddd;
+  transition: transform 0.2s;
+}
+
+.preset-swatch:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+textarea {
+  width: 100%;
+  height: 80px;
+  padding: 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  resize: vertical;
 }
 </style>

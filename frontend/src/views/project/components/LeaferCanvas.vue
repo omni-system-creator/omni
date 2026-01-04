@@ -19,6 +19,32 @@ import { useProjectFlowStore } from "@/stores/projectFlowStore";
 
 const store = useProjectFlowStore();
 
+// Helper to determine text color based on background brightness
+const getContrastColor = (hexcolor: string) => {
+    if (!hexcolor) return '#000000';
+    
+    // Handle hex shorthand (e.g. #fff)
+    let hex = hexcolor.replace('#', '');
+    if (hex.length === 3) {
+        const c1 = hex[0] || '0';
+        const c2 = hex[1] || '0';
+        const c3 = hex[2] || '0';
+        hex = c1 + c1 + c2 + c2 + c3 + c3;
+    }
+    
+    if (hex.length !== 6) return '#000000'; // Default to black for invalid hex
+
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Standard luminance calculation
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    
+    // Higher threshold prefers black text (easier to read on pastels)
+    return (yiq >= 128) ? '#000000' : '#FFFFFF';
+}
+
 // Helper to convert hex to rgb
 const hexToRgb = (hex: string) => {
     if (!hex) return null;
@@ -53,6 +79,7 @@ const connectingStartX = ref(0);
 const connectingStartY = ref(0);
 const selectedLine = ref<{ taskId: string; depId: string } | null>(null);
 const handleGroup = new Group({ zIndex: 1005 });
+const cursorGroup = new Group({ zIndex: 2000 });
 
 watch(
   () => store.selectedElement,
@@ -975,9 +1002,11 @@ const updateHandleGroup = () => {
       depObj?.controlPoints
     );
 
+    const virtualHandles: Ellipse[] = [];
+
     const polyHandles: Rect[] = [];
 
-    cps.forEach((p) => {
+    cps.forEach((p, i) => {
       const h = new Rect({
         x: p.x - 4,
         y: p.y - 4,
@@ -1012,6 +1041,43 @@ const updateHandleGroup = () => {
         });
         pathData += ` L ${points.endX} ${points.endY}`;
 
+        // Update virtual handles (hollow points) positions
+        const vhPrev = virtualHandles[i];
+        if (vhPrev) {
+            // Previous point (Start or Prev Handle)
+            let prevX = points.startX;
+            let prevY = points.startY;
+            
+            if (i > 0) {
+                const prevHandle = polyHandles[i-1];
+                if (prevHandle) {
+                    prevX = prevHandle.x! + 4;
+                    prevY = prevHandle.y! + 4;
+                }
+            }
+            
+            vhPrev.x = (prevX + (h.x! + 4)) / 2 - 3;
+            vhPrev.y = (prevY + (h.y! + 4)) / 2 - 3;
+        }
+
+        const vhNext = virtualHandles[i+1];
+        if (vhNext) {
+            // Next point (End or Next Handle)
+            let nextX = points.endX;
+            let nextY = points.endY;
+
+            if (i < polyHandles.length - 1) {
+                const nextHandle = polyHandles[i+1];
+                if (nextHandle) {
+                    nextX = nextHandle.x! + 4;
+                    nextY = nextHandle.y! + 4;
+                }
+            }
+            
+            vhNext.x = ((h.x! + 4) + nextX) / 2 - 3;
+            vhNext.y = ((h.y! + 4) + nextY) / 2 - 3;
+        }
+
         // Find the line object and update it
         const lines = lineMap.get(taskId);
         const lineObj = lines?.find(l => l.otherId === depId && l.type === 'incoming');
@@ -1029,6 +1095,19 @@ const updateHandleGroup = () => {
                 }
             }
         }
+      });
+
+      h.on(PointerEvent.DOUBLE_TAP, (e: PointerEvent) => {
+          e.stop();
+          // Remove this control point
+          const newPoints = polyHandles
+              .filter((_, idx) => idx !== i)
+              .map(ph => ({
+                  x: ph.x! + 4 - points.startX,
+                  y: ph.y! + 4 - points.startY
+              }));
+          
+          store.updateDependencyControlPoints(taskId, depId, newPoints, undefined, 'polyline', points.startPortId, points.endPortId);
       });
 
       h.on(DragEvent.END, () => {
@@ -1139,6 +1218,7 @@ const updateHandleGroup = () => {
       });
 
       handleGroup.add(vh);
+      virtualHandles.push(vh);
     }
   }
 
@@ -2809,6 +2889,8 @@ const getRoundedPolylinePath = (
 };
 
 const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
+  let isResizing = false;
+  const currentTaskWidth = task.width || TASK_WIDTH;
   const isTaskSelected =
     store.selectedElement?.type === "task" &&
     store.selectedElement.id === task.id;
@@ -2824,6 +2906,56 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
     y,
     cursor: "pointer",
   });
+  nodeGroup.data = { type: 'task', id: task.id };
+
+  // Check for remote selections
+  const remoteSelection = Object.values(store.remoteSelections).find((s: any) => s.type === 'task' && s.id === task.id);
+  if (remoteSelection) {
+      const { user } = remoteSelection;
+      const userColor = user.color || '#ff0000';
+      
+      // Selection Border
+      const selectionBorder = new Rect({
+          x: -4,
+          y: -4,
+          width: currentTaskWidth + 8,
+          height: TASK_HEIGHT + 8,
+          stroke: userColor,
+          strokeWidth: 2,
+          cornerRadius: 8,
+          dash: [5, 3]
+      });
+      nodeGroup.add(selectionBorder);
+
+      // User Label Group
+      const labelGroup = new Group({
+          x: 0,
+          y: -24
+      });
+
+      const nameWidth = user.name ? (user.name.length * 12 + 10) : 40;
+      
+      const nameBox = new Box({
+          width: nameWidth,
+          height: 22, 
+          fill: userColor,
+          cornerRadius: [4, 4, 0, 0]
+      });
+
+      const nameTxt = new Text({
+          text: user.name || 'User',
+          fontSize: 12,
+          fill: getContrastColor(userColor),
+          width: nameWidth,
+          height: 20,
+          textAlign: 'center',
+          verticalAlign: 'middle'
+      });
+
+      labelGroup.add(nameBox);
+      labelGroup.add(nameTxt);
+      nodeGroup.add(labelGroup);
+  }
 
   // Background
   const statusColors: Record<string, string> = {
@@ -2835,16 +2967,17 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
   const color = statusColors[task.status] || "#9E9E9E";
 
   const progressPct = (task.progress || 0) / 100;
+  
   const startColor = task.startColor || 'white';
   const endColor = task.endColor || '#B3E5FC';
 
   const bg = new Box({
-    width: TASK_WIDTH,
+    width: currentTaskWidth,
     height: TASK_HEIGHT,
     fill: {
       type: 'linear',
       from: { x: 0, y: 0 },
-      to: { x: TASK_WIDTH, y: 0 },
+      to: { x: currentTaskWidth, y: 0 },
       stops: [
         { offset: 0, color: startColor },
         { offset: progressPct, color: endColor },
@@ -2860,7 +2993,7 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
 
   // Status Indicator
   const indicator = new Rect({
-    x: TASK_WIDTH - 15,
+    x: currentTaskWidth - 15,
     y: 8,
     width: 8,
     height: 8,
@@ -2869,9 +3002,10 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
   });
 
   // Attachment Icon
+  let attachmentIcon: Text | undefined;
   if (task.attachments && task.attachments.length > 0) {
-    const attachmentIcon = new Text({
-      x: TASK_WIDTH - 30,
+    attachmentIcon = new Text({
+      x: currentTaskWidth - 30,
       y: 5,
       text: "📎",
       fontSize: 14,
@@ -2892,19 +3026,24 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
   // Name Text
   const nameText = new Text({
     x: 8,
-    y: 25,
+    y: 24,
     text: task.name,
     fontSize: 14,
     fontWeight: "bold",
     fill: "#333",
-    width: TASK_WIDTH - 16,
+    width: currentTaskWidth - 16,
+    height: 36, // Max 2 lines (approx 18px per line)
+    lineHeight: 18,
     textOverflow: "...",
+    textWrap: "break", // Ensure text wraps
   });
 
   // Owner Text
   const ownerText = new Text({
     x: 8,
-    y: 45,
+    y: 60,
+    width: currentTaskWidth - 16,
+    textAlign: "left",
     text: task.owner,
     fontSize: 12,
     fill: "#888",
@@ -2920,18 +3059,179 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
   const allPorts: Ellipse[] = [];
 
   // Default Ports
+  // Resize Handle - Create it first to ensure Ports are on top
+  let resizeHandle: Box | null = null;
+  let resizeVisual: Box | null = null;
+  let resizeHoverBox: Box | null = null;
+
+  if (isSelected) {
+    const handleWidth = 24; // 调整响应区域宽度
+    const hoverWidth = 4; // 视觉高亮宽度
+
+    // 1. 视觉高亮框 (Blue Highlight) - 独立于交互层
+    resizeHoverBox = new Box({
+        x: currentTaskWidth - hoverWidth / 2,
+        y: 0,
+        width: hoverWidth,
+        height: TASK_HEIGHT,
+        fill: 'rgba(33, 150, 243, 0.5)',
+        visible: false, // 默认隐藏
+        listening: false, // 不响应事件
+        zIndex: 999
+    });
+    nodeGroup.add(resizeHoverBox);
+
+    // 2. 交互手柄 (Invisible but hittable)
+    resizeHandle = new Box({
+      x: currentTaskWidth - handleWidth / 2, // 居中于边缘
+      y: 0,
+      width: handleWidth,
+      height: TASK_HEIGHT,
+      fill: 'rgba(255, 255, 255, 0.01)', // 几乎透明但可交互
+      cursor: 'ew-resize',
+      zIndex: 1000,
+    });
+    nodeGroup.add(resizeHandle);
+
+    // 3. 视觉装饰条 (Grey Bar)
+    resizeVisual = new Box({
+      x: currentTaskWidth - 2,
+      y: TASK_HEIGHT / 2 - 10,
+      width: 4,
+      height: 20,
+      fill: '#666',
+      cornerRadius: 2,
+      opacity: 0.5,
+      listening: false, // 不响应事件
+      zIndex: 1001
+    });
+    nodeGroup.add(resizeVisual);
+
+    // 鼠标进入：显示高亮 + 禁用父级拖拽
+    resizeHandle.on(PointerEvent.ENTER, (e: PointerEvent) => {
+      e.stop();
+      if (resizeHoverBox) resizeHoverBox.visible = true;
+      nodeGroup.draggable = false;
+    });
+
+    // 鼠标离开：隐藏高亮 + 启用父级拖拽
+    resizeHandle.on(PointerEvent.LEAVE, (e: PointerEvent) => {
+      e.stop();
+      if (!isResizing) {
+        if (resizeHoverBox) resizeHoverBox.visible = false;
+        if (!isConnecting.value) {
+          nodeGroup.draggable = true;
+        }
+      }
+    });
+
+    // 阻止 MOVE 事件冒泡，防止 nodeGroup 的 cursor 逻辑干扰
+    resizeHandle.on(PointerEvent.MOVE, (e: PointerEvent) => {
+      e.stop();
+    });
+
+    // Resize Logic
+    let startW = 0;
+    
+    // Use PointerEvent (Manual Drag) to completely bypass Leafer's Drag system conflicts
+    resizeHandle.on(PointerEvent.DOWN, (e: PointerEvent) => {
+      // 1. Stop propagation immediately
+      e.stop();
+      if ((e as any).event && (e as any).event.preventDefault) (e as any).event.preventDefault();
+      
+      // 2. Disable dragging on parent nodeGroup and tree
+      nodeGroup.draggable = false;
+      if (leaferApp && leaferApp.tree) leaferApp.tree.draggable = false;
+
+      isResizing = true;
+      if (resizeHoverBox) {
+          resizeHoverBox.visible = true;
+          resizeHoverBox.fill = 'rgba(33, 150, 243, 0.7)'; // 拖拽中颜色加深
+      }
+      
+      startW = bg.width || 0;
+      const startX = (e as any).event ? (e as any).event.clientX : e.x;
+      const scale = store.viewSettings.zoomLevel;
+
+      const onMove = (moveEvent: any) => {
+          const dx = (moveEvent.clientX - startX) / scale;
+          let newW = startW + dx;
+          if (newW < 100) newW = 100;
+
+          // Update Visuals
+          bg.width = newW;
+          bg.fill = {
+            type: 'linear',
+            from: { x: 0, y: 0 },
+            to: { x: newW, y: 0 },
+            stops: [
+              { offset: 0, color: startColor },
+              { offset: progressPct, color: endColor },
+              { offset: progressPct, color: 'white' },
+              { offset: 1, color: 'white' }
+            ]
+          };
+
+          indicator.x = newW - 15;
+          if (attachmentIcon) attachmentIcon.x = newW - 30;
+          nameText.width = newW - 16;
+
+          // Update Ports
+          allPorts.forEach(p => {
+            const pData = p.data;
+            if (!pData.isCustom) {
+              if (pData.portType === 'right') p.x = newW - 6;
+              if (pData.portType === 'top' || pData.portType === 'bottom') p.x = newW / 2 - 6;
+            } else {
+              if (pData.side === 'top' || pData.side === 'bottom') {
+                p.x = newW * pData.percentage - 6;
+              } else if (pData.side === 'right') {
+                p.x = newW;
+              }
+            }
+          });
+
+          if (resizeHandle) resizeHandle.x = newW - handleWidth / 2;
+          if (resizeHoverBox) resizeHoverBox.x = newW - hoverWidth / 2;
+          if (resizeVisual) resizeVisual.x = newW - 2;
+      };
+
+      const onUp = () => {
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+          
+          isResizing = false;
+          // 恢复为 Hover 状态颜色
+          if (resizeHoverBox) {
+              resizeHoverBox.fill = 'rgba(33, 150, 243, 0.5)';
+          }
+          
+          // Re-enable dragging
+          if (leaferApp && leaferApp.tree) leaferApp.tree.draggable = true;
+          if (!isConnecting.value) {
+            nodeGroup.draggable = true;
+          }
+          
+          store.updateTask(task.id, { width: bg.width });
+      };
+
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+    });
+  }
+
   const defaultPortsConfig = [
     { id: "left", x: -6, y: TASK_HEIGHT / 2 - 6, stroke: "#2196F3" },
     {
       id: "right",
-      x: TASK_WIDTH - 6,
+      x: currentTaskWidth - 6,
       y: TASK_HEIGHT / 2 - 6,
       stroke: "#2196F3",
     },
-    { id: "top", x: TASK_WIDTH / 2 - 6, y: -6, stroke: "#2196F3" },
+    { id: "top", x: currentTaskWidth / 2 - 6, y: -6, stroke: "#2196F3" },
     {
       id: "bottom",
-      x: TASK_WIDTH / 2 - 6,
+      x: currentTaskWidth / 2 - 6,
       y: TASK_HEIGHT - 6,
       stroke: "#2196F3",
     },
@@ -2949,6 +3249,7 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
       // Fixed ports are not draggable for position adjustment, but draggable for connection
       cursor: "crosshair",
       visible: showPorts, // Show if selected
+      zIndex: 1005, // Ensure ports are above resize handle (1000)
     });
     port.data = {
       type: "port",
@@ -2966,16 +3267,16 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
       let px = 0,
         py = 0;
       if (p.side === "top") {
-        px = TASK_WIDTH * p.percentage;
+        px = currentTaskWidth * p.percentage;
         py = 0;
       } else if (p.side === "bottom") {
-        px = TASK_WIDTH * p.percentage;
+        px = currentTaskWidth * p.percentage;
         py = TASK_HEIGHT;
       } else if (p.side === "left") {
         px = 0;
         py = TASK_HEIGHT * p.percentage;
       } else if (p.side === "right") {
-        px = TASK_WIDTH;
+        px = currentTaskWidth;
         py = TASK_HEIGHT * p.percentage;
       }
 
@@ -2994,6 +3295,7 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
         strokeWidth: isPortSelected ? 3 : 2,
         cursor: "crosshair",
         visible: showPorts,
+        zIndex: 1005,
       });
       port.data = {
         type: "port",
@@ -3021,7 +3323,7 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
     nodeGroup.draggable = false;
   };
   const enableDrag = () => {
-    if (!isConnecting.value && !isDraggingPort.value) {
+    if (!isConnecting.value && !isDraggingPort.value && !isResizing) {
       nodeGroup.draggable = true;
     }
   };
@@ -3039,7 +3341,7 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
         Math.abs(relY) < threshold ||
         Math.abs(relY - TASK_HEIGHT) < threshold ||
         Math.abs(relX) < threshold ||
-        Math.abs(relX - TASK_WIDTH) < threshold
+        Math.abs(relX - currentTaskWidth) < threshold
       ) {
         nearEdge = true;
       }
@@ -3074,8 +3376,6 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
     });
     port.on(PointerEvent.LEAVE, enableDrag);
 
-    // Custom Port Drag Logic removed - handled by PointerEvent.DOWN below
-
     // Port Interaction
     port.on(PointerEvent.DOWN, (e: PointerEvent) => {
       if (e.ctrlKey) {
@@ -3092,7 +3392,6 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
 
       if (port.data.isCustom && isSelected) {
         // Manual Drag Implementation
-        // store.selectElement("port", port.data.portType, task.id); // Remove selection to avoid re-render loop
         isDraggingPort.value = true;
         
         if (leaferApp && leaferApp.tree) leaferApp.tree.draggable = false;
@@ -3120,7 +3419,7 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
             const side = currentPort.data?.side || port.data.side; 
 
             if (side === "top" || side === "bottom") {
-                pct = localX / TASK_WIDTH;
+                pct = localX / currentTaskWidth;
             } else {
                 pct = localY / TASK_HEIGHT;
             }
@@ -3130,11 +3429,11 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
 
             // Force visual update on current port with Edge Locking
             if (side === "top" || side === "bottom") {
-                currentPort.x = TASK_WIDTH * pct - 6;
+                currentPort.x = currentTaskWidth * pct - 6;
                 currentPort.y = side === "top" ? -6 : TASK_HEIGHT - 6;
             } else {
                 currentPort.y = TASK_HEIGHT * pct - 6;
-                currentPort.x = side === "left" ? -6 : TASK_WIDTH - 6;
+                currentPort.x = side === "left" ? -6 : currentTaskWidth - 6;
             }
             
             currentDragPercentage = pct;
@@ -4203,6 +4502,17 @@ let resizeObserver: ResizeObserver | null = null;
 
 onMounted(() => {
   initLeafer();
+
+  if (leaferApp && leaferApp.tree) {
+      leaferApp.tree.add(cursorGroup);
+      leaferApp.tree.on(PointerEvent.MOVE, (e: PointerEvent) => {
+          if (leaferApp && leaferApp.tree) {
+              const point = leaferApp.tree.getInnerPoint({ x: e.x, y: e.y });
+              store.emitCursorMove(point.x, point.y);
+          }
+      });
+  }
+
   startAnimationLoop();
 
   if (containerRef.value) {
@@ -4408,6 +4718,74 @@ watch(
       store.viewSettings.zoomLevel = newScale;
     }
   }
+);
+
+
+watch(() => store.remoteSelections, drawChart, { deep: true });
+
+watch(
+  () => store.remoteCursors,
+  (newCursors) => {
+    cursorGroup.clear();
+    newCursors.forEach((cursor) => {
+         if (cursor.clientId === store.clientId) return;
+
+         // Draw Cursor Arrow
+         const arrow = new Path({
+             x: cursor.x,
+             y: cursor.y,
+             fill: cursor.user.color || '#000',
+             path: 'M 0 0 L 0 15 L 4 11 L 7 17 L 9 16 L 6 10 L 10 10 Z', // Standard pointer shape
+             stroke: 'white',
+             strokeWidth: 1,
+             shadow: { x: 1, y: 1, blur: 2, color: 'rgba(0,0,0,0.3)' }
+         });
+
+         // Draw Name Label Group
+         const labelGroup = new Group({
+             x: cursor.x + 12,
+             y: cursor.y + 12
+         });
+
+         const fontSize = 12;
+         const padding = 6;
+         const userName = cursor.user.name || cursor.user.username;
+         
+         // Estimate text width
+         let estimatedWidth = 0;
+         for (let i = 0; i < userName.length; i++) {
+             estimatedWidth += userName.charCodeAt(i) > 255 ? fontSize : fontSize * 0.6;
+         }
+         estimatedWidth += padding * 2;
+
+         const bg = new Rect({
+             width: estimatedWidth,
+             height: fontSize + padding * 2,
+             fill: cursor.user.color || '#000',
+             cornerRadius: 4,
+             shadow: { x: 1, y: 1, blur: 2, color: 'rgba(0,0,0,0.2)' }
+         });
+
+         const label = new Text({
+             x: estimatedWidth / 2,
+             y: (fontSize + padding * 2) / 2,
+             textAlign: 'center',
+             verticalAlign: 'middle',
+             text: userName,
+             fontSize: fontSize,
+             fill: getContrastColor(cursor.user.color || '#000'),
+         });
+
+         labelGroup.add(bg);
+         labelGroup.add(label);
+
+         const g = new Group();
+         g.add(arrow);
+         g.add(labelGroup);
+         cursorGroup.add(g);
+    });
+  },
+  { deep: true }
 );
 </script>
 
