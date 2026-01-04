@@ -1026,8 +1026,9 @@ const updateHandleGroup = () => {
       });
 
       h.on(DragEvent.DRAG, (e: DragEvent) => {
-        h.x! += e.moveX;
-        h.y! += e.moveY;
+        const scale = store.viewSettings.zoomLevel;
+        h.x! += e.moveX / scale;
+        h.y! += e.moveY / scale;
 
         // Real-time update of the line path
         const currentPoints = polyHandles.map(ph => ({
@@ -1156,8 +1157,9 @@ const updateHandleGroup = () => {
       });
 
       vh.on(DragEvent.DRAG, (e: DragEvent) => {
-        vh.x! += e.moveX;
-        vh.y! += e.moveY;
+        const scale = store.viewSettings.zoomLevel;
+        vh.x! += e.moveX / scale;
+        vh.y! += e.moveY / scale;
 
         // Real-time preview with new point
         const currentPoints = polyHandles.map(ph => ({
@@ -4806,7 +4808,7 @@ watch(
           style="border: none; width: 160px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border-radius: 4px;"
         >
            <template v-for="item in (menuOptions as any[])" :key="item.key">
-              <SubMenu v-if="item.children" :key="item.key" :title="item.label">
+              <SubMenu v-if="item.children" :key="item.key + '_sub'" :title="item.label">
                   <template v-for="child in item.children" :key="child.key">
                       <MenuDivider v-if="child.type === 'divider'" />
                       <MenuItem v-else :key="child.key">{{ child.label }}</MenuItem>
