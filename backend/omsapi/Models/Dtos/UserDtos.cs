@@ -7,11 +7,9 @@ namespace omsapi.Models.Dtos
         [MaxLength(50)]
         public string? Nickname { get; set; }
 
-        [EmailAddress]
         [MaxLength(100)]
         public string? Email { get; set; }
 
-        [Phone]
         [MaxLength(20)]
         public string? Phone { get; set; }
 
@@ -62,11 +60,9 @@ namespace omsapi.Models.Dtos
         [MaxLength(50)]
         public string? Nickname { get; set; }
 
-        [EmailAddress]
         [MaxLength(100)]
         public string? Email { get; set; }
 
-        [Phone]
         [MaxLength(20)]
         public string? Phone { get; set; }
 
