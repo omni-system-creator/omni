@@ -1076,8 +1076,8 @@ const drawGantt = () => {
                     const newS = new Date(newStartMs)
                     const newE = new Date(newEndMs)
                     
-                    const sStr = formatDate(newS.toISOString().split('T')[0] || '')
-                    const eStr = formatDate(newE.toISOString().split('T')[0] || '')
+                    const sStr = `${newS.getFullYear()}-${String(newS.getMonth() + 1).padStart(2, '0')}-${String(newS.getDate()).padStart(2, '0')}`
+                    const eStr = `${newE.getFullYear()}-${String(newE.getMonth() + 1).padStart(2, '0')}-${String(newE.getDate()).padStart(2, '0')}`
                     
                     tooltip.value.visible = true
                     tooltip.value.text = `${row.name}: ${sStr} - ${eStr}`
@@ -1240,7 +1240,10 @@ const drawGantt = () => {
                      e.stop()
                      if (!e.origin) return
                      const diff = e.origin.clientX - startResizeClientX
-                     const newW = Math.max(DAY_WIDTH.value, startResizeW + diff)
+                     const rawNewW = Math.max(DAY_WIDTH.value, startResizeW + diff)
+                     const days = Math.round(rawNewW / DAY_WIDTH.value)
+                     const newW = Math.max(DAY_WIDTH.value, days * DAY_WIDTH.value)
+
                      bar.width = newW
                      
                      rightHandle.x = newW - handleWidth/2
@@ -1252,14 +1255,13 @@ const drawGantt = () => {
                      updateDependencies()
                      
                      // Tooltip
-                     const days = newW / DAY_WIDTH.value
                      const visualStartX = itemGroup.x ?? 0
                      const startOffsetMs = (visualStartX / DAY_WIDTH.value) * msPerDay
                      const startDate = new Date(minDate.getTime() + startOffsetMs)
                      const endDate = new Date(startDate.getTime() + (days - 1) * msPerDay)
                      
-                     const sStr = formatDate(startDate.toISOString().split('T')[0] || '')
-                     const eStr = formatDate(endDate.toISOString().split('T')[0] || '')
+                     const sStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
+                     const eStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`
                      
                      tooltip.value.visible = true
                      tooltip.value.text = `${row.name}: ${sStr} - ${eStr}`
@@ -1309,16 +1311,28 @@ const drawGantt = () => {
                      if (!e.origin) return;
                      const diff = e.origin.clientX - startResizeClientX;
                      
-                     // Calculate new width first
-                     let newW = startResizeW - diff;
-                     let actualDiff = diff;
+                     // Calculate raw new X and W
+                     const rawNewX = startResizeGroupX + diff;
+                     // Snap X to nearest day
+                     const snappedX = Math.round(rawNewX / DAY_WIDTH.value) * DAY_WIDTH.value;
+                     const actualDiff = snappedX - startResizeGroupX;
+                     
+                     // Right edge must stay fixed relative to time (conceptually), but since we are changing X, we must adjust W.
+                     // Original Right X = startResizeGroupX + startResizeW
+                     // New Right X (should be same) = snappedX + newW
+                     // So newW = (startResizeGroupX + startResizeW) - snappedX
+                     
+                     let newW = (startResizeGroupX + startResizeW) - snappedX;
                      
                      if (newW < DAY_WIDTH.value) {
                          newW = DAY_WIDTH.value;
-                         actualDiff = startResizeW - DAY_WIDTH.value;
+                         // If width hits min, we must adjust X to respect min width
+                         // X = RightEdge - MinWidth
+                         itemGroup.x = (startResizeGroupX + startResizeW) - DAY_WIDTH.value;
+                     } else {
+                         itemGroup.x = snappedX;
                      }
-                     
-                     itemGroup.x = startResizeGroupX + actualDiff;
+
                      bar.width = newW;
                      
                      rightHandle.x = newW - handleWidth/2;
@@ -1332,11 +1346,11 @@ const drawGantt = () => {
                      const startOffsetMs = (visualStartX / DAY_WIDTH.value) * msPerDay;
                      const startDate = new Date(minDate.getTime() + startOffsetMs);
                      
-                     const sStr = formatDate(startDate.toISOString().split('T')[0] || '');
+                     const sStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
                      
                      const days = newW / DAY_WIDTH.value;
                      const endDate = new Date(startDate.getTime() + (days - 1) * msPerDay);
-                     const eStr = formatDate(endDate.toISOString().split('T')[0] || '');
+                     const eStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
                      
                      tooltip.value.visible = true;
                      tooltip.value.text = `${row.name}: ${sStr} - ${eStr}`;
