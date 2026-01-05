@@ -54,6 +54,7 @@
       </div>
     </div>
     <div class="file-explorer" @dragenter.prevent="handleDragEnter" @dragleave.prevent="handleDragLeave" @dragover.prevent @drop.prevent="handleDrop">
+      <input ref="fileInput" type="file" multiple style="display: none" @change="handleFileInputChange" />
       <a-upload-dragger
         v-if="isDragOverlayVisible"
         :fileList="fileList"
@@ -272,7 +273,7 @@ const getStatusText = (status: string) => {
 };
 
 const fileColumns = [
-  { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: (a: KbFileDto, b: KbFileDto) => a.name.localeCompare(b.name) },
+  { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: (a: KbFileDto, b: KbFileDto) => compareNames(a.name, b.name) },
   { title: '大小', align: 'right', dataIndex: 'size', key: 'size', width: 100, ellipsis: true },
   { title: '上传时间', align: 'center', dataIndex: 'uploadTime', key: 'uploadTime', width: 150, ellipsis: true },
   { title: '状态', key: 'status', width: 100, align: 'center' },
@@ -306,8 +307,12 @@ const filteredFiles = computed(() => {
   } else {
     list = list.filter(f => !f.parentId);
   }
-  if (!fileSearchText.value) return list;
-  return list.filter(f => f.name.toLowerCase().includes(fileSearchText.value.toLowerCase()));
+  if (fileSearchText.value) {
+    list = list.filter(f => f.name.toLowerCase().includes(fileSearchText.value.toLowerCase()));
+  }
+  const folders = list.filter(f => f.isFolder).sort((a, b) => compareNames(a.name, b.name));
+  const filesOnly = list.filter(f => !f.isFolder).sort((a, b) => compareNames(a.name, b.name));
+  return [...folders, ...filesOnly];
 });
 
 const fetchFiles = async (kbId: string) => {
@@ -372,9 +377,26 @@ const customRow = (record: KbFileDto) => {
 
 const handleContextMenu = (e: MouseEvent, _record?: KbFileDto) => { e.preventDefault(); };
 
+const fileInput = ref<HTMLInputElement | null>(null);
+const handleFileInputChange = async (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  if (!input.files || !props.currentKb) return;
+  const filesArr = Array.from(input.files);
+  const folderId = currentFolderId.value || undefined;
+  for (const f of filesArr) {
+    try {
+      await uploadKbFile(props.currentKb.id, f, folderId);
+      message.success(`${f.name} 上传成功`);
+    } catch {
+      message.error(`${f.name} 上传失败`);
+    }
+  }
+  input.value = '';
+  fetchFiles(props.currentKb.id);
+};
+
 const triggerUpload = () => {
-  const input = document.querySelector('.ant-upload-drag-icon + input') as HTMLInputElement;
-  if (input) input.click();
+  if (fileInput.value) fileInput.value.click();
 };
 
 const customUpload = async (options: any) => {
@@ -428,9 +450,24 @@ const openMoveModal = async (file: KbFileDto) => {
 };
 
 const buildFolderTree = (folders: KbFileDto[], parentId: string | null): any[] => {
-  return folders.filter(f => f.parentId === parentId).map(f => ({
+  return folders
+    .filter(f => f.parentId === parentId)
+    .sort((a, b) => compareNames(a.name, b.name))
+    .map(f => ({
     title: f.name, value: f.id, key: f.id, children: buildFolderTree(folders, f.id)
   }));
+};
+
+const collator = new Intl.Collator(['zh-u-co-pinyin', 'zh', 'en'], { sensitivity: 'base' });
+const isEnglishFirstChar = (s: string) => {
+  const ch = (s || '').trim().charAt(0);
+  return /[A-Za-z]/.test(ch);
+};
+const compareNames = (a: string, b: string) => {
+  const aEng = isEnglishFirstChar(a);
+  const bEng = isEnglishFirstChar(b);
+  if (aEng !== bEng) return aEng ? -1 : 1;
+  return collator.compare(a, b);
 };
 
 const handleMove = async () => {
