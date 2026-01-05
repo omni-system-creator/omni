@@ -3,6 +3,7 @@
 综合信息管理系统是一款为企业提供一体化业务数据管理解决方案的平台，旨在实现合同、财务、项目、客户、供应商等核心业务流程的数字化管理与协同。系统采用模块化松耦合设计，各模块既可独立运行，又能通过标准接口实现数据深度互通。
 
 国内仓库地址：<a href="https://gitee.com/kinglan_gitee/omni" target="_blank">https://gitee.com/kinglan_gitee/omni</a>
+
 Github仓库地址：<a href="https://github.com/omni-system-creator/omni" target="_blank">https://github.com/omni-system-creator/omni</a>
 
 演示地址：<a href="https://os.jinlan.info" target="_blank">https://os.jinlan.info</a>
