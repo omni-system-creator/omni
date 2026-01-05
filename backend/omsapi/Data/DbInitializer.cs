@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using omsapi.Models.Entities;
 using omsapi.Models.Entities.Contract;
 using omsapi.Models.Entities.Dict;
+using OmsApi.Models.Entities.Kb;
 
 namespace omsapi.Data
 {
@@ -20,6 +21,9 @@ namespace omsapi.Data
 
             // 初始化字典模块数据
             await SeedDictDataAsync(context);
+
+            // 初始化知识库模块数据
+            await SeedKbDataAsync(context);
 
             // 如果已经有权限数据，则跳过
             if (await context.Permissions.AnyAsync())
@@ -1111,6 +1115,174 @@ namespace omsapi.Data
 
                 await context.SaveChangesAsync();
             }
+        }
+
+        private static async Task SeedKbDataAsync(OmsContext context)
+        {
+            // 如果已经有知识库数据，则跳过
+            if (await context.KbInfos.AnyAsync())
+            {
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+
+            // 1. 文物保护管理规划
+            var kb1 = new KbInfo
+            {
+                Id = Guid.NewGuid(),
+                Name = "文物保护管理规划",
+                Category = "Project",
+                Description = "文博数据库建设规划与蓝图",
+                Type = "general",
+                CreatedAt = now,
+                CreatedBy = Guid.Empty // System
+            };
+
+            // 2. 文物数字化采集技术
+            var kb2 = new KbInfo
+            {
+                Id = Guid.NewGuid(),
+                Name = "文物数字化采集技术",
+                Category = "Tech",
+                Description = "三维扫描、高清摄影与动态记录",
+                Type = "general",
+                CreatedAt = now,
+                CreatedBy = Guid.Empty
+            };
+
+            // 3. 文物知识图谱应用
+            var kb3 = new KbInfo
+            {
+                Id = Guid.NewGuid(),
+                Name = "文物知识图谱应用",
+                Category = "Tech",
+                Description = "基于知识图谱的智能化管理与检索",
+                Type = "general",
+                CreatedAt = now,
+                CreatedBy = Guid.Empty
+            };
+
+            context.KbInfos.AddRange(kb1, kb2, kb3);
+            await context.SaveChangesAsync();
+
+            // --- KB 1 Files & Nodes ---
+            var file1 = new KbFile
+            {
+                Id = Guid.NewGuid(),
+                KbId = kb1.Id,
+                Name = "文物数据库建设规划.pdf",
+                Size = 1024 * 1024 * 5, // 5MB
+                Extension = ".pdf",
+                Path = "/uploads/kb/mock/plan.pdf",
+                Status = "ready",
+                UploadTime = now
+            };
+            context.KbFiles.Add(file1);
+
+            var node1_1 = new KbNode
+            {
+                Id = Guid.NewGuid(),
+                KbId = kb1.Id,
+                Key = Guid.NewGuid().ToString(),
+                Title = "建设目标与规划",
+                Summary = "明确数据库建设的核心目标与定位。",
+                Content = "<p>建库前需明确核心问题：主要为了内部存档、研究管理，还是面向公众的展示教育？文物类型是书画、古籍还是遗址？</p>",
+                SortOrder = 1
+            };
+            var node1_2 = new KbNode
+            {
+                Id = Guid.NewGuid(),
+                KbId = kb1.Id,
+                Key = Guid.NewGuid().ToString(),
+                Title = "参考案例",
+                Summary = "国内外优秀的文物数据库建设案例。",
+                Content = "<ul><li><strong>业务管理型</strong>：陕西省文物保护管理一体化平台（流程线上化）。</li><li><strong>深度研究与公众服务</strong>：湖南里耶秦简博物馆（知识图谱+3D展示）。</li><li><strong>创新性保护</strong>：辽塔数字孪生数据库（预防性保护）。</li></ul>",
+                SortOrder = 2
+            };
+            context.KbNodes.AddRange(node1_1, node1_2);
+            context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node1_1.Id, FileId = file1.Id, Page = 1 });
+            context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node1_2.Id, FileId = file1.Id, Page = 3 });
+
+
+            // --- KB 2 Files & Nodes ---
+            var file2 = new KbFile
+            {
+                Id = Guid.NewGuid(),
+                KbId = kb2.Id,
+                Name = "数据采集标准规范.docx",
+                Size = 1024 * 500, // 500KB
+                Extension = ".docx",
+                Path = "/uploads/kb/mock/standard.docx",
+                Status = "ready",
+                UploadTime = now
+            };
+            context.KbFiles.Add(file2);
+
+            var node2_1 = new KbNode
+            {
+                Id = Guid.NewGuid(),
+                KbId = kb2.Id,
+                Key = Guid.NewGuid().ToString(),
+                Title = "三维信息采集",
+                Summary = "针对不同文物的采集技术。",
+                Content = "<p><strong>三维激光扫描</strong>：适用于建筑、雕塑等大型不可移动文物。</p><p><strong>倾斜摄影</strong>：适用于大型遗址的全貌记录。</p>",
+                SortOrder = 1
+            };
+            var node2_2 = new KbNode
+            {
+                Id = Guid.NewGuid(),
+                KbId = kb2.Id,
+                Key = Guid.NewGuid().ToString(),
+                Title = "平面与细节采集",
+                Summary = "高精度图像与不可见光信息采集。",
+                Content = "<p><strong>高清摄影</strong>：600dpi以上，用于记录纹理细节。</p><p><strong>多光谱/红外摄影</strong>：提取肉眼不可见的墨迹或褪色图案（如里耶秦简）。</p>",
+                SortOrder = 2
+            };
+             context.KbNodes.AddRange(node2_1, node2_2);
+            context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node2_1.Id, FileId = file2.Id, Page = 5 });
+            context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node2_2.Id, FileId = file2.Id, Page = 8 });
+
+
+            // --- KB 3 Files & Nodes ---
+            var file3 = new KbFile
+            {
+                Id = Guid.NewGuid(),
+                KbId = kb3.Id,
+                Name = "知识图谱构建指南.pdf",
+                Size = 1024 * 1024 * 3,
+                Extension = ".pdf",
+                Path = "/uploads/kb/mock/kg_guide.pdf",
+                Status = "ready",
+                UploadTime = now
+            };
+            context.KbFiles.Add(file3);
+
+             var node3_1 = new KbNode
+            {
+                Id = Guid.NewGuid(),
+                KbId = kb3.Id,
+                Key = Guid.NewGuid().ToString(),
+                Title = "核心任务",
+                Summary = "让数据“活”起来的关键技术。",
+                Content = "<p>构建<strong>知识图谱</strong>：将文物、人物、地点、事件等实体进行关联，形成网状知识库。</p>",
+                SortOrder = 1
+            };
+            var node3_2 = new KbNode
+            {
+                Id = Guid.NewGuid(),
+                KbId = kb3.Id,
+                Key = Guid.NewGuid().ToString(),
+                Title = "应用场景",
+                Summary = "知识图谱的实际应用价值。",
+                Content = "<p><strong>语义化检索</strong>：用户搜索“战国青铜剑”，可同时关联展示相关出土遗址、历史背景。</p><p><strong>学术研究</strong>：支持“难录字检索”、“智能缀合”。</p>",
+                SortOrder = 2
+            };
+            context.KbNodes.AddRange(node3_1, node3_2);
+            context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node3_1.Id, FileId = file3.Id, Page = 12 });
+            context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node3_2.Id, FileId = file3.Id, Page = 15 });
+
+            await context.SaveChangesAsync();
         }
     }
 }

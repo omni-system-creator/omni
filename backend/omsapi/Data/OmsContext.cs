@@ -8,6 +8,7 @@ using omsapi.Models.Entities.Interfaces;
 using omsapi.Models.Entities.Pages;
 using omsapi.Models.Entities.Contract;
 using omsapi.Models.Entities.Project;
+using OmsApi.Models.Entities.Kb;
 
 namespace omsapi.Data
 {
@@ -88,6 +89,13 @@ namespace omsapi.Data
         public DbSet<omsapi.Models.Entities.Dict.SysDictCategory> DictCategories { get; set; }
         public DbSet<omsapi.Models.Entities.Dict.SysDictType> DictTypes { get; set; }
         public DbSet<omsapi.Models.Entities.Dict.SysDictData> DictDatas { get; set; }
+
+        // Kb Entities
+        public DbSet<KbInfo> KbInfos { get; set; }
+        public DbSet<KbFile> KbFiles { get; set; }
+        public DbSet<KbNode> KbNodes { get; set; }
+        public DbSet<KbNodeSource> KbNodeSources { get; set; }
+        public DbSet<KbQaHistory> KbQaHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
