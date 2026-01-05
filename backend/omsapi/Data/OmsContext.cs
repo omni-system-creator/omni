@@ -93,13 +93,16 @@ namespace omsapi.Data
         // Kb Entities
         public DbSet<KbInfo> KbInfos { get; set; }
         public DbSet<KbFile> KbFiles { get; set; }
-        public DbSet<KbNode> KbNodes { get; set; }
+        // public DbSet<KbNode> KbNodes { get; set; } // 移至 PgContext
         public DbSet<KbNodeSource> KbNodeSources { get; set; }
         public DbSet<KbQaHistory> KbQaHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Ignore KbNode as it is managed by OmsPgContext
+            modelBuilder.Ignore<KbNode>();
 
             // Configure Dict Entities
             modelBuilder.Entity<omsapi.Models.Entities.Dict.SysDictType>(entity =>

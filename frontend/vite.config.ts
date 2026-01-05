@@ -39,7 +39,7 @@ export default defineConfig({
         secure: false
       },
       '/bigview': {
-        target: 'https://oms.jinlan.info',
+        target: 'https://os.jinlan.info',
         changeOrigin: true,
         secure: false
       }

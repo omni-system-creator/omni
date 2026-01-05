@@ -5,7 +5,9 @@ import type {
   KbFileDto, 
   KbNodeDto, 
   ChatMessageDto, 
-  SendMessageDto 
+  SendMessageDto,
+  SiliconModelDto,
+  CreateKbFolderDto
 } from '../types/kb'
 
 // --- KB Management ---
@@ -32,10 +34,19 @@ export function getKbFiles(kbId: string) {
   return request.get<any, KbFileDto[]>(`/kb/${kbId}/files`)
 }
 
-export function uploadKbFile(kbId: string, file: File) {
+export function getKbFolders(kbId: string, parentId?: string) {
+  return request.get<any, KbFileDto[]>(`/kb/${kbId}/folders`, { params: { parentId } })
+}
+
+export function createKbFolder(kbId: string, data: CreateKbFolderDto) {
+  return request.post<any, KbFileDto>(`/kb/${kbId}/folders`, data)
+}
+
+export function uploadKbFile(kbId: string, file: File, parentId?: string) {
   const formData = new FormData()
   formData.append('file', file)
-  return request.post<any, KbFileDto>(`/kb/${kbId}/files`, formData, {
+  const url = parentId ? `/kb/${kbId}/files?parentId=${parentId}` : `/kb/${kbId}/files`
+  return request.post<any, KbFileDto>(url, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -44,6 +55,18 @@ export function uploadKbFile(kbId: string, file: File) {
 
 export function deleteKbFile(fileId: string) {
   return request.delete<any, any>(`/kb/files/${fileId}`)
+}
+
+export function renameKbFile(fileId: string, name: string) {
+  return request.put<any, any>(`/kb/files/${fileId}/rename`, { name })
+}
+
+export function moveKbFile(fileId: string, targetFolderId?: string) {
+  return request.put<any, any>(`/kb/files/${fileId}/move`, { targetFolderId })
+}
+
+export function getKbFileDownloadUrl(fileId: string) {
+  return `/api/kb/files/${fileId}/download`
 }
 
 // --- Catalog ---
@@ -64,4 +87,8 @@ export function getChatHistory(kbId: string) {
 
 export function sendChatMessage(data: SendMessageDto) {
   return request.post<any, ChatMessageDto>('/kb/chat', data)
+}
+
+export function getAvailableModels() {
+  return request.get<any, SiliconModelDto[]>('/kb/models')
 }

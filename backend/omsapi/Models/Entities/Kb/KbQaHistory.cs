@@ -20,7 +20,7 @@ namespace OmsApi.Models.Entities.Kb
         [Column(TypeName = "longtext")]
         public string? Answer { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         [Column(TypeName = "text")]
         public string? SourcesJson { get; set; } // Simplified storage for sources

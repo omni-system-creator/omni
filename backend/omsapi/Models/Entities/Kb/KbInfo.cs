@@ -22,7 +22,7 @@ namespace OmsApi.Models.Entities.Kb
         [MaxLength(50)]
         public string Type { get; set; } = "general"; // general, code, book
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedAt { get; set; }
 

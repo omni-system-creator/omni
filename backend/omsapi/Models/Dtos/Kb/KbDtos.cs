@@ -26,6 +26,16 @@ namespace OmsApi.Models.Dtos.Kb
         public string Size { get; set; } = string.Empty; // Formatted size
         public string Status { get; set; } = "uploading";
         public string UploadTime { get; set; } = string.Empty;
+        public string? Path { get; set; }
+        public bool IsFolder { get; set; }
+        public Guid? ParentId { get; set; }
+    }
+
+    public class CreateKbFolderDto
+    {
+        public Guid KbId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public Guid? ParentId { get; set; }
     }
 
     public class KbNodeDto
@@ -56,5 +66,24 @@ namespace OmsApi.Models.Dtos.Kb
     {
         public Guid KbId { get; set; }
         public string Message { get; set; } = string.Empty;
+        public string? Model { get; set; }
+    }
+
+    public class SiliconModelDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Object { get; set; } = "model";
+        public long Created { get; set; }
+        public string OwnedBy { get; set; } = string.Empty;
+    }
+
+    public class RenameKbFileDto
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+
+    public class MoveKbFileDto
+    {
+        public Guid? TargetFolderId { get; set; }
     }
 }

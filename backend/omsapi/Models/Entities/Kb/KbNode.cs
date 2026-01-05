@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Pgvector;
 
 namespace OmsApi.Models.Entities.Kb
 {
@@ -21,8 +22,11 @@ namespace OmsApi.Models.Entities.Kb
         [Column(TypeName = "text")]
         public string? Summary { get; set; }
 
-        [Column(TypeName = "longtext")]
+        [Column(TypeName = "text")]
         public string? Content { get; set; }
+
+        [Column(TypeName = "vector(1024)")]
+        public Vector? Vector { get; set; }
 
         [MaxLength(100)]
         public string? Key { get; set; }

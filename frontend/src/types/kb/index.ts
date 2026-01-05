@@ -23,6 +23,13 @@ export interface KbFileDto {
   size: string;
   status: 'uploading' | 'processing' | 'ready' | 'error';
   uploadTime: string;
+  isFolder?: boolean;
+  parentId?: string | null;
+}
+
+export interface CreateKbFolderDto {
+  name: string;
+  parentId?: string | null;
 }
 
 export interface KbNodeSourceDto {
@@ -49,4 +56,12 @@ export interface ChatMessageDto {
 export interface SendMessageDto {
   kbId: string;
   message: string;
+  model?: string;
+}
+
+export interface SiliconModelDto {
+  id: string;
+  object: string;
+  created: number;
+  ownedBy: string;
 }

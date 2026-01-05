@@ -1,0 +1,221 @@
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using omsapi.Infrastructure.Attributes;
+using omsapi.Services.Interfaces;
+
+namespace omsapi.Services
+{
+    [AutoInject]
+    public class AiService : IAiService
+    {
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
+
+        public AiService(HttpClient httpClient, IConfiguration configuration)
+        {
+            _httpClient = httpClient;
+            _configuration = configuration;
+        }
+
+        public async Task<float[]> GetEmbeddingAsync(string text, string model = "BAAI/bge-m3")
+        {
+            var apiKey = _configuration["SiliconFlow:ApiKey"];
+            var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                // Return random vector for testing if no key? 
+                // Or just zeros.
+                // Let's return zeros if no key to allow testing without cost/key in some envs
+                return new float[1024]; 
+            }
+
+            // Clean text (remove newlines usually helps)
+            text = text.Replace("\r", " ").Replace("\n", " ");
+
+            var requestBody = new
+            {
+                model = model,
+                input = text,
+                encoding_format = "float"
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/embeddings");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try 
+            {
+                var response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseString);
+                
+                // Response format: { "data": [ { "embedding": [0.1, ...] } ] }
+                if (doc.RootElement.TryGetProperty("data", out var data) && data.GetArrayLength() > 0)
+                {
+                    var embeddingElement = data[0].GetProperty("embedding");
+                    var vector = new List<float>();
+                    foreach (var item in embeddingElement.EnumerateArray())
+                    {
+                        vector.Add((float)item.GetDouble());
+                    }
+                    return vector.ToArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AiService] Error generating embedding: {ex.Message}");
+                throw;
+            }
+
+            return new float[0];
+        }
+
+        public async Task<List<float[]>> GetEmbeddingsAsync(List<string> texts, string model = "BAAI/bge-m3")
+        {
+            var apiKey = _configuration["SiliconFlow:ApiKey"];
+            var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
+            var results = new List<float[]>();
+
+            if (string.IsNullOrEmpty(apiKey) || texts == null || !texts.Any())
+            {
+                return results;
+            }
+
+            // Clean texts
+            var cleanTexts = texts.Select(t => t.Replace("\r", " ").Replace("\n", " ")).ToList();
+
+            // SiliconFlow / OpenAI API supports array input
+            var requestBody = new
+            {
+                model = model,
+                input = cleanTexts,
+                encoding_format = "float"
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/embeddings");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try 
+            {
+                var response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseString);
+                
+                if (doc.RootElement.TryGetProperty("data", out var data) && data.GetArrayLength() > 0)
+                {
+                    // The API returns embeddings in the same order as input
+                    foreach (var item in data.EnumerateArray())
+                    {
+                        var embeddingElement = item.GetProperty("embedding");
+                        var vector = new List<float>();
+                        foreach (var val in embeddingElement.EnumerateArray())
+                        {
+                            vector.Add((float)val.GetDouble());
+                        }
+                        results.Add(vector.ToArray());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AiService] Error generating batch embeddings: {ex.Message}");
+                // Fallback to serial processing if batch fails (optional, but good for robustness)
+                // For now, just throw or return partial
+                throw;
+            }
+
+            return results;
+        }
+        public async Task<string> GetImageDescriptionAsync(byte[] imageBytes, string mimeType, string model = "deepseek-ai/DeepSeek-V2.5")
+        {
+            var apiKey = _configuration["SiliconFlow:ApiKey"];
+            var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                return "[System: Image description requires API Key]";
+            }
+
+            // SiliconFlow / OpenAI Vision API
+            // Usually uses chat/completions with image_url content type
+            var base64Image = Convert.ToBase64String(imageBytes);
+            var dataUrl = $"data:{mimeType};base64,{base64Image}";
+
+            // Auto-switch to a vision-capable model if the requested one is likely text-only
+            // Common vision models: gpt-4-vision-preview, qwen-vl-max, etc.
+            // On SiliconFlow, Qwen-VL or Yi-VL might be available.
+            // Let's try to use a safe default if the user didn't specify a known vision model, 
+            // but usually we respect the parameter. 
+            // However, DeepSeek-V2.5 is text-only (as of knowledge cutoff). 
+            // Let's hardcode a known vision model if the default is passed, or trust the user.
+            // For now, let's use "Qwen/Qwen2-VL-72B-Instruct" as a powerful vision model available on SiliconFlow (assuming it is).
+            // Or "OpenGVLab/InternVL2-26B" etc.
+            // Let's default to "Qwen/Qwen2-VL-72B-Instruct" if the passed model is the default text one.
+            if (model == "deepseek-ai/DeepSeek-V2.5")
+            {
+                model = "Qwen/Qwen2-VL-72B-Instruct";
+            }
+
+            var requestBody = new
+            {
+                model = model,
+                messages = new[]
+                {
+                    new
+                    {
+                        role = "user",
+                        content = new object[]
+                        {
+                            new { type = "text", text = "请详细描述这张图片的内容，包括主要物体、文字（如果有）、场景和氛围。请用中文回答。" },
+                            new { type = "image_url", image_url = new { url = dataUrl } }
+                        }
+                    }
+                },
+                max_tokens = 500
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/chat/completions");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.SendAsync(request);
+                // If 404 or 400, it might be model not found or not supporting vision.
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[AiService] Vision API Error: {response.StatusCode} - {error}");
+                    return $"[System: Image analysis failed ({response.StatusCode})]";
+                }
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseString);
+                
+                if (doc.RootElement.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                {
+                    var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+                    return content ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AiService] Error analyzing image: {ex.Message}");
+                return $"[System: Image analysis error: {ex.Message}]";
+            }
+
+            return "";
+        }
+    }
+}

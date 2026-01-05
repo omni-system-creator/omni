@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20260105090004_AddKbFolderSupport")]
+    partial class AddKbFolderSupport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -110,6 +113,45 @@ namespace omsapi.Migrations
                     b.ToTable("kb_info");
                 });
 
+            modelBuilder.Entity("OmsApi.Models.Entities.Kb.KbNode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("KbId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KbId");
+
+                    b.HasIndex("ParentId");
+
+                    b.ToTable("kb_node");
+                });
+
             modelBuilder.Entity("OmsApi.Models.Entities.Kb.KbNodeSource", b =>
                 {
                     b.Property<Guid>("Id")
@@ -132,6 +174,8 @@ namespace omsapi.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FileId");
+
+                    b.HasIndex("NodeId");
 
                     b.ToTable("kb_node_source");
                 });
@@ -2873,6 +2917,23 @@ namespace omsapi.Migrations
                     b.Navigation("Parent");
                 });
 
+            modelBuilder.Entity("OmsApi.Models.Entities.Kb.KbNode", b =>
+                {
+                    b.HasOne("OmsApi.Models.Entities.Kb.KbInfo", "Kb")
+                        .WithMany("Nodes")
+                        .HasForeignKey("KbId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("OmsApi.Models.Entities.Kb.KbNode", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId");
+
+                    b.Navigation("Kb");
+
+                    b.Navigation("Parent");
+                });
+
             modelBuilder.Entity("OmsApi.Models.Entities.Kb.KbNodeSource", b =>
                 {
                     b.HasOne("OmsApi.Models.Entities.Kb.KbFile", "File")
@@ -2881,7 +2942,15 @@ namespace omsapi.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("OmsApi.Models.Entities.Kb.KbNode", "Node")
+                        .WithMany("Sources")
+                        .HasForeignKey("NodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("File");
+
+                    b.Navigation("Node");
                 });
 
             modelBuilder.Entity("OmsApi.Models.Entities.Kb.KbQaHistory", b =>
@@ -3259,6 +3328,15 @@ namespace omsapi.Migrations
             modelBuilder.Entity("OmsApi.Models.Entities.Kb.KbInfo", b =>
                 {
                     b.Navigation("Files");
+
+                    b.Navigation("Nodes");
+                });
+
+            modelBuilder.Entity("OmsApi.Models.Entities.Kb.KbNode", b =>
+                {
+                    b.Navigation("Children");
+
+                    b.Navigation("Sources");
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.Archive.ArchFile", b =>

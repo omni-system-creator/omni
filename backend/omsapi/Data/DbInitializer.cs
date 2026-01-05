@@ -8,11 +8,14 @@ namespace omsapi.Data
 {
     public static class DbInitializer
     {
-        public static async Task InitializeAsync(OmsContext context)
+        public static async Task InitializeAsync(OmsContext context, OmsPgContext pgContext)
         {
             // 确保数据库已创建
             await context.Database.EnsureCreatedAsync();
-
+            // PgContext will be migrated, so we might not need EnsureCreated if we use migrations, 
+            // but for initialization it's safe to check or migrate.
+            // await pgContext.Database.MigrateAsync(); // Prefer migration in Program.cs
+            
             // 初始化合同模块数据
             await SeedContractDataAsync(context);
 
@@ -23,7 +26,7 @@ namespace omsapi.Data
             await SeedDictDataAsync(context);
 
             // 初始化知识库模块数据
-            await SeedKbDataAsync(context);
+            await SeedKbDataAsync(context, pgContext);
 
             // 如果已经有权限数据，则跳过
             if (await context.Permissions.AnyAsync())
@@ -276,7 +279,8 @@ namespace omsapi.Data
             AddType("sales_mgmt", "sales_opportunity_stage", "商机阶段", "销售商机的进展阶段");
             AddType("sales_mgmt", "sales_customer_source", "客户来源", "客户信息的获取渠道");
             AddType("personal_mgmt", "personal_todo_priority", "待办优先级", "个人待办事项的优先级");
-            AddType("personal_mgmt", "personal_msg_type", "消息类型", "站内消息的类型");
+            AddType("sys_common", "kb_type", "知识库分类", "知识库的业务分类");
+            AddType("sys_common", "silicon_models", "硅基模型", "SiliconFlow支持的大模型列表");
 
             foreach (var t in types)
             {
@@ -487,6 +491,16 @@ namespace omsapi.Data
                 new SysDictData { Label = "系统通知", Value = "system", Sort = 1, IsDefault = true, Status = "normal" },
                 new SysDictData { Label = "私人消息", Value = "private", Sort = 2, IsDefault = false, Status = "normal" },
                 new SysDictData { Label = "任务提醒", Value = "task", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+
+            // 硅基流动模型
+            await AddData("silicon_models", new List<SysDictData>
+            {
+                new SysDictData { Label = "DeepSeek V2.5", Value = "deepseek-ai/DeepSeek-V2.5", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "Qwen 2.5 72B", Value = "Qwen/Qwen2.5-72B-Instruct", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "GLM-4 9B", Value = "THUDM/glm-4-9b-chat", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "Yi 1.5 34B", Value = "01-ai/Yi-1.5-34B-Chat", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "Gemma 2 27B", Value = "google/gemma-2-27b-it", Sort = 5, IsDefault = false, Status = "normal" }
             });
 
             await context.SaveChangesAsync();
@@ -1117,7 +1131,7 @@ namespace omsapi.Data
             }
         }
 
-        private static async Task SeedKbDataAsync(OmsContext context)
+        private static async Task SeedKbDataAsync(OmsContext context, OmsPgContext pgContext)
         {
             // 如果已经有知识库数据，则跳过
             if (await context.KbInfos.AnyAsync())
@@ -1125,7 +1139,7 @@ namespace omsapi.Data
                 return;
             }
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             // 1. 文物保护管理规划
             var kb1 = new KbInfo
@@ -1200,7 +1214,7 @@ namespace omsapi.Data
                 Content = "<ul><li><strong>业务管理型</strong>：陕西省文物保护管理一体化平台（流程线上化）。</li><li><strong>深度研究与公众服务</strong>：湖南里耶秦简博物馆（知识图谱+3D展示）。</li><li><strong>创新性保护</strong>：辽塔数字孪生数据库（预防性保护）。</li></ul>",
                 SortOrder = 2
             };
-            context.KbNodes.AddRange(node1_1, node1_2);
+            pgContext.KbNodes.AddRange(node1_1, node1_2);
             context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node1_1.Id, FileId = file1.Id, Page = 1 });
             context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node1_2.Id, FileId = file1.Id, Page = 3 });
 
@@ -1239,7 +1253,7 @@ namespace omsapi.Data
                 Content = "<p><strong>高清摄影</strong>：600dpi以上，用于记录纹理细节。</p><p><strong>多光谱/红外摄影</strong>：提取肉眼不可见的墨迹或褪色图案（如里耶秦简）。</p>",
                 SortOrder = 2
             };
-             context.KbNodes.AddRange(node2_1, node2_2);
+             pgContext.KbNodes.AddRange(node2_1, node2_2);
             context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node2_1.Id, FileId = file2.Id, Page = 5 });
             context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node2_2.Id, FileId = file2.Id, Page = 8 });
 
@@ -1278,11 +1292,12 @@ namespace omsapi.Data
                 Content = "<p><strong>语义化检索</strong>：用户搜索“战国青铜剑”，可同时关联展示相关出土遗址、历史背景。</p><p><strong>学术研究</strong>：支持“难录字检索”、“智能缀合”。</p>",
                 SortOrder = 2
             };
-            context.KbNodes.AddRange(node3_1, node3_2);
+            pgContext.KbNodes.AddRange(node3_1, node3_2);
             context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node3_1.Id, FileId = file3.Id, Page = 12 });
             context.KbNodeSources.Add(new KbNodeSource { Id = Guid.NewGuid(), NodeId = node3_2.Id, FileId = file3.Id, Page = 15 });
 
             await context.SaveChangesAsync();
+            await pgContext.SaveChangesAsync();
         }
     }
 }

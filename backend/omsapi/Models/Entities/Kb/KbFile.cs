@@ -27,7 +27,14 @@ namespace OmsApi.Models.Entities.Kb
         [MaxLength(20)]
         public string Status { get; set; } = "uploading"; // uploading, processing, ready, error
 
-        public DateTime UploadTime { get; set; } = DateTime.UtcNow;
+        public DateTime UploadTime { get; set; } = DateTime.Now;
+
+        public bool IsFolder { get; set; } = false;
+
+        public Guid? ParentId { get; set; }
+
+        [ForeignKey(nameof(ParentId))]
+        public KbFile? Parent { get; set; }
 
         [ForeignKey(nameof(KbId))]
         public KbInfo? Kb { get; set; }

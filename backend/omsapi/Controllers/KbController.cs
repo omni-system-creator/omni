@@ -61,12 +61,19 @@ namespace omsapi.Controllers
             return Ok(result);
         }
 
+        [HttpGet("{kbId}/folders")]
+        public async Task<ActionResult<List<KbFileDto>>> GetFolders(Guid kbId, [FromQuery] Guid? parentId = null)
+        {
+            var result = await _kbService.GetFoldersAsync(kbId, parentId);
+            return Ok(result);
+        }
+
         [HttpPost("{kbId}/files")]
-        public async Task<ActionResult<KbFileDto>> UploadFile(Guid kbId, IFormFile file)
+        public async Task<ActionResult<KbFileDto>> UploadFile(Guid kbId, IFormFile file, [FromQuery] Guid? parentId = null)
         {
             try
             {
-                var result = await _kbService.UploadFileAsync(kbId, file);
+                var result = await _kbService.UploadFileAsync(kbId, file, parentId);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -75,12 +82,45 @@ namespace omsapi.Controllers
             }
         }
 
+        [HttpPost("{kbId}/folders")]
+        public async Task<ActionResult<KbFileDto>> CreateFolder(Guid kbId, [FromBody] CreateKbFolderDto dto)
+        {
+            dto.KbId = kbId;
+            var result = await _kbService.CreateFolderAsync(dto);
+            return Ok(result);
+        }
+
         [HttpDelete("files/{fileId}")]
         public async Task<IActionResult> DeleteFile(Guid fileId)
         {
             var success = await _kbService.DeleteFileAsync(fileId);
             if (!success) return NotFound();
             return Ok();
+        }
+
+        [HttpPut("files/{fileId}/rename")]
+        public async Task<IActionResult> RenameFile(Guid fileId, [FromBody] RenameKbFileDto dto)
+        {
+            var success = await _kbService.RenameFileAsync(fileId, dto.Name);
+            if (!success) return NotFound();
+            return Ok();
+        }
+
+        [HttpPut("files/{fileId}/move")]
+        public async Task<IActionResult> MoveFile(Guid fileId, [FromBody] MoveKbFileDto dto)
+        {
+            var success = await _kbService.MoveFileAsync(fileId, dto.TargetFolderId);
+            if (!success) return NotFound();
+            return Ok();
+        }
+
+        [HttpGet("files/{fileId}/download")]
+        public async Task<IActionResult> DownloadFile(Guid fileId)
+        {
+            var info = await _kbService.GetFileDownloadInfoAsync(fileId);
+            if (info == null) return NotFound("File not found.");
+            
+            return PhysicalFile(info.Value.PhysicalPath, info.Value.ContentType, info.Value.Name);
         }
 
         // --- Catalog ---
@@ -102,6 +142,13 @@ namespace omsapi.Controllers
 
         // --- Chat ---
 
+        [HttpGet("models")]
+        public async Task<ActionResult<List<SiliconModelDto>>> GetModels()
+        {
+            var result = await _kbService.GetAvailableModelsAsync();
+            return Ok(result);
+        }
+
         [HttpGet("{kbId}/chat")]
         public async Task<ActionResult<List<ChatMessageDto>>> GetChatHistory(Guid kbId)
         {
@@ -116,6 +163,29 @@ namespace omsapi.Controllers
             var userId = Guid.Empty; // Replace with actual user ID
             var result = await _kbService.SendMessageAsync(dto, userId);
             return Ok(result);
+        }
+
+        [HttpPost("chat/stream")]
+        public async Task SendMessageStream([FromBody] SendMessageDto dto)
+        {
+            var userId = Guid.Empty; // Replace with actual user ID
+            
+            Response.Headers.Append("Content-Type", "text/event-stream");
+            Response.Headers.Append("Cache-Control", "no-cache");
+            Response.Headers.Append("Connection", "keep-alive");
+
+            await foreach (var chunk in _kbService.SendMessageStreamAsync(dto, userId))
+            {
+                // Send as SSE data
+                // Need to be careful with newlines in data, but for simple text chunks usually okay
+                // A better way is to JSON encode the chunk
+                var data = System.Text.Json.JsonSerializer.Serialize(new { content = chunk });
+                await Response.WriteAsync($"data: {data}\n\n");
+                await Response.Body.FlushAsync();
+            }
+            
+            await Response.WriteAsync("data: [DONE]\n\n");
+            await Response.Body.FlushAsync();
         }
     }
 }

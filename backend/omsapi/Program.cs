@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using omsapi.Data;
 using omsapi.Infrastructure.Extensions;
 using Serilog;
+using Pgvector.EntityFrameworkCore;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -26,6 +27,14 @@ builder.Services.AddDbContext<OmsContext>(
         options.UseMySql(
             builder.Configuration.GetConnectionString("DefaultConnection"),
             new MySqlServerVersion(new Version(8, 0, 21))
+        )
+);
+
+builder.Services.AddDbContext<OmsPgContext>(
+    options =>
+        options.UseNpgsql(
+            builder.Configuration.GetConnectionString("PgConnection"),
+            o => o.UseVector()
         )
 );
 
@@ -94,10 +103,14 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<omsapi.Data.OmsContext>();
-        // 自动应用迁移（可选，建议开发环境开启）
+        var pgContext = services.GetRequiredService<omsapi.Data.OmsPgContext>();
+        
+        // 自动应用迁移
         context.Database.Migrate();
+        pgContext.Database.Migrate();
+
         // 初始化种子数据
-        await omsapi.Data.DbInitializer.InitializeAsync(context);
+        await omsapi.Data.DbInitializer.InitializeAsync(context, pgContext);
     }
     catch (Exception ex)
     {
