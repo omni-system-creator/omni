@@ -100,6 +100,20 @@ const getUserSettingKey = (key: string) => {
 // Menu Logic
 const handleMenuClick = (item: MenuItem) => {
   if (item.path) {
+    // 检查路由是否存在
+    const routeResolved = router.resolve(item.path);
+    if (routeResolved.matched.length === 0 || routeResolved.name === 'NotFound') {
+      // 路由不存在，导航到404页面（可以在 Tab 中显示）
+      // 这里我们假设有一个通用的 NotFound 路由或者我们直接显示 404 组件
+      // 由于我们是在 Tab 系统中，我们需要一种方式让 Tab 显示 404
+      // 一种方法是导航到一个专门的 404 路径，带上原始路径作为参数
+      router.push({
+        path: '/error/404',
+        query: { from: item.path }
+      });
+      return;
+    }
+
     if (item.query) {
       const queryParams = new URLSearchParams(item.query);
       const query: Record<string, string> = {};

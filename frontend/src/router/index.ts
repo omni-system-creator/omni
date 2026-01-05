@@ -46,7 +46,19 @@ const router = createRouter({
         }
       ]
     },
-    // 404 页面
+    // 404 页面 (嵌入到 MainLayout 中)
+    {
+      path: '/error',
+      component: () => import('../layouts/MainLayout.vue'),
+      children: [
+        {
+          path: '404',
+          name: 'NotFoundInTab',
+          component: () => import('../views/error/404.vue'),
+          meta: { title: '页面不存在' }
+        }
+      ]
+    },
     {
       path: '/help',
       component: () => import('../layouts/MainLayout.vue'),

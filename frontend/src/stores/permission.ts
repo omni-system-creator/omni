@@ -64,6 +64,7 @@ function filterAsyncRoutes(routes: any[]) {
 
     // 特殊处理首页或顶级非 Layout 路由
     if (route.path === '/' && component !== 'Layout') {
+      const componentPath = `../${component}`;
       tmp = {
         path: '/',
         name: 'Root', // 给顶级路由一个固定的 name，确保 addRoute 时能正确覆盖旧路由
@@ -71,7 +72,7 @@ function filterAsyncRoutes(routes: any[]) {
         children: [
           {
             path: '',
-            component: modules[`../${component}`],
+            component: modules[componentPath] || (() => import('@/views/error/404.vue')),
             name: route.key,
             meta: {
               title: route.title,
@@ -83,11 +84,12 @@ function filterAsyncRoutes(routes: any[]) {
         ]
       };
     } else {
+      const componentPath = `../${component}`;
       tmp = {
         path: route.path,
         component: component === 'Layout' 
           ? () => import('@/layouts/MainLayout.vue') 
-          : modules[`../${component}`],
+          : (modules[componentPath] || (() => import('@/views/error/404.vue'))),
         name: route.key,
         meta: {
           title: route.title,
