@@ -41,7 +41,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import * as THREE from 'three';
 import { MapControls } from 'three/examples/jsm/controls/MapControls.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; // Import OrbitControls base type
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; // Import OrbitControls base type
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 
 // --- State ---
@@ -270,8 +270,8 @@ const createEarth = () => {
   // Create a dummy object at the surface coordinate of (Lat, Lon) on an unrotated sphere.
   // Then calculate quaternion to rotate that point to (0, 1, 0).
   
-  const phi = (90 - lat) * (Math.PI / 180);
-  const theta = (lon + 180) * (Math.PI / 180); // Adjust 180 depending on texture start
+  // const phi = (90 - lat) * (Math.PI / 180);
+  // const theta = (lon + 180) * (Math.PI / 180); // Adjust 180 depending on texture start
   
   // Spherical to Cartesian (Z-up in math, but Y-up in Three.js)
   // In Three.js SphereGeometry:
@@ -389,6 +389,21 @@ const createTank = (x: number, z: number, label: string) => {
   const base = new THREE.Mesh(baseGeo, baseMat);
   base.position.y = 0.5;
   group.add(base);
+
+  // Tank Label
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (context) {
+    context.font = 'Bold 40px Arial';
+    context.fillStyle = 'rgba(0,0,0,1)';
+    context.fillText(label, 0, 50);
+    const texture = new THREE.CanvasTexture(canvas);
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.position.set(0, 32, 0);
+    sprite.scale.set(10, 5, 1);
+    group.add(sprite);
+  }
 
   scene.add(group);
 };
