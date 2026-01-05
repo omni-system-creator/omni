@@ -58,10 +58,18 @@ const props = defineProps({
     type: Number,
     default: 500
   },
+  defaultWidth: {
+    type: Number,
+    default: undefined
+  },
   position: {
     type: String,
     default: 'left', // 'left' or 'right'
     validator: (val: string) => ['left', 'right'].includes(val)
+  },
+  saveKey: {
+    type: String,
+    default: ''
   },
   // Legacy props support
   initialLeftWidth: { type: Number, default: undefined },
@@ -70,11 +78,31 @@ const props = defineProps({
 });
 
 // Normalize props
-const initW = props.initialLeftWidth !== undefined ? props.initialLeftWidth : props.initialWidth;
+const initW = props.defaultWidth !== undefined ? props.defaultWidth : (props.initialLeftWidth !== undefined ? props.initialLeftWidth : props.initialWidth);
 const minW = props.minLeftWidth !== undefined ? props.minLeftWidth : props.minWidth;
 const maxW = props.maxLeftWidth !== undefined ? props.maxLeftWidth : props.maxWidth;
 
 const sidebarWidth = ref(initW);
+
+// Load saved width if saveKey is provided
+if (props.saveKey) {
+  const saved = localStorage.getItem(props.saveKey);
+  if (saved) {
+    const parsed = parseInt(saved, 10);
+    if (!isNaN(parsed)) {
+      sidebarWidth.value = Math.max(minW, Math.min(maxW, parsed));
+    }
+  }
+}
+
+// Watch defaultWidth changes to update sidebarWidth if not saved
+import { watch } from 'vue';
+watch(() => props.defaultWidth, (newVal) => {
+  if (newVal !== undefined && !localStorage.getItem(props.saveKey)) {
+    sidebarWidth.value = Math.max(minW, Math.min(maxW, newVal));
+  }
+});
+
 const isDragging = ref(false);
 let startX = 0;
 let startWidth = 0;

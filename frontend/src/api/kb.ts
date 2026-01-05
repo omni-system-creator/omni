@@ -2,6 +2,7 @@ import request from '../utils/request'
 import type { 
   KbInfoDto, 
   CreateKbDto, 
+  UpdateKbDto,
   KbFileDto, 
   KbNodeDto, 
   ChatMessageDto, 
@@ -22,6 +23,10 @@ export function getKb(id: string) {
 
 export function createKb(data: CreateKbDto) {
   return request.post<any, KbInfoDto>('/kb', data)
+}
+
+export function updateKb(id: string, data: UpdateKbDto) {
+  return request.put<any, any>(`/kb/${id}`, data)
 }
 
 export function deleteKb(id: string) {

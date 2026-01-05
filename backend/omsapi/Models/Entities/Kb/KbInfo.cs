@@ -22,6 +22,8 @@ namespace OmsApi.Models.Entities.Kb
         [MaxLength(50)]
         public string Type { get; set; } = "general"; // general, code, book
 
+        public int SortOrder { get; set; } = 0;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime? UpdatedAt { get; set; }

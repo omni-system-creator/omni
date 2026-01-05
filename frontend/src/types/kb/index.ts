@@ -6,8 +6,11 @@ export interface KbInfoDto {
   description?: string;
   category: string;
   type: string;
+  sortOrder: number;
   createdAt: string;
+  updatedAt?: string;
   fileCount: number;
+  wordCount: number;
 }
 
 export interface CreateKbDto {
@@ -15,6 +18,14 @@ export interface CreateKbDto {
   description?: string;
   category: string;
   type: string;
+}
+
+export interface UpdateKbDto {
+  name?: string;
+  description?: string;
+  category?: string;
+  type?: string;
+  sortOrder?: number;
 }
 
 export interface KbFileDto {
@@ -51,6 +62,7 @@ export interface ChatMessageDto {
   role: 'user' | 'ai';
   content: string;
   sources?: KbNodeSourceDto[];
+  createdAt?: string;
 }
 
 export interface SendMessageDto {

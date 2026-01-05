@@ -7,8 +7,11 @@ namespace OmsApi.Models.Dtos.Kb
         public string? Description { get; set; }
         public string Category { get; set; } = "general";
         public string Type { get; set; } = "general";
+        public int SortOrder { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
         public int FileCount { get; set; }
+        public int WordCount { get; set; }
     }
 
     public class CreateKbDto
@@ -59,6 +62,7 @@ namespace OmsApi.Models.Dtos.Kb
     {
         public string Role { get; set; } = "user"; // user, ai
         public string Content { get; set; } = string.Empty;
+        public DateTime? CreatedAt { get; set; }
         public List<KbNodeSourceDto>? Sources { get; set; }
     }
 

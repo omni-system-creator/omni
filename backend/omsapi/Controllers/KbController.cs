@@ -44,6 +44,14 @@ namespace omsapi.Controllers
             return Ok(result);
         }
 
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] UpdateKbDto dto)
+        {
+            var success = await _kbService.UpdateKbAsync(id, dto);
+            if (!success) return NotFound();
+            return Ok();
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {

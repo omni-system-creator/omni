@@ -51,8 +51,20 @@ namespace omsapi.Services
         {
             var kbs = await _context.KbInfos
                 .Include(k => k.Files)
-                .OrderByDescending(k => k.CreatedAt)
+                .OrderBy(k => k.SortOrder)
+                .ThenByDescending(k => k.CreatedAt)
                 .ToListAsync();
+
+            var kbIds = kbs.Select(k => k.Id).ToList();
+            var wordCounts = await _pgContext.KbNodes
+                .Where(n => kbIds.Contains(n.KbId))
+                .GroupBy(n => n.KbId)
+                .Select(g => new { KbId = g.Key, Count = g.Sum(n => 
+                    (n.Title != null ? n.Title.Length : 0) + 
+                    (n.Summary != null ? n.Summary.Length : 0) + 
+                    (n.Content != null ? n.Content.Length : 0)) })
+                .ToListAsync();
+            var wcDict = wordCounts.ToDictionary(x => x.KbId, x => x.Count);
 
             return kbs.Select(k => new KbInfoDto
             {
@@ -61,8 +73,11 @@ namespace omsapi.Services
                 Description = k.Description,
                 Category = k.Category,
                 Type = k.Type,
+                SortOrder = k.SortOrder,
                 CreatedAt = k.CreatedAt,
-                FileCount = k.Files.Count
+                UpdatedAt = k.UpdatedAt,
+                FileCount = k.Files.Count,
+                WordCount = wcDict.TryGetValue(k.Id, out var wc) ? wc : 0
             }).ToList();
         }
 
@@ -74,6 +89,14 @@ namespace omsapi.Services
 
             if (k == null) return null;
 
+            // Compute word count for this KB
+            var wc = await _pgContext.KbNodes
+                .Where(n => n.KbId == k.Id)
+                .SumAsync(n => 
+                    (n.Title != null ? n.Title.Length : 0) + 
+                    (n.Summary != null ? n.Summary.Length : 0) + 
+                    (n.Content != null ? n.Content.Length : 0));
+
             return new KbInfoDto
             {
                 Id = k.Id,
@@ -81,8 +104,11 @@ namespace omsapi.Services
                 Description = k.Description,
                 Category = k.Category,
                 Type = k.Type,
+                SortOrder = k.SortOrder,
                 CreatedAt = k.CreatedAt,
-                FileCount = k.Files.Count
+                UpdatedAt = k.UpdatedAt,
+                FileCount = k.Files.Count,
+                WordCount = wc
             };
         }
 
@@ -95,6 +121,7 @@ namespace omsapi.Services
                 Description = dto.Description,
                 Category = dto.Category,
                 Type = dto.Type,
+                SortOrder = 0,
                 CreatedAt = DateTime.Now,
                 CreatedBy = userId
             };
@@ -109,9 +136,29 @@ namespace omsapi.Services
                 Description = kb.Description,
                 Category = kb.Category,
                 Type = kb.Type,
+                SortOrder = kb.SortOrder,
                 CreatedAt = kb.CreatedAt,
                 FileCount = 0
             };
+        }
+
+        public async Task<bool> UpdateKbAsync(Guid id, UpdateKbDto dto)
+        {
+            var kb = await _context.KbInfos.FindAsync(id);
+            if (kb == null) return false;
+
+            kb.Name = dto.Name;
+            kb.Description = dto.Description;
+            kb.Category = dto.Category;
+            kb.Type = dto.Type;
+            if (dto.SortOrder.HasValue)
+            {
+                kb.SortOrder = dto.SortOrder.Value;
+            }
+            kb.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> DeleteKbAsync(Guid id)
@@ -411,8 +458,8 @@ namespace omsapi.Services
             var result = new List<ChatMessageDto>();
             foreach (var h in history)
             {
-                result.Add(new ChatMessageDto { Role = "user", Content = h.Question });
-                result.Add(new ChatMessageDto { Role = "ai", Content = h.Answer ?? "..." });
+                result.Add(new ChatMessageDto { Role = "user", Content = h.Question, CreatedAt = h.CreatedAt });
+                result.Add(new ChatMessageDto { Role = "ai", Content = h.Answer ?? "...", CreatedAt = h.CreatedAt });
             }
 
             return result;
@@ -499,6 +546,7 @@ namespace omsapi.Services
             {
                 Role = "ai",
                 Content = qa.Answer,
+                CreatedAt = qa.CreatedAt,
                 Sources = sources
             };
         }

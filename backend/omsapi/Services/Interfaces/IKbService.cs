@@ -9,6 +9,7 @@ namespace omsapi.Services.Interfaces
         Task<List<KbInfoDto>> GetAllKbsAsync();
         Task<KbInfoDto?> GetKbByIdAsync(Guid id);
         Task<KbInfoDto> CreateKbAsync(CreateKbDto dto, Guid userId);
+        Task<bool> UpdateKbAsync(Guid id, UpdateKbDto dto);
         Task<bool> DeleteKbAsync(Guid id);
 
         // File Management
