@@ -896,6 +896,13 @@ const updateDependencies = () => {
                          animatingLines.push(line);
                      }
                      lg.add(line);
+
+                     // Add arrow
+                     const arrow = new Path({
+                         path: `M ${endX} ${endY} L ${endX - 6} ${endY - 4} L ${endX - 6} ${endY + 4} Z`,
+                         fill: isSelected ? '#2196f3' : '#999',
+                     });
+                     lg.add(arrow);
                 }
             })
         }
