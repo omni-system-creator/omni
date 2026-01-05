@@ -180,6 +180,15 @@ OMS/
 | :---: | :---: | :---: |
 | ![微信支付](./documents/捐赠收款-微信.png) | ![支付宝](./documents/捐赠收款-支付宝.jpg) | ![联系作者](./documents/作者微信.png) |
 
+## 🙏 特别鸣谢
+
+本项目核心 Canvas 渲染引擎基于 [Leafer UI](https://www.leaferjs.com/) 开发。
+
+感谢 [LeaferJS](https://github.com/leaferjs/ui) 团队提供如此优秀、高性能且易用的 Canvas 2D 渲染库。
+
+- **Leafer UI 官网**: [https://www.leaferjs.com/](https://www.leaferjs.com/)
+- **GitHub 仓库**: [https://github.com/leaferjs/ui](https://github.com/leaferjs/ui)
+
 ## 📄 许可证
 
 MIT License
