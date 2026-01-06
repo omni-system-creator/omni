@@ -12,6 +12,7 @@ Github仓库地址：<a href="https://github.com/omni-system-creator/omni" targe
 
 - [📄 系统功能规划 (功能.md)](./documents/功能.md)
 - [📖 关于项目 (About.md)](./documents/About.md)
+- [📝 更新日志](./更新日志/)
 
 ## 🌟 核心功能
 
@@ -58,7 +59,7 @@ Github仓库地址：<a href="https://github.com/omni-system-creator/omni" targe
 
 ### 后端
 - **框架**: .NET 10
-- **数据库**: MySQL 8.0+
+- **数据库**: MySQL 8.0+ / PostgreSQL 16+ (支持 Pgvector)
 - **ORM**: Entity Framework Core
 - **API 文档**: Swagger / OpenAPI
 - **日志**: Serilog
@@ -109,7 +110,7 @@ OMS/
    ```
 
 2. 配置数据库连接：
-   修改 `appsettings.json` 中的 `ConnectionStrings:DefaultConnection` 为你的 MySQL 连接字符串。
+   修改 `appsettings.json` 中的 `ConnectionStrings:DefaultConnection` (MySQL) 或 `ConnectionStrings:PgConnection` (PostgreSQL) 为你的数据库连接字符串。
 
 3. 运行项目：
    ```bash

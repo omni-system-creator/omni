@@ -12,7 +12,7 @@
           />
           <menu-fold-outlined v-else class="trigger" @click="() => (collapsed = !collapsed)" />
           <div v-if="isHome" class="welcome-text">
-            欢迎使用 金兰®综合信息管理系统 - 全面的一站式管理组织、合同、项目、财务、CRM、进销存、流程、数据分析、系统管理等。
+            欢迎使用综合信息管理系统 - 集中管理各种信息数据的系统。类似包括但不只是OA、ERP、WMS、CRM等，各种能做的都做。
           </div>
           <a-breadcrumb v-else>
             <a-breadcrumb-item>
