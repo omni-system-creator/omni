@@ -22,6 +22,10 @@ namespace omsapi.Models.Entities.Sales
         [MaxLength(100)]
         public string Category { get; set; } = string.Empty;
 
+        [Column("description")]
+        [MaxLength(500)]
+        public string Description { get; set; } = string.Empty;
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }

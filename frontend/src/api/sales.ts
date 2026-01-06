@@ -65,6 +65,7 @@ export interface SalesScriptDto {
   title: string;
   content: string;
   category?: string;
+  description?: string;
 }
 
 export interface ProductDocDto {

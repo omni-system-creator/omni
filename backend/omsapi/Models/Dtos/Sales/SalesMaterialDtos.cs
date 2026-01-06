@@ -6,6 +6,7 @@ namespace omsapi.Models.Dtos.Sales
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
     }
 
     public class ProductDocDto
