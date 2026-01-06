@@ -10,9 +10,9 @@
         />
         <a-select v-model:value="filterStatus" style="width: 120px; margin-left: 8px" @change="onSearch">
           <a-select-option value="all">所有状态</a-select-option>
-          <a-select-option value="active">活跃</a-select-option>
-          <a-select-option value="potential">潜在</a-select-option>
-          <a-select-option value="lost">流失</a-select-option>
+          <a-select-option v-for="item in statusDictOptions" :key="item.value" :value="item.value">
+            {{ item.label }}
+          </a-select-option>
         </a-select>
       </div>
       <div class="btn-area">
@@ -69,16 +69,16 @@
         </a-form-item>
         <a-form-item label="客户等级">
           <a-select v-model:value="formData.level">
-            <a-select-option value="A级">A级</a-select-option>
-            <a-select-option value="B级">B级</a-select-option>
-            <a-select-option value="C级">C级</a-select-option>
+            <a-select-option v-for="item in levelDictOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="状态">
           <a-select v-model:value="formData.status">
-            <a-select-option value="active">活跃</a-select-option>
-            <a-select-option value="potential">潜在</a-select-option>
-            <a-select-option value="lost">流失</a-select-option>
+            <a-select-option v-for="item in statusDictOptions" :key="item.value" :value="item.value">
+              {{ item.label }}
+            </a-select-option>
           </a-select>
         </a-form-item>
         <a-form-item label="负责人">
@@ -94,11 +94,15 @@ import { ref, onMounted, reactive } from 'vue';
 import { PlusOutlined, ExportOutlined } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import { getCustomers, deleteCustomer, createCustomer, updateCustomer, type CustomerDto, type CreateCustomerDto } from '@/api/sales';
+import { getDictDataByCode } from '@/api/dict';
+import type { DictDataDto } from '@/api/dict';
 
 const searchText = ref('');
 const filterStatus = ref('all');
 const loading = ref(false);
 const customerList = ref<CustomerDto[]>([]);
+const statusDictOptions = ref<DictDataDto[]>([]);
+const levelDictOptions = ref<DictDataDto[]>([]);
 
 const pagination = reactive({
   current: 1,
@@ -139,6 +143,8 @@ const loadData = async () => {
 };
 
 onMounted(() => {
+  loadStatusDict();
+  loadLevelDict();
   loadData();
 });
 
@@ -245,12 +251,24 @@ const getStatusColor = (status: string) => {
 };
 
 const getStatusText = (status: string) => {
-  const map: Record<string, string> = {
-    active: '活跃',
-    potential: '潜在',
-    lost: '流失',
-  };
-  return map[status] || status;
+  const option = statusDictOptions.value.find(item => item.value === status);
+  return option ? option.label : status;
+};
+
+const loadStatusDict = async () => {
+  try {
+    statusDictOptions.value = await getDictDataByCode('sales_customer_state');
+  } catch (error) {
+    console.error('加载客户状态字典失败:', error);
+  }
+};
+
+const loadLevelDict = async () => {
+  try {
+    levelDictOptions.value = await getDictDataByCode('sales_customer_level');
+  } catch (error) {
+    console.error('加载客户等级字典失败:', error);
+  }
 };
 </script>
 
