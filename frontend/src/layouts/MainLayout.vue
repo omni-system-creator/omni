@@ -12,7 +12,9 @@
           />
           <menu-fold-outlined v-else class="trigger" @click="() => (collapsed = !collapsed)" />
           <div v-if="isHome" class="welcome-text">
-            欢迎使用综合信息管理系统 - 集中管理各种信息数据的系统。类似包括但不只是OA、ERP、WMS、CRM等，各种能做的都做。
+            <a-tooltip :title="welcomeText">
+              <span class="welcome-ellipsis">{{ welcomeText }}</span>
+            </a-tooltip>
           </div>
           <a-breadcrumb v-else>
             <a-breadcrumb-item>
@@ -24,15 +26,22 @@
           </a-breadcrumb>
         </div>
         <div class="header-right">
-          <a-space size="middle">
+          <a-space size="small">
+            <a-tooltip title="GitHub 仓库">
+              <a-button type="text" shape="circle" @click="openLink('github')">
+                <template #icon><DynamicIcon icon="ri:github-fill" /></template>
+              </a-button>
+            </a-tooltip>
+            <a-tooltip title="Gitee 仓库">
+              <a-button type="text" shape="circle" @click="openLink('gitee')">
+                <template #icon><DynamicIcon icon="ri:gitee-fill" /></template>
+              </a-button>
+            </a-tooltip>
             <HelpButton />
             <FullscreenButton />
-            <OnlineUsersButton />
-            
-            <NotificationBell />
-            
+            <OnlineUsersButton />            
+            <NotificationBell />            
             <StatusDropdown />
-
             <UserDropdown />
           </a-space>
         </div>
@@ -79,6 +88,7 @@ import StatusDropdown from './components/StatusDropdown.vue';
 import UserDropdown from './components/UserDropdown.vue';
 import OnlineUsersButton from './components/OnlineUsersButton.vue';
 import IframeView from './components/IframeView.vue';
+import DynamicIcon from '@/components/DynamicIcon.vue';
 
 import SideMenu from './components/SideMenu.vue';
 import type { MenuItem } from '@/types/menu';
@@ -206,6 +216,19 @@ const breadcrumbs = computed(() => {
   return matched;
 });
 
+const welcomeText = '集中管理各种信息数据的系统，类似包括但不只是OA、ERP、WMS、CRM等，各种能做的都可以做。';
+
+const openLink = (site: 'github' | 'gitee') => {
+  const urls: Record<string, string> = {
+    github: 'https://github.com/omni-system-creator/omni',
+    gitee: 'https://gitee.com/kinglan_gitee/omni'
+  };
+  const url = urls[site];
+  if (url) {
+    window.open(url, '_blank');
+  }
+};
+
 
 </script>
 
@@ -229,6 +252,19 @@ const breadcrumbs = computed(() => {
 
 .welcome-text {
   font-size: 16px;
+  flex: 1;
+  min-width: 0;
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.welcome-ellipsis {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .header {
