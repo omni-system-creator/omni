@@ -109,8 +109,8 @@ const userStore = useUserStore();
 const loading = ref(false);
 
 const formState = reactive({
-  username: 'admin',
-  password: 'admin123',
+  username: 'demo',
+  password: '123456',
   remember: true,
 });
 
