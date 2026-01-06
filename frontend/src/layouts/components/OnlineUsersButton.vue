@@ -33,10 +33,11 @@
               </template>
               <template v-if="column.key === 'user'">
                 <div style="display: flex; align-items: center;">
-                  <a-avatar :style="{ backgroundColor: getAvatarColor(record.userName), marginRight: '8px' }">
-                    {{ record.userName.charAt(0).toUpperCase() }}
+                  <a-avatar v-if="record.avatar" :src="record.avatar" :style="{ marginRight: '8px' }" />
+                  <a-avatar v-else :style="{ backgroundColor: getAvatarColor(record.userName), marginRight: '8px' }">
+                    {{ (record.nickname || record.userName).charAt(0).toUpperCase() }}
                   </a-avatar>
-                  <span>{{ record.userName }}</span>
+                  <span>{{ record.nickname || record.userName }}</span>
                   <a-tag v-if="record.connectionId === myConnectionId" color="blue" style="margin-left: 8px; font-size: 10px;">当前</a-tag>
                   <a-tag v-else-if="String(record.userId) === String(userStore.id)" color="cyan" style="margin-left: 8px; font-size: 10px;">我的其他设备</a-tag>
                 </div>
@@ -80,6 +81,8 @@ interface OnlineUser {
   connectionId: string;
   userId?: string;
   userName: string;
+  nickname?: string;
+  avatar?: string;
   loginTime: string;
   ipAddress?: string;
 }
@@ -196,7 +199,7 @@ const startChat = (user: OnlineUser) => {
     query: {
       chatWith: user.userId,
       myUserId: String(userStore.id),
-      userName: user.userName,
+      userName: user.nickname || user.userName,
       type: 'private'
     }
   });

@@ -3,11 +3,20 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Security.Claims;
+using omsapi.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace omsapi.Hubs
 {
     public class UserHub : Hub
     {
+        private readonly OmsContext _context;
+
+        public UserHub(OmsContext context)
+        {
+            _context = context;
+        }
+
         // Thread-safe dictionary to store online users: ConnectionId -> UserInfo
         private static readonly ConcurrentDictionary<string, OnlineUserInfo> _onlineUsers = new();
 
@@ -37,11 +46,30 @@ namespace omsapi.Hubs
                 var userId = user.FindFirst("id")?.Value;
                 var userName = user.FindFirst(ClaimTypes.Name)?.Value ?? "Unknown";
 
+                string? nickname = null;
+                string? avatar = null;
+
+                if (long.TryParse(userId, out long uid))
+                {
+                    // Fetch user details from DB to get latest Nickname and Avatar
+                    // We create a new scope or use the injected context. 
+                    // Hub lifetime is per-invocation, but OnConnectedAsync is an invocation.
+                    // However, ensure DbContext is not disposed if we were to access it later, but here we just await it.
+                    var dbUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == uid);
+                    if (dbUser != null)
+                    {
+                        nickname = dbUser.Nickname;
+                        avatar = dbUser.Avatar;
+                    }
+                }
+
                 var userInfo = new OnlineUserInfo
                 {
                     ConnectionId = Context.ConnectionId,
                     UserId = userId,
                     UserName = userName,
+                    Nickname = nickname,
+                    Avatar = avatar,
                     LoginTime = DateTime.Now,
                     IpAddress = Context.GetHttpContext()?.Connection?.RemoteIpAddress?.ToString()
                 };
@@ -72,6 +100,8 @@ namespace omsapi.Hubs
         public string ConnectionId { get; set; } = string.Empty;
         public string? UserId { get; set; }
         public string UserName { get; set; } = string.Empty;
+        public string? Nickname { get; set; }
+        public string? Avatar { get; set; }
         public DateTime LoginTime { get; set; }
         public string? IpAddress { get; set; }
     }
