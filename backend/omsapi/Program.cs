@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using omsapi.Data;
@@ -52,6 +53,22 @@ builder.Services.AddControllers(options =>
 builder.Services.AddSignalR();
 builder.Services.AddHttpClient(); // Add HttpClient
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // 信任所有代理（Docker 环境下通常需要这样配置，因为代理 IP 可能是动态的）
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder => builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -87,6 +104,8 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles(); // 启用静态文件支持
 
 app.UseSerilogRequestLogging(); // 记录 HTTP 请求日志
+
+app.UseForwardedHeaders();
 
 app.UseAuthentication();
 app.UseAuthorization();
