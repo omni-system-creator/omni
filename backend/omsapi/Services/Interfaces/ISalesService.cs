@@ -26,5 +26,8 @@ namespace omsapi.Services.Interfaces
         // Stats
         Task<SalesDashboardStatsDto> GetDashboardStatsAsync();
         Task<List<TeamRankingDto>> GetTeamRankingAsync();
+
+        // Targets
+        Task<SalesTargetResultDto> GetSalesTargetsAsync(SalesTargetSearchParams searchParams);
     }
 }

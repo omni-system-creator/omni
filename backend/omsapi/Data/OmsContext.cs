@@ -85,6 +85,7 @@ namespace omsapi.Data
         public DbSet<omsapi.Models.Entities.Sales.SalesScript> SalesScripts { get; set; }
         public DbSet<omsapi.Models.Entities.Sales.SalesProductDoc> SalesProductDocs { get; set; }
         public DbSet<omsapi.Models.Entities.Sales.SalesProcessRule> SalesProcessRules { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesTarget> SalesTargets { get; set; }
 
         // Dict Entities
         public DbSet<omsapi.Models.Entities.Dict.SysDictCategory> DictCategories { get; set; }

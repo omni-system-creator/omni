@@ -172,5 +172,15 @@ namespace omsapi.Controllers
             var result = await _salesService.GetTeamRankingAsync();
             return ApiResponse<List<TeamRankingDto>>.Success(result);
         }
+
+        /// <summary>
+        /// 获取销售目标
+        /// </summary>
+        [HttpGet("targets")]
+        public async Task<ApiResponse<SalesTargetResultDto>> GetSalesTargets([FromQuery] SalesTargetSearchParams searchParams)
+        {
+            var result = await _salesService.GetSalesTargetsAsync(searchParams);
+            return ApiResponse<SalesTargetResultDto>.Success(result);
+        }
     }
 }

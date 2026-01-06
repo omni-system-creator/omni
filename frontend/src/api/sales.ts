@@ -175,3 +175,19 @@ export function getSalesDashboardStats() {
 export function getTeamRanking() {
   return request.get<any, TeamRankingDto[]>('/sales/stats/ranking');
 }
+
+export function getSalesTargets(params?: any) {
+  return request.get<any, any>('/sales/targets', { params });
+}
+
+export function createSalesTarget(data: any) {
+  return request.post<any, any>('/sales/targets', data);
+}
+
+export function updateSalesTarget(id: string, data: any) {
+  return request.put<any, any>(`/sales/targets/${id}`, data);
+}
+
+export function deleteSalesTarget(id: string) {
+  return request.delete<any, boolean>(`/sales/targets/${id}`);
+}

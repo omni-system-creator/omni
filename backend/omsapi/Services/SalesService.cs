@@ -370,5 +370,169 @@ namespace omsapi.Services
                 Rate = 0 // Target not defined per user yet
             }).ToList();
         }
+
+        // --- Targets ---
+
+        public async Task<SalesTargetResultDto> GetSalesTargetsAsync(SalesTargetSearchParams searchParams)
+        {
+            // Auto-seed if empty
+            if (!await _context.SalesTargets.AnyAsync())
+            {
+                await SeedSalesTargetsAsync();
+            }
+
+            var query = _context.SalesTargets.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchParams.Period))
+            {
+                query = query.Where(t => t.Period == searchParams.Period);
+            }
+            
+            // Calculate overview
+            var totalTarget = await query.SumAsync(t => t.TargetAmount);
+            var completedAmount = await query.SumAsync(t => t.CompletedAmount);
+            var progressRate = totalTarget > 0 ? (completedAmount / totalTarget) * 100 : 0;
+            
+            var total = await query.CountAsync();
+            var items = await query.OrderByDescending(t => t.CreatedAt)
+                .Skip((searchParams.Page - 1) * searchParams.PageSize)
+                .Take(searchParams.PageSize)
+                .Select(t => new SalesTargetDto
+                {
+                    Id = t.Id,
+                    Period = t.Period,
+                    TargetType = t.TargetType,
+                    TargetId = t.TargetId,
+                    TargetName = t.TargetName,
+                    TargetAmount = t.TargetAmount,
+                    CompletedAmount = t.CompletedAmount,
+                    Status = t.Status,
+                    StartDate = t.StartDate,
+                    EndDate = t.EndDate
+                })
+                .ToListAsync();
+
+            // Mock remaining days for now
+            var deadline = DateTime.Now.AddDays(45);
+            
+            return new SalesTargetResultDto
+            {
+                Overview = new SalesTargetOverviewDto
+                {
+                    TotalTarget = totalTarget,
+                    CompletedAmount = completedAmount,
+                    ProgressRate = Math.Round(progressRate, 1),
+                    RemainingDays = (int)(deadline - DateTime.Now).TotalDays,
+                    Deadline = deadline.ToString("yyyy-MM-dd")
+                },
+                Items = items,
+                Total = total
+            };
+        }
+
+        private async Task SeedSalesTargetsAsync()
+        {
+             var targets = new List<SalesTarget>();
+             var random = new Random();
+             var groups = new[] { "华东大区", "华北大区", "华南大区", "西南大区" };
+             var products = new[] { "云服务", "大数据平台", "AI解决方案", "咨询服务" };
+             var industries = new[] { "金融", "制造", "零售", "医疗" };
+
+             // --- Quarter Data (Current) ---
+             foreach (var group in groups)
+             {
+                 var target = 1000000 + random.Next(500) * 10000;
+                 var completed = target * (random.NextDouble() * 0.8 + 0.1); 
+                 targets.Add(new SalesTarget
+                 {
+                     Period = "quarter",
+                     TargetType = "group",
+                     TargetId = Guid.NewGuid().ToString("N"),
+                     TargetName = group,
+                     TargetAmount = target,
+                     CompletedAmount = (decimal)completed,
+                     Status = completed >= target ? "completed" : "in_progress",
+                     StartDate = new DateTime(DateTime.Now.Year, 1, 1),
+                     EndDate = new DateTime(DateTime.Now.Year, 3, 31)
+                 });
+             }
+
+             foreach (var p in products)
+             {
+                 var target = 800000 + random.Next(300) * 10000;
+                 var completed = target * (random.NextDouble() * 0.8 + 0.1); 
+                 targets.Add(new SalesTarget
+                 {
+                     Period = "quarter",
+                     TargetType = "product",
+                     TargetId = Guid.NewGuid().ToString("N"),
+                     TargetName = p,
+                     TargetAmount = target,
+                     CompletedAmount = (decimal)completed,
+                     Status = completed >= target ? "completed" : "in_progress",
+                     StartDate = new DateTime(DateTime.Now.Year, 1, 1),
+                     EndDate = new DateTime(DateTime.Now.Year, 3, 31)
+                 });
+             }
+
+             foreach (var i in industries)
+             {
+                 var target = 1200000 + random.Next(400) * 10000;
+                 var completed = target * (random.NextDouble() * 0.8 + 0.1); 
+                 targets.Add(new SalesTarget
+                 {
+                     Period = "quarter",
+                     TargetType = "industry",
+                     TargetId = Guid.NewGuid().ToString("N"),
+                     TargetName = i,
+                     TargetAmount = target,
+                     CompletedAmount = (decimal)completed,
+                     Status = completed >= target ? "completed" : "in_progress",
+                     StartDate = new DateTime(DateTime.Now.Year, 1, 1),
+                     EndDate = new DateTime(DateTime.Now.Year, 3, 31)
+                 });
+             }
+
+             // --- Year Data ---
+             foreach (var group in groups)
+             {
+                 var target = 4000000 + random.Next(2000) * 10000;
+                 var completed = target * (random.NextDouble() * 0.3 + 0.1); // Early in year
+                 targets.Add(new SalesTarget
+                 {
+                     Period = "year",
+                     TargetType = "group",
+                     TargetId = Guid.NewGuid().ToString("N"),
+                     TargetName = group,
+                     TargetAmount = target,
+                     CompletedAmount = (decimal)completed,
+                     Status = "in_progress",
+                     StartDate = new DateTime(DateTime.Now.Year, 1, 1),
+                     EndDate = new DateTime(DateTime.Now.Year, 12, 31)
+                 });
+             }
+             
+             // --- Month Data ---
+             foreach (var group in groups)
+             {
+                 var target = 300000 + random.Next(100) * 10000;
+                 var completed = target * (random.NextDouble() * 0.9 + 0.1); 
+                 targets.Add(new SalesTarget
+                 {
+                     Period = "month",
+                     TargetType = "group",
+                     TargetId = Guid.NewGuid().ToString("N"),
+                     TargetName = group,
+                     TargetAmount = target,
+                     CompletedAmount = (decimal)completed,
+                     Status = completed >= target ? "completed" : "in_progress",
+                     StartDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1),
+                     EndDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month))
+                 });
+             }
+
+             _context.SalesTargets.AddRange(targets);
+             await _context.SaveChangesAsync();
+        }
     }
 }
