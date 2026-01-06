@@ -150,6 +150,7 @@ const columns = [
   { title: '#', key: 'index', width: 50, align: 'center' },
   { title: '标签', dataIndex: 'label', key: 'label' },
   { title: '键值', dataIndex: 'value', key: 'value' },
+  { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true },
   { title: '排序', dataIndex: 'sort', key: 'sort', width: 80 },
   { title: '默认', key: 'isDefault', width: 80 },
   { title: '状态', key: 'status', width: 80 },
