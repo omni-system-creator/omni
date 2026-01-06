@@ -26,7 +26,7 @@
           </a-breadcrumb>
         </div>
         <div class="header-right">
-          <a-space size="small">
+          <a-space :size="4">
             <a-tooltip title="GitHub 仓库">
               <a-button type="text" shape="circle" @click="openLink('github')">
                 <template #icon><DynamicIcon icon="ri:github-fill" /></template>
@@ -34,7 +34,7 @@
             </a-tooltip>
             <a-tooltip title="Gitee 仓库">
               <a-button type="text" shape="circle" @click="openLink('gitee')">
-                <template #icon><DynamicIcon icon="ri:gitee-fill" /></template>
+                <template #icon><DynamicIcon icon="simple-icons:gitee" /></template>
               </a-button>
             </a-tooltip>
             <HelpButton />
