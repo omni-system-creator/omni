@@ -110,55 +110,63 @@ namespace omsapi.Services
 
             // 检查是否有角色关联 (可选：也可以级联删除)
             // 这里选择级联删除角色关联，因为权限删了，关联也没意义了
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                var rolePerms = await _context.RolePermissions.Where(rp => rp.PermissionId == id).ToListAsync();
-                _context.RolePermissions.RemoveRange(rolePerms);
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    var rolePerms = await _context.RolePermissions.Where(rp => rp.PermissionId == id).ToListAsync();
+                    _context.RolePermissions.RemoveRange(rolePerms);
 
-                _context.Permissions.Remove(perm);
-                
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return (true, "删除成功");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return (false, "删除失败: " + ex.Message);
-            }
+                    _context.Permissions.Remove(perm);
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return (true, "删除成功");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "删除失败: " + ex.Message);
+                }
+            });
         }
 
         public async Task<(bool Success, string Message)> BatchUpdateStructureAsync(List<UpdatePermissionStructureDto> dtos)
         {
             if (dtos == null || !dtos.Any()) return (true, "没有需要更新的数据");
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                var ids = dtos.Select(d => d.Id).ToList();
-                var perms = await _context.Permissions.Where(p => ids.Contains(p.Id)).ToListAsync();
-
-                foreach (var dto in dtos)
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    var perm = perms.FirstOrDefault(p => p.Id == dto.Id);
-                    if (perm != null)
-                    {
-                        perm.ParentId = dto.ParentId;
-                        perm.SortOrder = dto.SortOrder;
-                        perm.UpdatedAt = DateTime.Now;
-                    }
-                }
+                    var ids = dtos.Select(d => d.Id).ToList();
+                    var perms = await _context.Permissions.Where(p => ids.Contains(p.Id)).ToListAsync();
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return (true, "结构更新成功");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return (false, "更新失败: " + ex.Message);
-            }
+                    foreach (var dto in dtos)
+                    {
+                        var perm = perms.FirstOrDefault(p => p.Id == dto.Id);
+                        if (perm != null)
+                        {
+                            perm.ParentId = dto.ParentId;
+                            perm.SortOrder = dto.SortOrder;
+                            perm.UpdatedAt = DateTime.Now;
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return (true, "结构更新成功");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "更新失败: " + ex.Message);
+                }
+            });
         }
 
         private List<PermissionTreeDto> BuildPermissionTree(List<PermissionTreeDto> all, long? parentId)

@@ -19,10 +19,22 @@ namespace omsapi.Controllers
         }
 
         [HttpGet("tree")]
-        public async Task<ActionResult<ApiResponse<List<DeptTreeDto>>>> GetDeptTree()
+        public async Task<ActionResult<ApiResponse<List<DeptTreeDto>>>> GetDeptTree([FromQuery] long? rootId = null)
         {
-            var tree = await _deptService.GetDeptTreeAsync();
+            var userIdClaim = User.FindFirst("id");
+            if (userIdClaim == null) return Unauthorized();
+            long userId = long.Parse(userIdClaim.Value);
+
+            var tree = await _deptService.GetDeptTreeAsync(userId, rootId);
             return Ok(ApiResponse<List<DeptTreeDto>>.Success(tree));
+        }
+
+        [HttpGet("roots")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<ActionResult<ApiResponse<List<DeptTreeDto>>>> GetRootDepts()
+        {
+            var roots = await _deptService.GetRootDeptsAsync();
+            return Ok(ApiResponse<List<DeptTreeDto>>.Success(roots));
         }
 
         [HttpGet("{id}")]
@@ -36,6 +48,11 @@ namespace omsapi.Controllers
         [HttpPost]
         public async Task<ActionResult<ApiResponse<DeptTreeDto>>> CreateDept(CreateDeptDto dto)
         {
+            var isRoot = !dto.ParentId.HasValue || dto.ParentId.Value == 0;
+            if (isRoot && !User.IsInRole("SuperAdmin"))
+            {
+                return Ok(ApiResponse<DeptTreeDto>.Error("只有平台超级管理员能新建顶级根组织", 403));
+            }
             var result = await _deptService.CreateDeptAsync(dto);
             // CreatedAtAction usually returns 201. We can wrap the result.
             // But to keep "Unified Structure" usually 200 is preferred with code=200 in body.
@@ -70,6 +87,13 @@ namespace omsapi.Controllers
         {
             try
             {
+                var dept = await _deptService.GetDeptByIdAsync(id);
+                if (dept == null) return Ok(ApiResponse<object>.Error("Department not found", 404));
+                var isRoot = !dept.ParentId.HasValue || dept.ParentId.Value == 0;
+                if (isRoot && !User.IsInRole("SuperAdmin"))
+                {
+                    return Ok(ApiResponse<object>.Error("只有平台超级管理员能删除顶级根组织", 403));
+                }
                 var success = await _deptService.DeleteDeptAsync(id);
                 if (!success) return Ok(ApiResponse<object>.Error("Department not found", 404));
                 return Ok(ApiResponse<object>.Success(null));

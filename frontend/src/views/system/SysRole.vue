@@ -9,7 +9,7 @@
               <ApartmentOutlined /> 组织结构
             </span>
           </template>
-          <DeptTree v-model:selectedKeys="selectedDeptKeys" @loaded="(data) => depts = data" @select="loadData" />
+          <DeptTree v-model:selectedKeys="selectedDeptKeys" @loaded="(data) => depts = data" @select="onSelectDept" />
         </a-card>
       </template>
 
@@ -34,6 +34,10 @@
                 <a-tag :color="record.isSystem ? 'orange' : 'green'">
                   {{ record.isSystem ? '系统内置' : '自定义' }}
                 </a-tag>
+              </template>
+
+              <template v-else-if="column.key === 'rootDept'">
+                <a-tag color="cyan">{{ getRootDeptName(record.deptId) }}</a-tag>
               </template>
 
               <template v-else-if="column.key === 'createdAt'">
@@ -63,7 +67,7 @@
           <a-input v-model:value="formState.name" placeholder="请输入角色名称" />
         </a-form-item>
         <a-form-item label="角色编码" name="code">
-          <a-input v-model:value="formState.code" :disabled="!!currentId" placeholder="请输入角色编码 (如: ADMIN)" />
+          <a-input v-model:value="formState.code" :disabled="!!currentId" placeholder="请输入角色编码" />
         </a-form-item>
         <a-form-item label="描述" name="description">
           <a-textarea v-model:value="formState.description" placeholder="请输入描述" :rows="3" />
@@ -107,29 +111,60 @@ import { type Dept } from '@/api/dept';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
 import dayjs from 'dayjs';
+import { useUserStore } from '@/stores/user';
 
 const loading = ref(false);
 const roles = ref<RoleDto[]>([]);
 const depts = ref<Dept[]>([]);
 const selectedDeptKeys = ref<number[]>([]);
 
-const columns = [
-  { title: '角色名称', dataIndex: 'name', key: 'name' },
-  { title: '角色编码', dataIndex: 'code', key: 'code' },
-  { title: '类型', key: 'isSystem', width: 100 },
-  { title: '描述', dataIndex: 'description', key: 'description' },
-  { title: '创建时间', key: 'createdAt', width: 180 },
-  { title: '操作', key: 'action', width: 250, align: 'center' },
-];
+const userStore = useUserStore();
+const isAdmin = computed(() => userStore.isAdmin);
+
+const columns = computed(() => {
+  const base = [
+    { title: '角色名称', dataIndex: 'name', key: 'name' },
+    { title: '角色编码', dataIndex: 'code', key: 'code' },
+    { title: '类型', key: 'isSystem', width: 100 },
+    { title: '描述', dataIndex: 'description', key: 'description' },
+    { title: '创建时间', key: 'createdAt', width: 180 },
+    { title: '操作', key: 'action', width: 250, align: 'center' },
+  ] as any[];
+  if (isAdmin.value) {
+    base.splice(2, 0, { title: '根组织', key: 'rootDept', width: 160 });
+  }
+  return base;
+});
 
 const formatDate = (date: string) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm:ss');
 };
 
-const loadData = async () => {
+const findPathToId = (nodes: Dept[], targetId: number, path: Dept[] = []): Dept[] | null => {
+  for (const node of nodes) {
+    const currentPath = [...path, node];
+    if (node.id === targetId) {
+      return currentPath;
+    }
+    if (node.children && node.children.length > 0) {
+      const result = findPathToId(node.children, targetId, currentPath);
+      if (result) return result;
+    }
+  }
+  return null;
+};
+
+const getRootDeptName = (deptId?: number) => {
+  if (!deptId) return '全局';
+  const path = findPathToId(depts.value || [], deptId);
+  const root = path?.[0];
+  return root ? root.name : '-';
+};
+
+const loadData = async (deptIdParam?: number) => {
   loading.value = true;
   try {
-    const deptId = selectedDeptKeys.value.length > 0 ? selectedDeptKeys.value[0] : undefined;
+    const deptId = deptIdParam !== undefined ? deptIdParam : (selectedDeptKeys.value.length > 0 ? selectedDeptKeys.value[0] : undefined);
     const rolesRes = await getRoleList(deptId);
     roles.value = rolesRes;
   } catch (error) {
@@ -137,6 +172,12 @@ const loadData = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const onSelectDept = (keys: number[]) => {
+  selectedDeptKeys.value = keys;
+  const id = keys && keys.length > 0 ? keys[0] : undefined;
+  loadData(id);
 };
 
 const initData = async () => {
@@ -171,7 +212,7 @@ const roleOptions = computed(() => {
 
 const rules = {
   name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
-  code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }],
+  code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }, { validator: (_r: any, v: string) => v && v.indexOf('-') === -1 ? Promise.resolve() : Promise.reject('角色编码不能包含连字符(-)'), trigger: 'blur' }],
 };
 
 const handleAdd = () => {

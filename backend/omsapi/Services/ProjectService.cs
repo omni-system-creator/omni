@@ -113,129 +113,133 @@ namespace omsapi.Services
             var code = dto.ProjectInfo.Code;
             if (string.IsNullOrEmpty(code)) return false;
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                // Update Project Info
-                var project = await _context.ProjectInfos.FirstOrDefaultAsync(p => p.Code == code);
-                if (project == null)
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    project = new ProjectInfo { Code = code };
-                    _context.ProjectInfos.Add(project);
-                }
-                project.Name = dto.ProjectInfo.Name;
-                project.Type = dto.ProjectInfo.Type;
-                project.Description = dto.ProjectInfo.Description;
-                project.Manager = dto.ProjectInfo.Manager;
-                project.PlannedStartDate = dto.ProjectInfo.PlannedStartDate;
-                project.PlannedEndDate = dto.ProjectInfo.PlannedEndDate;
-
-                // Clear existing children
-                var phases = await _context.ProjectPhases.Where(p => p.ProjectCode == code).ToListAsync();
-                _context.ProjectPhases.RemoveRange(phases);
-
-                var swimlanes = await _context.ProjectSwimlanes.Where(s => s.ProjectCode == code).ToListAsync();
-                _context.ProjectSwimlanes.RemoveRange(swimlanes);
-
-                var tasks = await _context.ProjectTasks.Where(t => t.ProjectCode == code).ToListAsync();
-                _context.ProjectTasks.RemoveRange(tasks);
-
-                var dependencies = await _context.ProjectTaskDependencies.Where(d => d.ProjectCode == code).ToListAsync();
-                _context.ProjectTaskDependencies.RemoveRange(dependencies);
-
-                var attachments = await _context.ProjectAttachments.Where(a => a.ProjectCode == code).ToListAsync();
-                _context.ProjectAttachments.RemoveRange(attachments);
-
-                await _context.SaveChangesAsync();
-
-                // Insert new children
-                if (dto.Phases != null)
-                {
-                    _context.ProjectPhases.AddRange(dto.Phases.Select(p => new ProjectPhase
+                    // Update Project Info
+                    var project = await _context.ProjectInfos.FirstOrDefaultAsync(p => p.Code == code);
+                    if (project == null)
                     {
-                        Id = p.Id,
-                        ProjectCode = code,
-                        Name = p.Name,
-                        Color = p.Color
-                    }));
-                }
+                        project = new ProjectInfo { Code = code };
+                        _context.ProjectInfos.Add(project);
+                    }
+                    project.Name = dto.ProjectInfo.Name;
+                    project.Type = dto.ProjectInfo.Type;
+                    project.Description = dto.ProjectInfo.Description;
+                    project.Manager = dto.ProjectInfo.Manager;
+                    project.PlannedStartDate = dto.ProjectInfo.PlannedStartDate;
+                    project.PlannedEndDate = dto.ProjectInfo.PlannedEndDate;
 
-                if (dto.Swimlanes != null)
-                {
-                    _context.ProjectSwimlanes.AddRange(dto.Swimlanes.Select(s => new ProjectSwimlane
-                    {
-                        Id = s.Id,
-                        ProjectCode = code,
-                        Name = s.Name,
-                        Color = s.Color
-                    }));
-                }
+                    // Clear existing children
+                    var phases = await _context.ProjectPhases.Where(p => p.ProjectCode == code).ToListAsync();
+                    _context.ProjectPhases.RemoveRange(phases);
 
-                if (dto.Tasks != null)
-                {
-                    foreach (var t in dto.Tasks)
+                    var swimlanes = await _context.ProjectSwimlanes.Where(s => s.ProjectCode == code).ToListAsync();
+                    _context.ProjectSwimlanes.RemoveRange(swimlanes);
+
+                    var tasks = await _context.ProjectTasks.Where(t => t.ProjectCode == code).ToListAsync();
+                    _context.ProjectTasks.RemoveRange(tasks);
+
+                    var dependencies = await _context.ProjectTaskDependencies.Where(d => d.ProjectCode == code).ToListAsync();
+                    _context.ProjectTaskDependencies.RemoveRange(dependencies);
+
+                    var attachments = await _context.ProjectAttachments.Where(a => a.ProjectCode == code).ToListAsync();
+                    _context.ProjectAttachments.RemoveRange(attachments);
+
+                    await _context.SaveChangesAsync();
+
+                    // Insert new children
+                    if (dto.Phases != null)
                     {
-                        _context.ProjectTasks.Add(new ProjectTask
+                        _context.ProjectPhases.AddRange(dto.Phases.Select(p => new ProjectPhase
                         {
-                            Id = t.Id,
+                            Id = p.Id,
                             ProjectCode = code,
-                            Name = t.Name,
-                            PhaseId = t.PhaseId,
-                            SwimlaneId = t.SwimlaneId,
-                            Status = t.Status,
-                            Progress = t.Progress,
-                            Owner = t.Owner,
-                            StartDate = t.StartDate,
-                            EndDate = t.EndDate,
-                            Type = t.Type,
-                            Description = t.Description,
-                            X = t.X,
-                            Y = t.Y,
-                            Width = t.Width,
-                            StartColor = t.StartColor,
-                            EndColor = t.EndColor
-                        });
+                            Name = p.Name,
+                            Color = p.Color
+                        }));
+                    }
 
-                        if (t.Dependencies != null)
+                    if (dto.Swimlanes != null)
+                    {
+                        _context.ProjectSwimlanes.AddRange(dto.Swimlanes.Select(s => new ProjectSwimlane
                         {
-                            _context.ProjectTaskDependencies.AddRange(t.Dependencies.Select(d => new ProjectTaskDependency
-                            {
-                                TaskId = t.Id,
-                                DependencyId = d.TaskId,
-                                ProjectCode = code,
-                                Type = d.Type,
-                                SourcePort = d.SourcePort,
-                                TargetPort = d.TargetPort,
-                                ControlPoints = d.ControlPoints,
-                                ControlPointCount = d.ControlPointCount
-                            }));
-                        }
+                            Id = s.Id,
+                            ProjectCode = code,
+                            Name = s.Name,
+                            Color = s.Color
+                        }));
+                    }
 
-                        if (t.Attachments != null)
+                    if (dto.Tasks != null)
+                    {
+                        foreach (var t in dto.Tasks)
                         {
-                            _context.ProjectAttachments.AddRange(t.Attachments.Select(a => new ProjectAttachment
+                            _context.ProjectTasks.Add(new ProjectTask
                             {
-                                Id = a.Id,
-                                TaskId = t.Id,
+                                Id = t.Id,
                                 ProjectCode = code,
-                                Name = a.Name,
-                                Url = a.Url,
-                                Type = a.Type,
-                                UploadDate = a.UploadDate
-                            }));
+                                Name = t.Name,
+                                PhaseId = t.PhaseId,
+                                SwimlaneId = t.SwimlaneId,
+                                Status = t.Status,
+                                Progress = t.Progress,
+                                Owner = t.Owner,
+                                StartDate = t.StartDate,
+                                EndDate = t.EndDate,
+                                Type = t.Type,
+                                Description = t.Description,
+                                X = t.X,
+                                Y = t.Y,
+                                Width = t.Width,
+                                StartColor = t.StartColor,
+                                EndColor = t.EndColor
+                            });
+
+                            if (t.Dependencies != null)
+                            {
+                                _context.ProjectTaskDependencies.AddRange(t.Dependencies.Select(d => new ProjectTaskDependency
+                                {
+                                    TaskId = t.Id,
+                                    DependencyId = d.TaskId,
+                                    ProjectCode = code,
+                                    Type = d.Type,
+                                    SourcePort = d.SourcePort,
+                                    TargetPort = d.TargetPort,
+                                    ControlPoints = d.ControlPoints,
+                                    ControlPointCount = d.ControlPointCount
+                                }));
+                            }
+
+                            if (t.Attachments != null)
+                            {
+                                _context.ProjectAttachments.AddRange(t.Attachments.Select(a => new ProjectAttachment
+                                {
+                                    Id = a.Id,
+                                    TaskId = t.Id,
+                                    ProjectCode = code,
+                                    Name = a.Name,
+                                    Url = a.Url,
+                                    Type = a.Type,
+                                    UploadDate = a.UploadDate
+                                }));
+                            }
                         }
                     }
-                }
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch (Exception)
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
         }
     }
 }

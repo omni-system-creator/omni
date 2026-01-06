@@ -62,8 +62,12 @@ export interface UpdateDeptStructureParams {
     sortOrder: number;
 }
 
-export const getDeptTree = () => {
-  return request.get('/dept/tree') as unknown as Promise<Dept[]>;
+export const getDeptTree = (rootId?: number) => {
+  return request.get('/dept/tree', { params: { rootId } }) as unknown as Promise<Dept[]>;
+};
+
+export const getRootDepts = () => {
+  return request.get('/dept/roots') as unknown as Promise<Dept[]>;
 };
 
 export const getDeptList = getDeptTree;

@@ -62,8 +62,12 @@ namespace omsapi.Services
             user.LastLoginAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            var token = GenerateJwtToken(user.Username, user.Id);
             var roleIds = await GetEffectiveRoleIdsAsync(user.Id);
+            var roleCodes = await _context.Roles.Where(r => roleIds.Contains(r.Id)).Select(r => r.Code).ToListAsync();
+            var token = GenerateJwtToken(user.Username, user.Id, roleCodes);
+            
+            // Check if user is Admin
+            var isAdmin = await _context.Roles.AnyAsync(r => roleIds.Contains(r.Id) && r.Code == "SuperAdmin");
 
             var result = new LoginResultDto
             {
@@ -76,7 +80,9 @@ namespace omsapi.Services
                     Email = user.Email,
                     Phone = user.Phone,
                     Avatar = user.Avatar,
-                    Roles = roleIds
+                    Roles = roleIds,
+                    DeptId = user.DeptId,
+                    IsAdmin = isAdmin
                 }
             };
 
@@ -211,19 +217,24 @@ namespace omsapi.Services
             await _auditLogService.LogAsync(log);
         }
 
-        private string GenerateJwtToken(string username, long userId)
+        private string GenerateJwtToken(string username, long userId, List<string> roleCodes)
         {
             var key = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing");
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, username),
                 new Claim(ClaimTypes.Name, username),
                 new Claim("id", userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            foreach (var code in roleCodes)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, code));
+            }
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],

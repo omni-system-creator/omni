@@ -26,7 +26,8 @@ builder.Services.AddDbContext<OmsContext>(
     options =>
         options.UseMySql(
             builder.Configuration.GetConnectionString("DefaultConnection"),
-            new MySqlServerVersion(new Version(8, 0, 21))
+            new MySqlServerVersion(new Version(8, 0, 21)),
+            mySqlOptions => mySqlOptions.EnableRetryOnFailure()
         )
 );
 

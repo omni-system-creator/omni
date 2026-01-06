@@ -139,16 +139,77 @@ namespace omsapi.Services
             }
         }
 
-        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync()
+        private async Task<bool> IsAdminAsync(long userId)
         {
-            var users = await _context.Users
+            var roles = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Include(ur => ur.Role)
+                .ToListAsync();
+            return roles.Any(ur => ur.Role.Code == "SuperAdmin");
+        }
+
+        private async Task<long?> GetUserRootDeptIdAsync(long userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user?.DeptId == null) return null;
+            var current = await _context.Depts.FindAsync(user.DeptId.Value);
+            while (current != null && current.ParentId != null && current.ParentId != 0)
+            {
+                current = await _context.Depts.FindAsync(current.ParentId);
+            }
+            return current?.Id;
+        }
+
+        private async Task<List<long>> GetDescendantDeptIdsAsync(long rootId)
+        {
+            var result = new List<long> { rootId };
+            var queue = new Queue<long>();
+            queue.Enqueue(rootId);
+            while (queue.Count > 0)
+            {
+                var parentId = queue.Dequeue();
+                var children = await _context.Depts
+                    .Where(d => d.ParentId == parentId)
+                    .Select(d => d.Id)
+                    .ToListAsync();
+                foreach (var cid in children)
+                {
+                    if (!result.Contains(cid))
+                    {
+                        result.Add(cid);
+                        queue.Enqueue(cid);
+                    }
+                }
+            }
+            return result;
+        }
+
+        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync(long userId)
+        {
+            var isAdmin = await IsAdminAsync(userId);
+
+            IQueryable<omsapi.Models.Entities.SystemUser> query = _context.Users
+                .AsSplitQuery()
                 .Include(u => u.Dept)
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                 .Include(u => u.UserPosts)
                 .ThenInclude(up => up.Post)
                 .Include(u => u.UserPosts)
-                .ThenInclude(up => up.Dept)
+                .ThenInclude(up => up.Dept);
+
+            if (!isAdmin)
+            {
+                var rootId = await GetUserRootDeptIdAsync(userId);
+                if (rootId == null)
+                {
+                    return (true, "获取成功", new List<UserListDto>());
+                }
+                var allowedDeptIds = await GetDescendantDeptIdsAsync(rootId.Value);
+                query = query.Where(u => u.DeptId.HasValue && allowedDeptIds.Contains(u.DeptId.Value));
+            }
+
+            var users = await query
                 .Select(u => new UserListDto
                 {
                     Id = u.Id,
@@ -162,16 +223,16 @@ namespace omsapi.Services
                     CreatedAt = u.CreatedAt,
                     LastLoginAt = u.LastLoginAt,
                     Roles = u.UserRoles.Select(ur => ur.Role.Name).ToList(),
-                    Posts = u.UserPosts.Select(up => new UserPostDto 
-                    { 
-                        PostId = up.PostId, 
+                    Posts = u.UserPosts.Select(up => new UserPostDto
+                    {
+                        PostId = up.PostId,
                         PostName = up.Post.Name,
                         DeptId = up.DeptId,
                         DeptName = up.Dept.Name
                     }).ToList(),
-                    Dept = u.Dept != null ? new DeptDto 
-                    { 
-                        Id = u.Dept.Id, 
+                    Dept = u.Dept != null ? new DeptDto
+                    {
+                        Id = u.Dept.Id,
                         Name = u.Dept.Name,
                         Code = u.Dept.Code,
                         ParentId = u.Dept.ParentId,
@@ -188,6 +249,7 @@ namespace omsapi.Services
         public async Task<(bool Success, string Message, UserListDto? Data)> GetUserByIdAsync(long id)
         {
             var user = await _context.Users
+                .AsSplitQuery()
                 .Include(u => u.Dept)
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
@@ -254,47 +316,51 @@ namespace omsapi.Services
                 IsActive = true
             };
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-
-                if (dto.RoleIds != null && dto.RoleIds.Any())
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    foreach (var roleId in dto.RoleIds)
-                    {
-                        _context.UserRoles.Add(new omsapi.Models.Entities.SystemUserRole
-                        {
-                            UserId = user.Id,
-                            RoleId = roleId
-                        });
-                    }
-                }
+                    _context.Users.Add(user);
+                    await _context.SaveChangesAsync();
 
-                if (dto.PostRelations != null && dto.PostRelations.Any())
+                    if (dto.RoleIds != null && dto.RoleIds.Any())
+                    {
+                        foreach (var roleId in dto.RoleIds)
+                        {
+                            _context.UserRoles.Add(new omsapi.Models.Entities.SystemUserRole
+                            {
+                                UserId = user.Id,
+                                RoleId = roleId
+                            });
+                        }
+                    }
+
+                    if (dto.PostRelations != null && dto.PostRelations.Any())
+                    {
+                        foreach (var rel in dto.PostRelations)
+                        {
+                            _context.UserPosts.Add(new omsapi.Models.Entities.SystemUserPost
+                            {
+                                UserId = user.Id,
+                                PostId = rel.PostId,
+                                DeptId = rel.DeptId
+                            });
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return (true, "创建成功");
+                }
+                catch (Exception ex)
                 {
-                    foreach (var rel in dto.PostRelations)
-                    {
-                        _context.UserPosts.Add(new omsapi.Models.Entities.SystemUserPost
-                        {
-                            UserId = user.Id,
-                            PostId = rel.PostId,
-                            DeptId = rel.DeptId
-                        });
-                    }
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "CreateUserAsync failed");
+                    return (false, "创建失败: " + ex.Message);
                 }
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return (true, "创建成功");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "CreateUserAsync failed");
-                return (false, "创建失败: " + ex.Message);
-            }
+            });
         }
 
         public async Task<(bool Success, string Message)> UpdateUserAsync(long id, UpdateUserDto dto)
@@ -316,54 +382,58 @@ namespace omsapi.Services
             if (dto.IsActive.HasValue) user.IsActive = dto.IsActive.Value;
             if (dto.DeptId.HasValue) user.DeptId = dto.DeptId.Value;
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                if (dto.RoleIds != null)
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    // 移除旧角色
-                    var oldRoles = await _context.UserRoles.Where(ur => ur.UserId == id).ToListAsync();
-                    _context.UserRoles.RemoveRange(oldRoles);
-
-                    // 添加新角色
-                    foreach (var roleId in dto.RoleIds)
+                    if (dto.RoleIds != null)
                     {
-                        _context.UserRoles.Add(new omsapi.Models.Entities.SystemUserRole
-                        {
-                            UserId = id,
-                            RoleId = roleId
-                        });
-                    }
-                }
+                        // 移除旧角色
+                        var oldRoles = await _context.UserRoles.Where(ur => ur.UserId == id).ToListAsync();
+                        _context.UserRoles.RemoveRange(oldRoles);
 
-                if (dto.PostRelations != null)
+                        // 添加新角色
+                        foreach (var roleId in dto.RoleIds)
+                        {
+                            _context.UserRoles.Add(new omsapi.Models.Entities.SystemUserRole
+                            {
+                                UserId = id,
+                                RoleId = roleId
+                            });
+                        }
+                    }
+
+                    if (dto.PostRelations != null)
+                    {
+                        // 移除旧岗位关联
+                        var oldPosts = await _context.UserPosts.Where(up => up.UserId == id).ToListAsync();
+                        _context.UserPosts.RemoveRange(oldPosts);
+
+                        // 添加新岗位关联
+                        foreach (var rel in dto.PostRelations)
+                        {
+                            _context.UserPosts.Add(new omsapi.Models.Entities.SystemUserPost
+                            {
+                                UserId = id,
+                                PostId = rel.PostId,
+                                DeptId = rel.DeptId
+                            });
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return (true, "更新成功");
+                }
+                catch (Exception ex)
                 {
-                    // 移除旧岗位关联
-                    var oldPosts = await _context.UserPosts.Where(up => up.UserId == id).ToListAsync();
-                    _context.UserPosts.RemoveRange(oldPosts);
-
-                    // 添加新岗位关联
-                    foreach (var rel in dto.PostRelations)
-                    {
-                        _context.UserPosts.Add(new omsapi.Models.Entities.SystemUserPost
-                        {
-                            UserId = id,
-                            PostId = rel.PostId,
-                            DeptId = rel.DeptId
-                        });
-                    }
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "UpdateUserAsync failed");
+                    return (false, "更新失败: " + ex.Message);
                 }
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return (true, "更新成功");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "UpdateUserAsync failed");
-                return (false, "更新失败: " + ex.Message);
-            }
+            });
         }
 
         public async Task<(bool Success, string Message)> DeleteUserAsync(long id)
@@ -454,7 +524,7 @@ namespace omsapi.Services
                 .ToListAsync();
 
             var roleIds = userRoles.Select(ur => ur.RoleId).ToList();
-            var isAdmin = userRoles.Any(ur => ur.Role.Code == "ADMIN");
+            var isAdmin = userRoles.Any(ur => ur.Role.Code == "SuperAdmin");
 
             return (isAdmin, roleIds);
         }

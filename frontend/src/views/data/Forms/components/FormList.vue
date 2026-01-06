@@ -327,10 +327,10 @@ const canManage = (record: FormDefinition) => {
   if (userStore.username === 'admin') return true;
   if (!record.manageRoleIds) return false;
   
-  const allowedRoles = record.manageRoleIds.split(',').map(r => Number(r.trim()));
+  const allowedRoles = record.manageRoleIds.split(',').map((r: string) => Number(r.trim()));
   const userRoles = userStore.roles || [];
   
-  return userRoles.some(r => allowedRoles.includes(r));
+  return userRoles.some((r: number) => allowedRoles.includes(r));
 };
 
 const columns = [

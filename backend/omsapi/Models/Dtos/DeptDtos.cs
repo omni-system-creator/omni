@@ -70,6 +70,7 @@ namespace omsapi.Models.Dtos
         public long Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Code { get; set; }
+        public string? FullCode { get; set; }
         public DeptType Type { get; set; }
         public long? ParentId { get; set; }
         public int SortOrder { get; set; }
@@ -85,6 +86,7 @@ namespace omsapi.Models.Dtos
         public long? ParentId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Code { get; set; }
+        public string? FullCode { get; set; }
         public DeptType Type { get; set; }
         public string? Leader { get; set; }
         public string? Phone { get; set; }

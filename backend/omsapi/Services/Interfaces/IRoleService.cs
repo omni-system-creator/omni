@@ -4,7 +4,7 @@ namespace omsapi.Services.Interfaces
 {
     public interface IRoleService
     {
-        Task<(bool Success, string Message, List<RoleDto>? Data)> GetAllRolesAsync(long? deptId = null);
+        Task<(bool Success, string Message, List<RoleDto>? Data)> GetAllRolesAsync(long userId, long? deptId = null);
         Task<(bool Success, string Message, RoleDto? Data)> GetRoleByIdAsync(long id);
         Task<(bool Success, string Message)> CreateRoleAsync(CreateRoleDto dto);
         Task<(bool Success, string Message)> UpdateRoleAsync(long id, UpdateRoleDto dto);

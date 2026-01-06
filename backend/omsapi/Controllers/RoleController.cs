@@ -21,7 +21,12 @@ namespace omsapi.Controllers
         [HttpGet]
         public async Task<ApiResponse<List<RoleDto>>> GetAll([FromQuery] long? deptId = null)
         {
-            var (success, message, data) = await _roleService.GetAllRolesAsync(deptId);
+            var userIdClaim = User.FindFirst("id");
+            if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out long userId))
+            {
+                return ApiResponse<List<RoleDto>>.Error("无法获取用户信息", 401);
+            }
+            var (success, message, data) = await _roleService.GetAllRolesAsync(userId, deptId);
             if (!success) return ApiResponse<List<RoleDto>>.Error(message);
             return ApiResponse<List<RoleDto>>.Success(data!);
         }

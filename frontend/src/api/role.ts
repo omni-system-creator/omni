@@ -4,6 +4,7 @@ export interface RoleDto {
   id: number;
   name: string;
   code: string;
+  fullCode: string;
   description?: string;
   isSystem: boolean;
   createdAt: string;

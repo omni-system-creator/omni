@@ -4,6 +4,7 @@ namespace omsapi.Models.Dtos
     {
         public long Id { get; set; }
         public string Code { get; set; } = string.Empty;
+        public string FullCode { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public int SortOrder { get; set; }
         public bool IsActive { get; set; }

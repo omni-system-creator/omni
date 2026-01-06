@@ -16,13 +16,95 @@ namespace omsapi.Services
             _context = context;
         }
 
-        public async Task<(bool Success, string Message, List<RoleDto>? Data)> GetAllRolesAsync(long? deptId = null)
+        private static string GetCodeSuffix(string fullCode)
         {
+            if (string.IsNullOrWhiteSpace(fullCode)) return string.Empty;
+            var idx = fullCode.LastIndexOf('-');
+            return idx >= 0 ? fullCode[(idx + 1)..] : fullCode;
+        }
+
+        private async Task<string> GetDeptCodePathAsync(long? deptId)
+        {
+            if (!deptId.HasValue) return string.Empty;
+            var codes = new List<string>();
+            var currentId = deptId;
+            while (currentId.HasValue)
+            {
+                var dept = await _context.Depts.FindAsync(currentId.Value);
+                if (dept == null) break;
+                if (!string.IsNullOrEmpty(dept.Code))
+                {
+                    codes.Insert(0, dept.Code);
+                }
+                currentId = dept.ParentId == 0 ? null : dept.ParentId;
+            }
+            return string.Join("-", codes);
+        }
+
+        private async Task<bool> IsAdminAsync(long userId)
+        {
+            var roles = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Include(ur => ur.Role)
+                .ToListAsync();
+            return roles.Any(ur => ur.Role.Code == "SuperAdmin");
+        }
+
+        private async Task<long?> GetUserRootDeptIdAsync(long userId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user?.DeptId == null) return null;
+            var current = await _context.Depts.FindAsync(user.DeptId.Value);
+            while (current != null && current.ParentId != null && current.ParentId != 0)
+            {
+                current = await _context.Depts.FindAsync(current.ParentId);
+            }
+            return current?.Id;
+        }
+
+        private async Task<List<long>> GetDescendantDeptIdsAsync(long rootId)
+        {
+            var result = new List<long> { rootId };
+            var queue = new Queue<long>();
+            queue.Enqueue(rootId);
+            while (queue.Count > 0)
+            {
+                var parentId = queue.Dequeue();
+                var children = await _context.Depts
+                    .Where(d => d.ParentId == parentId)
+                    .Select(d => d.Id)
+                    .ToListAsync();
+                foreach (var cid in children)
+                {
+                    if (!result.Contains(cid))
+                    {
+                        result.Add(cid);
+                        queue.Enqueue(cid);
+                    }
+                }
+            }
+            return result;
+        }
+
+        public async Task<(bool Success, string Message, List<RoleDto>? Data)> GetAllRolesAsync(long userId, long? deptId = null)
+        {
+            var isAdmin = await IsAdminAsync(userId);
             var query = _context.Roles.AsQueryable();
 
             if (deptId.HasValue)
             {
                 query = query.Where(r => r.DeptId == deptId);
+            }
+
+            if (!isAdmin)
+            {
+                var rootId = await GetUserRootDeptIdAsync(userId);
+                if (rootId == null)
+                {
+                    return (true, "获取成功", new List<RoleDto>());
+                }
+                var allowedDeptIds = await GetDescendantDeptIdsAsync(rootId.Value);
+                query = query.Where(r => r.DeptId.HasValue && allowedDeptIds.Contains(r.DeptId.Value));
             }
 
             var roles = await query
@@ -32,7 +114,8 @@ namespace omsapi.Services
                 {
                     Id = r.Id,
                     Name = r.Name,
-                    Code = r.Code,
+                    Code = GetCodeSuffix(r.Code),
+                    FullCode = r.Code,
                     Description = r.Description,
                     IsSystem = r.IsSystem,
                     CreatedAt = r.CreatedAt,
@@ -56,7 +139,8 @@ namespace omsapi.Services
             {
                 Id = role.Id,
                 Name = role.Name,
-                Code = role.Code,
+                Code = GetCodeSuffix(role.Code),
+                FullCode = role.Code,
                 Description = role.Description,
                 IsSystem = role.IsSystem,
                 CreatedAt = role.CreatedAt,
@@ -67,54 +151,68 @@ namespace omsapi.Services
 
         public async Task<(bool Success, string Message)> CreateRoleAsync(CreateRoleDto dto)
         {
-            if (await _context.Roles.AnyAsync(r => r.Code == dto.Code))
+            if (string.IsNullOrWhiteSpace(dto.Code))
             {
-                return (false, "角色编码已存在");
+                return (false, "角色编码必填");
+            }
+            if (dto.Code.Contains("-"))
+            {
+                return (false, "角色编码不能包含连字符(-)");
+            }
+            var prefix = await GetDeptCodePathAsync(dto.DeptId);
+            var fullCode = string.IsNullOrEmpty(prefix) ? dto.Code : $"{prefix}-{dto.Code}";
+            if (await _context.Roles.AnyAsync(r => r.Code == fullCode))
+            {
+                return (false, "角色编码已存在(包含部门前缀)");
             }
 
             var role = new omsapi.Models.Entities.SystemRole
             {
                 Name = dto.Name,
-                Code = dto.Code,
+                Code = fullCode,
                 Description = dto.Description,
                 IsSystem = false,
                 DeptId = dto.DeptId,
                 CreatedAt = DateTime.Now
             };
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                _context.Roles.Add(role);
-                await _context.SaveChangesAsync();
-
-                if (dto.ChildRoleIds != null && dto.ChildRoleIds.Any())
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    if (dto.ChildRoleIds.Contains(role.Id))
-                    {
-                        await transaction.RollbackAsync();
-                        return (false, "角色不能包含自身");
-                    }
-
-                    foreach (var childId in dto.ChildRoleIds.Distinct())
-                    {
-                        _context.RoleInheritances.Add(new omsapi.Models.Entities.SystemRoleInheritance
-                        {
-                            ParentRoleId = role.Id,
-                            ChildRoleId = childId
-                        });
-                    }
+                    _context.Roles.Add(role);
                     await _context.SaveChangesAsync();
-                }
 
-                await transaction.CommitAsync();
-                return (true, "创建成功");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return (false, "创建失败: " + ex.Message);
-            }
+                    if (dto.ChildRoleIds != null && dto.ChildRoleIds.Any())
+                    {
+                        if (dto.ChildRoleIds.Contains(role.Id))
+                        {
+                            await transaction.RollbackAsync();
+                            return (false, "角色不能包含自身");
+                        }
+
+                        foreach (var childId in dto.ChildRoleIds.Distinct())
+                        {
+                            _context.RoleInheritances.Add(new omsapi.Models.Entities.SystemRoleInheritance
+                            {
+                                ParentRoleId = role.Id,
+                                ChildRoleId = childId
+                            });
+                        }
+                        await _context.SaveChangesAsync();
+                    }
+
+                    await transaction.CommitAsync();
+                    return (true, "创建成功");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "创建失败: " + ex.Message);
+                }
+            });
         }
 
         public async Task<(bool Success, string Message)> UpdateRoleAsync(long id, UpdateRoleDto dto)
@@ -124,44 +222,65 @@ namespace omsapi.Services
 
             if (dto.Name != null) role.Name = dto.Name;
             if (dto.Description != null) role.Description = dto.Description;
-            if (dto.DeptId.HasValue) role.DeptId = dto.DeptId.Value; // Note: if null passed, it might mean "no change" or "clear". Usually UpdateDto null means no change. If user wants to clear, might need specific logic. Assuming null = no change here.
+            if (dto.DeptId.HasValue) role.DeptId = dto.DeptId.Value;
             
             role.UpdatedAt = DateTime.Now;
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                if (dto.ChildRoleIds != null)
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    if (dto.ChildRoleIds.Contains(id))
+                    // Recalculate code if dept or suffix changed
+                    if (dto.DeptId.HasValue || dto.ChildRoleIds != null)
                     {
-                        return (false, "角色不能包含自身");
-                    }
-
-                    // 移除旧关系
-                    var oldRelations = await _context.RoleInheritances.Where(ri => ri.ParentRoleId == id).ToListAsync();
-                    _context.RoleInheritances.RemoveRange(oldRelations);
-
-                    // 添加新关系
-                    foreach (var childId in dto.ChildRoleIds.Distinct())
-                    {
-                        _context.RoleInheritances.Add(new omsapi.Models.Entities.SystemRoleInheritance
+                        // If code suffix provided (not supported in UpdateRoleDto currently), keep existing suffix
+                        var suffix = GetCodeSuffix(role.Code);
+                        var prefix = await GetDeptCodePathAsync(role.DeptId);
+                        var fullCode = string.IsNullOrEmpty(prefix) ? suffix : $"{prefix}-{suffix}";
+                        if (fullCode != role.Code)
                         {
-                            ParentRoleId = id,
-                            ChildRoleId = childId
-                        });
+                            if (await _context.Roles.AnyAsync(r => r.Code == fullCode && r.Id != id))
+                            {
+                                return (false, "角色编码已存在(包含部门前缀)");
+                            }
+                            role.Code = fullCode;
+                        }
                     }
-                }
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return (true, "更新成功");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return (false, "更新失败: " + ex.Message);
-            }
+                    if (dto.ChildRoleIds != null)
+                    {
+                        if (dto.ChildRoleIds.Contains(id))
+                        {
+                            return (false, "角色不能包含自身");
+                        }
+
+                        // 移除旧关系
+                        var oldRelations = await _context.RoleInheritances.Where(ri => ri.ParentRoleId == id).ToListAsync();
+                        _context.RoleInheritances.RemoveRange(oldRelations);
+
+                        // 添加新关系
+                        foreach (var childId in dto.ChildRoleIds.Distinct())
+                        {
+                            _context.RoleInheritances.Add(new omsapi.Models.Entities.SystemRoleInheritance
+                            {
+                                ParentRoleId = id,
+                                ChildRoleId = childId
+                            });
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return (true, "更新成功");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "更新失败: " + ex.Message);
+                }
+            });
         }
 
         public async Task<(bool Success, string Message)> DeleteRoleAsync(long id)
@@ -177,25 +296,29 @@ namespace omsapi.Services
                 return (false, "该角色下存在用户，无法删除");
             }
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                // 删除角色权限关联
-                var perms = await _context.RolePermissions.Where(rp => rp.RoleId == id).ToListAsync();
-                _context.RolePermissions.RemoveRange(perms);
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // 删除角色权限关联
+                    var perms = await _context.RolePermissions.Where(rp => rp.RoleId == id).ToListAsync();
+                    _context.RolePermissions.RemoveRange(perms);
 
-                // 删除角色
-                _context.Roles.Remove(role);
-                
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return (true, "删除成功");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return (false, "删除失败: " + ex.Message);
-            }
+                    // 删除角色
+                    _context.Roles.Remove(role);
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return (true, "删除成功");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "删除失败: " + ex.Message);
+                }
+            });
         }
 
         public async Task<(bool Success, string Message, List<PermissionTreeDto>? Data)> GetAllPermissionsAsync()
@@ -236,37 +359,41 @@ namespace omsapi.Services
             var role = await _context.Roles.FindAsync(roleId);
             if (role == null) return (false, "角色不存在");
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                // 移除旧权限
-                var oldPerms = await _context.RolePermissions.Where(rp => rp.RoleId == roleId).ToListAsync();
-                _context.RolePermissions.RemoveRange(oldPerms);
-
-                // 添加新权限
-                if (permissionIds != null && permissionIds.Any())
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    // 去重，防止前端传来重复 ID 导致数据库唯一约束冲突
-                    var uniqueIds = permissionIds.Distinct().ToList();
+                    // 移除旧权限
+                    var oldPerms = await _context.RolePermissions.Where(rp => rp.RoleId == roleId).ToListAsync();
+                    _context.RolePermissions.RemoveRange(oldPerms);
 
-                    var newPerms = uniqueIds.Select(pid => new omsapi.Models.Entities.SystemRolePermission
+                    // 添加新权限
+                    if (permissionIds != null && permissionIds.Any())
                     {
-                        RoleId = roleId,
-                        PermissionId = pid,
-                        CreatedAt = DateTime.Now
-                    });
-                    _context.RolePermissions.AddRange(newPerms);
-                }
+                        // 去重，防止前端传来重复 ID 导致数据库唯一约束冲突
+                        var uniqueIds = permissionIds.Distinct().ToList();
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return (true, "权限分配成功");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return (false, "分配失败: " + ex.Message);
-            }
+                        var newPerms = uniqueIds.Select(pid => new omsapi.Models.Entities.SystemRolePermission
+                        {
+                            RoleId = roleId,
+                            PermissionId = pid,
+                            CreatedAt = DateTime.Now
+                        });
+                        _context.RolePermissions.AddRange(newPerms);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return (true, "权限分配成功");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "分配失败: " + ex.Message);
+                }
+            });
         }
 
         private List<PermissionTreeDto> BuildPermissionTree(List<PermissionTreeDto> all, long? parentId)

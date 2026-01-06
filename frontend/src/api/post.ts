@@ -3,6 +3,7 @@ import request from '@/utils/request';
 export interface Post {
   id: number;
   code: string;
+  fullCode: string;
   name: string;
   description?: string;
   sortOrder: number;

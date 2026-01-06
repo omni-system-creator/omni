@@ -18,11 +18,13 @@ export const useUserStore = defineStore('user', () => {
         nickname: userData.nickname || '',
         avatar: userData.avatar || '',
         status: userData.status || 'online',
-        roles: userData.roles || []
+        roles: userData.roles || [],
+        deptId: typeof userData.deptId === 'number' ? userData.deptId : null,
+        isAdmin: !!userData.isAdmin
       };
     } catch (e) {
       console.error('Error parsing user store data', e);
-      return { token: '', id: 0, username: '', nickname: '', avatar: '', status: 'online', roles: [] };
+      return { token: '', id: 0, username: '', nickname: '', avatar: '', status: 'online', roles: [], deptId: null, isAdmin: false };
     }
   };
 
@@ -35,6 +37,8 @@ export const useUserStore = defineStore('user', () => {
   const avatar = ref<string>(state.avatar);
   const status = ref<string>(state.status);
   const roles = ref<number[]>(state.roles);
+  const deptId = ref<number | null>(state.deptId);
+  const isAdmin = ref<boolean>(state.isAdmin);
   // const router = useRouter();
 
   function setToken(newToken: string) {
@@ -42,13 +46,15 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('oms.auth', JSON.stringify({ token: newToken }));
   }
 
-  function setUserInfo(info: { id: number; username: string; nickname?: string; avatar?: string; status?: string; roles?: number[] }) {
+  function setUserInfo(info: { id: number; username: string; nickname?: string; avatar?: string; status?: string; roles?: number[]; deptId?: number | null; isAdmin?: boolean }) {
     id.value = info.id;
     username.value = info.username;
     nickname.value = info.nickname || '';
     avatar.value = info.avatar || '';
     status.value = info.status || 'online';
     roles.value = info.roles || [];
+    deptId.value = typeof info.deptId === 'number' ? info.deptId : null;
+    isAdmin.value = !!info.isAdmin;
     
     const userData = {
       id: id.value,
@@ -56,7 +62,9 @@ export const useUserStore = defineStore('user', () => {
       nickname: nickname.value,
       avatar: avatar.value,
       status: status.value,
-      roles: roles.value
+      roles: roles.value,
+      deptId: deptId.value,
+      isAdmin: isAdmin.value
     };
     localStorage.setItem('oms.user', JSON.stringify(userData));
   }
@@ -97,6 +105,8 @@ export const useUserStore = defineStore('user', () => {
     avatar,
     status,
     roles,
+    deptId,
+    isAdmin,
     setToken,
     setUserInfo,
     logout,

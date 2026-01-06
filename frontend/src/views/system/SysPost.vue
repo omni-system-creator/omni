@@ -91,7 +91,7 @@
           <a-input v-model:value="formState.name" placeholder="请输入岗位名称" />
         </a-form-item>
         <a-form-item label="岗位编码" name="code">
-          <a-input v-model:value="formState.code" placeholder="请输入岗位编码" />
+          <a-input v-model:value="formState.code" :placeholder="currentId ? '请输入岗位编码' : '请输入岗位编码'" />
         </a-form-item>
         <a-form-item label="描述" name="description">
           <a-textarea v-model:value="formState.description" placeholder="请输入描述" :rows="3" />
@@ -176,10 +176,20 @@ const formState = reactive<any>({
   deptId: undefined
 });
 
+const validateCode = async (_rule: any, value: string) => {
+  if (!value) {
+    return Promise.reject('请输入岗位编码');
+  }
+  if (value.indexOf('-') !== -1) {
+    return Promise.reject('岗位编码不能包含连字符(-)');
+  }
+  return Promise.resolve();
+};
+
 const rules = {
   deptId: [{ required: true, message: '请选择所属部门', trigger: 'change' }],
   name: [{ required: true, message: '请输入岗位名称', trigger: 'blur' }],
-  code: [{ required: true, message: '请输入岗位编码', trigger: 'blur' }]
+  code: [{ required: true, validator: validateCode, trigger: 'blur' }]
 };
 
 const handleAdd = () => {

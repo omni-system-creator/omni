@@ -1,5 +1,10 @@
 <template>
   <div class="sys-org-container" @click="closeContextMenu">
+    <div class="header-controls" v-if="isAdmin">
+      <a-select v-model:value="selectedRootId" style="width: 220px" placeholder="切换根组织" @change="handleRootChange">
+         <a-select-option v-for="dept in rootDepts" :key="dept.id" :value="dept.id">{{ dept.name }}</a-select-option>
+      </a-select>
+    </div>
     <div class="canvas-container" ref="canvasContainer" @contextmenu.prevent="handleContextMenu"></div>
 
     <!-- 右键菜单 -->
@@ -8,7 +13,7 @@
 
       <!-- Canvas Menu Items -->
       <template v-if="contextMenuType === 'canvas'">
-        <div class="menu-item" @click="handleAddRootAndClose">
+        <div v-if="isAdmin" class="menu-item" @click="handleAddRootAndClose">
           <PlusOutlined /> 新增根节点
         </div>
         <div class="menu-divider"></div>
@@ -36,7 +41,7 @@
           <EditOutlined /> 编辑
         </div>
         <div class="menu-divider"></div>
-        <div class="menu-item danger" @click="handleDeleteAndClose">
+        <div v-if="!(isRootSelected && !isAdmin)" class="menu-item danger" @click="handleDeleteAndClose">
           <DeleteOutlined /> 删除
         </div>
       </template>
@@ -103,13 +108,19 @@ import {
   ExclamationCircleOutlined, ExpandOutlined, ReloadOutlined,
   CameraOutlined, AppstoreOutlined
 } from '@ant-design/icons-vue';
+import { useUserStore } from '@/stores/user';
 import {
-  getDeptTree, createDept, updateDept, deleteDept, updateDeptStructure,
+  getDeptTree, getRootDepts, createDept, updateDept, deleteDept, updateDeptStructure,
   type Dept, DeptType, type UpdateDeptStructureParams
 } from '@/api/dept';
 import { App, Rect, Text, Group, Line, Ellipse, PointerEvent, DragEvent } from 'leafer-ui';
 import '@leafer-in/find'; // 导入查找插件
 import '@leafer-in/export'; // 导入导出插件
+
+const userStore = useUserStore();
+const isAdmin = computed(() => userStore.isAdmin);
+const rootDepts = ref<Dept[]>([]);
+const selectedRootId = ref<number | undefined>(undefined);
 
 const loading = ref(false);
 const deptList = ref<Dept[]>([]);
@@ -178,6 +189,15 @@ const handleDeleteAndClose = () => {
   closeContextMenu();
 };
 
+const selectedNode = computed(() => {
+  if (!currentId.value) return null;
+  return findNodeById(deptList.value, currentId.value);
+});
+const isRootSelected = computed(() => {
+  const node = selectedNode.value as Dept | null;
+  if (!node) return false;
+  return !node.parentId || node.parentId === 0;
+});
 const findNodeById = (nodes: Dept[], id: number): Dept | null => {
   for (const node of nodes) {
     if (node.id === id) return node;
@@ -269,10 +289,28 @@ const COLOR_COMPANY = '#1890ff';
 const COLOR_DEPT = '#8c8c8c';
 const BG_COLOR = '#ffffff';
 
+const fetchRoots = async () => {
+  try {
+    const res = await getRootDepts();
+    rootDepts.value = res || [];
+    const firstId = rootDepts.value[0]?.id;
+    if (!selectedRootId.value && firstId !== undefined) {
+      selectedRootId.value = firstId;
+      fetchDeptTree();
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const handleRootChange = () => {
+  fetchDeptTree();
+};
+
 const fetchDeptTree = async () => {
   loading.value = true;
   try {
-    const res = await getDeptTree();
+    const res = await getDeptTree(selectedRootId.value);
     deptList.value = res || [];
     renderChart();
   } catch (error) {
@@ -843,7 +881,11 @@ const fitView = () => {
 
 onMounted(() => {
   initLeafer();
-  fetchDeptTree();
+  if (isAdmin.value) {
+    fetchRoots();
+  } else {
+    fetchDeptTree();
+  }
 });
 
 onUnmounted(() => {
@@ -987,8 +1029,19 @@ const formState = reactive<any>({
   isActive: true
 });
 
+const validateCode = async (_rule: any, value: string) => {
+  if (!value) {
+    return Promise.reject('请输入编码');
+  }
+  if (value.indexOf('-') !== -1) {
+    return Promise.reject('编码不能包含连字符(-)');
+  }
+  return Promise.resolve();
+};
+
 const rules = {
-  name: [{ required: true, message: '请输入名称', trigger: 'blur' }]
+  name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
+  code: [{ required: true, validator: validateCode, trigger: 'blur' }]
 };
 
 // Tree Select Data
@@ -1098,6 +1151,21 @@ const handleModalOk = async () => {
 };
 </script>
 
+<style scoped>
+.sys-org-container {
+  position: relative;
+}
+.header-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+}
+.canvas-container {
+  width: 100%;
+  height: calc(100vh - 64px);
+}
+</style>
 <style scoped>
 .sys-org-container {
   height: calc(100vh - 84px);
