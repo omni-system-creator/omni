@@ -152,6 +152,8 @@ namespace omsapi.Controllers
             public string ConversationKey { get; set; } = string.Empty;
             public long SenderUserId { get; set; }
             public string SenderName { get; set; } = string.Empty;
+            public string? SenderNickname { get; set; }
+            public string? SenderAvatar { get; set; }
             public string Type { get; set; } = "text";
             public string Content { get; set; } = string.Empty;
             public string? FileName { get; set; }
@@ -319,10 +321,12 @@ namespace omsapi.Controllers
             var key = BuildConversationKey(req.MyUserId.ToString(), req.PeerUserId.ToString());
             if (string.IsNullOrEmpty(key)) return Ok(new { code = 400, msg = "参数错误", data = (object?)null });
 
-            var senderName = await _context.Users
+            var senderUser = await _context.Users
                 .Where(u => u.Id == req.MyUserId)
-                .Select(u => u.Nickname ?? u.Username)
-                .FirstOrDefaultAsync() ?? "Unknown";
+                .Select(u => new { Name = u.Nickname ?? u.Username, u.Avatar, u.Nickname })
+                .FirstOrDefaultAsync();
+            
+            var senderName = senderUser?.Name ?? "Unknown";
 
             var msg = new ChatMessage
             {
@@ -352,6 +356,8 @@ namespace omsapi.Controllers
                 ConversationKey = msg.ConversationKey,
                 SenderUserId = msg.SenderUserId ?? 0,
                 SenderName = senderName,
+                SenderNickname = senderUser?.Nickname,
+                SenderAvatar = senderUser?.Avatar,
                 Type = msg.Type,
                 Content = msg.Content,
                 FileName = msg.FileName,
@@ -376,19 +382,22 @@ namespace omsapi.Controllers
                 var myConns = UserHub.GetConnectionsByUserId(req.MyUserId).Select(x => x.ConnectionId).ToList();
                 if (myConns.Count > 0)
                 {
-                    await _hubContext.Clients.Clients(myConns).SendAsync("ReceivePrivateMessage", new MessageDto
+                    var selfDto = new MessageDto
                     {
                         Id = msg.Id,
                         ConversationKey = msg.ConversationKey,
                         SenderUserId = msg.SenderUserId ?? 0,
                         SenderName = senderName,
+                        SenderNickname = senderUser?.Nickname,
+                        SenderAvatar = senderUser?.Avatar,
                         Type = msg.Type,
                         Content = msg.Content,
                         FileName = msg.FileName,
                         FileSize = msg.FileSize,
                         CreatedAt = msg.CreatedAt,
                         IsSelf = true
-                    });
+                    };
+                    await _hubContext.Clients.Clients(myConns).SendAsync("ReceivePrivateMessage", selfDto);
                 }
             }
             catch { }
@@ -411,22 +420,30 @@ namespace omsapi.Controllers
             list.Reverse(); // 从旧到新
 
             var userIds = list.Select(m => m.SenderUserId ?? 0).Distinct().ToList();
-            var userNames = await _context.Users
+            var users = await _context.Users
                 .Where(u => userIds.Contains(u.Id))
-                .ToDictionaryAsync(u => u.Id, u => u.Nickname ?? u.Username);
+                .Select(u => new { u.Id, Name = u.Nickname ?? u.Username, u.Avatar, u.Nickname })
+                .ToDictionaryAsync(u => u.Id, u => u);
 
-            var result = list.Select(m => new MessageDto
-            {
-                Id = m.Id,
-                ConversationKey = m.ConversationKey,
-                SenderUserId = m.SenderUserId ?? 0,
-                SenderName = userNames.ContainsKey(m.SenderUserId ?? 0) ? userNames[m.SenderUserId ?? 0] : "Unknown",
-                Type = m.Type,
-                Content = m.Content,
-                FileName = m.FileName,
-                FileSize = m.FileSize,
-                CreatedAt = m.CreatedAt,
-                IsSelf = m.SenderUserId == myUserId
+            var result = list.Select(m => {
+                var senderId = m.SenderUserId ?? 0;
+                var hasUser = users.ContainsKey(senderId);
+                var user = hasUser ? users[senderId] : null;
+                return new MessageDto
+                {
+                    Id = m.Id,
+                    ConversationKey = m.ConversationKey,
+                    SenderUserId = senderId,
+                    SenderName = user?.Name ?? "Unknown",
+                    SenderNickname = user?.Nickname,
+                    SenderAvatar = user?.Avatar,
+                    Type = m.Type,
+                    Content = m.Content,
+                    FileName = m.FileName,
+                    FileSize = m.FileSize,
+                    CreatedAt = m.CreatedAt,
+                    IsSelf = m.SenderUserId == myUserId
+                };
             }).ToList();
 
             return Ok(new { code = 200, msg = "获取成功", data = new { total, page, pageSize, items = result } });

@@ -5,6 +5,8 @@ export interface ChatMessageDto {
   conversationKey: string;
   senderUserId: number;
   senderName?: string;
+  senderNickname?: string;
+  senderAvatar?: string;
   type: 'text' | 'image' | 'file';
   content: string;
   fileName?: string;

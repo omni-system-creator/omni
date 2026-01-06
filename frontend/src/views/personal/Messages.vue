@@ -47,6 +47,16 @@
         <!-- 头部 -->
         <div class="main-header">
           <div class="header-info">
+            <a-avatar 
+              :size="32"
+              :shape="currentConversation.type === 'system' || currentConversation.type === 'app' ? 'square' : 'circle'"
+              :style="{ backgroundColor: currentConversation.bgColor, marginRight: '10px' }"
+            >
+              <template #icon>
+                <img v-if="currentConversation.avatar" :src="currentConversation.avatar" />
+                <component v-else :is="currentConversation.icon" />
+              </template>
+            </a-avatar>
             <span class="header-title">{{ currentConversation.name }}</span>
             <span v-if="currentConversation.type === 'group'" class="header-count">({{ currentConversation.memberCount }}人)</span>
             <a-tag v-if="currentConversation.type === 'app'" color="blue">业务通知</a-tag>
@@ -359,7 +369,7 @@ const selectConversation = (item: Conversation) => {
               id: String(m.id),
               senderId: String(m.senderUserId),
               senderName: m.senderName,
-              senderAvatar: undefined,
+              senderAvatar: m.senderAvatar,
               content: m.content,
               type: m.type,
               fileName: m.fileName,
@@ -408,6 +418,7 @@ const handleSend = (e?: KeyboardEvent) => {
   const newMsg: Message = {
     id: Date.now().toString(),
     senderId: 'me',
+    senderAvatar: userAvatarUrl.value,
     content: inputMessage.value,
     type: 'text',
     timestamp: new Date().toLocaleString(),
@@ -473,6 +484,7 @@ const handleImageUpload = (e: Event) => {
   const optimisticMsg: Message = {
     id: tempId,
     senderId: 'me',
+    senderAvatar: userAvatarUrl.value,
     content: blobUrl,
     type: 'image',
     fileName: file.name,
@@ -529,6 +541,7 @@ const handleFileUpload = (e: Event) => {
   const optimisticMsg: Message = {
     id: tempId,
     senderId: 'me',
+    senderAvatar: userAvatarUrl.value,
     content: '#',
     type: 'file',
     fileName: file.name,
@@ -624,7 +637,7 @@ watch(() => route.query, (query) => {
               id: String(m.id),
               senderId: String(m.senderUserId),
               senderName: m.senderName,
-              senderAvatar: undefined,
+              senderAvatar: m.senderAvatar,
               content: m.content,
               type: m.type,
               fileName: m.fileName,
@@ -670,7 +683,7 @@ const connectChatHub = async () => {
         id: peerIdFromKey,
         type: 'private',
         name: displayName,
-        avatar: undefined,
+        avatar: dto.senderAvatar,
         icon: UserOutlined,
         bgColor: getAvatarColor(displayName),
         lastMessage: dto.type === 'image' ? '[图片]' : (dto.type === 'file' ? '[文件]' : dto.content),
@@ -724,6 +737,7 @@ const connectChatHub = async () => {
       id: String(dto.id),
       senderId: String(dto.senderUserId),
       senderName: dto.senderName, // Use senderName from DTO
+      senderAvatar: dto.senderAvatar,
       content: dto.content,
       type: dto.type,
       fileName: dto.fileName,
@@ -884,6 +898,11 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
 }
 
 .header-title {
