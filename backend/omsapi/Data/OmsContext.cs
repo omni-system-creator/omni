@@ -9,6 +9,7 @@ using omsapi.Models.Entities.Pages;
 using omsapi.Models.Entities.Contract;
 using omsapi.Models.Entities.Project;
 using OmsApi.Models.Entities.Kb;
+using omsapi.Models.Entities.Chat;
 
 namespace omsapi.Data
 {
@@ -96,6 +97,10 @@ namespace omsapi.Data
         // public DbSet<KbNode> KbNodes { get; set; } // 移至 PgContext
         public DbSet<KbNodeSource> KbNodeSources { get; set; }
         public DbSet<KbQaHistory> KbQaHistories { get; set; }
+        
+        // Chat Entities
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<ChatConversation> ChatConversations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -119,6 +124,15 @@ namespace omsapi.Data
             modelBuilder.Entity<SystemConfig>(entity =>
             {
                 entity.HasIndex(e => e.Key).IsUnique();
+            });
+
+            // 配置 ChatConversation
+            modelBuilder.Entity<ChatConversation>(entity =>
+            {
+                entity.HasIndex(e => e.ConversationKey).IsUnique();
+                entity.HasIndex(e => e.User1Id);
+                entity.HasIndex(e => e.User2Id);
+                entity.HasIndex(e => e.RelatedId);
             });
 
             // 配置 User 实体
@@ -197,6 +211,12 @@ namespace omsapi.Data
             });
             modelBuilder.Entity<ArchBox>(entity => {
                 entity.HasIndex(e => e.BoxCode).IsUnique();
+            });
+
+            // Chat Configs
+            modelBuilder.Entity<ChatMessage>(entity => {
+                entity.HasIndex(e => e.ConversationKey);
+                entity.Property(e => e.Content).HasMaxLength(2000);
             });
 
             // 初始化超级管理员

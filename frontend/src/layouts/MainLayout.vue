@@ -27,6 +27,7 @@
           <a-space size="middle">
             <HelpButton />
             <FullscreenButton />
+            <OnlineUsersButton />
             
             <NotificationBell />
             
@@ -76,6 +77,7 @@ import FullscreenButton from './components/FullscreenButton.vue';
 import NotificationBell from './components/NotificationBell.vue';
 import StatusDropdown from './components/StatusDropdown.vue';
 import UserDropdown from './components/UserDropdown.vue';
+import OnlineUsersButton from './components/OnlineUsersButton.vue';
 import IframeView from './components/IframeView.vue';
 
 import SideMenu from './components/SideMenu.vue';

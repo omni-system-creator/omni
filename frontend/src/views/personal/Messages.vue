@@ -16,7 +16,7 @@
                 <a-badge :count="item.unreadCount" :dot="item.unreadCount > 0 && item.unreadCount < 10" :offset="[-5, 5]">
                   <a-avatar 
                     :size="40" 
-                    :shape="item.type === 'system' || item.type === 'business' ? 'square' : 'circle'"
+                    :shape="item.type === 'system' || item.type === 'app' ? 'square' : 'circle'"
                     :style="{ backgroundColor: item.bgColor, color: '#fff' }"
                   >
                     <template #icon>
@@ -49,7 +49,7 @@
           <div class="header-info">
             <span class="header-title">{{ currentConversation.name }}</span>
             <span v-if="currentConversation.type === 'group'" class="header-count">({{ currentConversation.memberCount }}人)</span>
-            <a-tag v-if="currentConversation.type === 'business'" color="blue">业务通知</a-tag>
+            <a-tag v-if="currentConversation.type === 'app'" color="blue">业务通知</a-tag>
             <a-tag v-if="currentConversation.type === 'system'" color="orange">系统消息</a-tag>
           </div>
           <div class="header-actions">
@@ -74,26 +74,37 @@
                     <span v-if="msg.type === 'text'">{{ msg.content }}</span>
                     
                     <!-- 图片消息 -->
-                    <a-image v-else-if="msg.type === 'image'" :src="msg.content" :width="150" />
+                    <a-image v-else-if="msg.type === 'image'" :src="msg.content" :width="150" @load="onImageLoad" />
                     
                     <!-- 文件消息 -->
                     <div v-else-if="msg.type === 'file'" class="file-message">
-                      <FileOutlined class="file-icon" />
-                      <div class="file-info">
-                        <div class="file-name">{{ msg.fileName }}</div>
-                        <div class="file-size">{{ msg.fileSize }}</div>
-                      </div>
+                      <a :href="msg.content" target="_blank" rel="noopener" style="display:flex;align-items:center;text-decoration:none;color:inherit">
+                        <FileOutlined class="file-icon" />
+                        <div class="file-info">
+                          <div class="file-name">{{ msg.fileName }}</div>
+                          <div class="file-size">{{ msg.fileSize }}</div>
+                        </div>
+                      </a>
                     </div>
                   </div>
                 </div>
-                <a-avatar v-if="msg.isSelf" :src="userAvatar" class="msg-avatar" />
+                <a-avatar v-if="msg.isSelf" :src="userAvatarUrl" class="msg-avatar" :style="!userAvatarUrl ? { backgroundColor: '#d9d9d9', color: '#fff' } : undefined">
+                  <template #icon><UserOutlined /></template>
+                </a-avatar>
               </div>
             </div>
           </div>
           
           <div class="chat-input">
             <div class="toolbar">
-              <a-tooltip title="表情"><SmileOutlined class="tool-icon" /></a-tooltip>
+              <a-popover v-model:open="emojiOpen" trigger="click" placement="topLeft">
+                <template #content>
+                  <div class="emoji-panel">
+                    <span class="emoji-item" v-for="e in emojiList" :key="e" @click="handleEmojiClick(e)">{{ e }}</span>
+                  </div>
+                </template>
+                <a-tooltip title="表情"><SmileOutlined class="tool-icon" /></a-tooltip>
+              </a-popover>
               <a-tooltip title="图片">
                 <label class="upload-label">
                   <PictureOutlined class="tool-icon" />
@@ -164,7 +175,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, reactive, nextTick, watch } from 'vue';
+import { ref, computed, reactive, nextTick, watch, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { 
   TeamOutlined, 
   BellOutlined, 
@@ -175,13 +187,17 @@ import {
   FolderOpenOutlined,
   FileOutlined,
   AlertOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  UserOutlined
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
+import { chatApi, type ChatMessageDto } from '@/api/chat';
+import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
+import { useUserStore } from '@/stores/user';
 
 // --- 类型定义 ---
-type ConversationType = 'system' | 'business' | 'private' | 'group';
-type MessageType = 'text' | 'image' | 'file';
+type ConversationType = 'system' | 'app' | 'private' | 'group';
+// 移除未使用的类型别名
 
 interface Conversation {
   id: string;
@@ -199,18 +215,18 @@ interface Conversation {
 interface Message {
   id: string;
   senderId: string;
-  senderName?: string;
+  senderName?: string; // Add this line
   senderAvatar?: string;
   content: string;
-  type: MessageType;
+  type: 'text' | 'image' | 'file';
   timestamp: string;
   isSelf: boolean;
   showTime?: boolean;
+  title?: string; // for system/business
+  level?: 'normal' | 'urgent'; // for system/business
+  actionText?: string; // for system/business
   fileName?: string;
   fileSize?: string;
-  title?: string; // For notifications
-  level?: 'normal' | 'urgent'; // For notifications
-  actionText?: string; // For notifications
 }
 
 // --- 状态 ---
@@ -218,97 +234,29 @@ const searchText = ref('');
 const currentConversation = ref<Conversation | null>(null);
 const inputMessage = ref('');
 const messageListRef = ref<HTMLDivElement | null>(null);
-const userAvatar = 'https://randomuser.me/api/portraits/men/1.jpg'; // 当前用户头像
+const userStore = useUserStore();
+const userAvatarUrl = computed(() => userStore.avatar || '');
+let chatConnection: HubConnection | null = null;
+
+const emojiOpen = ref(false);
+const emojiList = [
+  '😀','😃','😄','😁','😆','😅','😂','🙂','🙃','😉','😊','😍','😘','😗','😙','😚',
+  '😜','😝','🤗','🤔','🤨','😐','😑','😶','😏','😒','🙄','😬','😭','😤','😡','👍',
+  '👎','👏','👏','💪','👀','🎉','❤️','💔','⚡'
+];
+const handleEmojiClick = (e: string) => {
+  inputMessage.value += e;
+  emojiOpen.value = false;
+};
 
 // --- Mock 数据 ---
-const conversations = ref<Conversation[]>([
-  {
-    id: 'sys',
-    type: 'system',
-    name: '系统消息',
-    icon: BellOutlined,
-    bgColor: '#faad14',
-    lastMessage: '系统维护通知：本周六凌晨2点进行升级',
-    lastTime: '2023-10-25 10:00:00',
-    unreadCount: 2
-  },
-  {
-    id: 'biz',
-    type: 'business',
-    name: '业务审批提醒',
-    icon: AppstoreOutlined,
-    bgColor: '#1890ff',
-    lastMessage: '您有一条新的报销申请待审批',
-    lastTime: '2023-10-25 09:30:00',
-    unreadCount: 5
-  },
-  {
-    id: 'u1',
-    type: 'private',
-    name: '李四 (研发总监)',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    lastMessage: '好的，我稍后看一下',
-    lastTime: '10:45',
-    unreadCount: 0
-  },
-  {
-    id: 'u2',
-    type: 'private',
-    name: '王五 (前端主管)',
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-    lastMessage: '这个组件的样式有点问题',
-    lastTime: '昨天',
-    unreadCount: 1
-  },
-  {
-    id: 'g1',
-    type: 'group',
-    name: '前端开发组',
-    icon: TeamOutlined,
-    bgColor: '#52c41a',
-    lastMessage: '赵六: 大家下午茶点了吗？',
-    lastTime: '15:20',
-    unreadCount: 12,
-    memberCount: 8
-  },
-  {
-    id: 'g2',
-    type: 'group',
-    name: '项目攻坚小组',
-    icon: TeamOutlined,
-    bgColor: '#722ed1',
-    lastMessage: '张三: 今晚开个短会',
-    lastTime: '11:00',
-    unreadCount: 0,
-    memberCount: 15
-  }
-]);
+// 移除 Mock 数据，改从 API 获取
 
 // 消息记录 Mock
-const messagesMap = reactive<Record<string, Message[]>>({
-  'sys': [
-    { id: 's1', senderId: 'sys', title: '系统维护通知', content: '系统将于本周六凌晨2:00-4:00进行服务器升级维护，期间无法访问，请提前保存工作内容。', type: 'text', timestamp: '2023-10-25 10:00:00', isSelf: false, level: 'urgent' },
-    { id: 's2', senderId: 'sys', title: '安全提醒', content: '检测到您的账号在异地登录，如非本人操作请及时修改密码。', type: 'text', timestamp: '2023-10-24 15:30:00', isSelf: false, level: 'urgent', actionText: '修改密码' },
-    { id: 's3', senderId: 'sys', title: '版本更新', content: 'OMS系统 V2.1.0 版本已发布，新增了即时通讯功能。', type: 'text', timestamp: '2023-10-20 09:00:00', isSelf: false, level: 'normal', actionText: '查看详情' },
-  ],
-  'biz': [
-    { id: 'b1', senderId: 'oa', title: '报销审批', content: '您提交的【10月差旅费】报销申请已被财务审核通过。', type: 'text', timestamp: '2023-10-25 09:30:00', isSelf: false, level: 'normal', actionText: '查看详情' },
-    { id: 'b2', senderId: 'crm', title: '新客户分配', content: '销售总监分配给您一个新的潜在客户：杭州科技技术有限公司。', type: 'text', timestamp: '2023-10-24 14:20:00', isSelf: false, level: 'normal', actionText: '去跟进' },
-  ],
-  'u1': [
-    { id: 'm1', senderId: 'u1', senderName: '李四', senderAvatar: 'https://randomuser.me/api/portraits/men/32.jpg', content: '张工，上周那个API接口文档更新了吗？', type: 'text', timestamp: '2023-10-25 10:30:00', isSelf: false, showTime: true },
-    { id: 'm2', senderId: 'me', content: '已经更新了，在Wiki上可以看到。', type: 'text', timestamp: '2023-10-25 10:32:00', isSelf: true },
-    { id: 'm3', senderId: 'u1', senderName: '李四', senderAvatar: 'https://randomuser.me/api/portraits/men/32.jpg', content: '好的，我稍后看一下', type: 'text', timestamp: '2023-10-25 10:45:00', isSelf: false },
-  ],
-  'g1': [
-    { id: 'gm1', senderId: 'u2', senderName: '王五', senderAvatar: 'https://randomuser.me/api/portraits/women/44.jpg', content: '@所有人 下周一要进行代码评审，请大家准备好。', type: 'text', timestamp: '2023-10-25 14:00:00', isSelf: false, showTime: true },
-    { id: 'gm2', senderId: 'u3', senderName: '赵六', senderAvatar: 'https://randomuser.me/api/portraits/men/46.jpg', content: '收到', type: 'text', timestamp: '2023-10-25 14:05:00', isSelf: false },
-    { id: 'gm3', senderId: 'me', content: '收到，PPT模板有吗？', type: 'text', timestamp: '2023-10-25 14:10:00', isSelf: true },
-    { id: 'gm4', senderId: 'u2', senderName: '王五', senderAvatar: 'https://randomuser.me/api/portraits/women/44.jpg', content: '有的，发群里了', type: 'text', timestamp: '2023-10-25 14:12:00', isSelf: false },
-    { id: 'gm5', senderId: 'u2', senderName: '王五', senderAvatar: 'https://randomuser.me/api/portraits/women/44.jpg', content: 'code_review_template.pptx', fileName: 'code_review_template.pptx', fileSize: '2.5MB', type: 'file', timestamp: '2023-10-25 14:12:05', isSelf: false },
-    { id: 'gm6', senderId: 'u3', senderName: '赵六', senderAvatar: 'https://randomuser.me/api/portraits/men/46.jpg', content: '大家下午茶点了吗？', type: 'text', timestamp: '2023-10-25 15:20:00', isSelf: false, showTime: true },
-  ]
-});
+// 移除 messagesMap，改从 API 获取
+const messagesMap = reactive<Record<string, Message[]>>({});
+// 会话列表
+const conversations = ref<Conversation[]>([]);
 
 // --- 计算属性 ---
 const filteredConversations = computed(() => {
@@ -322,17 +270,57 @@ const currentMessages = computed(() => {
 });
 
 // --- 方法 ---
+// 从后端获取会话列表
+const fetchConversations = async () => {
+  try {
+    const uid = Number(userStore.id);
+    if (!uid) return;
+    const list = await chatApi.getConversations(uid);
+    conversations.value = (list || []).map((c: any) => ({
+      ...c,
+      icon: c.type === 'system' ? BellOutlined : (c.type === 'app' ? AppstoreOutlined : (c.type === 'group' ? TeamOutlined : UserOutlined)),
+      bgColor: c.type === 'system' ? '#faad14' : (c.type === 'app' ? '#1890ff' : (c.type === 'group' ? '#52c41a' : undefined))
+    }));
+    if (!currentConversation.value && conversations.value.length > 0) {
+      selectConversation(conversations.value[0] as Conversation);
+    }
+  } catch (e) {
+    console.error('获取会话列表失败', e);
+  }
+};
 const formatTime = (timeStr: string) => {
   if (!timeStr) return '';
-  // 简单处理，实际项目可以使用 dayjs
-  if (timeStr.length < 10) return timeStr; // 已经是短格式
   const date = new Date(timeStr);
+  if (isNaN(date.getTime())) return timeStr;
+
   const now = new Date();
-  if (date.toDateString() === now.toDateString()) {
-    const parts = timeStr.split(' ');
-    return parts.length > 1 ? (parts[1] || '').substring(0, 5) : timeStr; // HH:mm
+  const isToday = date.toDateString() === now.toDateString();
+  const isThisYear = date.getFullYear() === now.getFullYear();
+
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  if (isToday) {
+    return `${hours}:${minutes}`;
   }
-  return timeStr.split(' ')[0]; // YYYY-MM-DD
+
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  if (isThisYear) {
+    return `${month}-${day} ${hours}:${minutes}`;
+  }
+
+  return `${date.getFullYear()}-${month}-${day} ${hours}:${minutes}`;
+};
+
+const getAvatarColor = (name: string) => {
+  const colors = ['#f56a00', '#7265e6', '#ffbf00', '#00a2ae', '#1890ff', '#52c41a'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
 };
 
 const selectConversation = (item: Conversation) => {
@@ -342,7 +330,54 @@ const selectConversation = (item: Conversation) => {
   if (idx !== -1 && conversations.value[idx]) {
     conversations.value[idx].unreadCount = 0;
   }
+  
+  // 加载历史记录
+  if (item.type === 'private') {
+    const myUserId = userStore.id;
+    const peerUserId = Number(item.id);
+    if (myUserId && !isNaN(peerUserId)) {
+      chatApi.getHistory({ myUserId, peerUserId, page: 1, pageSize: 100 })
+        .then(res => {
+          const items = res.items || [];
+          messagesMap[item.id] = items.map((m: ChatMessageDto, index: number) => {
+            let showTime = false;
+            if (index === 0) {
+              showTime = true;
+            } else {
+              const prev = items[index - 1];
+              if (prev) {
+                const prevTime = new Date(prev.createdAt).getTime();
+                const currTime = new Date(m.createdAt).getTime();
+                if (currTime - prevTime > 5 * 60 * 1000) {
+                  showTime = true;
+                }
+              } else {
+                showTime = true;
+              }
+            }
+            return {
+              id: String(m.id),
+              senderId: String(m.senderUserId),
+              senderName: m.senderName,
+              senderAvatar: undefined,
+              content: m.content,
+              type: m.type,
+              fileName: m.fileName,
+              fileSize: m.fileSize,
+              timestamp: m.createdAt,
+              isSelf: m.isSelf,
+              showTime
+            };
+          });
+          scrollToBottom();
+          scheduleAutoScroll();
+        })
+        .catch(() => {});
+    }
+  }
+
   scrollToBottom();
+  scheduleAutoScroll();
 };
 
 const scrollToBottom = () => {
@@ -351,6 +386,14 @@ const scrollToBottom = () => {
       messageListRef.value.scrollTop = messageListRef.value.scrollHeight;
     }
   });
+};
+
+const scheduleAutoScroll = () => {
+  [50, 200, 800].forEach(ms => setTimeout(() => scrollToBottom(), ms));
+};
+
+const onImageLoad = () => {
+  scheduleAutoScroll();
 };
 
 const handleSend = (e?: KeyboardEvent) => {
@@ -376,6 +419,19 @@ const handleSend = (e?: KeyboardEvent) => {
   if (!messagesMap[cid]) {
     messagesMap[cid] = [];
   }
+  
+  // Calculate showTime
+  const lastMsg = messagesMap[cid][messagesMap[cid].length - 1];
+  if (!lastMsg) {
+    newMsg.showTime = true;
+  } else {
+    const prevTime = new Date(lastMsg.timestamp).getTime();
+    const currTime = new Date(newMsg.timestamp).getTime();
+    if (currTime - prevTime > 5 * 60 * 1000) {
+      newMsg.showTime = true;
+    }
+  }
+
   messagesMap[cid]?.push(newMsg);
   
   // 更新列表最后一条消息
@@ -385,83 +441,337 @@ const handleSend = (e?: KeyboardEvent) => {
     conv.lastTime = new Date().toLocaleString();
   }
 
+  const myUserId = userStore.id;
+  const peerUserId = Number(currentConversation.value.id);
   inputMessage.value = '';
   scrollToBottom();
 
-  // 模拟自动回复
-  if (currentConversation.value.type === 'private') {
-    setTimeout(() => {
-      const replyMsg: Message = {
-        id: Date.now().toString(),
-        senderId: currentConversation.value!.id,
-        senderAvatar: currentConversation.value!.avatar,
-        content: '收到，我现在有点忙，稍后回复你。',
-        type: 'text',
-        timestamp: new Date().toLocaleString(),
-        isSelf: false
-      };
-      messagesMap[currentConversation.value!.id]?.push(replyMsg);
-      if (conv) {
-        conv.lastMessage = replyMsg.content;
-        conv.lastTime = replyMsg.timestamp;
-      }
-      scrollToBottom();
-    }, 1000);
+  // Persist and broadcast via backend
+  if (currentConversation.value.type === 'private' && myUserId && peerUserId) {
+    chatApi.send({ myUserId, peerUserId, type: 'text', content: newMsg.content })
+      .catch(() => { /* errors already handled by request */ });
   }
 };
 
 const handleImageUpload = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file || !currentConversation.value) return;
-  
+
+  const peerUserId = Number(currentConversation.value.id);
+  if (isNaN(peerUserId)) {
+    message.warning('该会话不支持发送文件');
+    return;
+  }
+
   message.loading({ content: '图片上传中...', key: 'upload' });
   
-  // 模拟上传
-  setTimeout(() => {
-    if (!currentConversation.value) return;
-    message.success({ content: '发送成功', key: 'upload' });
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      senderId: 'me',
-      content: 'https://picsum.photos/300/200', // Mock image
-      type: 'image',
-      timestamp: new Date().toLocaleString(),
-      isSelf: true
-    };
-    if (!messagesMap[currentConversation.value.id]) {
-      messagesMap[currentConversation.value.id] = [];
+  // 乐观更新：先在本地展示一条图片消息（使用 blob URL）
+  const blobUrl = URL.createObjectURL(file);
+  const tempId = Date.now().toString();
+  const cid = currentConversation.value.id;
+  const nowStr = new Date().toLocaleString();
+  const optimisticMsg: Message = {
+    id: tempId,
+    senderId: 'me',
+    content: blobUrl,
+    type: 'image',
+    fileName: file.name,
+    fileSize: `${Math.round(file.size / 1024)}KB`,
+    timestamp: nowStr,
+    isSelf: true,
+    showTime: false
+  };
+  if (!messagesMap[cid]) messagesMap[cid] = [];
+  const lastMsg = messagesMap[cid][messagesMap[cid].length - 1];
+  if (!lastMsg) {
+    optimisticMsg.showTime = true;
+  } else {
+    const prevTime = new Date(lastMsg.timestamp).getTime();
+    const currTime = new Date(optimisticMsg.timestamp).getTime();
+    if (currTime - prevTime > 5 * 60 * 1000) {
+      optimisticMsg.showTime = true;
     }
-    messagesMap[currentConversation.value.id]?.push(newMsg);
-    scrollToBottom();
-  }, 1000);
+  }
+  messagesMap[cid].push(optimisticMsg);
+  const conv = conversations.value.find(c => c.id === cid);
+  if (conv) {
+    conv.lastMessage = '[图片]';
+    conv.lastTime = nowStr;
+  }
+  scrollToBottom();
+  
+  const myUserId = userStore.id;
+  chatApi.upload({ myUserId, peerUserId, file })
+    .then(() => { 
+      message.success({ content: '发送成功', key: 'upload' });
+    })
+    .catch(() => {
+      message.error({ content: '发送失败', key: 'upload' });
+    });
 };
 
 const handleFileUpload = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file || !currentConversation.value) return;
 
+  const peerUserId = Number(currentConversation.value.id);
+  if (isNaN(peerUserId)) {
+    message.warning('该会话不支持发送文件');
+    return;
+  }
+
   message.loading({ content: '文件上传中...', key: 'upload' });
 
-  setTimeout(() => {
-    message.success({ content: '发送成功', key: 'upload' });
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      senderId: 'me',
-      content: file.name,
-      fileName: file.name,
-      fileSize: (file.size / 1024).toFixed(1) + 'KB',
-      type: 'file',
-      timestamp: new Date().toLocaleString(),
-      isSelf: true
-    };
-    messagesMap[currentConversation.value!.id]?.push(newMsg);
-    scrollToBottom();
-  }, 1000);
+  // 乐观更新：先在本地展示一条文件消息（链接稍后由服务器回显填充）
+  const tempId = Date.now().toString();
+  const cid = currentConversation.value.id;
+  const nowStr = new Date().toLocaleString();
+  const optimisticMsg: Message = {
+    id: tempId,
+    senderId: 'me',
+    content: '#',
+    type: 'file',
+    fileName: file.name,
+    fileSize: `${Math.round(file.size / 1024)}KB`,
+    timestamp: nowStr,
+    isSelf: true,
+    showTime: false
+  };
+  if (!messagesMap[cid]) messagesMap[cid] = [];
+  const lastMsg = messagesMap[cid][messagesMap[cid].length - 1];
+  if (!lastMsg) {
+    optimisticMsg.showTime = true;
+  } else {
+    const prevTime = new Date(lastMsg.timestamp).getTime();
+    const currTime = new Date(optimisticMsg.timestamp).getTime();
+    if (currTime - prevTime > 5 * 60 * 1000) {
+      optimisticMsg.showTime = true;
+    }
+  }
+  messagesMap[cid].push(optimisticMsg);
+  const conv = conversations.value.find(c => c.id === cid);
+  if (conv) {
+    conv.lastMessage = '[文件]';
+    conv.lastTime = nowStr;
+  }
+  scrollToBottom();
+
+  const myUserId = userStore.id;
+  chatApi.upload({ myUserId, peerUserId, file })
+    .then(() => { 
+      message.success({ content: '发送成功', key: 'upload' });
+    })
+    .catch(() => {
+      message.error({ content: '发送失败', key: 'upload' });
+    });
 };
 
 // 监听会话切换，滚动到底部
 watch(() => currentConversation.value, () => {
   scrollToBottom();
+});
+
+const route = useRoute();
+
+// Handle external navigation to chat
+watch(() => route.query, (query) => {
+  if (query.chatWith && query.type === 'private') {
+    const targetId = String(query.chatWith);
+    const userName = query.userName as string || 'Unknown';
+    const myUserId = Number(query.myUserId as string) || userStore.id;
+    
+    let conv = conversations.value.find(c => c.id === targetId);
+    if (!conv) {
+      // Create new temporary conversation
+      conv = {
+        id: targetId,
+        type: 'private',
+        name: userName,
+        avatar: undefined,
+        icon: UserOutlined,
+        bgColor: getAvatarColor(userName),
+        lastMessage: '开始聊天吧',
+        lastTime: new Date().toLocaleString(),
+        unreadCount: 0
+      };
+      conversations.value.unshift(conv);
+    }
+    selectConversation(conv);
+    
+    // Load history
+    const peerUserId = Number(targetId);
+    if (myUserId && !isNaN(peerUserId)) {
+      chatApi.getHistory({ myUserId, peerUserId, page: 1, pageSize: 100 })
+        .then(res => {
+          const items = res.items || [];
+          messagesMap[targetId] = items.map((m: ChatMessageDto, index: number) => {
+            let showTime = false;
+            if (index === 0) {
+              showTime = true;
+            } else {
+              const prev = items[index - 1];
+              if (prev) {
+                const prevTime = new Date(prev.createdAt).getTime();
+                const currTime = new Date(m.createdAt).getTime();
+                if (currTime - prevTime > 5 * 60 * 1000) {
+                  showTime = true;
+                }
+              } else {
+                showTime = true;
+              }
+            }
+            return {
+              id: String(m.id),
+              senderId: String(m.senderUserId),
+              senderName: m.senderName,
+              senderAvatar: undefined,
+              content: m.content,
+              type: m.type,
+              fileName: m.fileName,
+              fileSize: m.fileSize,
+              timestamp: m.createdAt,
+              isSelf: m.isSelf,
+              showTime
+            };
+          });
+          scrollToBottom();
+          scheduleAutoScroll();
+        })
+        .catch(() => {});
+    }
+  }
+}, { immediate: true });
+
+// Connect to UserHub for receiving messages
+const connectChatHub = async () => {
+  if (chatConnection) return;
+  const token = userStore.token;
+  chatConnection = new HubConnectionBuilder()
+    .withUrl('/hubs/user', { accessTokenFactory: () => token || '' })
+    .withAutomaticReconnect()
+    .build();
+  chatConnection.on('ReceivePrivateMessage', (dto: ChatMessageDto) => {
+    // Ignore duplicate non-self echoes to my own connection
+    if (String(dto.senderUserId) === String(userStore.id) && !dto.isSelf) return;
+
+    const myId = String(userStore.id);
+    const parts = (dto.conversationKey || '').split('|');
+    if (parts.length !== 2) return;
+    const peerIdFromKey = parts[0] === myId ? parts[1] : (parts[1] === myId ? parts[0] : '');
+    if (!peerIdFromKey) return;
+
+    // 如果当前不是该会话，也要更新左侧会话预览
+    let conv = conversations.value.find(c => c.id === peerIdFromKey);
+    if (!conv) {
+      // 创建一个简易会话条目（缺少名称时用用户ID占位）
+      // 如果是对方发来的消息，可以直接使用消息中的发送者姓名
+      const displayName = (!dto.isSelf && dto.senderName) ? dto.senderName : `用户 ${peerIdFromKey}`;
+      conv = {
+        id: peerIdFromKey,
+        type: 'private',
+        name: displayName,
+        avatar: undefined,
+        icon: UserOutlined,
+        bgColor: getAvatarColor(displayName),
+        lastMessage: dto.type === 'image' ? '[图片]' : (dto.type === 'file' ? '[文件]' : dto.content),
+        lastTime: dto.createdAt,
+        unreadCount: 1
+      };
+      conversations.value.unshift(conv);
+    } else {
+      // 移动到顶部
+      conversations.value = conversations.value.filter(c => c.id !== peerIdFromKey);
+      conversations.value.unshift(conv);
+      
+      conv.lastMessage = dto.type === 'image' ? '[图片]' : (dto.type === 'file' ? '[文件]' : dto.content);
+      conv.lastTime = dto.createdAt;
+      if (currentConversation.value?.id !== peerIdFromKey) {
+        conv.unreadCount++;
+      }
+    }
+
+    // 自发消息的去重更新（文本、图片、文件）
+    if (dto.isSelf) {
+      const list = messagesMap[peerIdFromKey] || [];
+      const matchIndex = list.findIndex(m => 
+        m.isSelf &&
+        m.id.length >= 13 &&
+        (
+          (dto.type === 'text' && m.type === 'text' && m.content === dto.content) ||
+          ((dto.type === 'image' || dto.type === 'file') && m.type === dto.type && m.fileName === dto.fileName)
+        )
+      );
+      if (matchIndex !== -1) {
+        const pendingMsg = list[matchIndex];
+        if (pendingMsg) {
+          const oldUrl = pendingMsg.content;
+          pendingMsg.id = String(dto.id);
+          pendingMsg.timestamp = dto.createdAt;
+          pendingMsg.content = dto.content;
+          pendingMsg.fileName = dto.fileName;
+          pendingMsg.fileSize = dto.fileSize;
+          if (oldUrl && oldUrl.startsWith('blob:') && oldUrl !== dto.content) {
+            try { URL.revokeObjectURL(oldUrl); } catch {}
+          }
+          conv.lastMessage = dto.type === 'image' ? '[图片]' : (dto.type === 'file' ? '[文件]' : dto.content);
+          conv.lastTime = dto.createdAt;
+          return;
+        }
+      }
+    }
+
+    const msg = {
+      id: String(dto.id),
+      senderId: String(dto.senderUserId),
+      senderName: dto.senderName, // Use senderName from DTO
+      content: dto.content,
+      type: dto.type,
+      fileName: dto.fileName,
+      fileSize: dto.fileSize,
+      timestamp: dto.createdAt,
+      isSelf: dto.isSelf,
+      showTime: false
+    } as Message;
+    
+    // 将消息归入对应会话
+    if (!messagesMap[peerIdFromKey]) messagesMap[peerIdFromKey] = [];
+    const list = messagesMap[peerIdFromKey];
+    const lastMsg = list.length > 0 ? list[list.length - 1] : null;
+    
+    if (!lastMsg) {
+      msg.showTime = true;
+    } else {
+      const prevTime = new Date(lastMsg.timestamp).getTime();
+      const currTime = new Date(msg.timestamp).getTime();
+      if (currTime - prevTime > 5 * 60 * 1000) {
+        msg.showTime = true;
+      }
+    }
+    
+    // 追加并滚动
+    list.push(msg);
+    if (currentConversation.value?.id === peerIdFromKey) {
+      scrollToBottom();
+    }
+
+    // 更新会话预览
+    conv.lastMessage = msg.type === 'image' ? '[图片]' : (msg.type === 'file' ? '[文件]' : msg.content);
+    conv.lastTime = msg.timestamp;
+  });
+  try { await chatConnection.start(); } catch (e) { console.error(e); }
+};
+
+onMounted(async () => {
+  await fetchConversations();
+  if (conversations.value.length === 0 && String(userStore.id) === '10') {
+    try {
+      await chatApi.seedMock(10);
+      await fetchConversations();
+    } catch (e) {
+      console.warn('插入Mock数据失败', e);
+    }
+  }
+  connectChatHub();
 });
 </script>
 
@@ -619,7 +929,8 @@ watch(() => currentConversation.value, () => {
 }
 
 .is-self .msg-content-wrapper {
-  flex-direction: row-reverse;
+  flex-direction: row;
+  justify-content: flex-end;
 }
 
 .msg-avatar {
@@ -713,6 +1024,19 @@ watch(() => currentConversation.value, () => {
   cursor: pointer;
   display: flex;
   align-items: center;
+}
+
+.emoji-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 260px;
+}
+
+.emoji-item {
+  font-size: 20px;
+  line-height: 24px;
+  cursor: pointer;
 }
 
 .send-action {

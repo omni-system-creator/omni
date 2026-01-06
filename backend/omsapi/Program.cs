@@ -96,6 +96,7 @@ app.UseMiddleware<omsapi.Middleware.JwtSlidingExpirationMiddleware>();
 app.MapControllers();
 app.MapHub<omsapi.Hubs.DebugHub>("/hubs/debug");
 app.MapHub<omsapi.Hubs.ProjectHub>("/hubs/project");
+app.MapHub<omsapi.Hubs.UserHub>("/hubs/user");
 
 // 初始化数据库
 using (var scope = app.Services.CreateScope())
