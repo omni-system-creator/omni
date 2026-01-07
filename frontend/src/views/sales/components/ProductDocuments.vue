@@ -156,8 +156,15 @@ const previewUrl = computed(() => {
         fileUrl = `${window.location.origin}${fileUrl}`;
     }
     
-    const encodedUrl = encodeURIComponent(fileUrl);
-    return `https://kkview.dingzhi.info/onlinePreview?url=${encodedUrl}`;
+    const encodedUrl = window.btoa(fileUrl);
+    let url = `https://kkview.dingzhi.info/onlinePreview?url=${encodedUrl}`;
+    
+    const ext = selectedFile.value.title.split('.').pop()?.toLowerCase();
+    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext || '')) {
+        url += '&officePreviewType=pdf';
+    }
+    
+    return url;
 });
 
 const getFileIconInfo = (filename: string) => {
