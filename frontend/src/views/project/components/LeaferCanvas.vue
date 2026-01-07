@@ -3152,7 +3152,8 @@ const drawTaskNode = (group: Group, task: any, x: number, y: number) => {
       }
       
       startW = bg.width || 0;
-      const startX = (e as any).event ? (e as any).event.clientX : e.x;
+      // Fix: Use origin.clientX (Screen Coords) for correct delta calculation
+      const startX = (e.origin as MouseEvent)?.clientX ?? (e as any).event?.clientX ?? e.x;
       const scale = store.viewSettings.zoomLevel;
 
       const onMove = (moveEvent: any) => {

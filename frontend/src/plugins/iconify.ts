@@ -13,5 +13,5 @@ export function setupIcons() {
   addCollection(FaIcons);
   addCollection(MdiIcons);
   addCollection(RiIcons);
-  addCollection(SimpleIcons);
+  addCollection(SimpleIcons as any);
 }
