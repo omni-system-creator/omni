@@ -25,7 +25,7 @@ const activeTab = ref('1');
 
 <style scoped>
 .page-container {
-  padding: 16px;
+  padding: 0;
   flex: 1;
   background: #fff;
   display: flex;
@@ -51,5 +51,14 @@ const activeTab = ref('1');
 
 .page-container :deep(.ant-tabs-tabpane) {
   height: 100%;
+}
+
+.page-container :deep(.ant-tabs-nav) {
+  margin-bottom: 0;
+}
+
+.page-container :deep(.ant-tabs-tab) {
+  margin: 0 !important;
+  padding: 12px 16px !important;
 }
 </style>

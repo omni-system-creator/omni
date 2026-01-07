@@ -195,6 +195,44 @@ namespace omsapi.Controllers
         }
 
         /// <summary>
+        /// 创建产品资料/文件夹
+        /// </summary>
+        [HttpPost("materials/docs")]
+        public async Task<ApiResponse<ProductDocDto>> CreateProductDoc([FromBody] CreateProductDocDto dto)
+        {
+            var result = await _salesService.CreateProductDocAsync(dto);
+            return ApiResponse<ProductDocDto>.Success(result);
+        }
+
+        [HttpPost("materials/docs/upload")]
+        public async Task<ApiResponse<ProductDocDto>> UploadProductDoc(IFormFile file, [FromForm] string? parentId)
+        {
+            var result = await _salesService.UploadProductDocAsync(file, parentId);
+            return ApiResponse<ProductDocDto>.Success(result);
+        }
+
+        [HttpDelete("materials/docs/{id}")]
+        public async Task<ApiResponse<bool>> DeleteProductDoc(string id)
+        {
+            var result = await _salesService.DeleteProductDocAsync(id);
+            return ApiResponse<bool>.Success(result);
+        }
+
+        [HttpPut("materials/docs/{id}/rename")]
+        public async Task<ApiResponse<bool>> RenameProductDoc(string id, [FromQuery] string newName)
+        {
+            var result = await _salesService.RenameProductDocAsync(id, newName);
+            return ApiResponse<bool>.Success(result);
+        }
+
+        [HttpPut("materials/docs/{id}/move")]
+        public async Task<ApiResponse<bool>> MoveProductDoc(string id, [FromQuery] string? newParentId)
+        {
+            var result = await _salesService.MoveProductDocAsync(id, newParentId);
+            return ApiResponse<bool>.Success(result);
+        }
+
+        /// <summary>
         /// 获取流程规则列表
         /// </summary>
         [HttpGet("materials/rules")]

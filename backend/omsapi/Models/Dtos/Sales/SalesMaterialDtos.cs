@@ -31,7 +31,20 @@ namespace omsapi.Models.Dtos.Sales
         public string Title { get; set; } = string.Empty;
         public string Size { get; set; } = string.Empty;
         public string Url { get; set; } = string.Empty;
+        public string Type { get; set; } = "file";
+        public string? ParentId { get; set; }
         public DateTime UploadDate { get; set; }
+        public List<ProductDocDto> Children { get; set; } = new();
+    }
+
+    public class CreateProductDocDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string? ParentId { get; set; }
+        public string Type { get; set; } = "file";
+        // For file upload, usually handled separately, but here simplified
+        public string Size { get; set; } = "";
+        public string Url { get; set; } = "";
     }
 
     public class ProcessRuleDto

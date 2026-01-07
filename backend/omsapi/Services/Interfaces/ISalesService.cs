@@ -25,6 +25,11 @@ namespace omsapi.Services.Interfaces
         Task<string> GenerateScriptFieldAsync(GenerateScriptFieldRequest request);
         IAsyncEnumerable<string> GenerateScriptFieldStreamAsync(GenerateScriptFieldRequest request);
         Task<List<ProductDocDto>> GetProductDocsAsync();
+        Task<ProductDocDto> CreateProductDocAsync(CreateProductDocDto dto);
+        Task<ProductDocDto> UploadProductDocAsync(IFormFile file, string? parentId);
+        Task<bool> DeleteProductDocAsync(string id);
+        Task<bool> RenameProductDocAsync(string id, string newName);
+        Task<bool> MoveProductDocAsync(string id, string? newParentId);
         Task<List<ProcessRuleDto>> GetProcessRulesAsync();
         Task<SalesScriptChatResponseDto> SalesScriptChatAsync(SalesScriptChatDto dto);
         IAsyncEnumerable<SalesScriptChatResponseDto> SalesScriptChatStreamAsync(SalesScriptChatDto dto);

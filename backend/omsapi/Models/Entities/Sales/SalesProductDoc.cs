@@ -23,6 +23,14 @@ namespace omsapi.Models.Entities.Sales
         [MaxLength(500)]
         public string Url { get; set; } = string.Empty;
 
+        [Column("parent_id")]
+        [MaxLength(50)]
+        public string? ParentId { get; set; }
+
+        [Column("type")]
+        [MaxLength(20)]
+        public string Type { get; set; } = "file"; // "folder" or "file"
+
         [Column("upload_date")]
         public DateTime UploadDate { get; set; } = DateTime.Now;
     }

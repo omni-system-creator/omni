@@ -69,7 +69,8 @@ service.interceptors.response.use(
           localStorage.removeItem('oms.user');
           if (!window.location.pathname.includes('/login')) {
               message.error('登录已过期，请重新登录');
-              window.location.href = '/login';
+              const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+              window.location.href = `/login?redirect=${redirect}`;
           }
         } else {
           message.error(res.msg || '系统错误');
@@ -90,7 +91,8 @@ service.interceptors.response.use(
     if (error.response?.status === 401) {
         localStorage.removeItem('oms.auth');
         localStorage.removeItem('oms.user');
-        window.location.href = '/login';
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/login?redirect=${redirect}`;
     }
     
     return Promise.reject(error);

@@ -13,11 +13,13 @@ namespace omsapi.Services
     {
         private readonly OmsContext _context;
         private readonly IAiService _aiService;
+        private readonly IWebHostEnvironment _environment;
 
-        public SalesService(OmsContext context, IAiService aiService)
+        public SalesService(OmsContext context, IAiService aiService, IWebHostEnvironment environment)
         {
             _context = context;
             _aiService = aiService;
+            _environment = environment;
         }
 
         // --- Customer ---
@@ -371,24 +373,200 @@ namespace omsapi.Services
 
         public async Task<List<ProductDocDto>> GetProductDocsAsync()
         {
-            // Mock data or DB
-             if (!await _context.SalesProductDocs.AnyAsync())
+            if (!await _context.SalesProductDocs.AnyAsync())
             {
-                return new List<ProductDocDto>
-                {
-                    new ProductDocDto { Id = "1", Title = "产品白皮书.pdf", Size = "2.5MB", Url = "#", UploadDate = DateTime.Now },
-                    new ProductDocDto { Id = "2", Title = "功能清单.pdf", Size = "1.2MB", Url = "#", UploadDate = DateTime.Now }
-                };
+                // Seed data with folders
+                var folder1 = new SalesProductDoc { Id = "1", Title = "产品手册", Type = "folder", UploadDate = DateTime.Now };
+                var folder2 = new SalesProductDoc { Id = "2", Title = "技术文档", Type = "folder", UploadDate = DateTime.Now };
+                
+                _context.SalesProductDocs.AddRange(folder1, folder2);
+                
+                _context.SalesProductDocs.Add(new SalesProductDoc { Id = "3", Title = "产品白皮书.pdf", Size = "2.5MB", Url = "http://file.keking.cn/demo/20151125/aaa.pdf", Type = "file", ParentId = "1", UploadDate = DateTime.Now });
+                _context.SalesProductDocs.Add(new SalesProductDoc { Id = "4", Title = "功能清单.xlsx", Size = "1.2MB", Url = "http://file.keking.cn/demo/20151125/aaa.xlsx", Type = "file", ParentId = "1", UploadDate = DateTime.Now });
+                _context.SalesProductDocs.Add(new SalesProductDoc { Id = "5", Title = "架构设计.pptx", Size = "3.5MB", Url = "http://file.keking.cn/demo/20151125/aaa.pptx", Type = "file", ParentId = "2", UploadDate = DateTime.Now });
+
+                await _context.SaveChangesAsync();
             }
 
-            return await _context.SalesProductDocs.Select(d => new ProductDocDto
+            var allDocs = await _context.SalesProductDocs.Select(d => new ProductDocDto
             {
                 Id = d.Id,
                 Title = d.Title,
                 Size = d.Size,
                 Url = d.Url,
+                Type = d.Type,
+                ParentId = d.ParentId,
                 UploadDate = d.UploadDate
             }).ToListAsync();
+
+            // Build Tree
+            var lookup = allDocs.ToDictionary(x => x.Id);
+            var roots = new List<ProductDocDto>();
+
+            foreach (var doc in allDocs)
+            {
+                if (string.IsNullOrEmpty(doc.ParentId) || !lookup.ContainsKey(doc.ParentId))
+                {
+                    roots.Add(doc);
+                }
+                else
+                {
+                    lookup[doc.ParentId].Children.Add(doc);
+                }
+            }
+
+            return roots;
+        }
+
+        public async Task<ProductDocDto> CreateProductDocAsync(CreateProductDocDto dto)
+        {
+            var doc = new SalesProductDoc
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Title = dto.Title,
+                Size = dto.Size,
+                Url = dto.Url,
+                Type = dto.Type,
+                ParentId = dto.ParentId,
+                UploadDate = DateTime.Now
+            };
+
+            _context.SalesProductDocs.Add(doc);
+            await _context.SaveChangesAsync();
+
+            return new ProductDocDto
+            {
+                Id = doc.Id,
+                Title = doc.Title,
+                Size = doc.Size,
+                Url = doc.Url,
+                Type = doc.Type,
+                ParentId = doc.ParentId,
+                UploadDate = doc.UploadDate
+            };
+        }
+
+        public async Task<ProductDocDto> UploadProductDocAsync(IFormFile file, string? parentId)
+        {
+            if (file == null || file.Length == 0)
+                throw new ArgumentException("File is empty");
+
+            // 1. Save File
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadDir = Path.Combine(webRootPath, "uploads", "sales", "docs", DateTime.Now.ToString("yyyyMM"));
+            if (!Directory.Exists(uploadDir))
+                Directory.CreateDirectory(uploadDir);
+
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var fileName = $"{Guid.NewGuid():N}{ext}";
+            var filePath = Path.Combine(uploadDir, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var url = $"/uploads/sales/docs/{DateTime.Now:yyyyMM}/{fileName}";
+            var size = FormatFileSize(file.Length);
+
+            // 2. Create DB Record
+            var doc = new SalesProductDoc
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Title = file.FileName,
+                Size = size,
+                Url = url,
+                Type = "file",
+                ParentId = parentId,
+                UploadDate = DateTime.Now
+            };
+
+            _context.SalesProductDocs.Add(doc);
+            await _context.SaveChangesAsync();
+
+            return new ProductDocDto
+            {
+                Id = doc.Id,
+                Title = doc.Title,
+                Size = doc.Size,
+                Url = doc.Url,
+                Type = doc.Type,
+                ParentId = doc.ParentId,
+                UploadDate = doc.UploadDate
+            };
+        }
+
+        public async Task<bool> DeleteProductDocAsync(string id)
+        {
+            var doc = await _context.SalesProductDocs.FindAsync(id);
+            if (doc == null) return false;
+
+            // Fetch all to find descendants
+            var allDocs = await _context.SalesProductDocs.ToListAsync();
+            var toDelete = new List<SalesProductDoc> { doc };
+            
+            void AddChildren(string parentId)
+            {
+                var children = allDocs.Where(d => d.ParentId == parentId).ToList();
+                foreach (var child in children)
+                {
+                    toDelete.Add(child);
+                    AddChildren(child.Id);
+                }
+            }
+            
+            AddChildren(id);
+            
+            _context.SalesProductDocs.RemoveRange(toDelete);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RenameProductDocAsync(string id, string newName)
+        {
+            var doc = await _context.SalesProductDocs.FindAsync(id);
+            if (doc == null) return false;
+            
+            doc.Title = newName;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> MoveProductDocAsync(string id, string? newParentId)
+        {
+            var doc = await _context.SalesProductDocs.FindAsync(id);
+            if (doc == null) return false;
+            
+            // Prevent moving folder into itself or its children
+            if (doc.Type == "folder" && !string.IsNullOrEmpty(newParentId))
+            {
+                 // Check if newParentId is a child of id
+                 var allDocs = await _context.SalesProductDocs.ToListAsync();
+                 var current = allDocs.FirstOrDefault(d => d.Id == newParentId);
+                 while (current != null)
+                 {
+                     if (current.Id == id) return false; // Circular reference
+                     if (string.IsNullOrEmpty(current.ParentId)) break;
+                     current = allDocs.FirstOrDefault(d => d.Id == current.ParentId);
+                 }
+            }
+
+            doc.ParentId = newParentId;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        private string FormatFileSize(long bytes)
+        {
+            string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+            double len = bytes;
+            int order = 0;
+            while (len >= 1024 && order < sizes.Length - 1)
+            {
+                order++;
+                len = len / 1024;
+            }
+            return $"{len:0.##} {sizes[order]}";
         }
 
         public async Task<List<ProcessRuleDto>> GetProcessRulesAsync()

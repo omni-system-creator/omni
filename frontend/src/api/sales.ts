@@ -73,7 +73,18 @@ export interface ProductDocDto {
   title: string;
   size: string;
   url: string;
+  type: string; // "file" | "folder"
+  parentId?: string;
+  children?: ProductDocDto[];
   uploadDate?: string;
+}
+
+export interface CreateProductDocDto {
+  title: string;
+  type: string;
+  parentId?: string;
+  size?: string;
+  url?: string;
 }
 
 export interface ProcessRuleDto {
@@ -183,6 +194,35 @@ export function createSalesScript(data: CreateSalesScriptDto) {
 
 export function getProductDocs(params?: any) {
   return request.get<any, ProductDocDto[]>('/sales/materials/docs', { params });
+}
+
+export function createProductDoc(data: CreateProductDocDto) {
+  return request.post<any, ProductDocDto>('/sales/materials/docs', data);
+}
+
+export function uploadProductDoc(file: File, parentId?: string) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (parentId) {
+    formData.append('parentId', parentId);
+  }
+  return request.post('/sales/materials/docs/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+}
+
+export function deleteProductDoc(id: string) {
+  return request.delete<any, boolean>(`/sales/materials/docs/${id}`);
+}
+
+export function renameProductDoc(id: string, newName: string) {
+  return request.put<any, boolean>(`/sales/materials/docs/${id}/rename`, null, { params: { newName } });
+}
+
+export function moveProductDoc(id: string, newParentId?: string) {
+  return request.put<any, boolean>(`/sales/materials/docs/${id}/move`, null, { params: { newParentId } });
 }
 
 export function getProcessRules(params?: any) {

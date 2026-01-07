@@ -2083,6 +2083,11 @@ namespace omsapi.Migrations
                         .HasColumnType("varchar(255)")
                         .HasColumnName("id");
 
+                    b.Property<string>("ParentId")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("parent_id");
+
                     b.Property<string>("Size")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -2094,6 +2099,12 @@ namespace omsapi.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)")
                         .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("type");
 
                     b.Property<DateTime>("UploadDate")
                         .HasColumnType("datetime(6)")
