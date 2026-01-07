@@ -217,5 +217,152 @@ namespace omsapi.Services
 
             return "";
         }
+
+        public async Task<string> GetChatCompletionAsync(string message, string systemPrompt, string model = "deepseek-ai/DeepSeek-V3")
+        {
+            var apiKey = _configuration["SiliconFlow:ApiKey"];
+            var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                return "[System: Chat completion requires API Key]";
+            }
+
+            var requestBody = new
+            {
+                model = model,
+                messages = new[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = message }
+                },
+                max_tokens = 1000,
+                temperature = 0.7
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/chat/completions");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[AiService] Chat API Error: {response.StatusCode} - {error}");
+                    return $"[System: Chat completion failed ({response.StatusCode})]";
+                }
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseString);
+
+                if (doc.RootElement.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                {
+                    var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+                    return content ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AiService] Error in chat completion: {ex.Message}");
+                return $"[System: Chat completion error: {ex.Message}]";
+            }
+
+            return "";
+        }
+
+        public async IAsyncEnumerable<string> GetChatCompletionStreamAsync(string message, string systemPrompt, string model = "deepseek-ai/DeepSeek-V3")
+        {
+            var apiKey = _configuration["SiliconFlow:ApiKey"];
+            var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                yield return "[System: Chat completion requires API Key]";
+                yield break;
+            }
+
+            var requestBody = new
+            {
+                model = model,
+                messages = new[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = message }
+                },
+                max_tokens = 1000,
+                temperature = 0.7,
+                stream = true
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/chat/completions");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage? response = null;
+            string? errorMsg = null;
+            try
+            {
+                response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AiService] Error in chat completion stream init: {ex.Message}");
+                errorMsg = $"[System: Chat completion error: {ex.Message}]";
+            }
+
+            if (errorMsg != null)
+            {
+                yield return errorMsg;
+                yield break;
+            }
+
+            if (!response!.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[AiService] Chat API Error: {response.StatusCode} - {error}");
+                yield return $"[System: Chat completion failed ({response.StatusCode})]";
+                yield break;
+            }
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var reader = new StreamReader(stream);
+
+            string? line;
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (!line.StartsWith("data: ")) continue;
+
+                var data = line.Substring(6); // Remove "data: "
+                if (data == "[DONE]") break;
+
+                string? content = null;
+                try
+                {
+                    using var doc = JsonDocument.Parse(data);
+                    if (doc.RootElement.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                    {
+                        var choice = choices[0];
+                        if (choice.TryGetProperty("delta", out var delta) && delta.TryGetProperty("content", out var contentProp))
+                        {
+                            content = contentProp.GetString();
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    // Ignore parse errors for partial chunks
+                }
+
+                if (!string.IsNullOrEmpty(content))
+                {
+                    yield return content;
+                }
+            }
+        }
     }
 }

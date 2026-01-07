@@ -132,6 +132,18 @@ namespace omsapi.Controllers
         }
 
         /// <summary>
+        /// 更新话术
+        /// </summary>
+        [HttpPut("materials/scripts/{id}")]
+        public async Task<ApiResponse<SalesScriptDto>> UpdateSalesScript(string id, [FromBody] UpdateSalesScriptDto dto)
+        {
+            var result = await _salesService.UpdateSalesScriptAsync(id, dto);
+            return result != null
+                ? ApiResponse<SalesScriptDto>.Success(result)
+                : ApiResponse<SalesScriptDto>.Error("Sales script not found");
+        }
+
+        /// <summary>
         /// 获取产品资料列表
         /// </summary>
         [HttpGet("materials/docs")]
@@ -149,6 +161,35 @@ namespace omsapi.Controllers
         {
             var result = await _salesService.GetProcessRulesAsync();
             return ApiResponse<List<ProcessRuleDto>>.Success(result);
+        }
+
+        /// <summary>
+        /// 销售话术AI对话
+        /// </summary>
+        [HttpPost("scripts/chat")]
+        public async Task<ApiResponse<SalesScriptChatResponseDto>> SalesScriptChat([FromBody] SalesScriptChatDto dto)
+        {
+            var result = await _salesService.SalesScriptChatAsync(dto);
+            return ApiResponse<SalesScriptChatResponseDto>.Success(result);
+        }
+
+        /// <summary>
+        /// 销售话术AI对话（流式）
+        /// </summary>
+        [HttpPost("scripts/chat/stream")]
+        public async Task SalesScriptChatStream([FromBody] SalesScriptChatDto dto)
+        {
+            Response.Headers.Append("Content-Type", "text/event-stream");
+            Response.Headers.Append("Cache-Control", "no-cache");
+            Response.Headers.Append("Connection", "keep-alive");
+
+            await foreach (var item in _salesService.SalesScriptChatStreamAsync(dto))
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(item);
+                var data = $"data: {json}\n\n";
+                await Response.WriteAsync(data);
+                await Response.Body.FlushAsync();
+            }
         }
 
         // --- Stats ---

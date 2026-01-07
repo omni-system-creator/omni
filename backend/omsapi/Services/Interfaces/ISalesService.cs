@@ -20,8 +20,11 @@ namespace omsapi.Services.Interfaces
 
         // Materials
         Task<List<SalesScriptDto>> GetSalesScriptsAsync();
+        Task<SalesScriptDto?> UpdateSalesScriptAsync(string id, UpdateSalesScriptDto dto);
         Task<List<ProductDocDto>> GetProductDocsAsync();
         Task<List<ProcessRuleDto>> GetProcessRulesAsync();
+        Task<SalesScriptChatResponseDto> SalesScriptChatAsync(SalesScriptChatDto dto);
+        IAsyncEnumerable<SalesScriptChatResponseDto> SalesScriptChatStreamAsync(SalesScriptChatDto dto);
 
         // Stats
         Task<SalesDashboardStatsDto> GetDashboardStatsAsync();

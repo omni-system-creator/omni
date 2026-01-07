@@ -12,10 +12,12 @@ namespace omsapi.Services
     public class SalesService : ISalesService
     {
         private readonly OmsContext _context;
+        private readonly IAiService _aiService;
 
-        public SalesService(OmsContext context)
+        public SalesService(OmsContext context, IAiService aiService)
         {
             _context = context;
+            _aiService = aiService;
         }
 
         // --- Customer ---
@@ -270,6 +272,28 @@ namespace omsapi.Services
             }).ToListAsync();
         }
 
+        public async Task<SalesScriptDto?> UpdateSalesScriptAsync(string id, UpdateSalesScriptDto dto)
+        {
+            var script = await _context.SalesScripts.FindAsync(id);
+            if (script == null) return null;
+
+            if (!string.IsNullOrEmpty(dto.Title)) script.Title = dto.Title;
+            if (!string.IsNullOrEmpty(dto.Content)) script.Content = dto.Content;
+            if (!string.IsNullOrEmpty(dto.Category)) script.Category = dto.Category;
+            if (!string.IsNullOrEmpty(dto.Description)) script.Description = dto.Description;
+
+            await _context.SaveChangesAsync();
+
+            return new SalesScriptDto
+            {
+                Id = script.Id,
+                Title = script.Title,
+                Content = script.Content,
+                Category = script.Category,
+                Description = script.Description
+            };
+        }
+
         public async Task<List<ProductDocDto>> GetProductDocsAsync()
         {
             // Mock data or DB
@@ -310,6 +334,57 @@ namespace omsapi.Services
                 Title = r.Title,
                 Content = r.Content
             }).ToListAsync();
+        }
+
+        public async Task<SalesScriptChatResponseDto> SalesScriptChatAsync(SalesScriptChatDto dto)
+        {
+            // 获取话术内容
+            var script = await _context.SalesScripts.FindAsync(dto.ScriptId);
+            if (script == null)
+            {
+                throw new Exception("Sales script not found");
+            }
+
+            // 构建系统提示词
+            var aiRole = dto.UserRole == "salesman" ? "customer" : "salesman";
+            var systemPrompt = dto.UserRole == "salesman"
+                ? $"你是一个挑剔但专业的客户，正在与销售人员讨论{script.Title}的场景。请以客户的身份回应销售人员的话，提出合理的问题或异议，保持自然和真实的对话风格。场景背景：{script.Description ?? script.Title}"
+                : $"你是一个经验丰富的销售人员，正在与客户讨论{script.Title}的场景。请以专业销售人员的身份回应客户的问题或需求，保持友好、专业且有说服力的对话风格。场景背景：{script.Description ?? script.Title}";
+
+            // 调用AI服务
+            var response = await _aiService.GetChatCompletionAsync(dto.Message, systemPrompt, dto.Model);
+
+            return new SalesScriptChatResponseDto
+            {
+                Content = response,
+                Role = aiRole
+            };
+        }
+
+        public async IAsyncEnumerable<SalesScriptChatResponseDto> SalesScriptChatStreamAsync(SalesScriptChatDto dto)
+        {
+            // 获取话术内容
+            var script = await _context.SalesScripts.FindAsync(dto.ScriptId);
+            if (script == null)
+            {
+                throw new Exception("Sales script not found");
+            }
+
+            // 构建系统提示词
+            var aiRole = dto.UserRole == "salesman" ? "customer" : "salesman";
+            var systemPrompt = dto.UserRole == "salesman"
+                ? $"你是一个挑剔但专业的客户，正在与销售人员讨论{script.Title}的场景。请以客户的身份回应销售人员的话，提出合理的问题或异议，保持自然和真实的对话风格。场景背景：{script.Description ?? script.Title}"
+                : $"你是一个经验丰富的销售人员，正在与客户讨论{script.Title}的场景。请以专业销售人员的身份回应客户的问题或需求，保持友好、专业且有说服力的对话风格。场景背景：{script.Description ?? script.Title}";
+
+            // 调用AI服务
+            await foreach (var chunk in _aiService.GetChatCompletionStreamAsync(dto.Message, systemPrompt, dto.Model))
+            {
+                yield return new SalesScriptChatResponseDto
+                {
+                    Content = chunk,
+                    Role = aiRole
+                };
+            }
         }
 
         // --- Stats ---

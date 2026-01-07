@@ -82,6 +82,18 @@ export interface ProcessRuleDto {
   content: string;
 }
 
+export interface SalesScriptChatDto {
+  message: string;
+  scriptId: string;
+  userRole: 'salesman' | 'customer';
+  model?: string;
+}
+
+export interface SalesScriptChatResponseDto {
+  content: string;
+  role: 'salesman' | 'customer';
+}
+
 // --- Target/Stats Interfaces ---
 
 export interface SalesDashboardStatsDto {
@@ -190,4 +202,10 @@ export function updateSalesTarget(id: string, data: any) {
 
 export function deleteSalesTarget(id: string) {
   return request.delete<any, boolean>(`/sales/targets/${id}`);
+}
+
+// --- Sales Script Chat API ---
+
+export function sendSalesScriptChat(data: SalesScriptChatDto) {
+  return request.post<any, SalesScriptChatResponseDto>('/sales/scripts/chat', data);
 }

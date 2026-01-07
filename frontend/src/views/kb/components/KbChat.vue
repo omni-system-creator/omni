@@ -42,7 +42,7 @@
           <span style="margin-right: 8px; color: #666;">模型:</span>
           <a-select 
             v-model:value="selectedModel" 
-            style="width: 200px" 
+            style="width: 250px" 
             size="small" 
             :options="models.map((m: DictDataDto) => ({ label: m.label, value: m.value }))" 
           />

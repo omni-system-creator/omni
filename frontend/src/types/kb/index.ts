@@ -69,6 +69,7 @@ export interface SendMessageDto {
   kbId: string;
   message: string;
   model?: string;
+  systemPrompt?: string;
 }
 
 export interface SiliconModelDto {
