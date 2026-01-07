@@ -17,7 +17,7 @@ export const getKkViewUrl = (fileUrl: string, fileName: string): string => {
     let url = `https://kkview.dingzhi.info/onlinePreview?url=${encodedUrl}`;
     
     const ext = fileName.split('.').pop()?.toLowerCase();
-    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext || '')) {
+    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf'].includes(ext || '')) {
         url += '&officePreviewType=pdf';
     }
     
