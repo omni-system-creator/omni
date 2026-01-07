@@ -1,66 +1,72 @@
 <template>
   <div class="product-docs-layout" @click="closeContextMenu">
-    <div class="left-panel">
-      <div class="panel-header">
-        <span class="title">资料目录</span>
-        <div class="actions">
-           <a-dropdown trigger="click">
-              <a-button size="small" type="text"><PlusOutlined /></a-button>
-              <template #overlay>
-                <a-menu>
-                  <a-menu-item @click="showCreateFolder">新建文件夹</a-menu-item>
-                  <a-menu-item @click="showUploadFile">上传文件</a-menu-item>
-                </a-menu>
-              </template>
-           </a-dropdown>
-        </div>
-      </div>
-      <div class="tree-container">
-          <a-tree
-            v-if="documents.length"
-            :tree-data="documents"
-            :field-names="{ children: 'children', title: 'title', key: 'id' }"
-            block-node
-            @select="onSelect"
-            @rightClick="onRightClick"
-            v-model:expandedKeys="expandedKeys"
-          >
-            <template #title="{ title, type }">
-                <span class="tree-node-title">
-                    <FolderOutlined v-if="type === 'folder'" style="margin-right: 4px; color: #faad14;" />
-                    <component 
-                        v-else 
-                        :is="getFileIconInfo(title).icon" 
-                        :style="{ marginRight: '4px', color: getFileIconInfo(title).color }" 
-                    />
-                    {{ title }}
-                </span>
-            </template>
-          </a-tree>
-          <div v-else class="empty-tree">
-            <a-spin size="small" />
+    <SplitLayout position="left" :min-width="200" :max-width="600" :default-width="300" save-key="product-docs-sidebar">
+      <template #sidebar>
+        <div class="left-panel">
+          <div class="panel-header">
+            <span class="title">资料目录</span>
+            <div class="actions">
+               <a-dropdown trigger="click">
+                  <a-button size="small" type="text"><PlusOutlined /></a-button>
+                  <template #overlay>
+                    <a-menu>
+                      <a-menu-item @click="showCreateFolder">新建文件夹</a-menu-item>
+                      <a-menu-item @click="showUploadFile">上传文件</a-menu-item>
+                    </a-menu>
+                  </template>
+               </a-dropdown>
+            </div>
           </div>
-      </div>
-    </div>
-    <div class="right-panel">
-        <iframe 
-            v-if="selectedFile && selectedFile.type === 'file'"
-            :src="previewUrl"
-            class="preview-iframe"
-            frameborder="0"
-        ></iframe>
-        <div v-else class="empty-preview">
-            <div v-if="selectedFile && selectedFile.type === 'folder'" style="text-align: center;">
-                <FolderOpenOutlined style="font-size: 64px; color: #1890ff; margin-bottom: 16px;" />
-                <p style="font-size: 16px; color: #666;">{{ selectedFile.title }}</p>
-                <p style="color: #999;">请选择文件夹内的文件进行预览</p>
-            </div>
-            <div v-else style="text-align: center;">
-                <FileSearchOutlined style="font-size: 64px; color: #d9d9d9; margin-bottom: 16px;" />
-                <p style="color: #999;">选择左侧文件进行预览</p>
+          <div class="tree-container">
+              <a-tree
+                v-if="documents.length"
+                :tree-data="documents"
+                :field-names="{ children: 'children', title: 'title', key: 'id' }"
+                block-node
+                @select="onSelect"
+                @rightClick="onRightClick"
+                v-model:expandedKeys="expandedKeys"
+              >
+                <template #title="{ title, type }">
+                    <span class="tree-node-title">
+                        <FolderOutlined v-if="type === 'folder'" style="margin-right: 4px; color: #faad14;" />
+                        <component 
+                            v-else 
+                            :is="getFileIconInfo(title).icon" 
+                            :style="{ marginRight: '4px', color: getFileIconInfo(title).color }" 
+                        />
+                        {{ title }}
+                    </span>
+                </template>
+              </a-tree>
+              <div v-else class="empty-tree">
+                <a-spin size="small" />
+              </div>
+          </div>
+        </div>
+      </template>
+      <template #main>
+        <div class="right-panel">
+            <iframe 
+                v-if="selectedFile && selectedFile.type === 'file'"
+                :src="previewUrl"
+                class="preview-iframe"
+                frameborder="0"
+            ></iframe>
+            <div v-else class="empty-preview">
+                <div v-if="selectedFile && selectedFile.type === 'folder'" style="text-align: center;">
+                    <FolderOpenOutlined style="font-size: 64px; color: #1890ff; margin-bottom: 16px;" />
+                    <p style="font-size: 16px; color: #666;">{{ selectedFile.title }}</p>
+                    <p style="color: #999;">请选择文件夹内的文件进行预览</p>
+                </div>
+                <div v-else style="text-align: center;">
+                    <FileSearchOutlined style="font-size: 64px; color: #d9d9d9; margin-bottom: 16px;" />
+                    <p style="color: #999;">选择左侧文件进行预览</p>
+                </div>
             </div>
         </div>
-    </div>
+      </template>
+    </SplitLayout>
   </div>
 
   <!-- Context Menu -->
@@ -143,28 +149,16 @@ import {
 } from '@/api/sales';
 import { message, Modal } from 'ant-design-vue';
 
+import { getKkViewUrl } from '@/utils/kkview';
+import SplitLayout from '@/components/SplitLayout/index.vue';
+
 const documents = ref<ProductDocDto[]>([]);
 const expandedKeys = ref<string[]>([]);
 const selectedFile = ref<ProductDocDto | null>(null);
 
 const previewUrl = computed(() => {
     if (!selectedFile.value || !selectedFile.value.url) return '';
-    
-    // Construct full URL if it's relative
-    let fileUrl = selectedFile.value.url;
-    if (fileUrl.startsWith('/')) {
-        fileUrl = `${window.location.origin}${fileUrl}`;
-    }
-    
-    const encodedUrl = window.btoa(fileUrl);
-    let url = `https://kkview.dingzhi.info/onlinePreview?url=${encodedUrl}`;
-    
-    const ext = selectedFile.value.title.split('.').pop()?.toLowerCase();
-    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext || '')) {
-        url += '&officePreviewType=pdf';
-    }
-    
-    return url;
+    return getKkViewUrl(selectedFile.value.url, selectedFile.value.title);
 });
 
 const getFileIconInfo = (filename: string) => {
@@ -374,7 +368,6 @@ onMounted(loadData);
 
 <style scoped>
 .product-docs-layout {
-  display: flex;
   height: 100%; /* Ensure it takes full height of container */
   min-height: 500px;
   border: 1px solid #f0f0f0;
@@ -382,8 +375,7 @@ onMounted(loadData);
 }
 
 .left-panel {
-  width: 250px;
-  border-right: 1px solid #f0f0f0;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: #fafafa;
@@ -415,7 +407,7 @@ onMounted(loadData);
 }
 
 .right-panel {
-  flex: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: #fff;
