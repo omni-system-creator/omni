@@ -28,6 +28,8 @@ namespace omsapi.Services.Interfaces
 
         // Chat
         Task<List<ChatMessageDto>> GetChatHistoryAsync(Guid kbId, Guid? userId);
+        Task<bool> DeleteChatHistoryAsync(Guid kbId, Guid? userId);
+        Task<bool> DeleteKbQaHistoryAsync(Guid id);
         Task<ChatMessageDto> SendMessageAsync(SendMessageDto dto, Guid? userId);
         IAsyncEnumerable<string> SendMessageStreamAsync(SendMessageDto dto, Guid? userId);
         Task<List<SiliconModelDto>> GetAvailableModelsAsync();

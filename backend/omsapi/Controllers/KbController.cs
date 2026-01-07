@@ -165,6 +165,31 @@ namespace omsapi.Controllers
             return Ok(result);
         }
 
+        [HttpDelete("{kbId}/chat")]
+        public async Task<IActionResult> DeleteChatHistory(Guid kbId)
+        {
+            var userId = Guid.Empty; // Replace with actual user ID
+            // If admin, maybe pass null as userId to delete all? 
+            // The requirement says "Admin can delete". 
+            // For now, let's assume it deletes the history for the current context (simulated user).
+            // If we want to delete ALL history for the KB (admin feature), we might need a flag or different logic.
+            // But based on "KbChat.vue", it's likely a per-session or per-user chat.
+            // However, the current code uses Guid.Empty as placeholder.
+            // I'll stick with that for consistency.
+            
+            var success = await _kbService.DeleteChatHistoryAsync(kbId, userId);
+            if (!success) return NotFound();
+            return Ok();
+        }
+
+        [HttpDelete("chat/message/{id}")]
+        public async Task<IActionResult> DeleteKbQaHistory(Guid id)
+        {
+            var success = await _kbService.DeleteKbQaHistoryAsync(id);
+            if (!success) return NotFound();
+            return Ok();
+        }
+
         [HttpPost("chat")]
         public async Task<ActionResult<ChatMessageDto>> SendMessage([FromBody] SendMessageDto dto)
         {

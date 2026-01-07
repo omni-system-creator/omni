@@ -32,6 +32,12 @@ export const chatApi = {
   getHistory(params: { myUserId: number; peerUserId: number; page?: number; pageSize?: number }) {
     return request.get('/chat/history', { params }) as unknown as Promise<{ total: number; page: number; pageSize: number; items: ChatMessageDto[] }>;
   },
+  deleteHistory(params: { myUserId: number; peerUserId: number }) {
+    return request.delete('/chat/history', { params });
+  },
+  deleteMessage(id: number | string) {
+    return request.delete(`/chat/message/${id}`);
+  },
   send(data: { myUserId: number; peerUserId: number; type?: 'text' | 'image' | 'file'; content: string; fileName?: string; fileSize?: string }) {
     return request.post('/chat/send', data);
   },

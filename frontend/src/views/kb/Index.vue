@@ -4,7 +4,7 @@
       position="left"
       :min-width="200"
       :max-width="500"
-      :default-width="200"
+      :default-width="250"
       save-key="kb-sidebar-width"
     >
       <template #sidebar>

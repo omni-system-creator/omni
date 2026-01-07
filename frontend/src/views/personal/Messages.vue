@@ -63,6 +63,19 @@
             <a-tag v-if="currentConversation.type === 'system'" color="orange">系统消息</a-tag>
           </div>
           <div class="header-actions">
+            <a-popconfirm
+              v-if="userStore.isAdmin && ['private'].includes(currentConversation.type)"
+              title="确定要清空与该用户的聊天记录吗？此操作不可恢复。"
+              ok-text="确定"
+              cancel-text="取消"
+              @confirm="handleDeleteHistory"
+            >
+              <a-tooltip title="清空记录">
+                <a-button type="text" danger shape="circle">
+                  <template #icon><DeleteOutlined /></template>
+                </a-button>
+              </a-tooltip>
+            </a-popconfirm>
             <a-button type="text" shape="circle">
               <template #icon><EllipsisOutlined /></template>
             </a-button>
@@ -97,6 +110,15 @@
                       </a>
                     </div>
                   </div>
+                </div>
+                <!-- Delete Action (Right for received messages, Left for sent messages) -->
+                <div v-if="userStore.isAdmin || msg.isSelf" :class="['message-actions', { 'is-self': msg.isSelf }]">
+                  <a-popconfirm
+                    title="确定删除这条消息吗？"
+                    @confirm="handleDeleteSingleMessage(msg.id)"
+                  >
+                    <CloseOutlined class="delete-icon" />
+                  </a-popconfirm>
                 </div>
                 <a-avatar v-if="msg.isSelf" :src="userAvatarUrl" class="msg-avatar" :style="!userAvatarUrl ? { backgroundColor: '#d9d9d9', color: '#fff' } : undefined">
                   <template #icon><UserOutlined /></template>
@@ -198,7 +220,9 @@ import {
   FileOutlined,
   AlertOutlined,
   InfoCircleOutlined,
-  UserOutlined
+  UserOutlined,
+  DeleteOutlined,
+  CloseOutlined
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { chatApi, type ChatMessageDto } from '@/api/chat';
@@ -432,7 +456,8 @@ const handleSend = (e?: KeyboardEvent) => {
   }
   
   // Calculate showTime
-  const lastMsg = messagesMap[cid][messagesMap[cid].length - 1];
+  const list = messagesMap[cid];
+  const lastMsg = list.length > 0 ? list[list.length - 1] : null;
   if (!lastMsg) {
     newMsg.showTime = true;
   } else {
@@ -494,7 +519,8 @@ const handleImageUpload = (e: Event) => {
     showTime: false
   };
   if (!messagesMap[cid]) messagesMap[cid] = [];
-  const lastMsg = messagesMap[cid][messagesMap[cid].length - 1];
+  const list = messagesMap[cid];
+  const lastMsg = list.length > 0 ? list[list.length - 1] : null;
   if (!lastMsg) {
     optimisticMsg.showTime = true;
   } else {
@@ -551,7 +577,8 @@ const handleFileUpload = (e: Event) => {
     showTime: false
   };
   if (!messagesMap[cid]) messagesMap[cid] = [];
-  const lastMsg = messagesMap[cid][messagesMap[cid].length - 1];
+  const list = messagesMap[cid];
+  const lastMsg = list.length > 0 ? list[list.length - 1] : null;
   if (!lastMsg) {
     optimisticMsg.showTime = true;
   } else {
@@ -577,6 +604,75 @@ const handleFileUpload = (e: Event) => {
     .catch(() => {
       message.error({ content: '发送失败', key: 'upload' });
     });
+};
+
+const handleDeleteHistory = async () => {
+  if (!currentConversation.value || !userStore.id) return;
+  
+  const myUserId = userStore.id;
+  const peerUserId = Number(currentConversation.value.id);
+  
+  if (isNaN(peerUserId)) {
+    message.warning('无法删除该类型会话记录');
+    return;
+  }
+
+  try {
+    await chatApi.deleteHistory({ myUserId, peerUserId });
+    message.success('聊天记录已清空');
+    
+    // Clear local messages
+    if (messagesMap[currentConversation.value.id]) {
+      messagesMap[currentConversation.value.id] = [];
+    }
+    
+    // Update conversation last message
+    const conv = conversations.value.find(c => c.id === currentConversation.value?.id);
+    if (conv) {
+      conv.lastMessage = '';
+      conv.lastTime = ''; // Or keep last time? Usually empty if no messages.
+    }
+  } catch (error) {
+    console.error(error);
+    message.error('清空失败');
+  }
+};
+
+const handleDeleteSingleMessage = async (msgId: string) => {
+  try {
+    // The interceptor returns res.data directly if code === 200, otherwise it throws.
+    // So if we get here, it means success.
+    await chatApi.deleteMessage(msgId);
+    message.success('删除成功');
+    // Clear from UI
+    if (currentConversation.value?.id) {
+      const cid = currentConversation.value.id;
+      if (messagesMap[cid]) {
+        const oldList = messagesMap[cid];
+        const newList = oldList.filter(m => m.id !== msgId);
+        messagesMap[cid] = newList;
+
+        // Update conversation last message preview if needed
+        const conv = conversations.value.find(c => c.id === cid);
+        if (conv) {
+          if (newList.length > 0) {
+            const lastMsg = newList[newList.length - 1];
+            if (lastMsg) {
+              conv.lastMessage = lastMsg.type === 'image' ? '[图片]' : (lastMsg.type === 'file' ? '[文件]' : lastMsg.content);
+              conv.lastTime = lastMsg.timestamp;
+            }
+          } else {
+            conv.lastMessage = '';
+            conv.lastTime = '';
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error(error);
+    // Error message is already handled by interceptor usually, but we can keep a fallback
+    // message.error('删除失败'); 
+  }
 };
 
 // 监听会话切换，滚动到底部
@@ -955,6 +1051,11 @@ onMounted(async () => {
 .msg-avatar {
   margin: 0 10px;
   flex-shrink: 0;
+  order: 0; /* Avatar always first for received, will adjust for self */
+}
+
+.is-self .msg-avatar {
+  order: 3; /* Avatar last for self messages */
 }
 
 .msg-body {
@@ -1104,5 +1205,43 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   color: #999;
+}
+
+/* Message Actions */
+.message-actions {
+  opacity: 0;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  order: 2; /* Default order for received messages (after body) */
+}
+
+.message-actions.is-self {
+  order: 1; /* Order for self messages (before body) */
+}
+
+.msg-body {
+  order: 1; /* Default order for received messages */
+}
+
+.is-self .msg-body {
+  order: 2; /* Order for self messages */
+}
+
+.message-bubble:hover .message-actions {
+  opacity: 1;
+}
+
+.delete-icon {
+  color: #ff4d4f;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.delete-icon:hover {
+  background-color: rgba(255, 77, 79, 0.1);
 }
 </style>

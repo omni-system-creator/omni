@@ -223,12 +223,18 @@ export interface CreateSalesScriptDto {
   description?: string;
 }
 
+export interface UpdateSalesScriptDto extends Partial<CreateSalesScriptDto> {}
+
 export function getSalesScripts(params?: any) {
   return request.get<any, SalesScriptDto[]>('/sales/materials/scripts', { params });
 }
 
 export function createSalesScript(data: CreateSalesScriptDto) {
   return request.post<any, SalesScriptDto>('/sales/materials/scripts', data);
+}
+
+export function updateSalesScript(id: string, data: UpdateSalesScriptDto) {
+  return request.put<any, SalesScriptDto>(`/sales/materials/scripts/${id}`, data);
 }
 
 export function getProductDocs(params?: any) {

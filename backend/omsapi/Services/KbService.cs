@@ -458,11 +458,34 @@ namespace omsapi.Services
             var result = new List<ChatMessageDto>();
             foreach (var h in history)
             {
-                result.Add(new ChatMessageDto { Role = "user", Content = h.Question, CreatedAt = h.CreatedAt });
-                result.Add(new ChatMessageDto { Role = "ai", Content = h.Answer ?? "...", CreatedAt = h.CreatedAt });
+                result.Add(new ChatMessageDto { Id = h.Id, Role = "user", Content = h.Question, CreatedAt = h.CreatedAt });
+                result.Add(new ChatMessageDto { Id = h.Id, Role = "ai", Content = h.Answer ?? "...", CreatedAt = h.CreatedAt });
             }
 
             return result;
+        }
+
+        public async Task<bool> DeleteChatHistoryAsync(Guid kbId, Guid? userId)
+        {
+            var history = await _context.KbQaHistories
+                .Where(h => h.KbId == kbId && (userId == null || h.UserId == userId))
+                .ToListAsync();
+
+            if (!history.Any()) return false;
+
+            _context.KbQaHistories.RemoveRange(history);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> DeleteKbQaHistoryAsync(Guid id)
+        {
+            var item = await _context.KbQaHistories.FindAsync(id);
+            if (item == null) return false;
+
+            _context.KbQaHistories.Remove(item);
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<ChatMessageDto> SendMessageAsync(SendMessageDto dto, Guid? userId)
@@ -544,6 +567,7 @@ namespace omsapi.Services
 
             return new ChatMessageDto
             {
+                Id = qa.Id,
                 Role = "ai",
                 Content = qa.Answer,
                 CreatedAt = qa.CreatedAt,

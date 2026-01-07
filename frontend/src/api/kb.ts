@@ -90,6 +90,14 @@ export function getChatHistory(kbId: string) {
   return request.get<any, ChatMessageDto[]>(`/kb/${kbId}/chat`)
 }
 
+export function deleteChatHistory(kbId: string) {
+  return request.delete<any, any>(`/kb/${kbId}/chat`)
+}
+
+export function deleteKbQaHistory(id: string) {
+  return request.delete<any, any>(`/kb/chat/message/${id}`)
+}
+
 export function sendChatMessage(data: SendMessageDto) {
   return request.post<any, ChatMessageDto>('/kb/chat', data)
 }

@@ -434,7 +434,7 @@ namespace omsapi.Controllers
                     Id = m.Id,
                     ConversationKey = m.ConversationKey,
                     SenderUserId = senderId,
-                    SenderName = user?.Name ?? "Unknown",
+                    SenderName = m.SenderUserName ?? (user?.Name ?? "Unknown"),
                     SenderNickname = user?.Nickname,
                     SenderAvatar = user?.Avatar,
                     Type = m.Type,
@@ -442,11 +442,73 @@ namespace omsapi.Controllers
                     FileName = m.FileName,
                     FileSize = m.FileSize,
                     CreatedAt = m.CreatedAt,
-                    IsSelf = m.SenderUserId == myUserId
+                    IsSelf = senderId == myUserId
                 };
             }).ToList();
 
-            return Ok(new { code = 200, msg = "获取成功", data = new { total, page, pageSize, items = result } });
+            return Ok(new { code = 200, msg = "获取成功", data = new { items = result, total } });
+        }
+
+        [HttpDelete("history")]
+        public async Task<ActionResult<object>> DeleteHistory([FromQuery] long myUserId, [FromQuery] long peerUserId)
+        {
+            var key = BuildConversationKey(myUserId.ToString(), peerUserId.ToString());
+            if (string.IsNullOrEmpty(key)) return Ok(new { code = 400, msg = "参数错误", data = (object?)null });
+
+            // Delete messages
+            var messages = await _context.ChatMessages.Where(m => m.ConversationKey == key).ToListAsync();
+            if (messages.Any())
+            {
+                _context.ChatMessages.RemoveRange(messages);
+            }
+            
+            // Delete conversation record
+            var conv = await _context.ChatConversations.FirstOrDefaultAsync(c => c.ConversationKey == key);
+            if (conv != null)
+            {
+                _context.ChatConversations.Remove(conv);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { code = 200, msg = "删除成功", data = (object?)null });
+        }
+
+        [HttpDelete("message/{id}")]
+        public async Task<ActionResult<object>> DeleteMessage(long id)
+        {
+            var msg = await _context.ChatMessages.FindAsync(id);
+            if (msg == null) return Ok(new { code = 404, msg = "消息不存在", data = (object?)null });
+
+            var key = msg.ConversationKey;
+            _context.ChatMessages.Remove(msg);
+            
+            // Update conversation's LastMessage/LastTime if necessary
+            var conv = await _context.ChatConversations.FirstOrDefaultAsync(c => c.ConversationKey == key);
+            if (conv != null)
+            {
+                // Find the new last message (excluding the one being deleted)
+                var newLastMsg = await _context.ChatMessages
+                    .Where(m => m.ConversationKey == key && m.Id != id)
+                    .OrderByDescending(m => m.Id)
+                    .FirstOrDefaultAsync();
+
+                if (newLastMsg != null)
+                {
+                    conv.LastMessageContent = newLastMsg.Type == "image" ? "[图片]" : (newLastMsg.Type == "file" ? "[文件]" : newLastMsg.Content);
+                    conv.LastMessageTime = newLastMsg.CreatedAt;
+                    conv.UpdatedAt = DateTime.Now;
+                }
+                else
+                {
+                    // No messages left
+                    conv.LastMessageContent = string.Empty;
+                    conv.LastMessageTime = conv.CreatedAt; // Reset to creation time or some default
+                    conv.UpdatedAt = DateTime.Now;
+                }
+            }
+            
+            await _context.SaveChangesAsync();
+            return Ok(new { code = 200, msg = "删除成功", data = (object?)null });
         }
 
         [HttpPost("upload")]

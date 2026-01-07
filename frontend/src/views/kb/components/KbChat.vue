@@ -1,6 +1,19 @@
 <template>
   <div class="chat-panel">
     <div class="chat-view">
+      <div class="chat-header" v-if="userStore.isAdmin && messages.length > 0" style="padding: 8px 16px; border-bottom: 1px solid #e8e8e8; display: flex; justify-content: flex-end; background: #fff;">
+        <a-popconfirm
+          title="确定要清空当前知识库的聊天记录吗？此操作不可恢复。"
+          ok-text="确定"
+          cancel-text="取消"
+          @confirm="handleDeleteHistory"
+        >
+          <a-button type="link" danger>
+            <template #icon><DeleteOutlined /></template>
+            清空记录
+          </a-button>
+        </a-popconfirm>
+      </div>
       <div class="chat-history" ref="chatHistoryRef">
         <div v-for="(msg, index) in messages" :key="index">
           <div v-if="shouldShowTime(index)" class="message-time">
@@ -26,6 +39,17 @@
                 {{ source.fileName }} (P.{{ source.page }})
               </a-tag>
             </div>
+          </div>
+          <!-- Delete Action -->
+          <div v-if="userStore.isAdmin && msg.id" class="message-actions">
+            <a-popconfirm
+              title="确定删除这条消息吗？"
+              ok-text="确定"
+              cancel-text="取消"
+              @confirm="handleDeleteMessage(msg, index)"
+            >
+              <CloseOutlined class="delete-icon" />
+            </a-popconfirm>
           </div>
         </div>
         </div>
@@ -69,11 +93,14 @@ import { ref, nextTick, watch, onMounted } from 'vue';
 import { 
   UserOutlined, 
   RobotOutlined, 
-  SendOutlined 
+  SendOutlined,
+  DeleteOutlined,
+  CloseOutlined
 } from '@ant-design/icons-vue';
+import { message } from 'ant-design-vue';
 import type { ChatMessageDto, KbInfoDto, SendMessageDto, SiliconModelDto } from '@/types/kb';
 import type { DictDataDto } from '../../../api/dict';
-import { getChatHistory, sendChatMessage, getAvailableModels } from '@/api/kb';
+import { getChatHistory, sendChatMessage, getAvailableModels, deleteChatHistory, deleteKbQaHistory } from '@/api/kb';
 import { useUserStore } from '@/stores/user';
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
@@ -114,6 +141,35 @@ const fetchModels = async () => {
 onMounted(() => {
   fetchModels();
 });
+
+const handleDeleteHistory = async () => {
+  if (!props.currentKb) return;
+  try {
+    await deleteChatHistory(props.currentKb.id);
+    message.success('聊天记录已清空');
+    messages.value = [];
+  } catch (error) {
+    console.error(error);
+    message.error('清空失败');
+  }
+};
+
+const handleDeleteMessage = async (msg: ChatMessageDto, index: number) => {
+  if (!msg.id) {
+    // If it's a temporary message or missing ID (e.g. just added), just remove from local
+    messages.value.splice(index, 1);
+    return;
+  }
+  try {
+    await deleteKbQaHistory(msg.id);
+    // Remove all messages with this ID (usually a pair: question + answer)
+    messages.value = messages.value.filter(m => m.id !== msg.id);
+    message.success('删除成功');
+  } catch (error) {
+    console.error(error);
+    message.error('删除失败');
+  }
+};
 
 const handleSend = () => {
   sendMessage();
@@ -224,10 +280,17 @@ const sendMessage = async () => {
   try {
     const payload: SendMessageDto = { kbId: props.currentKb.id, message: prompt, model: selectedModel.value };
     const res = await sendChatMessage(payload);
-    if (messages.value[aiIndex]) {
-      messages.value[aiIndex].content = res.content || '';
-      messages.value[aiIndex].sources = res.sources || [];
-      messages.value[aiIndex].createdAt = res.createdAt;
+    // Update IDs for both user prompt and AI answer
+    const userMsg = messages.value[aiIndex - 1];
+    if (userMsg) {
+      userMsg.id = res.id;
+    }
+    const aiMsg = messages.value[aiIndex];
+    if (aiMsg) {
+      aiMsg.id = res.id;
+      aiMsg.content = res.content || '';
+      aiMsg.sources = res.sources || [];
+      aiMsg.createdAt = res.createdAt;
     }
   } catch {
     if (messages.value[aiIndex]) {
@@ -267,10 +330,11 @@ const sendMessage = async () => {
   display: flex;
   gap: 12px;
   max-width: 85%;
+  width: fit-content;
 }
 
 .chat-message.user {
-  align-self: flex-end;
+  margin-left: auto;
   flex-direction: row-reverse;
 }
 
@@ -384,5 +448,49 @@ const sendMessage = async () => {
 .markdown-body :deep(ul), .markdown-body :deep(ol) {
   padding-left: 20px;
   margin-bottom: 12px;
+}
+
+/* Message Actions */
+.message-actions {
+  opacity: 0;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.chat-message:hover .message-actions {
+  opacity: 1;
+}
+
+.delete-icon {
+  color: #ff4d4f;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.delete-icon:hover {
+  background-color: rgba(255, 77, 79, 0.1);
+}
+
+/* Custom Scrollbar */
+.chat-history::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.chat-history::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-history::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.chat-history::-webkit-scrollbar-thumb:hover {
+  background: #999;
 }
 </style>

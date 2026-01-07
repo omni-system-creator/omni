@@ -59,6 +59,7 @@ export interface KbNodeDto {
 }
 
 export interface ChatMessageDto {
+  id?: string;
   role: 'user' | 'ai';
   content: string;
   sources?: KbNodeSourceDto[];

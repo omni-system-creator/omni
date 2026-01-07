@@ -34,9 +34,31 @@
           :class="['dialog-item', msg.role === 'salesman' ? 'salesman' : 'customer']"
         >
           <div v-if="msg.role === 'customer'" class="dialog-avatar">客</div>
+          
+          <!-- Delete Button for Salesman (Left of Message) -->
+          <div v-if="userStore.isAdmin && msg.role === 'salesman'" class="message-actions">
+            <a-popconfirm
+              title="确定删除这条对话吗？这将更新话术库内容。"
+              @confirm="handleDeleteMessage(index)"
+            >
+              <CloseOutlined class="delete-icon" />
+            </a-popconfirm>
+          </div>
+
           <div class="dialog-message">
             <div class="dialog-text markdown-body" v-html="md.render(msg.content)"></div>
           </div>
+
+          <!-- Delete Button for Customer (Right of Message) -->
+          <div v-if="userStore.isAdmin && msg.role === 'customer'" class="message-actions">
+            <a-popconfirm
+              title="确定删除这条对话吗？这将更新话术库内容。"
+              @confirm="handleDeleteMessage(index)"
+            >
+              <CloseOutlined class="delete-icon" />
+            </a-popconfirm>
+          </div>
+
           <div v-if="msg.role === 'salesman'" class="dialog-avatar">销</div>
         </div>
         
@@ -137,14 +159,16 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick } from 'vue';
-import { SendOutlined, PlusOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
+import { SendOutlined, PlusOutlined, ThunderboltOutlined, CloseOutlined } from '@ant-design/icons-vue';
 import type { SalesScriptDto } from '@/api/sales';
-import { getSalesScripts, createSalesScript } from '@/api/sales';
+import { getSalesScripts, createSalesScript, updateSalesScript } from '@/api/sales';
 import { getAvailableModels } from '@/api/kb';
 import type { SiliconModelDto } from '@/types/kb';
 import MarkdownIt from 'markdown-it';
 import { message } from 'ant-design-vue';
+import { useUserStore } from '@/stores/user';
 
+const userStore = useUserStore();
 const md = new MarkdownIt({ html: true, breaks: true });
 
 const emit = defineEmits(['select']);
@@ -347,6 +371,35 @@ const parseDialogContent = (content: string) => {
   }
 
   return dialogs;
+};
+
+const serializeDialogContent = (messages: { role: 'salesman' | 'customer'; content: string }[]) => {
+  return messages.map(m => {
+    const roleTag = m.role === 'salesman' ? '[销售]' : '[客户]';
+    return `${roleTag} ${m.content}`;
+  }).join('\n');
+};
+
+const handleDeleteMessage = async (index: number) => {
+  if (!selectedScript.value) return;
+
+  const newMessages = [...chatMessages.value];
+  newMessages.splice(index, 1);
+  const newContent = serializeDialogContent(newMessages);
+
+  try {
+    await updateSalesScript(selectedScript.value.id, {
+      content: newContent
+    });
+    
+    // Update local state
+    chatMessages.value = newMessages;
+    selectedScript.value.content = newContent;
+    message.success('删除成功');
+  } catch (error) {
+    console.error(error);
+    message.error('删除失败');
+  }
 };
 
 // 滚动到底部
@@ -782,5 +835,30 @@ const handleAddScript = async () => {
   color: #999;
   font-size: 12px;
   margin-top: 4px;
+}
+
+/* Message Actions */
+.message-actions {
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  transition: opacity 0.2s;
+}
+
+.dialog-item:hover .message-actions {
+  opacity: 1;
+}
+
+.delete-icon {
+  color: #ff4d4f;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.delete-icon:hover {
+  background-color: rgba(255, 77, 79, 0.1);
 }
 </style>
