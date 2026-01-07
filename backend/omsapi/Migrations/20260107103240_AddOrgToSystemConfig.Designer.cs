@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20260107103240_AddOrgToSystemConfig")]
+    partial class AddOrgToSystemConfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2440,9 +2443,6 @@ namespace omsapi.Migrations
                     b.Property<long?>("OrgId")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -2467,7 +2467,6 @@ namespace omsapi.Migrations
                             IsOverridable = true,
                             IsSystem = true,
                             Key = "SystemName",
-                            Type = 0,
                             Value = "金兰®综合信息管理系统"
                         },
                         new
@@ -2479,7 +2478,6 @@ namespace omsapi.Migrations
                             IsOverridable = true,
                             IsSystem = true,
                             Key = "SystemLogo",
-                            Type = 0,
                             Value = "/logo.svg"
                         },
                         new
@@ -2491,7 +2489,6 @@ namespace omsapi.Migrations
                             IsOverridable = true,
                             IsSystem = true,
                             Key = "Copyright",
-                            Type = 0,
                             Value = "©2025 Created by jinlan.info"
                         },
                         new
@@ -2503,7 +2500,6 @@ namespace omsapi.Migrations
                             IsOverridable = true,
                             IsSystem = true,
                             Key = "PasswordMinLength",
-                            Type = 0,
                             Value = "6"
                         },
                         new
@@ -2515,7 +2511,6 @@ namespace omsapi.Migrations
                             IsOverridable = true,
                             IsSystem = true,
                             Key = "SessionTimeout",
-                            Type = 0,
                             Value = "30"
                         });
                 });

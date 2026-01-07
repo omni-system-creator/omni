@@ -123,11 +123,7 @@ namespace omsapi.Data
                 entity.HasIndex(e => new { e.DictTypeId, e.Value }).IsUnique();
             });
 
-            // 配置 SystemConfig
-            modelBuilder.Entity<SystemConfig>(entity =>
-            {
-                entity.HasIndex(e => e.Key).IsUnique();
-            });
+
 
             // 配置 ChatConversation
             modelBuilder.Entity<ChatConversation>(entity =>
@@ -148,6 +144,15 @@ namespace omsapi.Data
             modelBuilder.Entity<SystemRole>(entity =>
             {
                 entity.HasIndex(r => r.Code).IsUnique();
+            });
+
+            // 配置 SystemConfig
+            modelBuilder.Entity<SystemConfig>(entity =>
+            {
+                // unique index on Key and OrgId
+                // Note: In MySQL, (Key, OrgId) with OrgId=NULL allows duplicates. 
+                // We rely on application logic to enforce single global config per key.
+                entity.HasIndex(c => new { c.Key, c.OrgId }).IsUnique();
             });
 
             // 配置 Permission 实体
