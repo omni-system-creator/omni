@@ -272,6 +272,31 @@ namespace omsapi.Services
             }).ToListAsync();
         }
 
+        public async Task<SalesScriptDto> CreateSalesScriptAsync(CreateSalesScriptDto dto)
+        {
+            var script = new SalesScript
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Title = dto.Title,
+                Content = dto.Content,
+                Category = dto.Category ?? "General",
+                Description = dto.Description ?? "",
+                CreatedAt = DateTime.Now
+            };
+
+            _context.SalesScripts.Add(script);
+            await _context.SaveChangesAsync();
+
+            return new SalesScriptDto
+            {
+                Id = script.Id,
+                Title = script.Title,
+                Content = script.Content,
+                Category = script.Category,
+                Description = script.Description
+            };
+        }
+
         public async Task<SalesScriptDto?> UpdateSalesScriptAsync(string id, UpdateSalesScriptDto dto)
         {
             var script = await _context.SalesScripts.FindAsync(id);
@@ -292,6 +317,56 @@ namespace omsapi.Services
                 Category = script.Category,
                 Description = script.Description
             };
+        }
+
+        public async Task<string> GenerateScriptFieldAsync(GenerateScriptFieldRequest request)
+        {
+            var prompt = "";
+            var systemPrompt = "你是一个专业的销售话术编写助手。";
+
+            switch (request.TargetField.ToLower())
+            {
+                case "title":
+                    prompt = $"请根据以下销售场景描述和对话内容，生成一个简短精炼的场景标题（不超过15个字），只返回标题本身，不要包含引号或其他说明：\n\n描述：{request.Description}\n\n对话内容：{request.Content}";
+                    break;
+                case "description":
+                    prompt = $"请根据以下场景标题和对话内容，生成一段简洁的场景描述（50字以内），说明该场景的适用情况和目的，只返回描述内容：\n\n标题：{request.Title}\n\n对话内容：{request.Content}";
+                    break;
+                case "content":
+                    prompt = $"请根据以下场景标题和描述，生成一段初始的销售对话脚本。格式要求：\n1. 使用[销售]和[客户]作为角色标识。\n2. 每行一段对话，不要包含空行。\n3. 内容要自然、专业。\n4. 直接返回对话内容，不要包含其他解释。\n\n标题：{request.Title}\n\n描述：{request.Description}";
+                    break;
+                default:
+                    return "Invalid target field";
+            }
+
+            return await _aiService.GetChatCompletionAsync(prompt, systemPrompt, request.Model);
+        }
+
+        public async IAsyncEnumerable<string> GenerateScriptFieldStreamAsync(GenerateScriptFieldRequest request)
+        {
+            var prompt = "";
+            var systemPrompt = "你是一个专业的销售话术编写助手。";
+
+            switch (request.TargetField.ToLower())
+            {
+                case "title":
+                    prompt = $"请根据以下销售场景描述和对话内容，生成一个简短精炼的场景标题（不超过15个字），只返回标题本身，不要包含引号或其他说明：\n\n描述：{request.Description}\n\n对话内容：{request.Content}";
+                    break;
+                case "description":
+                    prompt = $"请根据以下场景标题和对话内容，生成一段简洁的场景描述（50字以内），说明该场景的适用情况和目的，只返回描述内容：\n\n标题：{request.Title}\n\n对话内容：{request.Content}";
+                    break;
+                case "content":
+                    prompt = $"请根据以下场景标题和描述，生成一段初始的销售对话脚本。格式要求：\n1. 使用[销售]和[客户]作为角色标识。\n2. 每行一段对话，不要包含空行。\n3. 内容要自然、专业。\n4. 直接返回对话内容，不要包含其他解释。\n\n标题：{request.Title}\n\n描述：{request.Description}";
+                    break;
+                default:
+                    yield return "Invalid target field";
+                    yield break;
+            }
+
+            await foreach (var chunk in _aiService.GetChatCompletionStreamAsync(prompt, systemPrompt, request.Model))
+            {
+                yield return chunk;
+            }
         }
 
         public async Task<List<ProductDocDto>> GetProductDocsAsync()

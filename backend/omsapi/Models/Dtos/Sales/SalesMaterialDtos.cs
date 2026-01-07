@@ -9,6 +9,14 @@ namespace omsapi.Models.Dtos.Sales
         public string Description { get; set; } = string.Empty;
     }
 
+    public class CreateSalesScriptDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+
     public class UpdateSalesScriptDto
     {
         public string Title { get; set; } = string.Empty;
@@ -45,5 +53,14 @@ namespace omsapi.Models.Dtos.Sales
     {
         public string Content { get; set; } = string.Empty;
         public string Role { get; set; } = "customer";
+    }
+
+    public class GenerateScriptFieldRequest
+    {
+        public string TargetField { get; set; } = string.Empty; // "title", "description", "content"
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Content { get; set; } = string.Empty;
+        public string Model { get; set; } = "";
     }
 }

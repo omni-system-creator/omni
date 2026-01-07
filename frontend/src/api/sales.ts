@@ -166,8 +166,19 @@ export function deleteOpportunity(id: string) {
 
 // --- Materials APIs ---
 
+export interface CreateSalesScriptDto {
+  title: string;
+  content: string;
+  category?: string;
+  description?: string;
+}
+
 export function getSalesScripts(params?: any) {
   return request.get<any, SalesScriptDto[]>('/sales/materials/scripts', { params });
+}
+
+export function createSalesScript(data: CreateSalesScriptDto) {
+  return request.post<any, SalesScriptDto>('/sales/materials/scripts', data);
 }
 
 export function getProductDocs(params?: any) {
@@ -176,6 +187,18 @@ export function getProductDocs(params?: any) {
 
 export function getProcessRules(params?: any) {
   return request.get<any, ProcessRuleDto[]>('/sales/materials/rules', { params });
+}
+
+export interface GenerateScriptFieldRequest {
+  targetField: 'title' | 'description' | 'content';
+  title?: string;
+  description?: string;
+  content?: string;
+  model?: string;
+}
+
+export function generateScriptField(data: GenerateScriptFieldRequest) {
+  return request.post<any, string>('/sales/materials/scripts/generate', data);
 }
 
 // --- Stats/Target APIs ---

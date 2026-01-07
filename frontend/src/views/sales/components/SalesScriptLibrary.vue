@@ -1,7 +1,13 @@
 <template>
   <div class="script-container">
     <div class="scene-list-wrapper">
-      <div class="scene-header">场景列表</div>
+      <div class="scene-header">
+        <span>场景列表</span>
+        <a-button type="primary" size="small" @click="showAddScriptModal">
+          <template #icon><PlusOutlined /></template>
+          新增
+        </a-button>
+      </div>
       <div class="scene-list" v-if="scripts.length > 0">
         <div
           v-for="script in scripts"
@@ -78,17 +84,66 @@
         </div>
       </div>
     </div>
+
+    <!-- 新增场景弹窗 -->
+    <a-modal
+      v-model:open="showAddModal"
+      title="新增销售场景"
+      :confirm-loading="isSaving"
+      @ok="handleAddScript"
+      @cancel="resetAddModal"
+      width="600px"
+    >
+      <a-form layout="vertical">
+        <a-form-item label="场景标题" required>
+          <div style="display: flex; gap: 8px;">
+            <a-input v-model:value="newScriptTitle" placeholder="请输入场景标题" />
+            <a-button @click="handleGenerate('title')" :loading="isGeneratingTitle" title="根据其他内容生成标题">
+               <template #icon><ThunderboltOutlined /></template>
+            </a-button>
+          </div>
+        </a-form-item>
+        <a-form-item label="场景描述">
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <a-textarea
+                v-model:value="newScriptDescription"
+                placeholder="请输入场景描述（可选）"
+                :auto-size="{ minRows: 2, maxRows: 4 }"
+            />
+            <a-button @click="handleGenerate('description')" :loading="isGeneratingDesc" title="根据标题和内容生成描述">
+                <template #icon><ThunderboltOutlined /></template>
+            </a-button>
+          </div>
+        </a-form-item>
+        <a-form-item label="初始对话内容">
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <a-button size="small" @click="fillExampleContent">填入示例</a-button>
+            <a-button size="small" type="primary" ghost @click="handleGenerate('content')" :loading="isGeneratingContent">
+                <template #icon><ThunderboltOutlined /></template>
+                AI生成
+            </a-button>
+          </div>
+          <a-textarea
+            v-model:value="newScriptContent"
+            placeholder="请输入初始对话内容，格式：[销售] 或 [客户] 开头"
+            :auto-size="{ minRows: 6, maxRows: 10 }"
+          />
+          <div class="form-tip">提示：使用 [销售] 和 [客户] 标记角色，每行表示一段对话</div>
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick } from 'vue';
-import { SendOutlined } from '@ant-design/icons-vue';
+import { SendOutlined, PlusOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
 import type { SalesScriptDto } from '@/api/sales';
-import { getSalesScripts } from '@/api/sales';
+import { getSalesScripts, createSalesScript } from '@/api/sales';
 import { getAvailableModels } from '@/api/kb';
 import type { SiliconModelDto } from '@/types/kb';
 import MarkdownIt from 'markdown-it';
+import { message } from 'ant-design-vue';
 
 const md = new MarkdownIt({ html: true, breaks: true });
 
@@ -106,6 +161,88 @@ const selectedModel = ref<string>('');
 const models = ref<SiliconModelDto[]>([]);
 const chatBottomRef = ref<HTMLElement | null>(null);
 const userRole = ref<'salesman' | 'customer'>('salesman'); // 用户扮演的角色
+
+// 新增场景弹窗
+const showAddModal = ref(false);
+const newScriptTitle = ref('');
+const newScriptDescription = ref('');
+const newScriptContent = ref('');
+const isSaving = ref(false);
+const isGeneratingTitle = ref(false);
+const isGeneratingDesc = ref(false);
+const isGeneratingContent = ref(false);
+
+const handleGenerate = async (field: 'title' | 'description' | 'content') => {
+  let loadingRef;
+  switch (field) {
+    case 'title': loadingRef = isGeneratingTitle; break;
+    case 'description': loadingRef = isGeneratingDesc; break;
+    case 'content': loadingRef = isGeneratingContent; break;
+  }
+  if (loadingRef) loadingRef.value = true;
+
+  // Clear the field before streaming
+  if (field === 'title') newScriptTitle.value = '';
+  if (field === 'description') newScriptDescription.value = '';
+  if (field === 'content') newScriptContent.value = '';
+
+  try {
+    const response = await fetch('/api/sales/materials/scripts/generate/stream', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            targetField: field,
+            title: newScriptTitle.value,
+            description: newScriptDescription.value,
+            content: newScriptContent.value,
+            model: selectedModel.value
+        })
+    });
+
+    if (!response.ok) throw new Error(response.statusText);
+    if (!response.body) throw new Error('No response body');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+            if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+                
+                try {
+                    const parsed = JSON.parse(data);
+                    const content = parsed.content;
+                    if (content) {
+                        switch (field) {
+                            case 'title': newScriptTitle.value += content; break;
+                            case 'description': newScriptDescription.value += content; break;
+                            case 'content': newScriptContent.value += content; break;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing SSE data:', e);
+                }
+            }
+        }
+    }
+    message.success('生成成功');
+  } catch (e) {
+    console.error('生成失败:', e);
+    message.error('生成失败');
+  } finally {
+    if (loadingRef) loadingRef.value = false;
+  }
+};
 
 const loadData = async () => {
   try {
@@ -366,6 +503,61 @@ const saveConversationToScript = async () => {
     console.error('保存话术失败:', e);
   }
 };
+
+// 显示新增场景弹窗
+const showAddScriptModal = () => {
+  showAddModal.value = true;
+};
+
+// 重置弹窗表单
+const resetAddModal = () => {
+  newScriptTitle.value = '';
+  newScriptDescription.value = '';
+  newScriptContent.value = '';
+  showAddModal.value = false;
+};
+
+// 填入示例内容
+const fillExampleContent = () => {
+  newScriptContent.value = `[销售] 您好，我是销售顾问，请问有什么可以帮助您的？
+[客户] 我对你们的产品很感兴趣，想了解更多信息。
+[销售] 非常感谢您的关注！请问您具体对哪个方面比较感兴趣呢？是我们的产品功能、价格，还是其他方面？
+[客户] 我主要想了解一下产品的主要功能和优势。
+[销售] 好的，我们的产品主要有以下几个核心功能：第一，智能化数据分析；第二，自动化工作流程；第三，实时协作平台。这些功能可以帮助企业提高30%以上的工作效率。
+[客户] 听起来不错，那价格方面呢？`;
+};
+
+// 新增场景
+const handleAddScript = async () => {
+  if (!newScriptTitle.value.trim()) {
+    message.error('请输入场景标题');
+    return;
+  }
+
+  isSaving.value = true;
+
+  try {
+    const newScript = await createSalesScript({
+        title: newScriptTitle.value,
+        description: newScriptDescription.value,
+        content: newScriptContent.value || '[销售] 您好，我是销售顾问，请问有什么可以帮助您的？'
+    });
+
+    message.success('新增场景成功');
+    resetAddModal();
+    loadData(); // 重新加载列表
+    
+    // 选中新创建的脚本
+    if (newScript) {
+        selectScript(newScript);
+    }
+  } catch (e) {
+    console.error('新增场景失败:', e);
+    message.error('新增场景失败，请稍后重试');
+  } finally {
+    isSaving.value = false;
+  }
+};
 </script>
 
 <style scoped>
@@ -390,6 +582,9 @@ const saveConversationToScript = async () => {
   background: #f0f0f0;
   border-bottom: 1px solid #e8e8e8;
   flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .scene-list {
@@ -581,5 +776,11 @@ const saveConversationToScript = async () => {
 
 .send-btn {
   flex-shrink: 0;
+}
+
+.form-tip {
+  color: #999;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>

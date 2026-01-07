@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using omsapi.Models.Common;
 using omsapi.Models.Dtos.Sales;
 using omsapi.Services.Interfaces;
+using System.Text.Json;
 
 namespace omsapi.Controllers
 {
@@ -132,6 +133,16 @@ namespace omsapi.Controllers
         }
 
         /// <summary>
+        /// 创建话术
+        /// </summary>
+        [HttpPost("materials/scripts")]
+        public async Task<ApiResponse<SalesScriptDto>> CreateSalesScript([FromBody] CreateSalesScriptDto dto)
+        {
+            var result = await _salesService.CreateSalesScriptAsync(dto);
+            return ApiResponse<SalesScriptDto>.Success(result);
+        }
+
+        /// <summary>
         /// 更新话术
         /// </summary>
         [HttpPut("materials/scripts/{id}")]
@@ -141,6 +152,36 @@ namespace omsapi.Controllers
             return result != null
                 ? ApiResponse<SalesScriptDto>.Success(result)
                 : ApiResponse<SalesScriptDto>.Error("Sales script not found");
+        }
+
+        /// <summary>
+        /// 生成话术字段内容
+        /// </summary>
+        [HttpPost("materials/scripts/generate")]
+        public async Task<ApiResponse<string>> GenerateScriptField([FromBody] GenerateScriptFieldRequest request)
+        {
+            var result = await _salesService.GenerateScriptFieldAsync(request);
+            return ApiResponse<string>.Success(result);
+        }
+
+        /// <summary>
+        /// 生成话术字段内容(流式)
+        /// </summary>
+        [HttpPost("materials/scripts/generate/stream")]
+        public async Task GenerateScriptFieldStream([FromBody] GenerateScriptFieldRequest request)
+        {
+            Response.Headers.Append("Content-Type", "text/event-stream");
+            Response.Headers.Append("Cache-Control", "no-cache");
+            Response.Headers.Append("Connection", "keep-alive");
+
+            await foreach (var chunk in _salesService.GenerateScriptFieldStreamAsync(request))
+            {
+                var data = JsonSerializer.Serialize(new { content = chunk });
+                await Response.WriteAsync($"data: {data}\n\n");
+                await Response.Body.FlushAsync();
+            }
+            await Response.WriteAsync("data: [DONE]\n\n");
+            await Response.Body.FlushAsync();
         }
 
         /// <summary>
