@@ -302,5 +302,71 @@ namespace omsapi.Controllers
             var result = await _salesService.GetSalesTargetsAsync(searchParams);
             return ApiResponse<SalesTargetResultDto>.Success(result);
         }
+
+        // --- Registrations (报备) ---
+
+        /// <summary>
+        /// 获取报备列表
+        /// </summary>
+        [HttpGet("registrations")]
+        public async Task<ApiResponse<PagedResult<SalesRegistrationDto>>> GetRegistrations([FromQuery] RegistrationSearchParams searchParams)
+        {
+            var result = await _salesService.GetRegistrationsAsync(searchParams);
+            return ApiResponse<PagedResult<SalesRegistrationDto>>.Success(result);
+        }
+
+        /// <summary>
+        /// 获取报备详情
+        /// </summary>
+        [HttpGet("registrations/{id}")]
+        public async Task<ApiResponse<SalesRegistrationDto>> GetRegistration(string id)
+        {
+            var result = await _salesService.GetRegistrationAsync(id);
+            return result != null
+                ? ApiResponse<SalesRegistrationDto>.Success(result)
+                : ApiResponse<SalesRegistrationDto>.Error("Registration not found");
+        }
+
+        /// <summary>
+        /// 创建报备
+        /// </summary>
+        [HttpPost("registrations")]
+        public async Task<ApiResponse<SalesRegistrationDto>> CreateRegistration([FromBody] CreateRegistrationDto dto)
+        {
+            var result = await _salesService.CreateRegistrationAsync(dto);
+            return ApiResponse<SalesRegistrationDto>.Success(result);
+        }
+
+        /// <summary>
+        /// 更新报备
+        /// </summary>
+        [HttpPut("registrations/{id}")]
+        public async Task<ApiResponse<SalesRegistrationDto>> UpdateRegistration(string id, [FromBody] UpdateRegistrationDto dto)
+        {
+            var result = await _salesService.UpdateRegistrationAsync(id, dto);
+            return result != null
+                ? ApiResponse<SalesRegistrationDto>.Success(result)
+                : ApiResponse<SalesRegistrationDto>.Error("Registration not found");
+        }
+
+        /// <summary>
+        /// 删除报备
+        /// </summary>
+        [HttpDelete("registrations/{id}")]
+        public async Task<ApiResponse<bool>> DeleteRegistration(string id)
+        {
+            var result = await _salesService.DeleteRegistrationAsync(id);
+            return ApiResponse<bool>.Success(result);
+        }
+
+        /// <summary>
+        /// 生成报备数据
+        /// </summary>
+        [HttpPost("registrations/generate")]
+        public async Task<ApiResponse<CreateRegistrationDto>> GenerateRegistrationData()
+        {
+            var result = await _salesService.GenerateRegistrationDataAsync();
+            return ApiResponse<CreateRegistrationDto>.Success(result);
+        }
     }
 }

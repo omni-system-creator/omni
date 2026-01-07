@@ -76,4 +76,52 @@ namespace omsapi.Models.Dtos.Sales
         public string Content { get; set; } = string.Empty;
         public string Model { get; set; } = "";
     }
+
+    // Registration (报备) DTOs
+    public class SalesRegistrationDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public string ProjectName { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+        public string Contact { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public DateTime Date { get; set; }
+        public string Status { get; set; } = "pending";
+        public string Owner { get; set; } = string.Empty;
+        public string? Remarks { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
+    public class CreateRegistrationDto
+    {
+        public string ProjectName { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+        public string? Contact { get; set; }
+        public string? Phone { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime Date { get; set; }
+        public string? Remarks { get; set; }
+    }
+
+    public class UpdateRegistrationDto
+    {
+        public string? ProjectName { get; set; }
+        public string? CustomerName { get; set; }
+        public string? Contact { get; set; }
+        public string? Phone { get; set; }
+        public decimal? Amount { get; set; }
+        public DateTime? Date { get; set; }
+        public string? Remarks { get; set; }
+        public string? Status { get; set; }
+    }
+
+    public class RegistrationSearchParams
+    {
+        public string? SearchText { get; set; }
+        public string? Status { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+    }
 }

@@ -124,6 +124,45 @@ export interface TeamRankingDto {
   rate: number; // percent 0-100
 }
 
+// --- Registration Interfaces ---
+
+export interface SalesRegistrationDto {
+  id: string;
+  projectName: string;
+  customerName: string;
+  contact: string;
+  phone: string;
+  amount: number;
+  date: string;
+  status: 'pending' | 'approved' | 'rejected';
+  owner: string;
+  remarks?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateRegistrationDto {
+  projectName: string;
+  customerName: string;
+  contact?: string;
+  phone?: string;
+  amount: number;
+  date: string;
+  remarks?: string;
+}
+
+export interface UpdateRegistrationDto extends Partial<CreateRegistrationDto> {
+  status?: string;
+  owner?: string;
+}
+
+export interface RegistrationSearchParams {
+  searchText?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 // ==========================================
 // API Functions
 // ==========================================
@@ -271,4 +310,30 @@ export function deleteSalesTarget(id: string) {
 
 export function sendSalesScriptChat(data: SalesScriptChatDto) {
   return request.post<any, SalesScriptChatResponseDto>('/sales/scripts/chat', data);
+}
+
+// --- Registration APIs ---
+
+export function getRegistrations(params?: RegistrationSearchParams) {
+  return request.get<any, { items: SalesRegistrationDto[]; total: number }>('/sales/registrations', { params });
+}
+
+export function getRegistration(id: string) {
+  return request.get<any, SalesRegistrationDto>(`/sales/registrations/${id}`);
+}
+
+export function createRegistration(data: CreateRegistrationDto) {
+  return request.post<any, SalesRegistrationDto>('/sales/registrations', data);
+}
+
+export function updateRegistration(id: string, data: UpdateRegistrationDto) {
+  return request.put<any, SalesRegistrationDto>(`/sales/registrations/${id}`, data);
+}
+
+export function deleteRegistration(id: string) {
+  return request.delete<any, boolean>(`/sales/registrations/${id}`);
+}
+
+export function generateRegistration() {
+  return request.post<any, CreateRegistrationDto>('/sales/registrations/generate', {}, { timeout: 60000 });
 }

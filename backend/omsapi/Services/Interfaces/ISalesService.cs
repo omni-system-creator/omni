@@ -40,5 +40,13 @@ namespace omsapi.Services.Interfaces
 
         // Targets
         Task<SalesTargetResultDto> GetSalesTargetsAsync(SalesTargetSearchParams searchParams);
+
+        // Registration (报备)
+        Task<PagedResult<SalesRegistrationDto>> GetRegistrationsAsync(RegistrationSearchParams searchParams);
+        Task<SalesRegistrationDto?> GetRegistrationAsync(string id);
+        Task<SalesRegistrationDto> CreateRegistrationAsync(CreateRegistrationDto dto);
+        Task<SalesRegistrationDto?> UpdateRegistrationAsync(string id, UpdateRegistrationDto dto);
+        Task<bool> DeleteRegistrationAsync(string id);
+        Task<CreateRegistrationDto> GenerateRegistrationDataAsync();
     }
 }

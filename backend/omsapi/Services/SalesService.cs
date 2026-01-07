@@ -5,6 +5,7 @@ using omsapi.Models.Dtos.Sales;
 using omsapi.Models.Entities.Sales;
 using omsapi.Services.Interfaces;
 using omsapi.Infrastructure.Attributes;
+using System.Text.Json;
 
 namespace omsapi.Services
 {
@@ -861,6 +862,152 @@ namespace omsapi.Services
 
              _context.SalesTargets.AddRange(targets);
              await _context.SaveChangesAsync();
+        }
+
+        // --- Registration (报备) ---
+
+        public async Task<PagedResult<SalesRegistrationDto>> GetRegistrationsAsync(RegistrationSearchParams searchParams)
+        {
+            var query = _context.SalesRegistrations.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchParams.SearchText))
+            {
+                query = query.Where(r => r.ProjectName.Contains(searchParams.SearchText) || r.CustomerName.Contains(searchParams.SearchText));
+            }
+
+            if (!string.IsNullOrEmpty(searchParams.Status) && searchParams.Status != "all")
+            {
+                query = query.Where(r => r.Status == searchParams.Status);
+            }
+
+            var total = await query.CountAsync();
+            var list = await query.OrderByDescending(r => r.CreatedAt)
+                .Skip((searchParams.Page - 1) * searchParams.PageSize)
+                .Take(searchParams.PageSize)
+                .Select(r => new SalesRegistrationDto
+                {
+                    Id = r.Id,
+                    ProjectName = r.ProjectName,
+                    CustomerName = r.CustomerName,
+                    Contact = r.Contact ?? string.Empty,
+                    Phone = r.Phone ?? string.Empty,
+                    Amount = r.Amount,
+                    Date = r.Date,
+                    Status = r.Status,
+                    Owner = r.Owner,
+                    Remarks = r.Remarks,
+                    CreatedAt = r.CreatedAt,
+                    UpdatedAt = r.UpdatedAt
+                })
+                .ToListAsync();
+
+            return new PagedResult<SalesRegistrationDto> { Items = list, Total = total, Page = searchParams.Page, PageSize = searchParams.PageSize };
+        }
+
+        public async Task<SalesRegistrationDto?> GetRegistrationAsync(string id)
+        {
+            var r = await _context.SalesRegistrations.FindAsync(id);
+            if (r == null) return null;
+
+            return new SalesRegistrationDto
+            {
+                Id = r.Id,
+                ProjectName = r.ProjectName,
+                CustomerName = r.CustomerName,
+                Contact = r.Contact ?? string.Empty,
+                Phone = r.Phone ?? string.Empty,
+                Amount = r.Amount,
+                Date = r.Date,
+                Status = r.Status,
+                Owner = r.Owner,
+                Remarks = r.Remarks,
+                CreatedAt = r.CreatedAt,
+                UpdatedAt = r.UpdatedAt
+            };
+        }
+
+        public async Task<SalesRegistrationDto> CreateRegistrationAsync(CreateRegistrationDto dto)
+        {
+            var entity = new SalesRegistration
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                ProjectName = dto.ProjectName,
+                CustomerName = dto.CustomerName,
+                Contact = dto.Contact,
+                Phone = dto.Phone,
+                Amount = dto.Amount,
+                Date = dto.Date,
+                Status = "pending",
+                Owner = "当前用户",
+                Remarks = dto.Remarks,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            _context.SalesRegistrations.Add(entity);
+            await _context.SaveChangesAsync();
+
+            return await GetRegistrationAsync(entity.Id);
+        }
+
+        public async Task<SalesRegistrationDto?> UpdateRegistrationAsync(string id, UpdateRegistrationDto dto)
+        {
+            var entity = await _context.SalesRegistrations.FindAsync(id);
+            if (entity == null) return null;
+
+            if (!string.IsNullOrEmpty(dto.ProjectName)) entity.ProjectName = dto.ProjectName;
+            if (!string.IsNullOrEmpty(dto.CustomerName)) entity.CustomerName = dto.CustomerName;
+            if (!string.IsNullOrEmpty(dto.Contact)) entity.Contact = dto.Contact;
+            if (!string.IsNullOrEmpty(dto.Phone)) entity.Phone = dto.Phone;
+            if (dto.Amount.HasValue) entity.Amount = dto.Amount.Value;
+            if (dto.Date.HasValue) entity.Date = dto.Date.Value;
+            if (!string.IsNullOrEmpty(dto.Remarks)) entity.Remarks = dto.Remarks;
+            if (!string.IsNullOrEmpty(dto.Status)) entity.Status = dto.Status;
+            entity.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            return await GetRegistrationAsync(id);
+        }
+
+        public async Task<bool> DeleteRegistrationAsync(string id)
+        {
+            var entity = await _context.SalesRegistrations.FindAsync(id);
+            if (entity == null) return false;
+
+            _context.SalesRegistrations.Remove(entity);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<CreateRegistrationDto> GenerateRegistrationDataAsync()
+        {
+            var systemPrompt = "你是一个专业的销售数据生成助手。请生成一条真实的销售报备数据。";
+            var userPrompt = @"请随机生成一条真实的B2B销售报备数据，确保每次生成的内容（尤其是客户名称和联系人）都具备随机性和多样性，不要总是使用相同的名字（如张明、李华等）。包含以下字段：
+            - ProjectName (项目名称，需具备行业特征)
+            - CustomerName (客户名称，需具备企业特征)
+            - Contact (联系人，请随机生成真实姓名)
+            - Phone (手机号，随机生成)
+            - Amount (金额，数字，随机生成合理金额)
+            - Remarks (备注，项目背景等)
+            
+            请直接返回JSON格式，不要包含Markdown标记。";
+
+            var response = await _aiService.GetChatCompletionAsync(userPrompt, systemPrompt);
+            
+            // Cleanup response if it contains markdown code blocks
+            response = response.Replace("```json", "").Replace("```", "").Trim();
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var dto = JsonSerializer.Deserialize<CreateRegistrationDto>(response, options);
+            if (dto != null)
+            {
+                dto.Date = DateTime.Now;
+                return dto;
+            }
+            throw new Exception("AI生成返回空数据");
         }
     }
 }
