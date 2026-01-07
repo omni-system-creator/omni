@@ -55,6 +55,10 @@ const props = defineProps({
   defaultExpandAll: {
     type: Boolean,
     default: true
+  },
+  rootId: {
+    type: Number,
+    default: undefined
   }
 });
 
@@ -73,10 +77,14 @@ watch(internalSelectedKeys, (val) => {
   emit('update:selectedKeys', val);
 });
 
+watch(() => props.rootId, () => {
+  loadData();
+});
+
 const loadData = async () => {
   loading.value = true;
   try {
-    const res = await getDeptTree();
+    const res = await getDeptTree(props.rootId);
     treeData.value = res || [];
     emit('loaded', treeData.value);
   } catch (error) {

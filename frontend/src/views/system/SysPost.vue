@@ -8,6 +8,7 @@
           </template>
           <DeptTree
             v-model:selectedKeys="selectedDeptKeys"
+            :root-id="currentOrgId"
             @loaded="(data) => deptTree = data"
             @select="onSelectDept"
           />
@@ -121,6 +122,11 @@ import {
 import { type Dept } from '@/api/dept';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
+import { useUserStore } from '@/stores/user';
+import { computed } from 'vue';
+
+const userStore = useUserStore();
+const currentOrgId = computed(() => userStore.currentOrg?.id);
 
 const loading = ref(false);
 const postList = ref<Post[]>([]);

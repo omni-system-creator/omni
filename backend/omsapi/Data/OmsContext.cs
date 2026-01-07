@@ -32,6 +32,7 @@ namespace omsapi.Data
         public DbSet<SystemRoleInheritance> RoleInheritances { get; set; }
         public DbSet<SystemFile> Files { get; set; }
         public DbSet<SystemFileShare> FileShares { get; set; }
+        public DbSet<omsapi.Models.Entities.System.SysOrgRegistration> OrgRegistrations { get; set; }
         
         // Archive Entities
         public DbSet<ArchFond> ArchFonds { get; set; }

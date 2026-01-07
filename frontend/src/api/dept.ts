@@ -62,6 +62,13 @@ export interface UpdateDeptStructureParams {
     sortOrder: number;
 }
 
+export interface PagedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
 export const getDeptTree = (rootId?: number) => {
   return request.get('/dept/tree', { params: { rootId } }) as unknown as Promise<Dept[]>;
 };
@@ -70,7 +77,9 @@ export const getRootDepts = () => {
   return request.get('/dept/roots') as unknown as Promise<Dept[]>;
 };
 
-export const getDeptList = getDeptTree;
+export const getDeptList = (params: { keyword?: string; page?: number; pageSize?: number }) => {
+  return request.get('/dept/list', { params }) as unknown as Promise<PagedResult<Dept>>;
+};
 
 export const getDept = (id: number) => {
   return request.get(`/dept/${id}`) as unknown as Promise<Dept>;

@@ -364,5 +364,99 @@ namespace omsapi.Services
                 }
             }
         }
+        public async Task<(string? OrgName, string? LicenseCode, string? OrgShortName, string? OrgAbbr)> OcrLicenseAsync(byte[] imageBytes, string mimeType)
+        {
+            var apiKey = _configuration["SiliconFlow:ApiKey"];
+            var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                return (null, null, null, null);
+            }
+
+            var base64Image = Convert.ToBase64String(imageBytes);
+            var dataUrl = $"data:{mimeType};base64,{base64Image}";
+
+            // Use a vision model
+            string model = "Qwen/Qwen2-VL-72B-Instruct"; // Default to a good vision model
+
+            var requestBody = new
+            {
+                model = model,
+                messages = new[]
+                {
+                    new
+                    {
+                        role = "user",
+                        content = new object[]
+                        {
+                            new { type = "text", text = "请分析这张营业执照/证书图片，提取并返回以下信息为一个JSON对象：1) orgName 组织全称；2) licenseCode 证照编码（统一社会信用代码/注册号）；3) orgShortName 简称（如公司简称，去除“有限公司”等后缀并保留核心名称）；4) orgAbbr 字母缩写（根据中文名称拼音首字母生成，若无法生成则置为null）。只返回纯JSON字符串，不要Markdown。" },
+                            new { type = "image_url", image_url = new { url = dataUrl } }
+                        }
+                    }
+                },
+                max_tokens = 500,
+                temperature = 0.1 // Low temperature for deterministic output
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/chat/completions");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[AiService] OCR Error: {response.StatusCode} - {error}");
+                    return (null, null, null, null);
+                }
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseString);
+                
+                if (doc.RootElement.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                {
+                    var content = choices[0].GetProperty("message").GetProperty("content").GetString();
+                    if (!string.IsNullOrEmpty(content))
+                    {
+                        // Try to parse JSON from content
+                        // Remove markdown code blocks if present
+                        content = content.Replace("```json", "").Replace("```", "").Trim();
+                        try 
+                        {
+                            using var jsonDoc = JsonDocument.Parse(content);
+                            string? orgName = null;
+                            string? licenseCode = null;
+                            string? orgShortName = null;
+                            string? orgAbbr = null;
+
+                            if (jsonDoc.RootElement.TryGetProperty("orgName", out var orgNameProp))
+                                orgName = orgNameProp.GetString();
+                            if (jsonDoc.RootElement.TryGetProperty("licenseCode", out var licenseCodeProp))
+                                licenseCode = licenseCodeProp.GetString();
+                            if (jsonDoc.RootElement.TryGetProperty("orgShortName", out var orgShortNameProp))
+                                orgShortName = orgShortNameProp.GetString();
+                            if (jsonDoc.RootElement.TryGetProperty("orgAbbr", out var orgAbbrProp))
+                                orgAbbr = orgAbbrProp.GetString();
+
+                            return (orgName, licenseCode, orgShortName, orgAbbr);
+                        }
+                        catch (JsonException)
+                        {
+                            Console.WriteLine($"[AiService] Failed to parse OCR JSON: {content}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AiService] Error in OCR: {ex.Message}");
+            }
+
+            return (null, null, null, null);
+        }
     }
 }

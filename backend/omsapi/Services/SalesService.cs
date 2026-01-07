@@ -947,7 +947,7 @@ namespace omsapi.Services
             _context.SalesRegistrations.Add(entity);
             await _context.SaveChangesAsync();
 
-            return await GetRegistrationAsync(entity.Id);
+            return (await GetRegistrationAsync(entity.Id))!;
         }
 
         public async Task<SalesRegistrationDto?> UpdateRegistrationAsync(string id, UpdateRegistrationDto dto)

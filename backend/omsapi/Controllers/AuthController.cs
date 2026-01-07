@@ -30,6 +30,44 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(data);
         }
 
+        [HttpPost("register")]
+        public async Task<ApiResponse<object>> Register([FromBody] RegisterRequest request)
+        {
+            var (success, message, data) = await _authService.RegisterAsync(request);
+
+            if (!success)
+            {
+                return ApiResponse<object>.Error(message, 400);
+            }
+
+            return ApiResponse<object>.Success(data, message);
+        }
+
+        [HttpPost("upload-registration-file")]
+        [AllowAnonymous]
+        public async Task<ApiResponse<object>> UploadRegistrationFile(IFormFile file)
+        {
+            var (success, message, url) = await _authService.UploadRegistrationFileAsync(file);
+             if (!success)
+            {
+                return ApiResponse<object>.Error(message, 400);
+            }
+            return ApiResponse<object>.Success(new { Url = url }, message);
+        }
+
+        [HttpPost("recognize-license")]
+        [AllowAnonymous]
+        public async Task<ApiResponse<object>> RecognizeLicense(IFormFile file)
+        {
+            var (success, message, data) = await _authService.RecognizeLicenseAsync(file);
+            if (!success)
+            {
+                return ApiResponse<object>.Error(message, 400);
+            }
+            return ApiResponse<object>.Success(data, message);
+        }
+
+
         [HttpGet("routes")]
         [Authorize]
         public async Task<ApiResponse<List<MenuItemDto>>> GetRoutes()

@@ -1,10 +1,5 @@
 <template>
   <div class="sys-org-container" @click="closeContextMenu">
-    <div class="header-controls" v-if="isAdmin">
-      <a-select v-model:value="selectedRootId" style="width: 220px" placeholder="切换根组织" @change="handleRootChange">
-         <a-select-option v-for="dept in rootDepts" :key="dept.id" :value="dept.id">{{ dept.name }}</a-select-option>
-      </a-select>
-    </div>
     <div class="canvas-container" ref="canvasContainer" @contextmenu.prevent="handleContextMenu"></div>
 
     <!-- 右键菜单 -->
@@ -100,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive, onUnmounted, createVNode } from 'vue';
+import { ref, onMounted, computed, reactive, onUnmounted, createVNode, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
@@ -110,7 +105,7 @@ import {
 } from '@ant-design/icons-vue';
 import { useUserStore } from '@/stores/user';
 import {
-  getDeptTree, getRootDepts, createDept, updateDept, deleteDept, updateDeptStructure,
+  getDeptTree, createDept, updateDept, deleteDept, updateDeptStructure,
   type Dept, DeptType, type UpdateDeptStructureParams
 } from '@/api/dept';
 import { App, Rect, Text, Group, Line, Ellipse, PointerEvent, DragEvent } from 'leafer-ui';
@@ -119,8 +114,6 @@ import '@leafer-in/export'; // 导入导出插件
 
 const userStore = useUserStore();
 const isAdmin = computed(() => userStore.isAdmin);
-const rootDepts = ref<Dept[]>([]);
-const selectedRootId = ref<number | undefined>(undefined);
 
 const loading = ref(false);
 const deptList = ref<Dept[]>([]);
@@ -289,28 +282,13 @@ const COLOR_COMPANY = '#1890ff';
 const COLOR_DEPT = '#8c8c8c';
 const BG_COLOR = '#ffffff';
 
-const fetchRoots = async () => {
-  try {
-    const res = await getRootDepts();
-    rootDepts.value = res || [];
-    const firstId = rootDepts.value[0]?.id;
-    if (!selectedRootId.value && firstId !== undefined) {
-      selectedRootId.value = firstId;
-      fetchDeptTree();
-    }
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const handleRootChange = () => {
-  fetchDeptTree();
-};
-
 const fetchDeptTree = async () => {
   loading.value = true;
   try {
-    const res = await getDeptTree(selectedRootId.value);
+    const orgId = userStore.currentOrg?.id;
+    // 如果没有选中的组织，且不是演示组织（ID 0可能在后端处理，或者在这里判断）
+    // 如果ID为0（演示），API可能会返回默认数据或空，视后端实现而定
+    const res = await getDeptTree(orgId);
     deptList.value = res || [];
     renderChart();
   } catch (error) {
@@ -319,6 +297,10 @@ const fetchDeptTree = async () => {
     loading.value = false;
   }
 };
+
+watch(() => userStore.currentOrg, () => {
+  fetchDeptTree();
+});
 
 const refresh = () => {
   fetchDeptTree();
@@ -881,11 +863,7 @@ const fitView = () => {
 
 onMounted(() => {
   initLeafer();
-  if (isAdmin.value) {
-    fetchRoots();
-  } else {
-    fetchDeptTree();
-  }
+  fetchDeptTree();
 });
 
 onUnmounted(() => {
@@ -1154,12 +1132,6 @@ const handleModalOk = async () => {
 <style scoped>
 .sys-org-container {
   position: relative;
-}
-.header-controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10;
 }
 .canvas-container {
   width: 100%;

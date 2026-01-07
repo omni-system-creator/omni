@@ -1,4 +1,5 @@
 using omsapi.Models.Dtos;
+using omsapi.Models.Common;
 
 namespace omsapi.Services.Interfaces
 {
@@ -19,5 +20,9 @@ namespace omsapi.Services.Interfaces
 
         // 权限辅助接口
         Task<(bool IsAdmin, List<long> RoleIds)> GetUserPermissionsAsync(long? userId);
+
+        Task<List<UserOrgDto>> GetUserOrganizationsAsync(long userId);
+        Task<PagedResult<DeptTreeDto>> GetMyOrganizationsPagedAsync(long userId, string? keyword, int page, int pageSize);
+        Task<(bool Success, string Message)> SwitchOrganizationAsync(long userId, long orgId);
     }
 }

@@ -1,3 +1,4 @@
+using omsapi.Models.Common;
 using omsapi.Models.Dtos;
 
 namespace omsapi.Services.Interfaces
@@ -12,5 +13,6 @@ namespace omsapi.Services.Interfaces
         Task<bool> UpdateDeptAsync(long id, UpdateDeptDto dto);
         Task<bool> DeleteDeptAsync(long id);
         Task<bool> BatchUpdateStructureAsync(List<UpdateDeptStructureDto> dtos);
+        Task<PagedResult<DeptTreeDto>> GetDeptListAsync(string? keyword, int page, int pageSize);
     }
 }

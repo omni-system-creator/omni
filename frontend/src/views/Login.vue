@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { reactive, ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
@@ -114,6 +114,23 @@ const formState = reactive({
   remember: true,
 });
 
+onMounted(() => {
+  const remember = localStorage.getItem('login_remember');
+  if (remember === 'true') {
+    const username = localStorage.getItem('login_username');
+    const password = localStorage.getItem('login_password');
+    if (username && password) {
+      formState.username = username;
+      try {
+        formState.password = atob(password);
+      } catch (e) {
+        formState.password = '';
+      }
+      formState.remember = true;
+    }
+  }
+});
+
 const handleLogin = async (_values: any) => {
   loading.value = true;
   try {
@@ -124,6 +141,17 @@ const handleLogin = async (_values: any) => {
     
     // 登录成功
     if (res.token) {
+      // 处理记住我
+      if (formState.remember) {
+        localStorage.setItem('login_username', formState.username);
+        localStorage.setItem('login_password', btoa(formState.password));
+        localStorage.setItem('login_remember', 'true');
+      } else {
+        localStorage.removeItem('login_username');
+        localStorage.removeItem('login_password');
+        localStorage.removeItem('login_remember');
+      }
+
       userStore.setToken(res.token);
       
       // 保存用户信息

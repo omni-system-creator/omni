@@ -12,6 +12,12 @@ const router = createRouter({
       meta: { title: '登录' }
     },
     {
+      path: '/register',
+      name: 'Register',
+      component: () => import('../views/Register.vue'),
+      meta: { title: '注册新组织' }
+    },
+    {
       path: '/s/:token',
       name: 'ShareAccess',
       component: () => import('../views/share/ShareAccess.vue'),
@@ -96,7 +102,7 @@ router.beforeEach(async (to, _from, next) => {
     console.error('Error parsing auth data', e);
   }
   
-  if (to.path === '/login' || to.meta.public || to.path.startsWith('/m/')) {
+  if (to.path === '/login' || to.path === '/register' || to.meta.public || to.path.startsWith('/m/')) {
     if (token && to.path === '/login') {
       next('/');
     } else {

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using omsapi.Data;
 using omsapi.Infrastructure.Attributes;
+using omsapi.Models.Common;
 using omsapi.Models.Dtos;
 using omsapi.Models.Entities;
 using omsapi.Services.Interfaces;
@@ -366,6 +367,30 @@ namespace omsapi.Services
                 }
             });
             return true;
+        }
+
+        public async Task<PagedResult<DeptTreeDto>> GetDeptListAsync(string? keyword, int page, int pageSize)
+        {
+            var query = _context.Depts.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(d => d.Name.Contains(keyword) || (d.Code != null && d.Code.Contains(keyword)));
+            }
+
+            query = query.Where(d => d.IsActive);
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderBy(d => d.SortOrder)
+                .ThenBy(d => d.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var dtos = items.Select(MapToTreeDto).ToList();
+
+            return new PagedResult<DeptTreeDto>(dtos, total, page, pageSize);
         }
 
         private DeptTreeDto MapToTreeDto(SystemDept dept)

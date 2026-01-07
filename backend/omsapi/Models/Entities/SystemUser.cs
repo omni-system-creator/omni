@@ -40,6 +40,9 @@ namespace omsapi.Models.Entities
 
         public long? DeptId { get; set; }
 
+        // Stores the default organization ID for the user
+        public long? CurrentOrgId { get; set; }
+
         [ForeignKey("DeptId")]
         public virtual SystemDept? Dept { get; set; }
 

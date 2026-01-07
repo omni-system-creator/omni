@@ -68,6 +68,38 @@ namespace omsapi.Controllers
         }
 
         /// <summary>
+        /// 获取当前用户的组织列表
+        /// </summary>
+        [HttpPost("switch-org/{orgId}")]
+        public async Task<ApiResponse<bool>> SwitchOrg(long orgId)
+        {
+            var userIdClaim = User.FindFirst("id");
+            if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out long userId))
+            {
+                return ApiResponse<bool>.Error("无法获取用户信息", 401);
+            }
+            var result = await _userService.SwitchOrganizationAsync(userId, orgId);
+            if (result.Success)
+            {
+                return ApiResponse<bool>.Success(true, result.Message);
+            }
+            return ApiResponse<bool>.Error(result.Message);
+        }
+
+        [HttpGet("orgs")]
+        public async Task<ApiResponse<List<UserOrgDto>>> GetMyOrgs()
+        {
+            var userIdClaim = User.FindFirst("id");
+            if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out long userId))
+            {
+                return ApiResponse<List<UserOrgDto>>.Error("无法获取用户信息", 401);
+            }
+
+            var data = await _userService.GetUserOrganizationsAsync(userId);
+            return ApiResponse<List<UserOrgDto>>.Success(data);
+        }
+
+        /// <summary>
         /// 更新个人资料
         /// </summary>
         [HttpPut("profile")]

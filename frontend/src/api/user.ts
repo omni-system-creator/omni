@@ -84,6 +84,21 @@ export const changePassword = (data: ChangePasswordDto) => {
 
 // --- 管理员接口 ---
 
+export interface UserOrgDto {
+  id: number;
+  name: string;
+  type: string;
+  isCurrent: boolean;
+}
+
+export const getUserOrgs = () => {
+  return request.get<any, UserOrgDto[]>('/user/orgs');
+};
+
+export const switchUserOrg = (orgId: number) => {
+  return request.post<any, boolean>(`/user/switch-org/${orgId}`);
+};
+
 export const getUserList = () => {
   return request.get<any, UserListDto[]>('/user');
 };

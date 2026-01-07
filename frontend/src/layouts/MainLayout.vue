@@ -48,6 +48,20 @@
       </a-layout-header>
       
       <a-layout-content style="display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+        <a-alert
+          v-if="isDemoOrg"
+          message="这是演示环境，如有需要可以注册自己的组织使用，自己注册的多个组织可以切换"
+          type="info"
+          show-icon
+          closable
+          banner
+        >
+          <template #action>
+            <a-button size="small" type="primary" ghost @click="openRegister">
+              注册新组织
+            </a-button>
+          </template>
+        </a-alert>
         <tabs-view />
         
         <div class="site-layout-content">
@@ -72,7 +86,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
@@ -81,6 +95,7 @@ import TabsView from '../components/TabsView.vue';
 import { useTabsStore } from '../stores/tabs';
 import { useSystemStore } from '@/stores/system';
 import { usePermissionStore } from '@/stores/permission';
+import { useUserStore } from '@/stores/user';
 import HelpButton from './components/HelpButton.vue';
 import FullscreenButton from './components/FullscreenButton.vue';
 import NotificationBell from './components/NotificationBell.vue';
@@ -109,6 +124,11 @@ const saveSettings = (key: string, value: any) => {
 
 const systemStore = useSystemStore();
 systemStore.fetchConfigs();
+const userStore = useUserStore();
+
+const isDemoOrg = computed(() => {
+  return userStore.currentOrg?.type === 'Demo';
+});
 
 const collapsed = ref<boolean>(getSettings().menuCollapsed === true);
 
@@ -117,6 +137,7 @@ watch(collapsed, (val) => {
 });
 
 const route = useRoute();
+const router = useRouter();
 const tabsStore = useTabsStore();
 const permissionStore = usePermissionStore();
 
@@ -227,6 +248,11 @@ const openLink = (site: 'github' | 'gitee') => {
   if (url) {
     window.open(url, '_blank');
   }
+};
+
+const openRegister = () => {
+  const routeData = router.resolve({ name: 'Register' });
+  window.open(routeData.href, '_blank');
 };
 
 

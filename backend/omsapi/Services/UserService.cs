@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using omsapi.Data;
 using omsapi.Models.Dtos;
 using omsapi.Services.Interfaces;
+using omsapi.Models.Common;
+using omsapi.Models.Enums;
 
 using omsapi.Infrastructure.Attributes;
 
@@ -125,6 +127,163 @@ namespace omsapi.Services
 
             return (true, "获取成功", userDto);
         }
+        public async Task<List<UserOrgDto>> GetUserOrganizationsAsync(long userId)
+        {
+            var result = new List<UserOrgDto>();
+            
+            var user = await _context.Users
+                .Include(u => u.Dept)
+                .Include(u => u.UserPosts)
+                    .ThenInclude(up => up.Dept)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null) return result;
+
+            // 1. Add Demo Org (Find by Code = "DEMO")
+            var demoOrg = await _context.Depts.FirstOrDefaultAsync(d => d.Code == "DEMO");
+            if (demoOrg != null)
+            {
+                result.Add(new UserOrgDto
+                {
+                    Id = demoOrg.Id,
+                    Name = demoOrg.Name, // Should be "演示组织"
+                    Type = "Demo",
+                    IsCurrent = user.CurrentOrgId == demoOrg.Id
+                });
+            }
+            else
+            {
+                // Fallback if no DEMO org in DB, maybe just skip or add a fake one?
+                // User instruction says "Query Code is DEMO". If not found, we probably shouldn't show it or should create it?
+                // For safety, let's keep the fake one if not found, but with ID=0? 
+                // No, better to stick to DB. If not found, maybe just don't add. 
+                // But for development, I'll add a check. If not found, I won't add it to avoid confusion with ID 0.
+            }
+
+            // 2. Check if SuperAdmin - return ALL active root organizations
+            if (await IsAdminAsync(userId))
+            {
+                var rootDepts = await _context.Depts
+                    .Where(d => d.ParentId == null && d.IsActive)
+                    .OrderBy(d => d.SortOrder)
+                    .Take(11)
+                    .ToListAsync();
+
+                // Find root of current org to mark IsCurrent correctly
+                long? currentRootId = null;
+                if (user.CurrentOrgId.HasValue)
+                {
+                     var cOrg = await _context.Depts.FindAsync(user.CurrentOrgId.Value);
+                     if (cOrg != null)
+                     {
+                         var temp = cOrg;
+                         while(temp.ParentId != null)
+                         {
+                             var p = await _context.Depts.FindAsync(temp.ParentId);
+                             if (p == null) break;
+                             temp = p;
+                         }
+                         currentRootId = temp.Id;
+                     }
+                }
+
+                foreach (var root in rootDepts)
+                {
+                     if (!result.Any(r => r.Id == root.Id))
+                     {
+                        result.Add(new UserOrgDto
+                        {
+                            Id = root.Id,
+                            Name = root.Name,
+                            Type = root.Type.ToString(),
+                            IsCurrent = currentRootId == root.Id
+                        });
+                     }
+                }
+                
+                return result;
+            }
+
+            var deptIds = new HashSet<long>();
+            if (user.DeptId.HasValue) deptIds.Add(user.DeptId.Value);
+            
+            foreach(var post in user.UserPosts)
+            {
+                deptIds.Add(post.DeptId);
+            }
+
+            if (deptIds.Count > 0)
+            {
+                foreach(var deptId in deptIds)
+                {
+                    var currentDept = await _context.Depts.FindAsync(deptId);
+                    if (currentDept == null) continue;
+                    
+                    // Climb up
+                    var root = currentDept;
+                    while(root.ParentId != null)
+                    {
+                        var parent = await _context.Depts.FindAsync(root.ParentId);
+                        if (parent == null) break;
+                        root = parent;
+                    }
+                    
+                    // Add if not exists
+                    if (!result.Any(r => r.Id == root.Id))
+                    {
+                        if (result.Count >= 11) break;
+                        result.Add(new UserOrgDto
+                        {
+                            Id = root.Id,
+                            Name = root.Name,
+                            Type = root.Type.ToString(),
+                            IsCurrent = user.CurrentOrgId == root.Id
+                        });
+                    }
+                }
+            }
+
+            // 3. Ensure CurrentOrg is in the list (for SuperAdmin switching to non-member orgs)
+            if (user.CurrentOrgId.HasValue && !result.Any(r => r.Id == user.CurrentOrgId.Value))
+            {
+                var currentOrg = await _context.Depts.FindAsync(user.CurrentOrgId.Value);
+                if (currentOrg != null)
+                {
+                     result.Add(new UserOrgDto
+                     {
+                         Id = currentOrg.Id,
+                         Name = currentOrg.Name,
+                         Type = currentOrg.Type.ToString(),
+                         IsCurrent = true
+                     });
+                }
+            }
+
+            return result;
+        }
+
+        public async Task<(bool Success, string Message)> SwitchOrganizationAsync(long userId, long orgId)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return (false, "用户不存在");
+
+            // Verify orgId is valid (exists in DB)
+            // Note: If orgId is 0 (fake demo), we might have issues if we moved to DB based DEMO.
+            // But now we use DB ID.
+            
+            var org = await _context.Depts.FindAsync(orgId);
+            if (org == null)
+            {
+                 // Maybe it is the fake ID 0? If we removed fake ID 0 logic, we expect real ID.
+                 return (false, "组织不存在");
+            }
+
+            user.CurrentOrgId = orgId;
+            await _context.SaveChangesAsync();
+            
+            return (true, "切换成功");
+        }
+
         private string ComputeSha256Hash(string rawData)
         {
             using (var sha256Hash = System.Security.Cryptography.SHA256.Create())
@@ -527,6 +686,82 @@ namespace omsapi.Services
             var isAdmin = userRoles.Any(ur => ur.Role.Code == "SuperAdmin");
 
             return (isAdmin, roleIds);
+        }
+        public async Task<PagedResult<DeptTreeDto>> GetMyOrganizationsPagedAsync(long userId, string? keyword, int page, int pageSize)
+        {
+            // 1. Get User
+            var user = await _context.Users
+                .Include(u => u.Dept)
+                .Include(u => u.UserPosts)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null) return new PagedResult<DeptTreeDto>();
+
+            var rootIds = new HashSet<long>();
+
+            // 2. Demo Org
+            var demoOrg = await _context.Depts.FirstOrDefaultAsync(d => d.Code == "DEMO");
+            if (demoOrg != null) rootIds.Add(demoOrg.Id);
+
+            // 3. User Depts (Climb to root)
+            var deptIds = new HashSet<long>();
+            if (user.DeptId.HasValue) deptIds.Add(user.DeptId.Value);
+            foreach (var post in user.UserPosts) deptIds.Add(post.DeptId);
+
+            foreach (var deptId in deptIds)
+            {
+                var current = await _context.Depts.FindAsync(deptId);
+                if (current == null) continue;
+                
+                var root = current;
+                while (root.ParentId != null)
+                {
+                    var parent = await _context.Depts.FindAsync(root.ParentId);
+                    if (parent == null) break;
+                    root = parent;
+                }
+                rootIds.Add(root.Id);
+            }
+
+            // 4. Query
+            var query = _context.Depts.Where(d => rootIds.Contains(d.Id));
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(d => d.Name.Contains(keyword) || (d.Code != null && d.Code.Contains(keyword)));
+            }
+
+            query = query.Where(d => d.IsActive);
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderBy(d => d.SortOrder)
+                .ThenBy(d => d.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var dtos = items.Select(MapToTreeDto).ToList();
+
+            return new PagedResult<DeptTreeDto>(dtos, total, page, pageSize);
+        }
+
+        private DeptTreeDto MapToTreeDto(omsapi.Models.Entities.SystemDept d)
+        {
+            return new DeptTreeDto
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Code = d.Code,
+                Type = d.Type,
+                Leader = d.Leader,
+                Phone = d.Phone,
+                Email = d.Email,
+                IsActive = d.IsActive,
+                SortOrder = d.SortOrder,
+                CreatedAt = d.CreatedAt,
+                Children = new List<DeptTreeDto>()
+            };
         }
     }
 }

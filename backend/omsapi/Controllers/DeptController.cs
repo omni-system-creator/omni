@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using omsapi.Models.Common;
 using omsapi.Models.Dtos;
 using omsapi.Services.Interfaces;
+using omsapi.Infrastructure.Extensions;
 
 namespace omsapi.Controllers
 {
@@ -12,10 +13,12 @@ namespace omsapi.Controllers
     public class DeptController : ControllerBase
     {
         private readonly IDeptService _deptService;
+        private readonly IUserService _userService;
 
-        public DeptController(IDeptService deptService)
+        public DeptController(IDeptService deptService, IUserService userService)
         {
             _deptService = deptService;
+            _userService = userService;
         }
 
         [HttpGet("tree")]
@@ -35,6 +38,22 @@ namespace omsapi.Controllers
         {
             var roots = await _deptService.GetRootDeptsAsync();
             return Ok(ApiResponse<List<DeptTreeDto>>.Success(roots));
+        }
+
+        [HttpGet("list")]
+        public async Task<ActionResult<ApiResponse<PagedResult<DeptTreeDto>>>> GetDeptList([FromQuery] string? keyword, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            if (User.IsInRole("SuperAdmin"))
+            {
+                var result = await _deptService.GetDeptListAsync(keyword, page, pageSize);
+                return Ok(ApiResponse<PagedResult<DeptTreeDto>>.Success(result));
+            }
+            else
+            {
+                var userId = User.GetUserId();
+                var result = await _userService.GetMyOrganizationsPagedAsync(userId, keyword, page, pageSize);
+                return Ok(ApiResponse<PagedResult<DeptTreeDto>>.Success(result));
+            }
         }
 
         [HttpGet("{id}")]

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Hosting;
 using omsapi.Data;
 using omsapi.Models.Dtos;
 using omsapi.Services.Interfaces;
@@ -19,13 +20,17 @@ namespace omsapi.Services
         private readonly IConfiguration _configuration;
         private readonly IAuditLogService _auditLogService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IWebHostEnvironment _environment;
+        private readonly IAiService _aiService;
 
-        public AuthService(OmsContext context, IConfiguration configuration, IAuditLogService auditLogService, IHttpContextAccessor httpContextAccessor)
+        public AuthService(OmsContext context, IConfiguration configuration, IAuditLogService auditLogService, IHttpContextAccessor httpContextAccessor, IWebHostEnvironment environment, IAiService aiService)
         {
             _context = context;
             _configuration = configuration;
             _auditLogService = auditLogService;
             _httpContextAccessor = httpContextAccessor;
+            _environment = environment;
+            _aiService = aiService;
         }
 
         public async Task<(bool Success, string Message, LoginResultDto? Data)> LoginAsync(LoginRequest request)
@@ -88,6 +93,146 @@ namespace omsapi.Services
 
             await LogLoginAsync(user.Id, user.Username, true, "登录成功", startTime, ipAddress, userAgent);
             return (true, "登录成功", result);
+        }
+
+        public async Task<(bool Success, string Message, object? Data)> RegisterAsync(RegisterRequest request)
+        {
+            var startTime = DateTime.Now;
+            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            var userAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
+
+            if (string.IsNullOrEmpty(request.OrgName) || string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
+            {
+                return (false, "组织名称、用户名和密码不能为空", null);
+            }
+
+            // 1. Check if username exists in System Users (even if pending, we should probably check, 
+            // but for now pending registrations are separate. However, if a user exists in main table, we can't use that username?)
+            // Actually, if we store in SysOrgRegistration, we check there too?
+            // Let's check both SystemUser and SysOrgRegistration for username uniqueness to avoid conflicts later.
+            if (await _context.Users.AnyAsync(u => u.Username == request.Username))
+            {
+                return (false, "用户名已存在", null);
+            }
+            if (await _context.OrgRegistrations.AnyAsync(r => r.AdminUsername == request.Username && r.Status == "pending"))
+            {
+                return (false, "用户名已被注册（审核中）", null);
+            }
+
+            // 2. Check if Org Name exists
+            if (await _context.Depts.AnyAsync(d => d.Name == request.OrgName))
+            {
+                return (false, "组织名称已存在", null);
+            }
+            if (await _context.OrgRegistrations.AnyAsync(r => r.OrgName == request.OrgName && r.Status == "pending"))
+            {
+                return (false, "组织名称已被注册（审核中）", null);
+            }
+
+            // 3. Create Registration Record
+            var hashedPassword = ComputeSha256Hash(request.Password);
+            var registration = new omsapi.Models.Entities.System.SysOrgRegistration
+            {
+                OrgName = request.OrgName,
+                OrgShortName = request.OrgShortName,
+                OrgAbbr = request.OrgAbbr,
+                LicenseCode = request.LicenseCode,
+                LicenseFileUrl = request.LicenseFileUrl,
+                AuthLetterFileUrl = request.AuthLetterFileUrl,
+                ContactName = request.ContactName,
+                ContactPhone = request.ContactPhone,
+                ContactEmail = request.ContactEmail,
+                AdminUsername = request.Username,
+                AdminPassword = hashedPassword,
+                Status = "pending",
+                CreatedAt = DateTime.Now
+            };
+
+            _context.OrgRegistrations.Add(registration);
+            await _context.SaveChangesAsync();
+
+            // Return success but NO token (because they are not active yet)
+            return (true, "注册申请已提交，请等待审核", new { RegistrationId = registration.Id });
+        }
+
+        public async Task<(bool Success, string Message, string? Url)> UploadRegistrationFileAsync(Microsoft.AspNetCore.Http.IFormFile file)
+        {
+             if (file == null || file.Length == 0)
+            {
+                return (false, "请选择文件", null);
+            }
+
+            // 验证文件类型 (Images + PDF?)
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf" };
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(extension))
+            {
+                return (false, "仅支持 jpg, jpeg, png, pdf 格式的文件", null);
+            }
+
+            try
+            {
+                // Store in uploads/registration
+                var uploadPath = Path.Combine(_environment.WebRootPath, "uploads", "registration");
+
+                if (!Directory.Exists(uploadPath))
+                {
+                    Directory.CreateDirectory(uploadPath);
+                }
+
+                // Generate unique filename
+                var fileName = $"{Guid.NewGuid()}{extension}";
+                var filePath = Path.Combine(uploadPath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                var url = $"/uploads/registration/{fileName}";
+                return (true, "上传成功", url);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"上传失败: {ex.Message}", null);
+            }
+        }
+
+        public async Task<(bool Success, string Message, object? Data)> RecognizeLicenseAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return (false, "请选择文件", null);
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" }; // Only images for vision model
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(extension))
+            {
+                return (false, "OCR识别仅支持 jpg, jpeg, png 格式的图片", null);
+            }
+
+            try
+            {
+                using var stream = new MemoryStream();
+                await file.CopyToAsync(stream);
+                var imageBytes = stream.ToArray();
+
+                var (orgName, licenseCode, orgShortName, orgAbbr) = await _aiService.OcrLicenseAsync(imageBytes, file.ContentType);
+
+                if (string.IsNullOrEmpty(orgName) && string.IsNullOrEmpty(licenseCode))
+                {
+                    // Even if null, return success=false or just empty data?
+                    // User expects recognition.
+                    return (false, "未能识别出组织全称或证照编码，请手动填写", null);
+                }
+
+                return (true, "识别成功", new { orgName = orgName, licenseCode = licenseCode, orgShortName = orgShortName, orgAbbr = orgAbbr });
+            }
+            catch (Exception ex)
+            {
+                return (false, $"识别失败: {ex.Message}", null);
+            }
         }
 
         public async Task<(bool Success, string Message, List<MenuItemDto>? Data)> GetUserRoutesAsync(long userId)
