@@ -20,7 +20,7 @@
       </a-col>
       <a-col :span="6">
         <a-card hoverable class="stat-card">
-          <a-statistic title="待审批用车申请" :value="5" value-style="color: #faad14">
+          <a-statistic title="待审批用车申请" :value="5" :value-style="{ color: '#faad14' }">
             <template #prefix><FileProtectOutlined /></template>
           </a-statistic>
           <div class="stat-footer">紧急申请: 1</div>

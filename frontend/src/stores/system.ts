@@ -24,7 +24,16 @@ export const useSystemStore = defineStore('system', () => {
   };
 
   const systemName = computed(() => getConfig('SystemName') || '综合信息管理系统');
-  const systemLogo = computed(() => getConfig('SystemLogo') || defaultLogo);
+  const systemLogo = computed(() => {
+    const logo = getConfig('SystemLogo');
+    if (logo && typeof logo === 'string') {
+      if (!logo.startsWith('/') && !logo.startsWith('http') && !logo.startsWith('data:')) {
+        return `/${logo}`;
+      }
+      return logo;
+    }
+    return defaultLogo;
+  });
 
   return {
     configs,
