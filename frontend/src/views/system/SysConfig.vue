@@ -338,6 +338,6 @@ onMounted(() => {
 
 <style scoped>
 .sys-config-container {
-  padding: 24px;
+  padding: 10px;
 }
 </style>

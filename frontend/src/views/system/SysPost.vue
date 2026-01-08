@@ -263,7 +263,7 @@ onMounted(() => {
 <style lang="scss" scoped>
   .sys-post-container {
     flex: 1;
-    padding: 16px;
+    padding: 10px;
   }
   .dept-card {
     height: 100%;

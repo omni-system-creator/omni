@@ -8,6 +8,7 @@
           </template>
           <DeptTree
             v-model:selectedKeys="selectedDeptKeys"
+            :root-id="currentOrgId"
             @loaded="(data) => deptTreeData = data"
           />
         </a-card>
@@ -241,6 +242,7 @@ import { generatePassword } from '@/utils/password';
 import dayjs from 'dayjs';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
+import { useUserStore } from '@/stores/user';
 
 const loading = ref(false);
 const users = ref<UserListDto[]>([]);
@@ -249,6 +251,9 @@ const roleOptions = ref<RoleDto[]>([]);
 const postOptions = ref<Post[]>([]);
 const deptTreeData = ref<Dept[]>([]);
 const selectedDeptKeys = ref<number[]>([]);
+
+const userStore = useUserStore();
+const currentOrgId = computed(() => userStore.currentOrg?.id);
 
 const columns = [
   { title: '头像', key: 'avatar', width: 60, align: 'center' },
@@ -564,7 +569,7 @@ onMounted(() => {
 <style scoped>
 .sys-user-container {
   flex: 1;
-  padding: 16px;
+  padding: 10px;
 }
 .dept-card {
   height: 100%;

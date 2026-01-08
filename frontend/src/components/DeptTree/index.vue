@@ -10,6 +10,7 @@
           :tree-data="treeData"
           :field-names="{ children: 'children', title: 'name', key: 'id' }"
           :default-expand-all="defaultExpandAll"
+          v-model:expandedKeys="expandedKeys"
           v-model:selectedKeys="internalSelectedKeys"
           @select="onSelect"
           block-node
@@ -67,6 +68,7 @@ const emit = defineEmits(['update:selectedKeys', 'select', 'loaded']);
 const loading = ref(false);
 const treeData = ref<Dept[]>([]);
 const internalSelectedKeys = ref<number[]>([]);
+const expandedKeys = ref<number[]>([]);
 const searchValue = ref('');
 
 watch(() => props.selectedKeys, (val) => {
@@ -86,6 +88,10 @@ const loadData = async () => {
   try {
     const res = await getDeptTree(props.rootId);
     treeData.value = res || [];
+    // 默认展开一级
+    if (treeData.value.length > 0) {
+      expandedKeys.value = treeData.value.map(item => item.id);
+    }
     emit('loaded', treeData.value);
   } catch (error) {
     console.error(error);

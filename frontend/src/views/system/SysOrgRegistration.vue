@@ -323,7 +323,7 @@ onMounted(() => {
 
 <style scoped>
 .sys-org-registration-container {
-  padding: 16px;
+  padding: 10px;
   height: 100%;
 }
 .mt-4 {

@@ -9,7 +9,7 @@
               <ApartmentOutlined /> 组织结构
             </span>
           </template>
-          <DeptTree v-model:selectedKeys="selectedDeptKeys" @loaded="(data) => depts = data" @select="onSelectDept" />
+          <DeptTree v-model:selectedKeys="selectedDeptKeys" :root-id="currentOrgId" @loaded="(data) => depts = data" @select="onSelectDept" />
         </a-card>
       </template>
 
@@ -120,6 +120,7 @@ const selectedDeptKeys = ref<number[]>([]);
 
 const userStore = useUserStore();
 const isAdmin = computed(() => userStore.isAdmin);
+const currentOrgId = computed(() => userStore.currentOrg?.id);
 
 const columns = computed(() => {
   const base = [
@@ -359,7 +360,7 @@ onMounted(() => {
 <style scoped>
 .sys-role-container {
   flex: 1;
-  padding: 16px;
+  padding: 10px;
 }
 
 .dept-card {

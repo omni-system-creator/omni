@@ -493,7 +493,7 @@ onMounted(() => {
 
 <style scoped>
 .sys-permission-container {
-  padding: 24px;
+  padding: 10px;
 }
 .header-actions {
   margin-bottom: 16px;
