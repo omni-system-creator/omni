@@ -397,7 +397,7 @@ const currentStepIndex = computed(() => {
 });
 
 // --- Methods ---
-const onSelectOrder = (keys: string[], info: any) => {
+const onSelectOrder = (keys: string[], _info: any) => {
   if (keys.length > 0) {
     const key = keys[0];
     const order = mockOrders.find(o => o.key === key);
