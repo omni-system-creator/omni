@@ -87,7 +87,28 @@ const loadData = async () => {
   loading.value = true;
   try {
     const res = await getDeptTree(props.rootId);
-    treeData.value = res || [];
+    let data = res || [];
+    
+    // Client-side filter fallback if rootId is provided
+    if (props.rootId) {
+      const findNode = (nodes: Dept[]): Dept | null => {
+        for (const node of nodes) {
+          if (node.id === props.rootId) return node;
+          if (node.children) {
+            const found = findNode(node.children);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      const target = findNode(data);
+      if (target) {
+        data = [target];
+      }
+    }
+
+    treeData.value = data;
     // 默认展开一级
     if (treeData.value.length > 0) {
       expandedKeys.value = treeData.value.map(item => item.id);

@@ -8,6 +8,7 @@
           </template>
           <DeptTree
             v-model:selectedKeys="selectedKeys"
+            :root-id="userStore.currentOrg?.id"
             @loaded="onDeptLoaded"
             @select="handleSelect"
           />
@@ -124,7 +125,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { 
   AppstoreOutlined, 
   BarsOutlined, 
@@ -167,6 +168,14 @@ watch(viewMode, (newVal) => {
 // Helper functions
 const onDeptLoaded = (data: Dept[]) => {
   deptTree.value = data;
+  // Auto-select root node if nothing is selected
+  if (data.length > 0 && selectedKeys.value.length === 0) {
+    const root = data[0];
+    if (root) {
+      selectedKeys.value = [root.id];
+      currentDept.value = root;
+    }
+  }
 };
 
 const getDisplayName = (member: UserListDto) => {
@@ -211,7 +220,13 @@ const columns = [
 ];
 
 // Methods
-const handleSelect = (keys: number[]) => {
+const handleSelect = (keys: number[], _e: any) => {
+  // Prevent deselection: if keys is empty but we have a currently selected node, restore it
+  if (keys.length === 0 && currentDept.value) {
+    selectedKeys.value = [currentDept.value.id];
+    return;
+  }
+
   if (keys.length > 0 && keys[0]) {
     const findDept = (nodes: Dept[], key: number): Dept | null => {
       for (const node of nodes) {
@@ -259,6 +274,23 @@ const getAllDeptIds = (deptId: number): number[] => {
 const filteredMembers = computed(() => {
   let data = allMembers.value;
 
+  // Filter by current organization scope (based on loaded deptTree)
+  if (deptTree.value.length > 0) {
+    const validDeptIds = new Set<number>();
+    const collectAllIds = (nodes: Dept[]) => {
+      for (const node of nodes) {
+        validDeptIds.add(node.id);
+        if (node.children) {
+          collectAllIds(node.children);
+        }
+      }
+    };
+    collectAllIds(deptTree.value);
+    
+    // Only show members who belong to a department in the current organization tree
+    data = data.filter(m => m.dept && validDeptIds.has(m.dept.id));
+  }
+
   // Filter by department
   if (selectedKeys.value.length > 0 && selectedKeys.value[0]) {
     const selectedId = selectedKeys.value[0];
@@ -293,8 +325,10 @@ const fetchData = async () => {
   }
 };
 
-onMounted(() => {
-  fetchData();
+watch(selectedKeys, (val) => {
+  if (val.length > 0) {
+    fetchData();
+  }
 });
 
 </script>

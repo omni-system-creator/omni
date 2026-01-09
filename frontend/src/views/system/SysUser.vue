@@ -9,7 +9,8 @@
           <DeptTree
             v-model:selectedKeys="selectedDeptKeys"
             :root-id="currentOrgId"
-            @loaded="(data) => deptTreeData = data"
+            @loaded="onDeptLoaded"
+            @select="handleSelect"
           />
         </a-card>
       </template>
@@ -231,7 +232,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed, reactive } from 'vue';
+import { ref, onMounted, computed, reactive, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
 import { getUserList, createUser, updateUser, deleteUser, resetUserPassword, type UserListDto } from '@/api/user';
@@ -559,8 +560,40 @@ const handleSearch = () => {
   // 搜索逻辑已在 computed 中实现
 };
 
+const onDeptLoaded = (data: Dept[]) => {
+  deptTreeData.value = data;
+  // Auto-select root node if nothing is selected
+  if (data.length > 0 && selectedDeptKeys.value.length === 0) {
+    const root = data[0];
+    if (root) {
+      selectedDeptKeys.value = [root.id];
+    }
+  }
+};
+
+const handleSelect = (keys: number[], _e: any) => {
+  // Prevent deselection: if keys is empty but we have a currently selected node, restore it
+  if (keys.length === 0 && selectedDeptKeys.value.length > 0) {
+     // Force update trigger if needed, though v-model should handle it,
+     // but sometimes direct mutation is safer for "prevent" logic
+     const current = selectedDeptKeys.value[0];
+     if (current !== undefined) {
+         // Use setTimeout to ensure the update happens after the current event loop
+         setTimeout(() => {
+             selectedDeptKeys.value = [current];
+         }, 0);
+     }
+  }
+};
+
+watch(selectedDeptKeys, (val) => {
+  if (val.length > 0) {
+    loadData();
+  }
+});
+
 onMounted(() => {
-  loadData();
+  // loadData(); // Deferred to watch(selectedDeptKeys)
   loadRoles();
   loadPosts();
 });
