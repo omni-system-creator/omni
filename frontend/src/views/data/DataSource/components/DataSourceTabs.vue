@@ -200,22 +200,26 @@ const openTableTab = (record: any, parentNode: any) => {
   openTab(node);
 };
 
-const onEdit = (targetKey: string | MouseEvent, action: 'add' | 'remove') => {
-  if (action === 'remove') {
-    const targetIndex = panes.value.findIndex(pane => pane.key === targetKey);
-    if (targetIndex >= 0) {
-      panes.value.splice(targetIndex, 1);
-      if (activeKey.value === targetKey) {
-        if (panes.value.length > 0) {
-          const nextPane = panes.value[Math.min(targetIndex, panes.value.length - 1)];
-          if (nextPane) {
-            activeKey.value = nextPane.key;
-          }
-        } else {
-          activeKey.value = '';
-        }
-      }
+const removeTab = (targetKey: string) => {
+  let lastIndex = -1;
+  panes.value.forEach((pane, i) => {
+    if (pane.key === targetKey) {
+      lastIndex = i - 1;
     }
+  });
+  panes.value = panes.value.filter(pane => pane.key !== targetKey);
+  if (panes.value.length && activeKey.value === targetKey) {
+    if (lastIndex >= 0) {
+      activeKey.value = panes.value[lastIndex]!.key;
+    } else {
+      activeKey.value = panes.value[0]!.key;
+    }
+  }
+};
+
+const onEdit = (targetKey: any, action: string) => {
+  if (action === 'remove') {
+    removeTab(targetKey as string);
   }
 };
 

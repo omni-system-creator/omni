@@ -69,7 +69,7 @@ const getUsageStatus = (usage: number) => {
   return 'success';
 };
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '编号', dataIndex: 'code', key: 'code' },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '所属库房', dataIndex: 'room', key: 'room' },

@@ -44,11 +44,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { PlusOutlined } from '@ant-design/icons-vue';
-
+import { PlusOutlined } from '@ant-design/icons-vue'
 const activeTab = ref('info');
 
-const warehouseColumns = [
+const warehouseColumns: ColumnType[] = [
   { title: '仓库编号', dataIndex: 'code', key: 'code' },
   { title: '仓库名称', dataIndex: 'name', key: 'name' },
   { title: '类型', dataIndex: 'type', key: 'type' },

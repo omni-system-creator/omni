@@ -287,7 +287,7 @@
                                   <span>实际: ¥12,450</span>
                                   <span class="standard">标准: ¥12,300</span>
                                </div>
-                               <a-progress :percent="101.2" status="exception" :show-info="false" stroke-width="6" />
+                               <a-progress :percent="101.2" status="exception" :show-info="false" :stroke-width="6" />
                             </div>
                          </div>
                        </div>
@@ -306,6 +306,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+import type { TreeProps } from 'ant-design-vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
 import { 
   ProfileOutlined, 
@@ -451,7 +452,7 @@ watch(currentBatchId, (newVal) => {
   }
 });
 
-const onSelectBomNode = (keys: string[], _info: any) => {
+const onSelectBomNode: TreeProps['onSelect'] = (keys, _info) => {
   if (keys.length > 0 && currentBatch.value?.bomTree) {
     const findNode = (nodes: BomNode[], key: string): BomNode | undefined => {
       for (const node of nodes) {
@@ -463,7 +464,7 @@ const onSelectBomNode = (keys: string[], _info: any) => {
       }
       return undefined;
     };
-    const key = keys[0];
+    const key = keys[0] as string;
     if (key) {
       const node = findNode(currentBatch.value.bomTree, key);
       if (node) {
@@ -1154,9 +1155,9 @@ const currentStepActiveIndex = computed(() => {
 });
 
 // --- Methods ---
-const onSelectOrder = (keys: string[], _info: any) => {
+const onSelectOrder: TreeProps['onSelect'] = (keys, _info) => {
   if (keys.length > 0) {
-    const key = keys[0];
+    const key = keys[0] as string;
     const order = mockOrders.find(o => o.key === key);
     if (order) {
       currentOrder.value = order;

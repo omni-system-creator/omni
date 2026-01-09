@@ -61,9 +61,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import type { TreeProps } from 'ant-design-vue';
+import type { Key } from 'ant-design-vue/es/table/interface';
 import SplitLayout from '@/components/SplitLayout/index.vue';
 
-const selectedKeys = ref(['PRD-2024001']);
+const selectedKeys = ref<Key[]>(['PRD-2024001']);
 
 const treeData = [
   {
@@ -95,7 +97,7 @@ const treeData = [
 
 const defaultExpandedKeys = treeData.map(n => n.key);
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '物料编码', dataIndex: 'key', key: 'key' },
   { title: '物料名称', dataIndex: 'title', key: 'title' },
   { title: '类型', dataIndex: 'type', key: 'type' },
@@ -135,7 +137,7 @@ const currentNodeChildren = computed(() => {
   }));
 });
 
-const onSelect = (keys: string[]) => {
+const onSelect: TreeProps['onSelect'] = (keys, _info) => {
   if (keys.length > 0) {
     selectedKeys.value = keys;
   }

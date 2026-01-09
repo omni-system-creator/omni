@@ -81,7 +81,7 @@ const productColumns = [
   { title: '环比增长', dataIndex: 'growth', key: 'growth', align: 'right' },
   { title: '平均客单价 (万)', dataIndex: 'avgPrice', key: 'avgPrice', align: 'right' },
   { title: '营收贡献度', dataIndex: 'contribution', key: 'contribution' }
-];
+] as any[];
 
 const productData = [
   { key: 1, name: 'OMS 标准版 SaaS', amount: 450, growth: 15.2, avgPrice: 2.5, contribution: 35 },

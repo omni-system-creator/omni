@@ -6,7 +6,7 @@
     <template #overlay>
       <a-menu>
         <a-menu-item v-for="option in statusOptions" :key="option.value" @click="handleStatusChange(option.value)">
-          <a-badge :status="option.color" :text="option.label" />
+          <a-badge :status="option.color as any" :text="option.label" />
           <DynamicIcon v-if="userStatus === option.value" icon="ant-design:check-outlined" style="margin-left: 8px; font-size: 12px;" />
         </a-menu-item>
       </a-menu>

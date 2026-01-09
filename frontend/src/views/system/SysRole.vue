@@ -46,10 +46,10 @@
 
               <template v-else-if="column.key === 'action'">
                 <a-space divider type="vertical">
-                  <a @click="handleEdit(record)">编辑</a>
-                  <a @click="handlePermission(record)">分配权限</a>
+                  <a @click="handleEdit(record as RoleDto)">编辑</a>
+                  <a @click="handlePermission(record as RoleDto)">分配权限</a>
                   <a-popconfirm title="确定要删除该角色吗？此操作不可恢复" ok-text="删除" cancel-text="取消" ok-type="danger"
-                    @confirm="handleDelete(record)" v-if="!record.isSystem">
+                    @confirm="handleDelete(record as RoleDto)" v-if="!record.isSystem">
                     <a class="text-danger">删除</a>
                   </a-popconfirm>
                 </a-space>
@@ -90,7 +90,7 @@
       <a-spin :spinning="permLoading">
         <div style="max-height: 500px; overflow-y: auto;">
           <a-tree v-if="permissionTree.length > 0" v-model:checkedKeys="checkedKeys" checkable :check-strictly="true"
-            :tree-data="permissionTree" :field-names="{ children: 'children', title: 'name', key: 'id' }"
+            :tree-data="(permissionTree as unknown as TreeProps['treeData'])" :field-names="{ children: 'children', title: 'name', key: 'id' }"
             defaultExpandAll />
         </div>
       </a-spin>
@@ -101,6 +101,8 @@
 <script lang="ts" setup>
 import { ref, onMounted, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import type { TreeProps } from 'ant-design-vue/es/tree';
 import { PlusOutlined, ApartmentOutlined } from '@ant-design/icons-vue';
 import {
   getRoleList, createRole, updateRole, deleteRole,
@@ -123,14 +125,14 @@ const isAdmin = computed(() => userStore.isAdmin);
 const currentOrgId = computed(() => userStore.currentOrg?.id);
 
 const columns = computed(() => {
-  const base = [
+  const base: ColumnType[] = [
     { title: '角色名称', dataIndex: 'name', key: 'name' },
     { title: '角色编码', dataIndex: 'code', key: 'code' },
     { title: '类型', key: 'isSystem', width: 100 },
     { title: '描述', dataIndex: 'description', key: 'description' },
     { title: '创建时间', key: 'createdAt', width: 180 },
     { title: '操作', key: 'action', width: 250, align: 'center' },
-  ] as any[];
+  ];
   if (isAdmin.value) {
     base.splice(2, 0, { title: '根组织', key: 'rootDept', width: 160 });
   }
@@ -211,7 +213,7 @@ const roleOptions = computed(() => {
     .map(r => ({ label: r.name, value: r.id }));
 });
 
-const rules = {
+const rules: Record<string, Rule[]> = {
   name: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入角色编码', trigger: 'blur' }, { validator: (_r: any, v: string) => v && v.indexOf('-') === -1 ? Promise.resolve() : Promise.reject('角色编码不能包含连字符(-)'), trigger: 'blur' }],
 };

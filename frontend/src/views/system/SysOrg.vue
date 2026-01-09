@@ -45,7 +45,7 @@
     <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleModalOk" :confirmLoading="confirmLoading">
       <a-form ref="formRef" :model="formState" :rules="rules" layout="vertical">
         <a-form-item label="上级" name="parentId">
-          <a-tree-select v-model:value="formState.parentId" :tree-data="deptTreeSelectData" placeholder="请选择上级"
+          <a-tree-select v-model:value="formState.parentId" :tree-data="(deptTreeSelectData as TreeSelectProps['treeData'])" placeholder="请选择上级"
             allow-clear tree-default-expand-all disabled>
             <template #title="{ label, type }">
               <span v-if="type === DeptType.Group">
@@ -97,6 +97,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, reactive, onUnmounted, createVNode, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
   BankOutlined, ApartmentOutlined, ClusterOutlined,
@@ -1017,7 +1018,7 @@ const validateCode = async (_rule: any, value: string) => {
   return Promise.resolve();
 };
 
-const rules = {
+const rules: Record<string, Rule[]> = {
   name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
   code: [{ required: true, validator: validateCode, trigger: 'blur' }]
 };

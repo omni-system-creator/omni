@@ -45,7 +45,7 @@
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
-            <a @click="handleDetail(record)">详情</a>
+            <a @click="handleDetail(record as SalesRegistrationDto)">详情</a>
             <a-divider type="vertical" />
             <a-dropdown>
               <a class="ant-dropdown-link" @click.prevent>
@@ -53,19 +53,19 @@
               </a>
               <template #overlay>
                 <a-menu>
-                  <a-menu-item key="edit" @click="handleEdit(record)">
+                  <a-menu-item key="edit" @click="handleEdit(record as SalesRegistrationDto)">
                     编辑
                   </a-menu-item>
                   
                   <template v-if="record.status === 'pending'">
                     <a-menu-divider />
                     <a-menu-item key="approve">
-                      <a-popconfirm title="确定通过这条报备吗？" @confirm="handleStatusChange(record, 'approved')">
+                      <a-popconfirm title="确定通过这条报备吗？" @confirm="handleStatusChange(record as SalesRegistrationDto, 'approved')">
                         <span style="color: #52c41a">通过</span>
                       </a-popconfirm>
                     </a-menu-item>
                     <a-menu-item key="reject">
-                      <a-popconfirm title="确定驳回这条报备吗？" @confirm="handleStatusChange(record, 'rejected')">
+                      <a-popconfirm title="确定驳回这条报备吗？" @confirm="handleStatusChange(record as SalesRegistrationDto, 'rejected')">
                         <span style="color: #ff4d4f">驳回</span>
                       </a-popconfirm>
                     </a-menu-item>
@@ -86,7 +86,7 @@
     </a-table>
 
     <!-- Create/Edit Modal -->
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" @ok="handleModalOk">
+    <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleModalOk">
       <a-form ref="formRef" :model="formData" :rules="rules" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
         <div style="text-align: right; margin-bottom: 16px; padding-right: 48px;">
           <a-button type="dashed" size="small" @click="handleAiFill" :loading="aiLoading">
@@ -124,7 +124,7 @@
       </a-form>
     </a-modal>
     <!-- Detail Modal -->
-    <a-modal v-model:visible="detailVisible" title="报备详情" :footer="null" width="700px">
+    <a-modal v-model:open="detailVisible" title="报备详情" :footer="null" width="700px">
       <a-descriptions bordered :column="2">
         <a-descriptions-item label="项目名称" :span="2">{{ currentDetail?.projectName }}</a-descriptions-item>
         <a-descriptions-item label="客户名称">{{ currentDetail?.customerName }}</a-descriptions-item>
@@ -150,6 +150,7 @@ import { ref, onMounted, reactive } from 'vue';
 import { PlusOutlined, ThunderboltOutlined, MoreOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
 import dayjs from 'dayjs';
 import { 
   getRegistrations, 
@@ -178,7 +179,7 @@ const statusOptions = [
   { label: '已驳回', value: 'rejected' },
 ];
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '项目名称', dataIndex: 'projectName', key: 'projectName' },
   { title: '客户名称', dataIndex: 'customerName', key: 'customerName' },
   { title: '联系人', dataIndex: 'contact', key: 'contact' },
@@ -210,7 +211,7 @@ const formData = reactive<Partial<CreateRegistrationDto>>({
   remarks: ''
 });
 
-const rules = {
+const rules: Record<string, Rule[]> = {
   projectName: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
   customerName: [{ required: true, message: '请输入客户名称', trigger: 'blur' }],
   amount: [{ required: true, message: '请输入预计金额', trigger: 'change' }],

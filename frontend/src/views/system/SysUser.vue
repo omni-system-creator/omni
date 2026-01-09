@@ -76,14 +76,14 @@
 
               <template v-else-if="column.key === 'action'">
                 <a-space divider type="vertical">
-                  <a @click="handleEdit(record)">编辑</a>
-                  <a @click="handleResetPwd(record)">重置密码</a>
+                  <a @click="handleEdit(record as UserListDto)">编辑</a>
+                  <a @click="handleResetPwd(record as UserListDto)">重置密码</a>
                   <a-popconfirm
                     title="确定要删除该用户吗？此操作不可恢复"
                     ok-text="删除"
                     cancel-text="取消"
                     ok-type="danger"
-                    @confirm="handleDelete(record)"
+                    @confirm="handleDelete(record as UserListDto)"
                     v-if="record.username !== 'admin'"
                   >
                     <a class="text-danger">删除</a>
@@ -136,7 +136,7 @@
             <a-form-item label="所属部门" name="deptId">
               <a-tree-select
                 v-model:value="formState.deptId"
-                :tree-data="deptTreeData"
+                :tree-data="(deptTreeData as TreeSelectProps['treeData'])"
                 :field-names="{ label: 'name', value: 'id', children: 'children' }"
                 placeholder="请选择部门"
                 allow-clear
@@ -178,7 +178,7 @@
           <div v-for="(item, index) in formState.postRelations" :key="index" style="display: flex; margin-bottom: 8px;">
             <a-tree-select
               v-model:value="item.deptId"
-              :tree-data="deptTreeData"
+              :tree-data="(deptTreeData as TreeSelectProps['treeData'])"
               :field-names="{ label: 'name', value: 'id', children: 'children' }"
               placeholder="选择部门"
               style="width: 200px; margin-right: 8px;"
@@ -234,6 +234,8 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed, reactive, watch } from 'vue';
 import { message } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import type { TreeSelectProps } from 'ant-design-vue/es/tree-select';
 import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
 import { getUserList, createUser, updateUser, deleteUser, resetUserPassword, type UserListDto } from '@/api/user';
 import { getRoleList, type RoleDto } from '@/api/role';
@@ -256,8 +258,8 @@ const selectedDeptKeys = ref<number[]>([]);
 const userStore = useUserStore();
 const currentOrgId = computed(() => userStore.currentOrg?.id);
 
-const columns = [
-  { title: '头像', key: 'avatar', width: 60, align: 'center' },
+const columns: ColumnType[] = [
+  { title: '头像', key: 'avatar', width: 60, align: 'center' as const },
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '昵称', dataIndex: 'nickname', key: 'nickname' },
   { title: '部门', key: 'dept' },
@@ -265,7 +267,7 @@ const columns = [
   { title: '岗位', key: 'posts' },
   { title: '状态', key: 'isActive', width: 80 },
   { title: '创建时间', key: 'createdAt', width: 160 },
-  { title: '操作', key: 'action', width: 180, align: 'center' },
+  { title: '操作', key: 'action', width: 180, align: 'center' as const },
 ];
 
 const filteredUsers = computed(() => {
@@ -375,7 +377,7 @@ const formState = reactive({
   postRelations: [] as { deptId: number | undefined, postId: number | undefined }[]
 });
 
-const rules = {
+const rules: Record<string, Rule[]> = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, message: '密码至少6位', trigger: 'blur' }],
 };
@@ -527,7 +529,7 @@ const validateConfirmPassword = async (_rule: any, value: string) => {
   }
 };
 
-const resetPwdRules = {
+const resetPwdRules: Record<string, Rule[]> = {
   newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }, { min: 6, message: '密码至少6位', trigger: 'blur' }],
   confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }]
 };

@@ -2,7 +2,7 @@
   <a-form
     ref="formRef"
     :model="formState"
-    :rules="rules"
+    :rules="rules as any"
     layout="vertical"
   >
     <!-- Section 1: Basic Info -->
@@ -150,7 +150,7 @@ const formState = reactive({
   amount: 0,
   currency: 'CNY',
   paymentMethod: 'bank',
-  period: [],
+  period: [] as any,
   taxId: '',
   description: '',
   fileList: [] as any[],

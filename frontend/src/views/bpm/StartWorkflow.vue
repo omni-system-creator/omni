@@ -63,7 +63,7 @@
           </a-radio-group>
         </a-form-item>
         <a-form-item label="申请原因/备注">
-          <a-textarea v-model:value="formData.reason" rows="4" />
+          <a-textarea v-model:value="formData.reason" :rows="4" />
         </a-form-item>
       </a-form>
     </a-modal>

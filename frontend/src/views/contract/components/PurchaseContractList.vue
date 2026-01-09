@@ -4,7 +4,7 @@
       :columns="columns"
       :data-source="data"
       :pagination="pagination"
-      :scroll="{ x: 'max-content', y: true }"
+      :scroll="{ x: 'max-content', y: 600 }"
       @change="handleTableChange"
     >
       <template #customFilterDropdown="{ setSelectedKeys, selectedKeys, confirm, clearFilters, column }">
@@ -74,7 +74,7 @@
               <template #icon><MoreOutlined style="font-size: 16px; font-weight: bold; transform: rotate(90deg);" /></template>
             </a-button>
             <template #overlay>
-                <a-menu @click="(e: any) => handleMenuClick(e.key as string, record)">
+                <a-menu @click="(e: any) => handleMenuClick(e.key as string, record as PurchaseContract)">
                   <a-menu-item key="view">查看</a-menu-item>
                   <a-menu-item key="edit">变更</a-menu-item>
                 <a-menu-item key="payment">付款</a-menu-item>
@@ -161,13 +161,13 @@ const pagination = reactive({
 });
 
 // Columns
-const columns = [
+const columns: ColumnType<PurchaseContract>[] = [
   {
     title: '序号',
     key: 'index',
     width: 60,
-    align: 'center',
-    fixed: 'left',
+    align: 'center' as const,
+    fixed: 'left' as const,
     customRender: ({ index }: { index: number }) => index + 1,
   },
   {
@@ -175,7 +175,7 @@ const columns = [
     dataIndex: 'contractNo',
     key: 'contractNo',
     customFilterDropdown: true,
-    onFilter: (value: string, record: PurchaseContract) => record.contractNo.toString().toLowerCase().includes(value.toLowerCase()),
+    onFilter: (value: any, record: PurchaseContract) => record.contractNo.toString().toLowerCase().includes(String(value).toLowerCase()),
     sorter: (a: PurchaseContract, b: PurchaseContract) => a.contractNo.localeCompare(b.contractNo),
     width: 150,
   },
@@ -184,7 +184,7 @@ const columns = [
     dataIndex: 'contractName',
     key: 'contractName',
     customFilterDropdown: true,
-    onFilter: (value: string, record: PurchaseContract) => record.contractName.toString().toLowerCase().includes(value.toLowerCase()),
+    onFilter: (value: any, record: PurchaseContract) => record.contractName.toString().toLowerCase().includes(String(value).toLowerCase()),
     sorter: (a: PurchaseContract, b: PurchaseContract) => a.contractName.localeCompare(b.contractName),
     width: 200,
   },
@@ -193,7 +193,7 @@ const columns = [
     dataIndex: 'supplierName',
     key: 'supplierName',
     customFilterDropdown: true,
-    onFilter: (value: string, record: PurchaseContract) => record.supplierName.toString().toLowerCase().includes(value.toLowerCase()),
+    onFilter: (value: any, record: PurchaseContract) => record.supplierName.toString().toLowerCase().includes(String(value).toLowerCase()),
     sorter: (a: PurchaseContract, b: PurchaseContract) => a.supplierName.localeCompare(b.supplierName),
     width: 200,
   },
@@ -203,7 +203,7 @@ const columns = [
     key: 'signDate',
     sorter: (a: PurchaseContract, b: PurchaseContract) => new Date(a.signDate).getTime() - new Date(b.signDate).getTime(),
     customFilterDropdown: true,
-    onFilter: (value: string[], record: PurchaseContract) => {
+    onFilter: (value: any, record: PurchaseContract) => {
       const date = new Date(record.signDate).getTime();
       const [start, end] = value;
       if (start && date < new Date(start).getTime()) return false;
@@ -219,7 +219,7 @@ const columns = [
     align: 'right',
     sorter: (a: PurchaseContract, b: PurchaseContract) => parseAmount(a.totalAmount) - parseAmount(b.totalAmount),
     customFilterDropdown: true,
-    onFilter: (value: number[], record: PurchaseContract) => {
+    onFilter: (value: any, record: PurchaseContract) => {
       const amount = parseAmount(record.totalAmount);
       const [min, max] = value;
       if (min !== undefined && min !== null && amount < min) return false;
@@ -235,7 +235,7 @@ const columns = [
     align: 'right',
     sorter: (a: PurchaseContract, b: PurchaseContract) => parseAmount(a.paidAmount) - parseAmount(b.paidAmount),
     customFilterDropdown: true,
-    onFilter: (value: number[], record: PurchaseContract) => {
+    onFilter: (value: any, record: PurchaseContract) => {
       const amount = parseAmount(record.paidAmount);
       const [min, max] = value;
       if (min !== undefined && min !== null && amount < min) return false;
@@ -254,7 +254,7 @@ const columns = [
       return dateA - dateB;
     },
     customFilterDropdown: true,
-    onFilter: (value: string[], record: PurchaseContract) => {
+    onFilter: (value: any, record: PurchaseContract) => {
       if (!record.latestPaymentDate) return false;
       const date = new Date(record.latestPaymentDate).getTime();
       const [start, end] = value;
@@ -273,7 +273,7 @@ const columns = [
       { text: '已完成', value: 'completed' },
       { text: '异常', value: 'abnormal' },
     ],
-    onFilter: (value: string, record: PurchaseContract) => record.status.indexOf(value) === 0,
+    onFilter: (value: any, record: PurchaseContract) => record.status.indexOf(String(value)) === 0,
     width: 100,
   },
   {

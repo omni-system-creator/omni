@@ -54,7 +54,7 @@
     <a-row :gutter="16" style="margin-top: 16px;">
       <a-col :span="14">
         <a-card title="重点跟进商机 (Hot Leads)" :bordered="false">
-          <a-table :dataSource="leads" :columns="leadColumns" pagination="false" size="small">
+          <a-table :dataSource="leads" :columns="leadColumns" :pagination="false" size="small">
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'probability'">
                 <a-progress :percent="record.probability" size="small" :status="record.probability > 70 ? 'success' : 'active'" />

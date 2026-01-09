@@ -62,7 +62,7 @@
                   <a-form-item label="所属分类" required>
                     <a-tree-select
                       v-model:value="formState.categoryId"
-                      :tree-data="treeData"
+                      :tree-data="(treeData as unknown as TreeSelectProps['treeData'])"
                       :field-names="{ children: 'children', label: 'name', value: 'id' }"
                       placeholder="请选择分类"
                       tree-default-expand-all
@@ -268,6 +268,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, reactive, onUnmounted } from 'vue';
 import { message } from 'ant-design-vue';
+import type { TreeSelectProps } from 'ant-design-vue';
 import { 
   CheckCircleOutlined, 
   BugOutlined, 

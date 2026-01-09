@@ -9,7 +9,7 @@
           <a-input v-model:value="searchForm.fileName" placeholder="请输入文件名" allow-clear />
         </a-form-item>
         <a-form-item label="时间范围">
-          <a-range-picker v-model:value="searchForm.dateRange" />
+          <a-range-picker v-model:value="searchForm.dateRange as any" />
         </a-form-item>
         <a-form-item>
           <a-button type="primary" @click="handleSearch">查询</a-button>

@@ -47,8 +47,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import type { PresetStatusColorType } from 'ant-design-vue/es/_util/colors';
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '订单号', dataIndex: 'id', key: 'id' },
   { title: '关联需求单', dataIndex: 'requestId', key: 'requestId' },
   { title: '供应商', dataIndex: 'supplier', key: 'supplier' },
@@ -70,8 +71,8 @@ const pagination = {
   showQuickJumper: true,
 };
 
-const getStatusBadge = (status: string) => {
-  const map: Record<string, string> = {
+const getStatusBadge = (status: string): PresetStatusColorType => {
+  const map: Record<string, PresetStatusColorType> = {
     created: 'default',
     shipping: 'processing',
     received: 'success',

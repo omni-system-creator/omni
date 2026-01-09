@@ -148,10 +148,10 @@ const getStatusText = (status: string) => {
 };
 
 // Data Definitions
-const planColumns = [
+const planColumns: ColumnType[] = [
   { title: '期数', dataIndex: 'phase', key: 'phase', width: 80 },
   { title: '计划付款日期', dataIndex: 'dueDate', key: 'dueDate' },
-  { title: '计划金额', dataIndex: 'amount', key: 'amount', align: 'right' },
+  { title: '计划金额', dataIndex: 'amount', key: 'amount', align: 'right' as const },
   { title: '付款条件', dataIndex: 'condition', key: 'condition' },
   { title: '状态', dataIndex: 'status', key: 'status' },
 ];
@@ -168,9 +168,9 @@ const planData = computed(() => {
   }));
 });
 
-const recordColumns = [
+const recordColumns: ColumnType[] = [
   { title: '日期', dataIndex: 'date', key: 'date' },
-  { title: '金额', dataIndex: 'amount', key: 'amount', align: 'right' },
+  { title: '金额', dataIndex: 'amount', key: 'amount', align: 'right' as const },
   { title: '方式', dataIndex: 'method', key: 'method' },
   { title: '经办人', dataIndex: 'operator', key: 'operator' },
   { title: '备注', dataIndex: 'remark', key: 'remark' },
@@ -188,10 +188,10 @@ const recordData = computed(() => {
   }));
 });
 
-const invoiceColumns = [
+const invoiceColumns: ColumnType[] = [
   { title: '发票号码', dataIndex: 'invoiceNo', key: 'invoiceNo' },
   { title: '开票日期', dataIndex: 'date', key: 'date' },
-  { title: '金额', dataIndex: 'amount', key: 'amount', align: 'right' },
+  { title: '金额', dataIndex: 'amount', key: 'amount', align: 'right' as const },
   { title: '类型', dataIndex: 'type', key: 'type' },
   { title: '状态', dataIndex: 'status', key: 'status' },
 ];
@@ -208,7 +208,7 @@ const invoiceData = computed(() => {
   }));
 });
 
-const contactColumns = [
+const contactColumns: ColumnType[] = [
   { title: '姓名', dataIndex: 'name', key: 'name' },
   { title: '角色', dataIndex: 'role', key: 'role' },
   { title: '电话', dataIndex: 'phone', key: 'phone' },

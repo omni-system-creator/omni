@@ -102,7 +102,7 @@ const searchForm = reactive({
   status: undefined
 });
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '资产名称', dataIndex: 'name', key: 'name' },
   { title: '类型', dataIndex: 'type', key: 'type', width: 120 },
   { title: '供应商/品牌', dataIndex: 'vendor', key: 'vendor', width: 150 },

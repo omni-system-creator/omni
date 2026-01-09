@@ -39,7 +39,7 @@
                 </a-select>
               </a-form-item>
               <a-form-item label="上传时间">
-                <a-range-picker v-model:value="searchForm.dateRange" />
+                <a-range-picker v-model:value="searchForm.dateRange as any" />
               </a-form-item>
               <a-form-item>
                 <a-button type="primary" @click="handleSearch">
@@ -204,7 +204,7 @@ const columns = [
   { title: '上传人', dataIndex: 'uploader', key: 'uploader', width: 100 },
   { title: '上传时间', dataIndex: 'uploadTime', key: 'uploadTime', width: 170 },
   { title: '操作', key: 'action', width: 180, fixed: 'right' }
-];
+] as any[];
 
 const data = ref([
   { 

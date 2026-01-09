@@ -17,7 +17,7 @@
       
       <a-tree
         v-if="treeData && treeData.length > 0"
-        :tree-data="treeData"
+        :tree-data="(treeData as unknown as TreeProps['treeData'])"
         :field-names="{ children: 'children', title: 'name', key: 'id' }"
         :default-expand-all="true"
         show-line

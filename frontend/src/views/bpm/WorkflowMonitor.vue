@@ -37,7 +37,7 @@
         :columns="columns" 
         :data-source="data" 
         :pagination="pagination"
-        :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
+        :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange as any }"
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">

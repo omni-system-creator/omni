@@ -95,13 +95,13 @@ watch(() => props.selectedId, (newId) => {
   }
 }, { immediate: true });
 
-const onSelect = (selectedKeys: string[]) => {
+const onSelect = (selectedKeys: any[]) => {
   if (selectedKeys.length > 0) {
     emit('select', selectedKeys[0]);
   }
 };
 
-const onExpand = (keys: string[]) => {
+const onExpand = (keys: any[]) => {
   expandedKeys.value = keys;
 };
 

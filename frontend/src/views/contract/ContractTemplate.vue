@@ -157,6 +157,7 @@ import {
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { UploadChangeParam, UploadProps } from 'ant-design-vue';
+import type { ColumnType } from 'ant-design-vue/es/table';
 import { getTemplates, createTemplate, updateTemplate, deleteTemplate } from '@/api/contract';
 import type { ContractTemplateDto, CreateContractTemplateDto } from '@/api/contract';
 
@@ -278,7 +279,7 @@ const showAddModal = () => {
   modalVisible.value = true;
 };
 
-const handleEdit = (record: TemplateItem) => {
+const handleEdit = (record: any) => {
   modalTitle.value = '编辑模板';
   formState.id = record.id;
   formState.name = record.name;
@@ -345,7 +346,7 @@ const handleModalOk = async () => {
   });
 };
 
-const handlePreview = (record: TemplateItem) => {
+const handlePreview = (record: any) => {
   previewData.value = record;
   previewVisible.value = true;
 };
@@ -404,7 +405,7 @@ const getTypeColor = (type: string | undefined) => {
 };
 
 // --- 表格配置 ---
-const columns = [
+const columns: ColumnType[] = [
   {
     title: '模板名称',
     dataIndex: 'name',

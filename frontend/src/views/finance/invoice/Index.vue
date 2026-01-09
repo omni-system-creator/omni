@@ -111,11 +111,12 @@
 import { ref, reactive } from 'vue';
 import { PlusOutlined, DownloadOutlined, ExportOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
+import type { PresetStatusColorType } from 'ant-design-vue/es/_util/colors';
 
 const queryParam = reactive({
   invoiceNo: '',
   type: undefined,
-  dateRange: []
+  dateRange: [] as any
 });
 
 const visible = ref(false);
@@ -128,14 +129,14 @@ const formState = reactive({
   remark: ''
 });
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '发票号码', dataIndex: 'invoiceNo', key: 'invoiceNo' },
   { title: '发票代码', dataIndex: 'invoiceCode', key: 'invoiceCode' },
   { title: '购方名称', dataIndex: 'buyer', key: 'buyer', width: 200 },
   { title: '类型', dataIndex: 'type', key: 'type' },
-  { title: '金额(不含税)', dataIndex: 'amount', key: 'amount', align: 'right' },
-  { title: '税额', dataIndex: 'tax', key: 'tax', align: 'right' },
-  { title: '价税合计', dataIndex: 'total', key: 'total', align: 'right' },
+  { title: '金额(不含税)', dataIndex: 'amount', key: 'amount', align: 'right' as const },
+  { title: '税额', dataIndex: 'tax', key: 'tax', align: 'right' as const },
+  { title: '价税合计', dataIndex: 'total', key: 'total', align: 'right' as const },
   { title: '开票日期', dataIndex: 'date', key: 'date' },
   { title: '状态', dataIndex: 'status', key: 'status' },
   { title: '操作', key: 'action', width: 150 }
@@ -153,7 +154,7 @@ const pagination = {
   pageSize: 10
 };
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string): PresetStatusColorType => {
   switch (status) {
     case '已开票': return 'success';
     case '草稿': return 'default';

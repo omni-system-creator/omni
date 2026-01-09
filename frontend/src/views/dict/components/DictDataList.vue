@@ -38,13 +38,13 @@
             
             <template v-else-if="column.key === 'action'">
               <a-space divider type="vertical">
-                <a @click="handleEdit(record)">编辑</a>
+                <a @click="handleEdit(record as DictDataDto)">编辑</a>
                 <a-popconfirm
                   title="确定要删除该数据吗？"
                   ok-text="删除"
                   cancel-text="取消"
                   ok-type="danger"
-                  @confirm="handleDelete(record)"
+                  @confirm="handleDelete(record as DictDataDto)"
                 >
                   <a class="text-danger">删除</a>
                 </a-popconfirm>
@@ -146,15 +146,15 @@ const formState = ref({
   remark: ''
 });
 
-const columns = [
-  { title: '#', key: 'index', width: 50, align: 'center' },
+const columns: ColumnType[] = [
+  { title: '#', key: 'index', width: 50, align: 'center' as const },
   { title: '标签', dataIndex: 'label', key: 'label' },
   { title: '键值', dataIndex: 'value', key: 'value' },
   { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true },
   { title: '排序', dataIndex: 'sort', key: 'sort', width: 80 },
   { title: '默认', key: 'isDefault', width: 80 },
   { title: '状态', key: 'status', width: 80 },
-  { title: '操作', key: 'action', width: 150, align: 'center' }
+  { title: '操作', key: 'action', width: 150, align: 'center' as const }
 ];
 
 watch(() => props.selectedType, (newVal) => {

@@ -17,7 +17,7 @@
         theme="dark"
         mode="inline"
         :open-keys="openKeys"
-        @openChange="onOpenChange"
+        @openChange="onOpenChange as any"
       >
         <template v-for="item in menuData" :key="item.key">
           <!-- If item has children, render SubMenu -->

@@ -8,7 +8,7 @@
           </div>
           <div class="scroll-panel">
             <a-tree
-              :tree-data="treeData"
+              :tree-data="(treeData as unknown as TreeProps['treeData'])"
               :default-expanded-keys="defaultExpandedKeys"
               :selected-keys="selectedKeys"
               @select="onSelect"
@@ -61,9 +61,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import type { TreeProps } from 'ant-design-vue';
+import type { Key } from 'ant-design-vue/es/table/interface';
 import SplitLayout from '@/components/SplitLayout/index.vue';
 
-const selectedKeys = ref(['0-0']);
+const selectedKeys = ref<Key[]>(['0-0']);
 
 const treeData = [
   {
@@ -286,7 +288,7 @@ const treeData = [
 
 const defaultExpandedKeys = treeData.map(node => node.key);
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '物料编码', dataIndex: 'key', key: 'key' },
   { title: '物料名称', dataIndex: 'title', key: 'title' },
   { title: '规格型号', dataIndex: 'spec', key: 'spec' },
@@ -326,7 +328,7 @@ const currentNodeChildren = computed(() => {
   }));
 });
 
-const onSelect = (keys: string[]) => {
+const onSelect: TreeProps['onSelect'] = (keys, _info) => {
   if (keys.length > 0) {
     selectedKeys.value = keys;
   }

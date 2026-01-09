@@ -20,7 +20,7 @@
           <div class="tree-container">
               <a-tree
                 v-if="documents.length"
-                :tree-data="documents"
+                :tree-data="documents as any"
                 :field-names="{ children: 'children', title: 'title', key: 'id' }"
                 block-node
                 @select="onSelect"
@@ -202,7 +202,7 @@ const loadData = async () => {
     }
 };
 
-const onSelect = (selectedKeys: string[], info: any) => {
+const onSelect = (selectedKeys: (string | number)[], info: any) => {
     if (selectedKeys.length && info.node) {
         // Prefer dataRef if available (standard in AntD Vue for treeData)
         selectedFile.value = info.node.dataRef || info.node;

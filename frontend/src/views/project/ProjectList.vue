@@ -44,11 +44,11 @@
              <a-progress :percent="record.progress" :status="record.status === 'paused' ? 'exception' : (record.progress === 100 ? 'success' : 'active')" />
           </template>
           <template v-if="column.key === 'action'">
-            <a @click="viewDetail(record)">详情</a>
+            <a @click="viewDetail(record as ProjectListItem)">详情</a>
             <a-divider type="vertical" />
-            <a @click="editProject(record)">编辑</a>
+            <a @click="editProject(record as ProjectListItem)">编辑</a>
             <a-divider type="vertical" />
-            <a @click="handleClone(record)">克隆</a>
+            <a @click="handleClone(record as ProjectListItem)">克隆</a>
           </template>
         </template>
       </a-table>
@@ -84,7 +84,7 @@ const queryParams = reactive({
 const activeTab = ref('all');
 const loading = ref(false);
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '项目名称', dataIndex: 'name', key: 'name' },
   { title: '项目编号', dataIndex: 'code', key: 'code' },
   { title: '类型', dataIndex: 'type', key: 'type' },
@@ -149,8 +149,8 @@ const resetSearch = () => {
   handleSearch();
 };
 
-const handleTabChange = (key: string) => {
-  message.info(`切换到：${key}`);
+const handleTabChange = (activeKey: any) => {
+  message.info(`切换到：${activeKey}`);
   handleSearch();
 };
 

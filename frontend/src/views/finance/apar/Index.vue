@@ -131,12 +131,12 @@ const queryParam = reactive({
   status: '0'
 });
 
-const arColumns = [
+const arColumns: ColumnType[] = [
   { title: '单据编号', dataIndex: 'no', key: 'no' },
   { title: '客户名称', dataIndex: 'customer', key: 'customer' },
-  { title: '应收金额', dataIndex: 'amount', key: 'amount', align: 'right' },
+  { title: '应收金额', dataIndex: 'amount', key: 'amount', align: 'right' as const },
   { title: '应收日期', dataIndex: 'dueDate', key: 'dueDate' },
-  { title: '逾期天数', dataIndex: 'overdueDays', key: 'overdueDays', align: 'center' },
+  { title: '逾期天数', dataIndex: 'overdueDays', key: 'overdueDays', align: 'center' as const },
   { title: '状态', dataIndex: 'status', key: 'status' },
   { title: '操作', key: 'action', width: 200 }
 ];
@@ -147,10 +147,10 @@ const arData = ref([
   { id: 3, no: 'AR20241020005', customer: '广州电子集团', amount: 85000, dueDate: '2024-10-30', overdueDays: 0, status: '已完成' },
 ]);
 
-const apColumns = [
+const apColumns: ColumnType[] = [
   { title: '单据编号', dataIndex: 'no', key: 'no' },
   { title: '供应商名称', dataIndex: 'supplier', key: 'supplier' },
-  { title: '应付金额', dataIndex: 'amount', key: 'amount', align: 'right' },
+  { title: '应付金额', dataIndex: 'amount', key: 'amount', align: 'right' as const },
   { title: '应付日期', dataIndex: 'dueDate', key: 'dueDate' },
   { title: '状态', dataIndex: 'status', key: 'status' },
   { title: '操作', key: 'action', width: 150 }

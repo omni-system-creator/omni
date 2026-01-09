@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '检验单号', dataIndex: 'id', key: 'id' },
   { title: '关联工单', dataIndex: 'order', key: 'order' },
   { title: '检验项目', dataIndex: 'item', key: 'item' },

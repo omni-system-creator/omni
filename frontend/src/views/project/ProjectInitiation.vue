@@ -84,12 +84,14 @@
 import { ref, reactive } from 'vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import type { PresetStatusColorType } from 'ant-design-vue/es/_util/colors';
 
 const searchText = ref('');
 const visible = ref(false);
 const formRef = ref();
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '立项名称', dataIndex: 'name', key: 'name' },
   { title: '类型', dataIndex: 'type', key: 'type', width: 100 },
   { title: '申请人', dataIndex: 'applicant', key: 'applicant', width: 100 },
@@ -115,18 +117,18 @@ const formState = reactive({
   name: '',
   type: undefined,
   leader: '',
-  cycle: [],
+  cycle: [] as any,
   target: '',
   scope: ''
 });
 
-const rules = {
+const rules: Record<string, Rule[]> = {
   name: [{ required: true, message: '请输入项目名称', trigger: 'blur' }],
   type: [{ required: true, message: '请选择项目类型', trigger: 'change' }],
   leader: [{ required: true, message: '请输入负责人', trigger: 'blur' }]
 };
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string): PresetStatusColorType => {
   switch (status) {
     case '待审批': return 'processing';
     case '已通过': return 'success';

@@ -44,7 +44,7 @@
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a>详情</a>
-            <a @click="handleEdit(record)">编辑</a>
+            <a @click="handleEdit(record as CustomerDto)">编辑</a>
             <a-divider type="vertical" />
             <a class="delete-btn" @click="onDelete(record.id)">删除</a>
           </a-space>
@@ -53,7 +53,7 @@
     </a-table>
 
     <!-- Create/Edit Modal -->
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" @ok="handleModalOk">
+    <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleModalOk">
       <a-form :model="formData" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
         <a-form-item label="客户名称" required>
           <a-input v-model:value="formData.name" />
@@ -112,7 +112,7 @@ const pagination = reactive({
   showQuickJumper: true,
 });
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '客户名称', dataIndex: 'name', key: 'name' },
   { title: '行业', dataIndex: 'industry', key: 'industry' },
   { title: '联系人', dataIndex: 'contact', key: 'contact' },

@@ -105,7 +105,8 @@
           </div>
 
           <!-- 文件列表区域 -->
-          <div class="file-list-container" v-loading="loading">
+          <div class="file-list-container">
+            <a-spin :spinning="loading">
             <!-- 空状态 -->
             <a-empty
               v-if="fileList.length === 0"
@@ -157,11 +158,11 @@
               >
                 <template #bodyCell="{ column, record, text }">
                   <template v-if="column.key === 'name'">
-                    <div class="list-name-cell" @dblclick="openFile(record)">
+                    <div class="list-name-cell" @dblclick="openFile(record as FileItem)">
                       <component
-                        :is="getFileIcon(getFileType(record))"
+                        :is="getFileIcon(getFileType(record as FileItem))"
                         :style="{
-                          color: getFileColor(getFileType(record)),
+                          color: getFileColor(getFileType(record as FileItem)),
                           marginRight: '8px',
                           fontSize: '18px',
                           flexShrink: 0,
@@ -208,7 +209,7 @@
                         <a-button
                           type="text"
                           size="small"
-                          @click="handleDownload(record)"
+                          @click="handleDownload(record as FileItem)"
                           ><DownloadOutlined
                         /></a-button>
                       </a-tooltip>
@@ -219,18 +220,18 @@
                           /></a-button>
                           <template #overlay>
                             <a-menu>
-                              <a-menu-item key="open" @click="openFile(record)"
+                              <a-menu-item key="open" @click="openFile(record as FileItem)"
                                 >打开</a-menu-item
                               >
                               <a-menu-item
                                 key="share"
-                                @click="handleShare(record)"
+                                @click="handleShare(record as FileItem)"
                                 v-if="record.ownerId === userStore.id"
                                 >分享</a-menu-item
                               >
                               <a-menu-item
                                 key="rename"
-                                @click="handleRename(record)"
+                                @click="handleRename(record as FileItem)"
                                 v-if="record.ownerId === userStore.id"
                                 >属性</a-menu-item
                               >
@@ -238,7 +239,7 @@
                               <a-menu-item
                                 key="delete"
                                 danger
-                                @click="handleDelete(record)"
+                                @click="handleDelete(record as FileItem)"
                                 v-if="record.ownerId === userStore.id"
                                 >删除</a-menu-item
                               >
@@ -251,6 +252,7 @@
                 </template>
               </a-table>
             </div>
+            </a-spin>
           </div>
         </div>
       </template>
@@ -421,6 +423,8 @@ import {
   CopyOutlined,
 } from "@ant-design/icons-vue";
 import { message, Modal } from "ant-design-vue";
+import type { Key } from 'ant-design-vue/es/table/interface';
+import type { TreeProps } from 'ant-design-vue';
 import * as FileApi from "@/api/file";
 import type { FileItem } from "@/api/file";
 import * as UserApi from "@/api/user";
@@ -484,7 +488,7 @@ const shareForm = ref({
   targetUserIds: [] as number[],
   permission: "read",
   shareType: "user", // user | public
-  expirationTime: null as string | null,
+  expirationTime: undefined as string | undefined,
 });
 const shareLink = ref("");
 const userList = ref<UserListDto[]>([]);
@@ -593,7 +597,7 @@ const formatDate = (dateStr: string) => {
 };
 
 // --- 表格列定义 ---
-const columns = [
+const columns: ColumnType<FileItem>[] = [
   {
     title: "名称",
     dataIndex: "name",
@@ -623,7 +627,7 @@ const columns = [
     ellipsis: true,
     width: 100,
   },
-  { title: "操作", key: "action", width: 100, align: "center" },
+  { title: "操作", key: "action", width: 100, align: "center" as const },
 ];
 
 // --- 方法 ---
@@ -823,9 +827,9 @@ const getCurrentDeptId = () => {
 };
 
 // 树节点选择
-const handleTreeSelect = (keys: string[], info: any) => {
+const handleTreeSelect: TreeProps['onSelect'] = (keys, info) => {
   if (!keys.length) return;
-  const key = keys[0];
+  const key = keys[0] as string;
 
   // 更新面包屑（统一使用树路径）
   updateBreadcrumbs(key!);
@@ -909,8 +913,8 @@ const selectFile = (file: FileItem, event: MouseEvent) => {
 };
 
 // 表格选中变更
-const onSelectChange = (keys: number[]) => {
-  selectedFiles.value = keys;
+const onSelectChange = (keys: Key[]) => {
+  selectedFiles.value = keys as number[];
 };
 
 // 表格行属性
@@ -1111,7 +1115,7 @@ const handleShare = async (file: FileItem) => {
     targetUserIds: [],
     permission: "read",
     shareType: "user",
-    expirationTime: null,
+    expirationTime: undefined,
   };
   shareLink.value = "";
   shareVisible.value = true;

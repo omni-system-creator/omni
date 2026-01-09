@@ -92,7 +92,7 @@ import { ref } from 'vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '物品名称', dataIndex: 'name', key: 'name' },
   { title: '规格', dataIndex: 'spec', key: 'spec' },
   { title: '当前库存', dataIndex: 'stock', key: 'stock' },

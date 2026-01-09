@@ -35,7 +35,7 @@
         <a-spin :spinning="loading">
           <a-tree
             v-if="treeData.length > 0"
-            :tree-data="treeData"
+            :tree-data="(treeData as unknown as TreeProps['treeData'])"
             :expanded-keys="expandedKeys"
             :auto-expand-parent="autoExpandParent"
             :selected-keys="selectedKeys"
@@ -170,6 +170,7 @@ import {
   FolderOutlined, FolderOpenOutlined, FileTextOutlined
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
+import type { TreeProps } from 'ant-design-vue';
 import DraggableModal from '@/components/DraggableModal.vue';
 import { 
   getDictCategories, getDictTypes, 

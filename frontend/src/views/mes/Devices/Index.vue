@@ -82,6 +82,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import type { TreeProps } from 'ant-design-vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
 
 const viewMode = ref('grid');
@@ -118,13 +119,15 @@ const defaultExpandedKeys = [
   ...(areaTreeData[0]?.children?.map(n => n.key) || [])
 ];
 
-const onSelect = (keys: string[]) => {
-  if (keys.length > 0) {
-    selectedKeys.value = keys;
+const onSelect: TreeProps['onSelect'] = (keys) => {
+  if (keys && keys.length > 0) {
+    selectedKeys.value = keys as string[];
   }
 };
 
-const columns = [
+
+
+const columns: ColumnType[] = [
   { title: '设备编号', dataIndex: 'code', key: 'code' },
   { title: '设备名称', dataIndex: 'name', key: 'name' },
   { title: '状态', dataIndex: 'status', key: 'status' },

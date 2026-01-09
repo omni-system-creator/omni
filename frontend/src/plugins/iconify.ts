@@ -1,17 +1,9 @@
-import { addCollection } from '@iconify/vue';
-import AntDesignIcons from '@iconify-json/ant-design/icons.json';
-import CarbonIcons from '@iconify-json/carbon/icons.json';
-import FaIcons from '@iconify-json/fa/icons.json';
-import MdiIcons from '@iconify-json/mdi/icons.json';
-import RiIcons from '@iconify-json/ri/icons.json';
-import SimpleIcons from '@iconify-json/simple-icons/icons.json';
-
+import { addAPIProvider } from '@iconify/vue';
 export function setupIcons() {
-  // 注册所有图标库到 Iconify，避免请求在线 API
-  addCollection(AntDesignIcons);
-  addCollection(CarbonIcons);
-  addCollection(FaIcons);
-  addCollection(MdiIcons);
-  addCollection(RiIcons);
-  addCollection(SimpleIcons as any);
+  // 配置 Iconify 使用本地后端 API (api/icons)
+  // 这样前端会请求 /api/icons/{prefix}.json?icons={icons}
+  // 而不是访问公共 API
+  addAPIProvider('', {
+    resources: ['/api/icons'],
+  });
 }

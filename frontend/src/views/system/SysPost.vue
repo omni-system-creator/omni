@@ -41,14 +41,14 @@
               </template>
               <template v-else-if="column.key === 'action'">
                 <a-tooltip title="编辑">
-                  <a-button type="link" size="small" @click="handleEdit(record)">
+                  <a-button type="link" size="small" @click="handleEdit(record as Post)">
                     <template #icon><EditOutlined /></template>
                   </a-button>
                 </a-tooltip>
                 <a-tooltip title="删除">
                   <a-popconfirm
                     title="确定删除吗？"
-                    @confirm="handleDelete(record)"
+                    @confirm="handleDelete(record as Post)"
                     ok-text="是"
                     cancel-text="否"
                   >
@@ -81,7 +81,7 @@
               v-model:value="formState.deptId"
               style="width: 100%"
               :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
-              :tree-data="deptTree"
+              :tree-data="(deptTree as TreeSelectProps['treeData'])"
               placeholder="请选择所属部门"
               :field-names="{ children: 'children', label: 'name', value: 'id' }"
               tree-default-expand-all
@@ -111,6 +111,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import { message } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
 import { 
   PlusOutlined, EditOutlined, DeleteOutlined,
   ApartmentOutlined
@@ -134,15 +135,15 @@ const deptTree = ref<Dept[]>([]);
 const selectedDeptId = ref<number | undefined>(undefined);
 const selectedDeptKeys = ref<number[]>([]);
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '岗位名称', dataIndex: 'name', key: 'name' },
   { title: '岗位编码', dataIndex: 'code', key: 'code' },
   { title: '所属部门', dataIndex: 'deptName', key: 'deptName' },
-  { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', align: 'center' },
+  { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', align: 'center' as const },
   { title: '描述', dataIndex: 'description', key: 'description' },
-  { title: '状态', key: 'isActive', align: 'center' },
+  { title: '状态', key: 'isActive', align: 'center' as const },
   { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
-  { title: '操作', key: 'action', width: '150px', fixed: 'right' }
+  { title: '操作', key: 'action', width: '150px', fixed: 'right' as const }
 ];
 
 const fetchPosts = async () => {
@@ -192,7 +193,7 @@ const validateCode = async (_rule: any, value: string) => {
   return Promise.resolve();
 };
 
-const rules = {
+const rules: Record<string, Rule[]> = {
   deptId: [{ required: true, message: '请选择所属部门', trigger: 'change' }],
   name: [{ required: true, message: '请输入岗位名称', trigger: 'blur' }],
   code: [{ required: true, validator: validateCode, trigger: 'blur' }]

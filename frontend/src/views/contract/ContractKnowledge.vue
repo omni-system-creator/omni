@@ -17,7 +17,7 @@
         />
         <a-tree
           v-if="treeData && treeData.length > 0"
-          :tree-data="treeData"
+          :tree-data="treeData as any"
           :field-names="{ children: 'children', title: 'name', key: 'id' }"
           :default-expanded-keys="expandedKeys"
           :selected-keys="selectedKeys"
@@ -188,6 +188,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import { message, Modal } from 'ant-design-vue';
+import type { ColumnType } from 'ant-design-vue/es/table';
 import {
   FolderOutlined,
   FolderOpenOutlined,
@@ -410,7 +411,7 @@ const onFileSearch = (val: string) => {
 };
 
 // 表格列定义
-const columns = [
+const columns: ColumnType[] = [
   {
     title: '文档名称',
     dataIndex: 'name',
@@ -502,7 +503,7 @@ const pagination = {
 };
 
 // 树节点选择
-const onSelect = (keys: number[], info: any) => {
+const onSelect = (keys: any[], info: any) => {
   console.log('selected', keys, info);
   
   const nodeData = info.node.dataRef;

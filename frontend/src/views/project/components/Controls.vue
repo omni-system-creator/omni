@@ -8,6 +8,7 @@ import type { ProjectFullDto } from '@/types/project';
 import CloneProjectDialog from './CloneProjectDialog.vue';
 
 import { Modal, message } from 'ant-design-vue';
+import type { MenuProps } from 'ant-design-vue';
 import type { TaskStatus } from "@/types/project";
 import { onMounted, onUnmounted } from 'vue';
 
@@ -166,7 +167,7 @@ const addTask = () => {
   store.selectedElement = { type: 'task', id: newTask.id };
 };
 
-const handleAddSelect = ({ key }: { key: string }) => {
+const handleAddSelect: MenuProps['onClick'] = ({ key }) => {
   switch (key) {
     case "task":
       addTask();
@@ -180,7 +181,7 @@ const handleAddSelect = ({ key }: { key: string }) => {
   }
 };
 
-const handleFileSelect = ({ key }: { key: string }) => {
+const handleFileSelect: MenuProps['onClick'] = ({ key }) => {
   switch (key) {
     case "new":
       showNewProjectDialog.value = true;

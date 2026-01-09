@@ -17,7 +17,7 @@
       
       <a-tree
         v-if="treeData && treeData.length > 0"
-        :tree-data="treeData"
+        :tree-data="(treeData as any)"
         :field-names="{ children: 'children', title: 'name', key: 'id' }"
         :default-expand-all="true"
         show-line
@@ -122,7 +122,7 @@ const loadData = async () => {
   }
 };
 
-const onSelect = (keys: number[], info: any) => {
+const onSelect = (keys: any[], info: any) => {
   selectedKeys.value = keys;
   if (keys.length > 0) {
     emit('select', info.node.dataRef);

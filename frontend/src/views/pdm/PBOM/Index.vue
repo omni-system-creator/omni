@@ -201,6 +201,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import type { TreeProps } from 'ant-design-vue';
+import type { Key } from 'ant-design-vue/es/table/interface';
 import SplitLayout from '@/components/SplitLayout/index.vue';
 import { 
   ApartmentOutlined, 
@@ -259,7 +261,7 @@ interface PbomNode {
 
 // --- State ---
 const currentStepIndex = ref(0);
-const selectedKeys = ref<string[]>([]);
+const selectedKeys = ref<Key[]>(['part-001']);
 const currentNode = ref<PbomNode | null>(null);
 
 // --- Mock Data (Based on Model Y from Order View) ---
@@ -386,7 +388,7 @@ const paramColumns = [
   { title: '操作', key: 'action', width: 80 },
 ];
 
-const resourceColumns = [
+const resourceColumns: ColumnType[] = [
   { title: '物料/资源编码', dataIndex: 'code', key: 'code' },
   { title: '名称', dataIndex: 'name', key: 'name' },
   { title: '定额数量', dataIndex: 'qty', key: 'qty' },
@@ -416,7 +418,7 @@ const currentRisks = computed(() => {
 });
 
 // --- Methods ---
-const onSelect = (keys: string[]) => {
+const onSelect: TreeProps['onSelect'] = (keys, _info) => {
   if (keys.length > 0 && keys[0]) {
     selectedKeys.value = keys;
     // Find node logic (recursive)
@@ -431,7 +433,7 @@ const onSelect = (keys: string[]) => {
       return undefined;
     };
     
-    const node = findNode(treeData, keys[0]);
+    const node = findNode(treeData, keys[0] as string);
     if (node) {
       currentNode.value = node;
       currentStepIndex.value = 0; // Reset step selection

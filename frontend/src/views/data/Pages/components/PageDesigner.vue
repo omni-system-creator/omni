@@ -532,7 +532,7 @@ const handleClear = () => {
   });
 };
 
-const handleInitTemplate = ({ key }: { key: string }) => {
+const handleInitTemplate = ({ key }: { key: string | number }) => {
   let templateConfig: PageConfig | null = null;
   
   if (key === 'data-list') {

@@ -84,7 +84,7 @@
       </a-col>
       <a-col :span="12">
         <a-card title="关键大客户动态" :bordered="false">
-          <a-table :dataSource="keyAccounts" :columns="columns" pagination="false" size="small">
+          <a-table :dataSource="keyAccounts" :columns="columns" :pagination="false" size="small">
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'status'">
                 <a-tag :color="record.status === 'stable' ? 'green' : record.status === 'risk' ? 'red' : 'orange'">

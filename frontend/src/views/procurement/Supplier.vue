@@ -56,12 +56,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { PlusOutlined, ImportOutlined } from '@ant-design/icons-vue';
+import type { PresetStatusColorType } from 'ant-design-vue/es/_util/colors';
 
 const searchText = ref('');
 const filterCategory = ref('all');
 const filterStatus = ref('active');
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '供应商名称', dataIndex: 'name', key: 'name', width: 200 },
   { title: '类别', dataIndex: 'category', key: 'category', width: 120 },
   { title: '主要产品/服务', dataIndex: 'products', key: 'products' },
@@ -89,8 +90,8 @@ const onSearch = () => {
   console.log('search');
 };
 
-const getStatusBadge = (status: string) => {
-  const map: Record<string, string> = {
+const getStatusBadge = (status: string): PresetStatusColorType => {
+  const map: Record<string, PresetStatusColorType> = {
     active: 'success',
     suspended: 'warning',
     blacklisted: 'error',

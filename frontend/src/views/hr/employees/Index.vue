@@ -111,7 +111,7 @@ const searchText = ref('');
 const deptFilter = ref(undefined);
 const statusFilter = ref(undefined);
 
-const columns = [
+const columns: ColumnType[] = [
   {
     title: '员工信息',
     dataIndex: 'name',
@@ -244,8 +244,8 @@ const getTagColor = (tag: string) => {
   return colors[tag.toLowerCase()] || 'cyan';
 };
 
-const getStatusBadge = (status: string) => {
-  const map: Record<string, any> = {
+const getStatusBadge = (status: string): PresetStatusColorType => {
+  const map: Record<string, PresetStatusColorType> = {
     active: 'success',
     probation: 'processing',
     leave: 'warning',

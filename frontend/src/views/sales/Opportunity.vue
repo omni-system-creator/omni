@@ -45,7 +45,7 @@
             <a-tag :color="getStageColor(record.stage)">{{ getStageName(record.stage) }}</a-tag>
           </template>
           <template v-else-if="column.key === 'action'">
-             <a @click="handleEdit(record)">编辑</a>
+             <a @click="handleEdit(record as OpportunityDto)">编辑</a>
              <a-divider type="vertical" />
              <a @click="handleDelete(record.id)" style="color: red">删除</a>
           </template>
@@ -53,7 +53,7 @@
       </a-table>
     </div>
 
-    <a-modal v-model:visible="modalVisible" :title="modalTitle" @ok="handleModalOk">
+    <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleModalOk">
       <a-form :model="formData" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
           <a-form-item label="商机名称" required>
               <a-input v-model:value="formData.title" />
@@ -119,7 +119,8 @@ onMounted(() => {
     loadData();
 });
 
-const columns = [
+
+const columns: ColumnType[] = [
   { title: '商机名称', dataIndex: 'title', key: 'title' },
   { title: '客户', dataIndex: 'customer', key: 'customer' },
   { title: '预计金额', dataIndex: 'amount', key: 'amount' },

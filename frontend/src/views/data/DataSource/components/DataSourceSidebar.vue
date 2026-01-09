@@ -127,7 +127,7 @@ const onLoadData = (treeNode: any): Promise<void> => {
   });
 };
 
-const onSelect = (_keys: string[], info: any) => {
+const onSelect = (_keys: any[], info: any) => {
   if (info.selected) {
     emit('select', info.node);
   }

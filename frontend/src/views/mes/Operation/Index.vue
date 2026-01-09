@@ -46,7 +46,7 @@
 
         <a-card title="今日产量" :bordered="false">
           <div style="text-align: center; padding: 20px 0;">
-            <a-progress type="dashboard" :percent="75" gap-degree="60">
+            <a-progress type="dashboard" :percent="75" :gap-degree="60">
               <template #format="{ percent }">
                 <div style="font-size: 24px">{{ percent }}%</div>
                 <div style="font-size: 12px; color: #999">目标达成</div>
@@ -72,7 +72,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-const columns = [
+
+const columns: ColumnType[] = [
   { title: '工单号', dataIndex: 'id', key: 'id' },
   { title: '工序', dataIndex: 'process', key: 'process' },
   { title: '设备/工位', dataIndex: 'station', key: 'station' },
@@ -81,6 +82,23 @@ const columns = [
   { title: '状态', dataIndex: 'status', key: 'status' },
   { title: '操作', key: 'action' },
 ];
+
+
+
+const getBadgeStatus = (status: string): PresetStatusColorType => {
+  switch (status) {
+    case '运行中':
+      return 'processing';
+    case '异常':
+      return 'error';
+    case '等待':
+      return 'default';
+    case '完成':
+      return 'success';
+    default:
+      return 'default';
+  }
+};
 
 const activeOrders = ref([
   {
@@ -128,14 +146,7 @@ const lines = ref([
   { name: '总装线 B', code: 'L4', status: '运行中', currentOrder: 'WO-20240108-03' },
 ]);
 
-const getBadgeStatus = (status: string) => {
-  switch (status) {
-    case '运行中': return 'processing';
-    case '异常': return 'error';
-    case '等待': return 'default';
-    default: return 'default';
-  }
-};
+
 </script>
 
 <style scoped>

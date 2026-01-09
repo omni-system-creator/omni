@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, reactive } from 'vue';
 import dayjs from 'dayjs';
+import type { Rule } from 'ant-design-vue/es/form';
 
 const props = defineProps<{
   open: boolean;
@@ -23,7 +24,7 @@ const formState = reactive({
   startDate: undefined as string | undefined
 });
 
-const rules = {
+const rules: Record<string, Rule[]> = {
   code: [{ required: true, message: '请输入新项目编号', trigger: 'blur' }],
   name: [{ required: true, message: '请输入新项目名称', trigger: 'blur' }],
   manager: [{ required: true, message: '请输入负责人', trigger: 'blur' }],

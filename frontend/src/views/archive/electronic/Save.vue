@@ -63,7 +63,7 @@ const formState = reactive({
 
 const fileList = ref([]);
 
-const rules = {
+const rules: Record<string, Rule[]> = {
   name: [{ required: true, message: '请输入文件名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入档号', trigger: 'blur' }],
   source: [{ required: true, message: '请输入来源', trigger: 'blur' }],

@@ -229,15 +229,15 @@ function hasAnyClosable() {
   return visitedViews.value.some(v => !isAffix(v));
 }
 
-function onChange(key: string) {
-  router.push(getPathWithWebFull(key));
+function onChange(key: any) {
+  router.push(getPathWithWebFull(key as string));
 }
 
 function toggleWorkbenchEditMode() {
   workbenchStore.toggleEditMode();
 }
 
-function onEdit(targetKey: string | MouseEvent, action: string) {
+function onEdit(targetKey: any, action: string) {
   if (action === 'remove' && typeof targetKey === 'string') {
     removeTab(targetKey);
   }

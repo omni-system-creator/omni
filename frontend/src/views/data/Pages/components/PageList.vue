@@ -27,17 +27,17 @@
           </template>
           <template v-if="column.key === 'action'">
             <a-tooltip title="设计">
-              <a-button type="link" size="small" @click="handleDesign(record)">
+              <a-button type="link" size="small" @click="handleDesign(record as PageDefinition)">
                 <template #icon><FormOutlined /></template>
               </a-button>
             </a-tooltip>
             <a-tooltip title="预览">
-              <a-button type="link" size="small" @click="handlePreview(record)">
+              <a-button type="link" size="small" @click="handlePreview(record as PageDefinition)">
                 <template #icon><PlayCircleOutlined /></template>
               </a-button>
             </a-tooltip>
             <a-tooltip title="编辑信息">
-              <a-button type="link" size="small" @click="handleEdit(record)">
+              <a-button type="link" size="small" @click="handleEdit(record as PageDefinition)">
                 <template #icon><EditOutlined /></template>
               </a-button>
             </a-tooltip>

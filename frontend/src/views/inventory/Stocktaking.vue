@@ -33,8 +33,9 @@
 </template>
 
 <script setup lang="ts">
+import type { PresetStatusColorType } from 'ant-design-vue/es/_util/colors';
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '盘点单号', dataIndex: 'id', key: 'id' },
   { title: '盘点仓库', dataIndex: 'warehouse', key: 'warehouse' },
   { title: '盘点类型', dataIndex: 'type', key: 'type' },
@@ -51,8 +52,8 @@ const data = [
   { id: 'ST20251130002', warehouse: '广州冷链仓', type: '月度全盘', date: '2025-11-30', manager: '王五', status: 'completed', diff: 2 },
 ];
 
-const getStatusBadge = (status: string) => {
-  const map: Record<string, string> = {
+const getStatusBadge = (status: string): PresetStatusColorType => {
+  const map: Record<string, PresetStatusColorType> = {
     pending: 'default',
     processing: 'processing',
     completed: 'success',

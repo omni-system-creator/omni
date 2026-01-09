@@ -1,6 +1,6 @@
 <template>
   <div class="todo-calendar-widget">
-    <a-calendar :fullscreen="false" :value="currentDate" @select="onSelect" @panelChange="onPanelChange" :locale="zhCN">
+    <a-calendar :fullscreen="false" :value="currentDate" @select="onSelect" @panelChange="onPanelChange" :locale="zhCN as any">
       <template #headerRender="{ value, onChange }">
         <div class="custom-header">
           <div class="header-left">
@@ -74,6 +74,11 @@ const changeMonth = (value: Dayjs, offset: number, onChange: (date: Dayjs) => vo
   // 切换月份不更新选中日期
 };
 
+const onPanelChange = (value: any, mode: any) => {
+  console.log('Panel changed:', value, mode);
+  currentDate.value = value;
+};
+
 const backToToday = (onChange: (date: Dayjs) => void) => {
   const today = dayjs();
   onChange(today);
@@ -119,9 +124,7 @@ const onSelect = (date: Dayjs, info: any) => {
   }
 };
 
-const onPanelChange = (date: Dayjs) => {
-  currentDate.value = date;
-};
+
 </script>
 
 <style scoped>

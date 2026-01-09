@@ -4,7 +4,7 @@
     <a-card :bordered="false" class="mb-4">
       <div class="flex justify-between items-center">
         <span class="text-lg font-bold">经营概况 (2024 Q4)</span>
-        <a-range-picker v-model:value="dateRange" />
+        <a-range-picker v-model:value="dateRange as any" />
       </div>
     </a-card>
 

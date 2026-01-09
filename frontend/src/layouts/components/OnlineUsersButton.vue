@@ -46,7 +46,7 @@
                 {{ formatTime(record.loginTime) }}
               </template>
               <template v-if="column.key === 'action'">
-                <a-button type="link" size="small" @click="startChat(record)">
+                <a-button type="link" size="small" @click="startChat(record as any)">
                   <MessageOutlined /> 发消息
                 </a-button>
               </template>
@@ -163,7 +163,7 @@ const columns = [
     width: 120,
     align: 'center',
   },
-];
+] as any[];
 
 const showDrawer = () => {
   visible.value = true;

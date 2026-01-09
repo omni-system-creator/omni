@@ -14,8 +14,8 @@
       :loading="loadingColumns"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="['isPrimaryKey', 'isNullable'].includes(column.key)">
-          <a-checkbox :checked="record[column.key]" disabled />
+        <template v-if="['isPrimaryKey', 'isNullable'].includes(String(column.key))">
+          <a-checkbox :checked="record[column.key as string]" disabled />
         </template>
         <template v-if="column.key === 'action'">
           <a-space>

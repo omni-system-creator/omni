@@ -206,6 +206,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { PlusOutlined, UserAddOutlined } from '@ant-design/icons-vue';
 import type { FormInstance } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
 import dayjs, { Dayjs } from 'dayjs';
 import { useRoute } from 'vue-router';
 
@@ -251,7 +252,7 @@ const createFormState = reactive({
   assignee: undefined,
 });
 
-const createRules = {
+const createRules: Record<string, Rule[]> = {
   title: [{ required: true, message: '请输入任务标题', trigger: 'blur' }],
   priority: [{ required: true, message: '请选择优先级', trigger: 'change' }],
   deadline: [{ required: true, message: '请选择截止时间', trigger: 'change' }],
@@ -450,7 +451,7 @@ const filteredSubordinateData = computed(() => {
   return data;
 });
 
-const pendingColumns = [
+const pendingColumns: ColumnType[] = [
   { title: '任务标题', dataIndex: 'title', key: 'title', width: 300 },
   { title: '类型', dataIndex: 'type', key: 'type', width: 100 },
   { title: '优先级', dataIndex: 'priority', key: 'priority', width: 100 },
@@ -460,7 +461,7 @@ const pendingColumns = [
   { title: '操作', key: 'action', width: 100, fixed: 'right' },
 ];
 
-const completedColumns = [
+const completedColumns: ColumnType[] = [
   { title: '任务标题', dataIndex: 'title', key: 'title', width: 300 },
   { title: '类型', dataIndex: 'type', key: 'type', width: 100 },
   { title: '优先级', dataIndex: 'priority', key: 'priority', width: 100 },
@@ -471,7 +472,7 @@ const completedColumns = [
   { title: '操作', key: 'action', width: 100, fixed: 'right' },
 ];
 
-const subordinateColumns = [
+const subordinateColumns: ColumnType[] = [
   { title: '任务标题', dataIndex: 'title', key: 'title', width: 300 },
   { title: '执行人', dataIndex: 'assigneeName', key: 'assigneeName', width: 120 },
   { title: '类型', dataIndex: 'type', key: 'type', width: 100 },

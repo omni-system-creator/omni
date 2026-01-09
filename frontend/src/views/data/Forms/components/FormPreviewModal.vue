@@ -83,16 +83,16 @@
                     <a @click="removeSubtableRow(item.field, index)" style="color: red">删除</a>
                   </template>
                   <template v-else>
-                    <a-input v-if="column.type === 'input'" v-model:value="record[column.dataIndex]" size="small" />
-                    <a-textarea v-else-if="column.type === 'textarea'" v-model:value="record[column.dataIndex]" size="small" :auto-size="{ minRows: 1, maxRows: 3 }" />
-                    <a-input-number v-else-if="column.type === 'number'" v-model:value="record[column.dataIndex]" size="small" style="width: 100%" />
-                    <a-date-picker v-else-if="column.type === 'date'" v-model:value="record[column.dataIndex]" size="small" style="width: 100%" value-format="YYYY-MM-DD" />
-                    <a-select v-else-if="column.type === 'select'" v-model:value="record[column.dataIndex]" size="small" style="width: 100%">
+                    <a-input v-if="(column as any).type === 'input'" v-model:value="(record as any)[(column as any).dataIndex as string]" size="small" />
+                    <a-textarea v-else-if="(column as any).type === 'textarea'" v-model:value="(record as any)[(column as any).dataIndex as string]" size="small" :auto-size="{ minRows: 1, maxRows: 3 }" />
+                    <a-input-number v-else-if="(column as any).type === 'number'" v-model:value="(record as any)[(column as any).dataIndex as string]" size="small" style="width: 100%" />
+                    <a-date-picker v-else-if="(column as any).type === 'date'" v-model:value="(record as any)[(column as any).dataIndex as string]" size="small" style="width: 100%" value-format="YYYY-MM-DD" />
+                    <a-select v-else-if="(column as any).type === 'select'" v-model:value="(record as any)[(column as any).dataIndex as string]" size="small" style="width: 100%">
                       <a-select-option value="Option 1">选项 1</a-select-option>
                       <a-select-option value="Option 2">选项 2</a-select-option>
                       <a-select-option value="Option 3">选项 3</a-select-option>
                     </a-select>
-                    <a-input v-else v-model:value="record[column.dataIndex]" size="small" />
+                    <a-input v-else v-model:value="(record as any)[(column as any).dataIndex as string]" size="small" />
                   </template>
                 </template>
               </a-table>
@@ -217,8 +217,8 @@ const removeSubtableRow = (field: string, index: number) => {
   previewForm.value[field].splice(index, 1);
 };
 
-const getSubtableColumns = (item: any) => {
-  const cols = [];
+const getSubtableColumns = (item: any): any[] => {
+  const cols: any[] = [];
   if (item.showRowNumber) {
     cols.push({ title: '序号', key: 'index', width: 50, align: 'center' });
   }

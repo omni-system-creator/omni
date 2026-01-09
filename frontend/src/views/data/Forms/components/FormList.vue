@@ -44,12 +44,12 @@
           <template v-else-if="column.key === 'action'">
             <a-space>
               <a-tooltip title="编辑" v-if="canManage(record)">
-                <a-button type="link" size="small" @click="handleEdit(record)">
+                <a-button type="link" size="small" @click="handleEdit(record as any)">
                   <template #icon><EditOutlined /></template>
                 </a-button>
               </a-tooltip>
               <a-tooltip title="设计" v-if="canManage(record)">
-                <a-button type="link" size="small" @click="handleDesign(record)">
+                <a-button type="link" size="small" @click="handleDesign(record as any)">
                   <template #icon><FormOutlined /></template>
                 </a-button>
               </a-tooltip>
@@ -57,7 +57,7 @@
                 <a-button 
                   type="link" 
                   size="small" 
-                  @click="handlePublish(record)"
+                  @click="handlePublish(record as any)"
                 >
                   <template #icon><SendOutlined /></template>
                 </a-button>
@@ -66,7 +66,7 @@
                 <a-button 
                   type="link" 
                   size="small" 
-                  @click="handleUnpublish(record)"
+                  @click="handleUnpublish(record as any)"
                 >
                   <template #icon><StopOutlined /></template>
                 </a-button>
@@ -75,7 +75,7 @@
                 <a-button 
                   type="link" 
                   size="small" 
-                  @click="handleViewLink(record)"
+                  @click="handleViewLink(record as any)"
                 >
                   <template #icon><ShareAltOutlined /></template>
                 </a-button>
@@ -84,7 +84,7 @@
                 <a-button 
                   type="link" 
                   size="small" 
-                  @click="handleViewData(record)"
+                  @click="handleViewData(record as any)"
                 >
                   <template #icon><TableOutlined /></template>
                 </a-button>
@@ -222,9 +222,9 @@
               <template v-if="column.key === 'submittedAt'">
                 {{ dayjs(record.submittedAt).format('YYYY-MM-DD HH:mm:ss') }}
               </template>
-              <template v-else-if="column.isSubTable">
-                 <a-button type="link" size="small" @click="viewSubTable(record[column.key], column)">
-                   查看 ({{ Array.isArray(record[column.key]) ? record[column.key].length : 0 }})
+              <template v-else-if="(column as any).isSubTable">
+                 <a-button type="link" size="small" @click="viewSubTable(record[(column as any).key], column)">
+                   查看 ({{ Array.isArray(record[(column as any).key]) ? record[(column as any).key].length : 0 }})
                  </a-button>
               </template>
             </template>
@@ -323,7 +323,7 @@ const queryParams = reactive({
   categoryId: props.categoryId
 });
 
-const canManage = (record: FormDefinition) => {
+const canManage = (record: any) => {
   if (userStore.username === 'admin') return true;
   if (!record.manageRoleIds) return false;
   
@@ -333,13 +333,13 @@ const canManage = (record: FormDefinition) => {
   return userRoles.some((r: number) => allowedRoles.includes(r));
 };
 
-const columns = [
-  { title: '序号', key: 'index', width: 70, align: 'center' },
+const columns: any[] = [
+  { title: '序号', key: 'index', width: 70, align: 'center' as const },
   { title: '表单名称', dataIndex: 'name', key: 'name', sorter: true },
   { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
   { title: '状态', dataIndex: 'isPublished', key: 'status', width: 100 },
   { title: '修改时间', dataIndex: 'updatedAt', key: 'updatedAt', width: 180, sorter: true },
-  { title: '操作', key: 'action', width: 280, fixed: 'right' }
+  { title: '操作', key: 'action', width: 280, fixed: 'right' as const }
 ];
 
 // Dialog Logic
@@ -559,7 +559,7 @@ const fetchAllDataAndExport = async () => {
        };
        
        // Map dynamic fields
-       dataColumns.value.forEach(col => {
+       dataColumns.value.forEach((col: any) => {
           if (col.key !== 'submittedAt' && col.key !== 'submittedBy' && !col.isSubTable) {
              let val = parsed[col.key];
              // Handle object

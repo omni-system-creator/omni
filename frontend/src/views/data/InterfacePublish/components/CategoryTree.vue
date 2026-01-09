@@ -17,7 +17,7 @@
       
       <a-tree
         v-if="treeData && treeData.length > 0"
-        :tree-data="treeData"
+        :tree-data="(treeData as any)"
         :field-names="{ children: 'children', title: 'name', key: 'id' }"
         :default-expand-all="true"
         show-line
@@ -56,7 +56,7 @@
         <a-form-item label="父级分类">
           <a-tree-select
             v-model:value="formState.parentId"
-            :tree-data="treeData"
+            :tree-data="(treeData as unknown as TreeProps['treeData'])"
             :field-names="{ children: 'children', label: 'name', value: 'id' }"
             placeholder="请选择父级分类（留空为根分类）"
             tree-default-expand-all
@@ -88,6 +88,7 @@ import {
   FolderOpenOutlined
 } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
+import type { TreeProps } from 'ant-design-vue';
 import { interfaceApi, type InterfaceCategory } from '@/api/interface';
 
 const emit = defineEmits(['select']);
@@ -132,12 +133,11 @@ const loadData = async () => {
   }
 };
 
-const onSelect = (keys: number[], info: any) => {
-  selectedKeys.value = keys;
+const onSelect = (keys: any[], info: any) => {
+  console.log('Select:', keys, info);
   if (keys.length > 0) {
-    emit('select', info.node.dataRef);
-  } else {
-    emit('select', null);
+    selectedKeys.value = keys;
+    emit('select', keys[0]);
   }
 };
 

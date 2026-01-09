@@ -42,26 +42,26 @@
                 </div>
                 <a-table
                   :columns="getSubTableColumns(item)"
-                  :data-source="formData[item.id]"
+                  :data-source="formData[item.id] || []"
                   :pagination="false"
                   bordered
                   size="small"
-                  :row-key="(_record: any, index: number) => index"
+                  :row-key="(_record: any, index: number | undefined) => index || 0"
                 >
                   <template #bodyCell="{ column, record, index }">
-                    <template v-if="column.key === 'action'">
+                    <template v-if="(column as any).key === 'action'">
                       <div style="text-align: center">
                         <DeleteOutlined v-if="!isReadOnly" class="delete-btn" @click="removeSubTableRow(item.id, index)" />
                       </div>
                     </template>
                     <template v-else>
                       <component
-                        :is="getComponent(column.type)"
-                        v-model:value="record[column.key]"
+                        :is="getComponent((column as any).type)"
+                        v-model:value="(record as any)[(column as any).key as string]"
                         style="width: 100%"
-                        v-bind="column.props"
-                        :options="column.options"
-                        :placeholder="column.title"
+                        v-bind="(column as any).props"
+                        :options="(column as any).options"
+                        :placeholder="(column as any).title"
                         :disabled="isReadOnly"
                       />
                     </template>
@@ -273,8 +273,8 @@ const removeSubTableRow = (itemId: string, index: number) => {
   formData.value[itemId].splice(index, 1);
 };
 
-const getSubTableColumns = (item: any) => {
-  const cols = item.columns.map((col: any) => ({
+const getSubTableColumns = (item: any): any[] => {
+  const cols: any[] = item.columns.map((col: any) => ({
     title: col.label,
     dataIndex: col.id,
     key: col.id,

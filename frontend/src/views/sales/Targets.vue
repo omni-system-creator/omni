@@ -72,7 +72,7 @@
       </a-col>
       <a-col :span="6">
         <a-card class="full-height-card">
-          <a-statistic title="完成率" :value="overview.progressRate" precision="1" suffix="%" />
+          <a-statistic title="完成率" :value="overview.progressRate" :precision="1" suffix="%" />
           <a-progress :percent="overview.progressRate" status="active" />
         </a-card>
       </a-col>
@@ -215,14 +215,14 @@ const targetForm = reactive({
 });
 
 // 表格列定义
-const columns = [
-  { title: '目标名称', dataIndex: 'targetName', key: 'targetName', fixed: 'left', width: 180 },
+const columns: ColumnType[] = [
+  { title: '目标名称', dataIndex: 'targetName', key: 'targetName', fixed: 'left' as const, width: 180 },
   { title: '目标类型', dataIndex: 'targetType', key: 'targetType', width: 120 },
-  { title: '目标金额', dataIndex: 'targetAmount', key: 'targetAmount', width: 120, align: 'right' },
-  { title: '已完成金额', dataIndex: 'completedAmount', key: 'completedAmount', width: 120, align: 'right' },
+  { title: '目标金额', dataIndex: 'targetAmount', key: 'targetAmount', width: 120, align: 'right' as const },
+  { title: '已完成金额', dataIndex: 'completedAmount', key: 'completedAmount', width: 120, align: 'right' as const },
   { title: '完成率', dataIndex: 'progressRate', key: 'progress', width: 150 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
-  { title: '操作', key: 'action', width: 150, fixed: 'right' }
+  { title: '操作', key: 'action', width: 150, fixed: 'right' as const }
 ];
 
 // 加载数据字典

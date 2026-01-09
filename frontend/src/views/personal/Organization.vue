@@ -91,9 +91,9 @@
                 <template v-if="column.key === 'name'">
                   <a-space>
                     <a-avatar :size="32" :src="record.avatar" :style="{ backgroundColor: record.avatar ? 'transparent' : '#1890ff' }">
-                      {{ getAvatarText(record) }}
+                      {{ getAvatarText(record as UserListDto) }}
                     </a-avatar>
-                    {{ getDisplayName(record) }}
+                    {{ getDisplayName(record as UserListDto) }}
                     <!-- <a-tag v-if="record.isLeader" color="blue">负责人</a-tag> -->
                   </a-space>
                 </template>
@@ -137,6 +137,7 @@ import {
 } from '@ant-design/icons-vue';
 import { type Dept } from '@/api/dept';
 import { getUserList, type UserListDto } from '@/api/user';
+import type { PresetStatusColorType } from 'ant-design-vue/es/_util/colors';
 import { useUserStore } from '@/stores/user';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
@@ -148,7 +149,7 @@ const loading = ref(false);
 const userStore = useUserStore();
 const STORAGE_VIEW_KEY = `oms_org_view_mode_${userStore.username}`;
 
-const statusMap: Record<string, { text: string; status: string; color: string }> = {
+const statusMap: Record<string, { text: string; status: PresetStatusColorType; color: string }> = {
   online: { text: '在岗', status: 'success', color: '#52c41a' },
   business: { text: '出差中', status: 'warning', color: '#faad14' },
   out: { text: '临时外出', status: 'processing', color: '#1890ff' },
@@ -208,7 +209,7 @@ const getDeptPath = (deptId: number | undefined): string => {
 };
 
 // Table Columns
-const columns = [
+const columns: ColumnType[] = [
   { title: '姓名', key: 'name', width: 200 },
   { title: '工号', dataIndex: 'id', width: 100 },
   { title: '职位', key: 'position', width: 150 },

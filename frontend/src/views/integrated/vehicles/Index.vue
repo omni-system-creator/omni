@@ -136,10 +136,11 @@ import {
   ToolOutlined,
   PlusOutlined
 } from '@ant-design/icons-vue';
+import type { PresetStatusColorType } from 'ant-design-vue/es/_util/colors';
 
 const viewMode = ref('list');
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '车牌号', dataIndex: 'plate', key: 'plate' },
   { title: '品牌型号', dataIndex: 'model', key: 'model' },
   { title: '类型', dataIndex: 'category', key: 'category' },
@@ -158,8 +159,8 @@ const data = [
   { key: 5, plate: '京A·99999', model: '帕萨特', category: '公务轿车', type: 'Fuel', driver: '王建国', status: 'using', location: '海淀区·中关村', mileage: 89000 },
 ];
 
-const getStatusBadge = (status: string) => {
-  const map: Record<string, string> = {
+const getStatusBadge = (status: string): PresetStatusColorType => {
+  const map: Record<string, PresetStatusColorType> = {
     available: 'success',
     using: 'processing',
     maintenance: 'error',

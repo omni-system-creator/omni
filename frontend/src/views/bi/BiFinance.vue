@@ -94,7 +94,7 @@ const arColumns = [
   { title: '61-90天', dataIndex: 'day90', key: 'day90', align: 'right' },
   { title: '>90天', dataIndex: 'dayMore', key: 'dayMore', align: 'right' },
   { title: '状态', dataIndex: 'status', key: 'status' }
-];
+] as any[];
 
 const arData = [
   { key: 1, name: '某大型国企', amount: 120, day30: 0, day60: 0, day90: 50, dayMore: 70, status: 'Critical' },

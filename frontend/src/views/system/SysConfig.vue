@@ -19,7 +19,7 @@
               <span v-else>{{ record.value }}</span>
             </template>
             <template v-if="column.key === 'action'">
-              <a @click="handleEdit(record)">编辑</a>
+              <a @click="handleEdit(record as SystemConfigDto)">编辑</a>
             </template>
           </template>
         </a-table>
@@ -148,6 +148,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, computed, reactive } from 'vue';
 import { message } from 'ant-design-vue';
+
 import { useUserStore } from '@/stores/user';
 import { getAllConfigs, updateConfig, deleteConfig, type SystemConfigDto, ConfigType } from '@/api/systemConfig';
 import { Modal } from 'ant-design-vue';
@@ -185,7 +186,7 @@ const formState = reactive({
   description: ''
 });
 
-const columns = [
+const columns: ColumnType[] = [
   {
     title: '配置项说明',
     dataIndex: 'description',

@@ -123,17 +123,17 @@ const searchForm = reactive({
   status: undefined
 });
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '资产编号', dataIndex: 'assetNo', key: 'assetNo', width: 120 },
   { title: '资产名称', dataIndex: 'name', key: 'name' },
   { title: '类别', dataIndex: 'categoryName', key: 'categoryName', width: 150 },
   { title: '型号/规格', dataIndex: 'model', key: 'model' },
   { title: '使用部门', dataIndex: 'deptName', key: 'deptName', width: 100 },
   { title: '使用人', dataIndex: 'userName', key: 'userName', width: 100 },
-  { title: '原值', dataIndex: 'price', key: 'price', width: 100, align: 'right' },
+  { title: '原值', dataIndex: 'price', key: 'price', width: 100, align: 'right' as const },
   { title: '购入日期', dataIndex: 'purchaseDate', key: 'purchaseDate', width: 120 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
-  { title: '操作', key: 'action', width: 200, fixed: 'right' }
+  { title: '操作', key: 'action', width: 200, fixed: 'right' as const }
 ];
 
 const data = ref([

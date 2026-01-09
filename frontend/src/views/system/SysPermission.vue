@@ -49,7 +49,7 @@
               </a-button>
             </a-tooltip>
             <a-tooltip title="编辑">
-              <a-button type="link" size="small" @click="handleEdit(record)">
+              <a-button type="link" size="small" @click="handleEdit(record as PermissionTreeDto)">
                 <template #icon><EditOutlined /></template>
               </a-button>
             </a-tooltip>
@@ -59,7 +59,7 @@
                 ok-text="删除"
                 cancel-text="取消"
                 ok-type="danger"
-                @confirm="handleDelete(record)"
+                @confirm="handleDelete(record as PermissionTreeDto)"
               >
                 <a-button type="link" size="small" danger>
                   <template #icon><DeleteOutlined /></template>
@@ -90,7 +90,7 @@
             <a-form-item label="上级权限" name="parentId">
               <a-tree-select
                 v-model:value="formState.parentId"
-                :tree-data="permissions"
+                :tree-data="(permissions as TreeSelectProps['treeData'])"
                 :field-names="{ children: 'children', label: 'name', value: 'id' }"
                 placeholder="请选择上级权限 (留空为顶级)"
                 tree-default-expand-all
@@ -195,7 +195,7 @@
         <a-tree
           v-if="sortTreeData.length > 0"
           draggable
-          :tree-data="sortTreeData"
+          :tree-data="(sortTreeData as unknown as TreeProps['treeData'])"
           :field-names="{ children: 'children', title: 'name', key: 'id' }"
           defaultExpandAll
           @drop="onDrop"
@@ -225,6 +225,8 @@
 <script lang="ts" setup>
 import { ref, onMounted, reactive } from 'vue';
 import { message } from 'ant-design-vue';
+import type { Rule } from 'ant-design-vue/es/form';
+import type { TreeProps } from 'ant-design-vue/es/tree';
 import { 
   PlusOutlined, 
   ReloadOutlined, 
@@ -245,15 +247,15 @@ import type { AntTreeNodeDropEvent } from 'ant-design-vue/es/tree';
 const loading = ref(false);
 const permissions = ref<PermissionTreeDto[]>([]);
 
-const columns = [
-  { title: '权限名称', dataIndex: 'name', key: 'name', width: 250, fixed: 'left' },
+const columns: ColumnType[] = [
+  { title: '权限名称', dataIndex: 'name', key: 'name', width: 250, fixed: 'left' as const },
   { title: '权限标识', dataIndex: 'code', key: 'code', width: 200 },
-  { title: '类型', key: 'type', width: 80, align: 'center' },
+  { title: '类型', key: 'type', width: 80, align: 'center' as const },
   { title: '路由路径', dataIndex: 'path', key: 'path', width: 200 },
   { title: '组件路径', dataIndex: 'component', key: 'component', width: 250 },
-  { title: '状态', key: 'isVisible', width: 80, align: 'center' },
-  { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', width: 60, align: 'center' },
-  { title: '操作', key: 'action', width: 120, align: 'center', fixed: 'right' },
+  { title: '状态', key: 'isVisible', width: 80, align: 'center' as const },
+  { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', width: 60, align: 'center' as const },
+  { title: '操作', key: 'action', width: 120, align: 'center' as const, fixed: 'right' as const },
 ];
 
 const loadData = async () => {
@@ -288,7 +290,7 @@ const formState = reactive({
   isVisible: true
 });
 
-const rules = {
+const rules: Record<string, Rule[]> = {
   name: [{ required: true, message: '请输入权限名称', trigger: 'blur' }],
   code: [{ required: true, message: '请输入权限标识', trigger: 'blur' }],
 };

@@ -221,15 +221,15 @@ const customUploadRequest = async ({ file, onSuccess, onError }: UploadRequestOp
     }
 };
 
-const updateDependencyType = (val: 'straight' | 'polyline' | 'curve') => {
-    const newType = val
+const updateDependencyType = (val: any) => {
+    const newType = val as 'straight' | 'polyline' | 'curve'
     if (dependency.value && dependency.value.sourceId && dependency.value.targetId) {
         store.updateDependencyType(dependency.value.sourceId!, dependency.value.targetId!, newType)
     }
 }
 
-const updateDependencyControlPointCount = (val: number) => {
-    const count = val
+const updateDependencyControlPointCount = (val: any) => {
+    const count = Number(val)
     if (dependency.value && dependency.value.sourceId && dependency.value.targetId) {
         store.updateDependencyControlPointCount(dependency.value.sourceId!, dependency.value.targetId!, count)
     }

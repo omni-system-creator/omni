@@ -63,7 +63,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '成本项目', dataIndex: 'item', key: 'item' },
   { title: '预算金额', dataIndex: 'budget', key: 'budget' },
   { title: '实际金额', dataIndex: 'amount', key: 'amount' },

@@ -163,7 +163,7 @@ const onSelectTree = (_selectedKeys: any, info: any) => {
   message.info(`选择了分类: ${info.node.title}`);
 };
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '档案题名', dataIndex: 'title', key: 'title', ellipsis: true },
   { title: '档号', dataIndex: 'archCode', key: 'archCode', width: 140 },
   { title: '来源', dataIndex: 'source', key: 'source', width: 150 },
@@ -173,7 +173,7 @@ const columns = [
   { title: '存放位置', dataIndex: 'location', key: 'location', width: 200 },
   { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
   { title: '归档日期', dataIndex: 'archDate', key: 'archDate', width: 120 },
-  { title: '操作', key: 'action', width: 180, fixed: 'right' }
+  { title: '操作', key: 'action', width: 180, fixed: 'right' as const }
 ];
 
 const data = ref([

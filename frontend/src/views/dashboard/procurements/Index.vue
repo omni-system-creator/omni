@@ -52,7 +52,7 @@
 
     <!-- Recent Requests -->
     <a-card title="待处理采购申请" :bordered="false" style="margin-top: 16px;">
-      <a-table :dataSource="requests" :columns="columns" pagination="false">
+      <a-table :dataSource="requests" :columns="columns" :pagination="false">
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'status'">
             <a-badge :status="record.status === 'urgent' ? 'error' : 'processing'" :text="record.statusText" />

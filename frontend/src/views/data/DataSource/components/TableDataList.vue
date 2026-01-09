@@ -26,7 +26,7 @@
         :pagination="pagination" 
         :loading="loadingData"
         size="small" 
-        scroll="{ x: 'max-content' }" 
+        :scroll="{ x: 'max-content' }" 
         @change="onTableChange"
      >
         <template #bodyCell="{ column, record }">

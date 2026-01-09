@@ -128,6 +128,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import type { Dayjs } from 'dayjs';
 import {
   SearchOutlined,
   PlusOutlined,
@@ -137,9 +138,9 @@ import {
   DesktopOutlined
 } from '@ant-design/icons-vue';
 
-const query = ref({
+const query = ref<{ area: string; date?: Dayjs; equipment: string[] }>({
   area: 'all',
-  date: null,
+  date: undefined,
   equipment: []
 });
 

@@ -430,7 +430,7 @@ const onImageLoad = () => {
   scheduleAutoScroll();
 };
 
-const handleSend = (e?: KeyboardEvent) => {
+const handleSend = (e?: any) => {
   // 处理 Ctrl+Enter
   if (e && e.ctrlKey) {
     inputMessage.value += '\n';

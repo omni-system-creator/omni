@@ -7,7 +7,7 @@
       <a-spin :spinning="loading">
         <a-tree
           v-if="treeData.length > 0"
-          :tree-data="treeData"
+          :tree-data="treeData as any"
           :field-names="{ children: 'children', title: 'name', key: 'id' }"
           :default-expand-all="defaultExpandAll"
           v-model:expandedKeys="expandedKeys"
@@ -121,7 +121,7 @@ const loadData = async () => {
   }
 };
 
-const onSelect = (keys: number[], info: any) => {
+const onSelect = (keys: any[], info: any) => {
   emit('select', keys, info);
 };
 

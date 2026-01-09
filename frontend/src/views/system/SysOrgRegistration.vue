@@ -178,13 +178,13 @@ const pagination = reactive({
   showTotal: (total: number) => `共 ${total} 条`,
 });
 
-const columns = [
+const columns: ColumnType[] = [
   { title: '组织名称', dataIndex: 'orgName', key: 'orgName' },
   { title: '联系人', dataIndex: 'contactName', key: 'contactName' },
   { title: '联系电话', dataIndex: 'contactPhone', key: 'contactPhone' },
   { title: '申请时间', dataIndex: 'createdAt', key: 'createdAt' },
   { title: '状态', dataIndex: 'status', key: 'status' },
-  { title: '操作', key: 'action', align: 'center' },
+  { title: '操作', key: 'action', align: 'center' as const },
 ];
 
 const detailVisible = ref(false);

@@ -109,8 +109,8 @@
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'name'">
-                <div class="list-name-cell" @dblclick="record.isFolder ? handleFolderClick(record) : viewFile(record)">
-                  <component :is="getFileIcon(getFileType(record))" :style="{ color: getFileColor(getFileType(record)), marginRight: '8px', fontSize: '18px', flexShrink: 0 }" />
+                <div class="list-name-cell" @dblclick="record.isFolder ? handleFolderClick(record as KbFileDto) : viewFile(record as KbFileDto)">
+                  <component :is="getFileIcon(getFileType(record as KbFileDto))" :style="{ color: getFileColor(getFileType(record as KbFileDto)), marginRight: '8px', fontSize: '18px', flexShrink: 0 }" />
                   <a-tooltip :title="record.name" placement="topLeft">
                     <span class="file-name-text">{{ record.name }}</span>
                   </a-tooltip>
@@ -132,12 +132,12 @@
                   <a-button type="text" size="small"><EllipsisOutlined /></a-button>
                   <template #overlay>
                     <a-menu>
-                      <a-menu-item key="view" v-if="!record.isFolder" @click="viewFile(record)">查看</a-menu-item>
-                      <a-menu-item key="download" v-if="!record.isFolder" @click="downloadFile(record)">下载</a-menu-item>
+                      <a-menu-item key="view" v-if="!record.isFolder" @click="viewFile(record as KbFileDto)">查看</a-menu-item>
+                      <a-menu-item key="download" v-if="!record.isFolder" @click="downloadFile(record as KbFileDto)">下载</a-menu-item>
                       <template v-if="isAdmin">
                         <a-menu-divider v-if="!record.isFolder" />
-                        <a-menu-item key="rename" @click="openRenameModal(record)">重命名</a-menu-item>
-                        <a-menu-item key="move" @click="openMoveModal(record)">移动</a-menu-item>
+                        <a-menu-item key="rename" @click="openRenameModal(record as KbFileDto)">重命名</a-menu-item>
+                        <a-menu-item key="move" @click="openMoveModal(record as KbFileDto)">移动</a-menu-item>
                         <a-menu-divider />
                         <a-menu-item key="delete" danger @click="deleteFile(record.id)">删除</a-menu-item>
                       </template>
@@ -272,7 +272,7 @@ const getStatusText = (status: string) => {
   }
 };
 
-const fileColumns = [
+const fileColumns: ColumnType<KbFileDto>[] = [
   { title: '名称', dataIndex: 'name', key: 'name', ellipsis: true, sorter: (a: KbFileDto, b: KbFileDto) => compareNames(a.name, b.name) },
   { title: '大小', align: 'right', dataIndex: 'size', key: 'size', width: 100, ellipsis: true },
   { title: '上传时间', align: 'center', dataIndex: 'uploadTime', key: 'uploadTime', width: 150, ellipsis: true },
@@ -364,8 +364,8 @@ const handleSelectFile = (file: KbFileDto, event: MouseEvent) => {
   selectedFiles.value = newSelected;
 };
 
-const onSelectChange = (keys: string[]) => {
-  selectedFiles.value = keys;
+const onSelectChange = (keys: any[]) => {
+  selectedFiles.value = keys as string[];
 };
 
 const customRow = (record: KbFileDto) => {

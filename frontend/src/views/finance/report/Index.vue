@@ -77,10 +77,10 @@ const activeTab = ref('overview');
 const trendChartRef = ref();
 const pieChartRef = ref();
 
-const incomeColumns = [
+const incomeColumns: ColumnType[] = [
   { title: '项目', dataIndex: 'item', key: 'item' },
-  { title: '本月金额', dataIndex: 'currentAmount', key: 'currentAmount', align: 'right' },
-  { title: '本年累计', dataIndex: 'yearAmount', key: 'yearAmount', align: 'right' }
+  { title: '本月金额', dataIndex: 'currentAmount', key: 'currentAmount', align: 'right' as const },
+  { title: '本年累计', dataIndex: 'yearAmount', key: 'yearAmount', align: 'right' as const }
 ];
 
 const incomeData = ref([
@@ -90,11 +90,11 @@ const incomeData = ref([
   { key: 4, item: '二、营业利润', currentAmount: '378,000.00', yearAmount: '5,350,000.00' },
 ]);
 
-const balanceColumns = [
+const balanceColumns: ColumnType[] = [
   { title: '资产', dataIndex: 'asset', key: 'asset' },
-  { title: '期末余额', dataIndex: 'endBalance', key: 'endBalance', align: 'right' },
+  { title: '期末余额', dataIndex: 'endBalance', key: 'endBalance', align: 'right' as const },
   { title: '负债及所有者权益', dataIndex: 'liability', key: 'liability' },
-  { title: '期末余额', dataIndex: 'lBalance', key: 'lBalance', align: 'right' },
+  { title: '期末余额', dataIndex: 'lBalance', key: 'lBalance', align: 'right' as const },
 ];
 
 const balanceData = ref([
