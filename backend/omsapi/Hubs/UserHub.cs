@@ -48,6 +48,7 @@ namespace omsapi.Hubs
 
                 string? nickname = null;
                 string? avatar = null;
+                long? currentOrgId = null;
 
                 if (long.TryParse(userId, out long uid))
                 {
@@ -60,6 +61,7 @@ namespace omsapi.Hubs
                     {
                         nickname = dbUser.Nickname;
                         avatar = dbUser.Avatar;
+                        currentOrgId = dbUser.CurrentOrgId;
                     }
                 }
 
@@ -70,6 +72,7 @@ namespace omsapi.Hubs
                     UserName = userName,
                     Nickname = nickname,
                     Avatar = avatar,
+                    CurrentOrgId = currentOrgId,
                     LoginTime = DateTime.Now,
                     IpAddress = Context.GetHttpContext()?.Connection?.RemoteIpAddress?.ToString()
                 };
@@ -81,6 +84,16 @@ namespace omsapi.Hubs
             }
 
             await base.OnConnectedAsync();
+        }
+
+        public async Task SwitchOrganization(long orgId)
+        {
+            if (_onlineUsers.TryGetValue(Context.ConnectionId, out var userInfo))
+            {
+                userInfo.CurrentOrgId = orgId;
+                // Broadcast update
+                await Clients.All.SendAsync("UserUpdated", userInfo);
+            }
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
@@ -102,6 +115,7 @@ namespace omsapi.Hubs
         public string UserName { get; set; } = string.Empty;
         public string? Nickname { get; set; }
         public string? Avatar { get; set; }
+        public long? CurrentOrgId { get; set; }
         public DateTime LoginTime { get; set; }
         public string? IpAddress { get; set; }
     }

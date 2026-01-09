@@ -70,7 +70,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, computed, watch } from 'vue';
 import { TeamOutlined, MessageOutlined } from '@ant-design/icons-vue';
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { useRouter } from 'vue-router';
@@ -85,6 +85,7 @@ interface OnlineUser {
   avatar?: string;
   loginTime: string;
   ipAddress?: string;
+  currentOrgId?: number;
 }
 
 const router = useRouter();
@@ -97,7 +98,14 @@ const myConnectionId = ref<string>('');
 
 const uniqueUsers = computed(() => {
   const map = new Map<string, OnlineUser>();
+  const currentOrgId = userStore.currentOrg?.id;
+
   allConnections.value.forEach(conn => {
+    // Filter by Organization
+    if (currentOrgId !== undefined && conn.currentOrgId !== currentOrgId) {
+      return;
+    }
+
     // Group by userId if available, otherwise userName
     const key = conn.userId || conn.userName;
     const existing = map.get(key);
@@ -109,13 +117,19 @@ const uniqueUsers = computed(() => {
       if (conn.connectionId === myConnectionId.value) {
         map.set(key, { ...conn });
       }
-      // If existing is not current, but this one is also not current,
-      // we could check login time, but just keeping first one is fine for now
-      // or we might want to update IP if it changed.
     }
   });
   return Array.from(map.values());
 });
+
+// Watch for organization changes
+watch(() => userStore.currentOrg, (newOrg) => {
+  if (newOrg && connection.value?.state === 'Connected') {
+    connection.value.invoke('SwitchOrganization', newOrg.id).catch(err => {
+      console.error('Failed to switch organization in Hub', err);
+    });
+  }
+}, { deep: true });
 
 const onlineCount = computed(() => uniqueUsers.value.length);
 
@@ -241,6 +255,15 @@ const connectSignalR = async () => {
 
   connection.value.on('UserDisconnected', (connectionId: string) => {
     allConnections.value = allConnections.value.filter(u => u.connectionId !== connectionId);
+  });
+
+  connection.value.on('UserUpdated', (user: OnlineUser) => {
+    const index = allConnections.value.findIndex(u => u.connectionId === user.connectionId);
+    if (index !== -1) {
+      allConnections.value[index] = user;
+    } else {
+      allConnections.value.push(user);
+    }
   });
 
   try {
