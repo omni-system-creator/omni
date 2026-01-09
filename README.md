@@ -12,7 +12,8 @@ Github仓库地址：<a href="https://github.com/omni-system-creator/omni" targe
 
 - [📄 系统功能规划 (功能.md)](./documents/功能.md)
 - [📖 关于项目 (About.md)](./documents/About.md)
-- [📝 更新日志](./更新日志/)
+- [🗓️ 今日更新 (2026-01-09)](./更新日志/2026-01-09_Frontend_OnDemandLoading.md)
+- [📝 更新日志目录](./更新日志/)
 
 ## 🌟 核心功能
 
