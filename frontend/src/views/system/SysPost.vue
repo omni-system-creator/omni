@@ -9,7 +9,7 @@
           <DeptTree
             v-model:selectedKeys="selectedDeptKeys"
             :root-id="currentOrgId"
-            @loaded="(data) => deptTree = data"
+            @loaded="onDeptLoaded"
             @select="onSelectDept"
           />
         </a-card>
@@ -158,14 +158,56 @@ const fetchPosts = async () => {
   }
 };
 
-const onSelectDept = (selectedKeys: number[]) => {
-  if (selectedKeys && selectedKeys.length > 0) {
-    selectedDeptId.value = selectedKeys[0];
-  } else {
-    selectedDeptId.value = undefined;
+const onDeptLoaded = (data: Dept[]) => {
+  deptTree.value = data;
+  
+  // Check if current selection is valid in the new tree
+  let isValidSelection = false;
+  if (selectedDeptKeys.value.length > 0) {
+     const id = selectedDeptKeys.value[0];
+     if (id !== undefined) {
+        isValidSelection = !!findNodeById(data, id);
+     }
   }
-  fetchPosts();
+
+  // Auto-select root node if nothing is selected or current selection is invalid
+  if ((!isValidSelection || selectedDeptKeys.value.length === 0) && data.length > 0) {
+    const root = data[0];
+    if (root) {
+      selectedDeptKeys.value = [root.id];
+    }
+  }
 };
+
+const findNodeById = (nodes: Dept[], id: number): Dept | null => {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findNodeById(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
+const onSelectDept = (selectedKeys: number[]) => {
+  // Prevent deselection: if keys is empty but we have a currently selected node, restore it
+  if (selectedKeys.length === 0 && selectedDeptKeys.value.length > 0) {
+     const current = selectedDeptKeys.value[0];
+     if (current !== undefined) {
+         setTimeout(() => {
+             selectedDeptKeys.value = [current];
+         }, 0);
+     }
+  }
+};
+
+watch(selectedDeptKeys, (val) => {
+  if (val && val.length > 0) {
+    selectedDeptId.value = val[0];
+    fetchPosts();
+  }
+});
 
 // Modal Logic
 const modalVisible = ref(false);

@@ -564,13 +564,34 @@ const handleSearch = () => {
 
 const onDeptLoaded = (data: Dept[]) => {
   deptTreeData.value = data;
-  // Auto-select root node if nothing is selected
-  if (data.length > 0 && selectedDeptKeys.value.length === 0) {
+  
+  // Check if current selection is valid in the new tree
+  let isValidSelection = false;
+  if (selectedDeptKeys.value.length > 0) {
+     const id = selectedDeptKeys.value[0];
+     if (id !== undefined) {
+        isValidSelection = !!findNodeById(data, id);
+     }
+  }
+
+  // Auto-select root node if nothing is selected or current selection is invalid
+  if ((!isValidSelection || selectedDeptKeys.value.length === 0) && data.length > 0) {
     const root = data[0];
     if (root) {
       selectedDeptKeys.value = [root.id];
     }
   }
+};
+
+const findNodeById = (nodes: Dept[], id: number): Dept | null => {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findNodeById(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
 };
 
 const handleSelect = (keys: number[], _e: any) => {

@@ -9,7 +9,7 @@
               <ApartmentOutlined /> 组织结构
             </span>
           </template>
-          <DeptTree v-model:selectedKeys="selectedDeptKeys" :root-id="currentOrgId" @loaded="(data) => depts = data" @select="onSelectDept" />
+          <DeptTree v-model:selectedKeys="selectedDeptKeys" :root-id="currentOrgId" @loaded="onDeptLoaded" @select="onSelectDept" />
         </a-card>
       </template>
 
@@ -177,11 +177,55 @@ const loadData = async (deptIdParam?: number) => {
   }
 };
 
-const onSelectDept = (keys: number[]) => {
-  selectedDeptKeys.value = keys;
-  const id = keys && keys.length > 0 ? keys[0] : undefined;
-  loadData(id);
+const onDeptLoaded = (data: Dept[]) => {
+  depts.value = data;
+  
+  // Check if current selection is valid in the new tree
+  let isValidSelection = false;
+  if (selectedDeptKeys.value.length > 0) {
+     const id = selectedDeptKeys.value[0];
+     if (id !== undefined) {
+        isValidSelection = !!findNodeById(data, id);
+     }
+  }
+
+  // Auto-select root node if nothing is selected or current selection is invalid
+  if ((!isValidSelection || selectedDeptKeys.value.length === 0) && data.length > 0) {
+    const root = data[0];
+    if (root) {
+      selectedDeptKeys.value = [root.id];
+    }
+  }
 };
+
+const findNodeById = (nodes: Dept[], id: number): Dept | null => {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children) {
+      const found = findNodeById(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
+const onSelectDept = (keys: number[]) => {
+  // Prevent deselection
+  if (keys.length === 0 && selectedDeptKeys.value.length > 0) {
+      const current = selectedDeptKeys.value[0];
+      if (current !== undefined) {
+         setTimeout(() => {
+             selectedDeptKeys.value = [current];
+         }, 0);
+      }
+  }
+};
+
+watch(selectedDeptKeys, (val) => {
+    if (val && val.length > 0) {
+        loadData(val[0]);
+    }
+});
 
 const initData = async () => {
   try {
