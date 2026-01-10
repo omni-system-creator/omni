@@ -289,26 +289,28 @@ namespace omsapi.Services
                 }
             }
 
-            // Check duplicate name
+            // Check duplicate name and auto-rename
             var fileName = Path.GetFileNameWithoutExtension(file.FileName);
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
             var fullName = fileName + extension;
 
-            var parentCheck = _context.Files.Where(f => f.ParentId == parentId && f.Name == fullName);
-            if (deptId.HasValue)
+            int count = 1;
+            while (true)
             {
-                parentCheck = parentCheck.Where(f => f.DeptId == deptId);
-            }
-            else
-            {
-                parentCheck = parentCheck.Where(f => f.OwnerId == ownerId && f.DeptId == null);
-            }
+                var check = _context.Files.Where(f => f.ParentId == parentId && f.Name == fullName);
+                if (deptId.HasValue)
+                {
+                    check = check.Where(f => f.DeptId == deptId);
+                }
+                else
+                {
+                    check = check.Where(f => f.OwnerId == ownerId && f.DeptId == null);
+                }
 
-            if (await parentCheck.AnyAsync())
-            {
-                // Auto rename? Or return error?
-                // Let's return error for now.
-                return (false, "同名文件已存在", null);
+                if (!await check.AnyAsync()) break;
+
+                fullName = $"{fileName} ({count}){extension}";
+                count++;
             }
 
             try 

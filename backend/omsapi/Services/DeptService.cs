@@ -123,15 +123,71 @@ namespace omsapi.Services
             }
             else
             {
-                // Normal user: Only see their own root organization
-                var user = await _context.Users.FindAsync(userId);
-                if (user?.DeptId == null) return new List<DeptTreeDto>();
+                // Normal user: Can see organizations they belong to (DeptId or UserPosts)
+                var user = await _context.Users
+                    .Include(u => u.UserPosts)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
 
-                var userRootId = await GetRootDeptIdAsync(user.DeptId.Value);
-                if (userRootId == null) return new List<DeptTreeDto>();
+                if (user == null) return new List<DeptTreeDto>();
 
-                var node = FindNode(tree, userRootId.Value);
-                return node != null ? new List<DeptTreeDto> { node } : new List<DeptTreeDto>();
+                // Collect all departments the user is related to
+                var relatedDeptIds = new HashSet<long>();
+                if (user.DeptId.HasValue) relatedDeptIds.Add(user.DeptId.Value);
+                foreach (var post in user.UserPosts) relatedDeptIds.Add(post.DeptId);
+
+                if (relatedDeptIds.Count == 0) return new List<DeptTreeDto>();
+
+                // Find roots for these departments using in-memory allDepts
+                var allowedRootIds = new HashSet<long>();
+                foreach (var deptId in relatedDeptIds)
+                {
+                    var current = allDepts.FirstOrDefault(d => d.Id == deptId);
+                    while (current != null && current.ParentId != null && current.ParentId != 0)
+                    {
+                        var parentId = current.ParentId;
+                        current = allDepts.FirstOrDefault(d => d.Id == parentId);
+                    }
+                    // If current became null (shouldn't if data consistent), we skip
+                    // Actually if loop finishes, 'current' is the root (or the node itself if no parent)
+                    // Wait, my while loop logic above:
+                    // while (current != null && current.ParentId != null...)
+                    //   current = find(parent)
+                    // If parent not found (data inconsistency), current becomes null.
+                    
+                    // Let's refine the loop to be safe
+                    var temp = allDepts.FirstOrDefault(d => d.Id == deptId);
+                    if (temp == null) continue;
+                    
+                    var root = temp;
+                    while (root.ParentId != null && root.ParentId != 0)
+                    {
+                        var parent = allDepts.FirstOrDefault(d => d.Id == root.ParentId);
+                        if (parent == null) break;
+                        root = parent;
+                    }
+                    allowedRootIds.Add(root.Id);
+                }
+
+                // If a specific root is requested, check if it is allowed
+                if (rootId.HasValue)
+                {
+                    if (allowedRootIds.Contains(rootId.Value))
+                    {
+                        var node = FindNode(tree, rootId.Value);
+                        return node != null ? new List<DeptTreeDto> { node } : new List<DeptTreeDto>();
+                    }
+                    // If requested root is not allowed, return empty
+                    return new List<DeptTreeDto>();
+                }
+
+                // If no root requested, return all allowed roots
+                var result = new List<DeptTreeDto>();
+                foreach (var allowedId in allowedRootIds)
+                {
+                    var node = FindNode(tree, allowedId);
+                    if (node != null) result.Add(node);
+                }
+                return result;
             }
         }
 

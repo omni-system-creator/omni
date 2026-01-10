@@ -245,18 +245,34 @@ namespace omsapi.Services
 
             if (!roleIds.Any()) return (true, "获取成功", new List<MenuItemDto>());
 
-            // 获取所有权限ID
-            var permissionIds = await _context.RolePermissions
-                .Where(rp => roleIds.Contains(rp.RoleId))
-                .Select(rp => rp.PermissionId)
-                .Distinct()
-                .ToListAsync();
+            // Check if SuperAdmin
+            var isSuperAdmin = await _context.Roles.AnyAsync(r => roleIds.Contains(r.Id) && r.Code == "SuperAdmin");
 
-            // 查询菜单类型的权限
-            var menus = await _context.Permissions
-                .Where(p => permissionIds.Contains(p.Id) && p.Type == "MENU" && p.IsVisible)
-                .OrderBy(p => p.SortOrder)
-                .ToListAsync();
+            List<omsapi.Models.Entities.SystemPermission> menus;
+
+            if (isSuperAdmin)
+            {
+                // SuperAdmin gets all visible menus
+                menus = await _context.Permissions
+                    .Where(p => p.Type == "MENU" && p.IsVisible)
+                    .OrderBy(p => p.SortOrder)
+                    .ToListAsync();
+            }
+            else
+            {
+                // 获取所有权限ID
+                var permissionIds = await _context.RolePermissions
+                    .Where(rp => roleIds.Contains(rp.RoleId))
+                    .Select(rp => rp.PermissionId)
+                    .Distinct()
+                    .ToListAsync();
+
+                // 查询菜单类型的权限
+                menus = await _context.Permissions
+                    .Where(p => permissionIds.Contains(p.Id) && p.Type == "MENU" && p.IsVisible)
+                    .OrderBy(p => p.SortOrder)
+                    .ToListAsync();
+            }
 
             // 构建树形结构
             var menuTree = BuildMenuTree(menus, null);
@@ -273,6 +289,19 @@ namespace omsapi.Services
             var roleIds = await GetEffectiveRoleIdsAsync(userId);
 
             if (!roleIds.Any()) return (true, "获取成功", new List<string>());
+
+            // Check if SuperAdmin
+            var isSuperAdmin = await _context.Roles.AnyAsync(r => roleIds.Contains(r.Id) && r.Code == "SuperAdmin");
+
+            if (isSuperAdmin)
+            {
+                // SuperAdmin gets all permissions
+                var allPermissions = await _context.Permissions
+                    .Select(p => p.Code)
+                    .Distinct()
+                    .ToListAsync();
+                return (true, "获取成功", allPermissions);
+            }
 
             // 获取所有权限编码
             var permissions = await _context.RolePermissions

@@ -278,6 +278,7 @@ namespace omsapi.Data
             AddType("sys_security", "sys_oper_type", "操作类型", "系统操作日志的操作类型");
             AddType("sales_mgmt", "sales_opportunity_stage", "商机阶段", "销售商机的进展阶段");
             AddType("sales_mgmt", "sales_customer_source", "客户来源", "客户信息的获取渠道");
+            AddType("sales_mgmt", "sales_bid_type", "招标类型", "招投标项目的类型分类");
             AddType("personal_mgmt", "personal_todo_priority", "待办优先级", "个人待办事项的优先级");
             AddType("sys_common", "kb_type", "知识库分类", "知识库的业务分类");
             AddType("sys_common", "silicon_models", "硅基模型", "SiliconFlow支持的大模型列表");
@@ -477,6 +478,14 @@ namespace omsapi.Data
                 new SysDictData { Label = "客户介绍", Value = "referral", Sort = 3, IsDefault = false, Status = "normal" },
                 new SysDictData { Label = "电话销售", Value = "cold_call", Sort = 4, IsDefault = false, Status = "normal" },
                 new SysDictData { Label = "展会活动", Value = "exhibition", Sort = 5, IsDefault = false, Status = "normal" }
+            });
+            await AddData("sales_bid_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "服务类", Value = "service", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "货物类", Value = "goods", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "工程类", Value = "engineering", Sort = 3, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "监理类", Value = "supervision", Sort = 4, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "其他", Value = "other", Sort = 5, IsDefault = false, Status = "normal" }
             });
 
             // 个人办公
@@ -764,6 +773,89 @@ namespace omsapi.Data
                         Title = "客户接待标准流程",
                         Content = "1. 预约：确认客户来访人数、职位、关注点，提前预定会议室。\n2. 接待：前台登记，引导至会议室，提供茶水（矿泉水/茶/咖啡）。\n3. 演示：连接投影仪，准备好演示环境，演示时长控制在30分钟内。\n4. 送别：送至电梯口或公司门口，并在当天发送感谢短信/邮件。",
                         CreatedAt = now
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            // 6. 招投标项目数据
+            if (!await context.SalesBidProjects.AnyAsync())
+            {
+                context.SalesBidProjects.AddRange(
+                    new omsapi.Models.Entities.Sales.SalesBidProject
+                    {
+                        Code = "BID-2024-001",
+                        Name = "智慧城市二期扩建项目",
+                        Customer = "某市大数据局",
+                        Region = "华东区 - 江苏省",
+                        Type = "信息化/软件开发",
+                        Budget = "¥ 5,000,000",
+                        BidTime = DateTime.Parse("2024-05-01 09:30"),
+                        Leader = "张三",
+                        Status = "进行中",
+                        Description = "本项目旨在通过引入先进的大数据技术，对现有的智慧城市平台进行升级改造，提升城市管理的智能化水平。主要内容包括数据中心扩容、城市大脑升级、智慧交通子系统开发等。",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesBidProject
+                    {
+                        Code = "BID-2024-002",
+                        Name = "某集团ERP升级改造",
+                        Customer = "某大型制造业集团",
+                        Region = "华北区 - 北京市",
+                        Type = "企业管理软件",
+                        Budget = "¥ 8,500,000",
+                        BidTime = DateTime.Parse("2024-06-15 14:00"),
+                        Leader = "李四",
+                        Status = "已中标",
+                        Description = "针对集团现有ERP系统性能瓶颈及功能缺失进行全面升级，涵盖供应链、生产制造、财务核算等核心模块，要求支持云端部署及移动端应用。",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesBidProject
+                    {
+                        Code = "BID-2024-003",
+                        Name = "政务云平台采购",
+                        Customer = "某省政府办公厅",
+                        Region = "华南区 - 广东省",
+                        Type = "云计算/基础设施",
+                        Budget = "¥ 12,000,000",
+                        BidTime = DateTime.Parse("2024-07-20 10:00"),
+                        Leader = "王五",
+                        Status = "未中标",
+                        Description = "采购一批高性能服务器、存储设备及网络安全设备，构建省流政务云平台基础设施，并提供为期3年的运维服务。",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesBidProject
+                    {
+                        Code = "BID-2024-004",
+                        Name = "智慧校园一卡通系统",
+                        Customer = "某知名大学",
+                        Region = "西南区 - 四川省",
+                        Type = "系统集成",
+                        Budget = "¥ 3,200,000",
+                        BidTime = DateTime.Parse("2024-08-10 09:00"),
+                        Leader = "赵六",
+                        Status = "进行中",
+                        Description = "建设覆盖全校的智能一卡通系统，实现身份识别、消费支付、图书借阅、门禁管理等一卡通用功能，支持手机NFC及二维码。",
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    },
+                    new omsapi.Models.Entities.Sales.SalesBidProject
+                    {
+                        Code = "BID-2024-005",
+                        Name = "医院HIS系统维护服务",
+                        Customer = "某三甲医院",
+                        Region = "华中区 - 湖北省",
+                        Type = "运维服务",
+                        Budget = "¥ 1,500,000",
+                        BidTime = DateTime.Parse("2024-05-25 15:00"),
+                        Leader = "孙七",
+                        Status = "流标",
+                        Description = "提供为期一年的HIS系统驻场运维服务，保障医院核心业务系统7x24小时稳定运行，负责故障排查、系统优化及数据备份。",
+                        CreatedAt = now,
+                        UpdatedAt = now
                     }
                 );
                 await context.SaveChangesAsync();

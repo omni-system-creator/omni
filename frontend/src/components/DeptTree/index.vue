@@ -79,14 +79,17 @@ watch(internalSelectedKeys, (val) => {
   emit('update:selectedKeys', val);
 });
 
-watch(() => props.rootId, () => {
+watch(() => props.rootId, (newVal) => {
+  console.log('DeptTree: rootId changed to', newVal);
   loadData();
 });
 
 const loadData = async () => {
   loading.value = true;
+  console.log('DeptTree: loading data for rootId', props.rootId);
   try {
     const res = await getDeptTree(props.rootId);
+    console.log('DeptTree: API response', res);
     let data = res || [];
     
     // Client-side filter fallback if rootId is provided

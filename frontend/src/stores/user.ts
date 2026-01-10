@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 // import { useRouter } from 'vue-router';
 import { usePermissionStore } from './permission';
-import { resetRouter } from '@/router';
+import router, { resetRouter } from '@/router';
 import { useTabsStore } from './tabs';
 import { getUserOrgs, switchUserOrg, type UserOrgDto } from '@/api/user';
 
@@ -103,7 +103,20 @@ export const useUserStore = defineStore('user', () => {
       await switchUserOrg(org.id);
       currentOrg.value = org;
       localStorage.setItem('oms.currentOrg', JSON.stringify(org));
-      // Trigger any necessary reloads or state updates
+      
+      // Reload permissions and routes
+      const permissionStore = usePermissionStore();
+      permissionStore.resetPermission();
+      resetRouter();
+      
+      const accessRoutes = await permissionStore.generateRoutes();
+      await permissionStore.loadPermissions();
+      
+      // Dynamically add routes
+      accessRoutes.forEach(route => {
+        router.addRoute(route);
+      });
+      
     } catch (e) {
       console.error('Failed to switch organization', e);
     }

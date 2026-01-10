@@ -88,6 +88,11 @@ namespace omsapi.Data
         public DbSet<omsapi.Models.Entities.Sales.SalesProcessRule> SalesProcessRules { get; set; }
         public DbSet<omsapi.Models.Entities.Sales.SalesTarget> SalesTargets { get; set; }
         public DbSet<omsapi.Models.Entities.Sales.SalesRegistration> SalesRegistrations { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesBidProject> SalesBidProjects { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesTenderAnalysis> SalesTenderAnalyses { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesTenderChapter> SalesTenderChapters { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesTenderAnalysisRun> SalesTenderAnalysisRuns { get; set; }
+        public DbSet<omsapi.Models.Entities.Sales.SalesTenderAnalysisLog> SalesTenderAnalysisLogs { get; set; }
 
         // Dict Entities
         public DbSet<omsapi.Models.Entities.Dict.SysDictCategory> DictCategories { get; set; }

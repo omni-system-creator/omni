@@ -55,7 +55,6 @@ namespace omsapi.Services
                 var responseString = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(responseString);
                 
-                // Response format: { "data": [ { "embedding": [0.1, ...] } ] }
                 if (doc.RootElement.TryGetProperty("data", out var data) && data.GetArrayLength() > 0)
                 {
                     var embeddingElement = data[0].GetProperty("embedding");
@@ -75,6 +74,124 @@ namespace omsapi.Services
 
             return new float[0];
         }
+
+        public async Task<string> GetChatCompletionAsync(string prompt, string model = "deepseek-ai/DeepSeek-V3")
+        {
+            var apiKey = _configuration["SiliconFlow:ApiKey"];
+            var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                return "AI API Key missing. Cannot generate analysis.";
+            }
+
+            var requestBody = new
+            {
+                model = model,
+                messages = new[]
+                {
+                    new { role = "user", content = prompt }
+                },
+                temperature = 0.7,
+                max_tokens = 8192
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/chat/completions");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[AiService] Chat API Error: {response.StatusCode} - {error}");
+                    // Throw specific exception to propagate the error message up if needed, 
+                    // or return a failure string. Given the current usage, returning a string starting with error info might be better for debugging.
+                    // But to keep consistency with "Analysis failed..." fallback, maybe just log it.
+                    // Actually, let's return the error message so the user sees it in the log.
+                    return $"Analysis failed: {response.StatusCode} - {error}";
+                }
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseString);
+                
+                if (doc.RootElement.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                {
+                    return choices[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AiService] Error in chat completion: {ex.Message}");
+                // Fallback or rethrow
+            }
+
+            return "Analysis failed due to API error.";
+        }
+
+        public async Task<string> GetImageAnalysisAsync(byte[] imageBytes, string prompt = "Extract all text from this image.", string model = "Qwen/Qwen2-VL-72B-Instruct")
+        {
+            var apiKey = _configuration["SiliconFlow:ApiKey"];
+            var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
+
+            if (string.IsNullOrEmpty(apiKey)) return "";
+
+            var base64Image = Convert.ToBase64String(imageBytes);
+            var imageUri = $"data:image/jpeg;base64,{base64Image}";
+
+            var requestBody = new
+            {
+                model = model,
+                messages = new[]
+                {
+                    new
+                    {
+                        role = "user",
+                        content = new object[]
+                        {
+                            new { type = "text", text = prompt },
+                            new { type = "image_url", image_url = new { url = imageUri } }
+                        }
+                    }
+                },
+                max_tokens = 2048
+            };
+
+            var json = JsonSerializer.Serialize(requestBody);
+            var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl}/chat/completions");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            try
+            {
+                var response = await _httpClient.SendAsync(request);
+                // Don't throw immediately, check status
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[AiService] Vision API Error: {response.StatusCode} - {error}");
+                    return "";
+                }
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseString);
+                
+                if (doc.RootElement.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
+                {
+                    return choices[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AiService] Error in image analysis: {ex.Message}");
+            }
+
+            return "";
+        }
+
 
         public async Task<List<float[]>> GetEmbeddingsAsync(List<string> texts, string model = "BAAI/bge-m3")
         {
@@ -218,7 +335,7 @@ namespace omsapi.Services
             return "";
         }
 
-        public async Task<string> GetChatCompletionAsync(string message, string systemPrompt, string model = "deepseek-ai/DeepSeek-V3")
+        public async Task<string> GetChatCompletionAsync(string message, string systemPrompt, string model = "deepseek-ai/DeepSeek-V3", double temperature = 0.7)
         {
             var apiKey = _configuration["SiliconFlow:ApiKey"];
             var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
@@ -236,8 +353,8 @@ namespace omsapi.Services
                     new { role = "system", content = systemPrompt },
                     new { role = "user", content = message }
                 },
-                max_tokens = 1000,
-                temperature = 0.7
+                max_tokens = 8192,
+                temperature = temperature
             };
 
             var json = JsonSerializer.Serialize(requestBody);
@@ -292,7 +409,7 @@ namespace omsapi.Services
                     new { role = "system", content = systemPrompt },
                     new { role = "user", content = message }
                 },
-                max_tokens = 1000,
+                max_tokens = 8192,
                 temperature = 0.7,
                 stream = true
             };

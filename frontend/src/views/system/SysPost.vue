@@ -31,13 +31,21 @@
             :data-source="postList"
             :loading="loading"
             row-key="id"
-            :pagination="{ pageSize: 10 }"
+            :pagination="pagination"
+            @change="handleTableChange"
+            style="flex: 1"
           >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'isActive'">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'index'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
+              <template v-else-if="column.key === 'isActive'">
                 <a-tag :color="record.isActive ? 'success' : 'error'">
                   {{ record.isActive ? '启用' : '禁用' }}
                 </a-tag>
+              </template>
+              <template v-else-if="column.key === 'createdAt'">
+                {{ dayjs(record.createdAt).format('YYYY-MM-DD HH:mm:ss') }}
               </template>
               <template v-else-if="column.key === 'action'">
                 <a-tooltip title="编辑">
@@ -109,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
+import { ref, reactive } from 'vue';
 import { message } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { 
@@ -120,6 +128,7 @@ import {
   getPostList, createPost, updatePost, deletePost, 
   type Post
 } from '@/api/post';
+import dayjs from 'dayjs';
 import { type Dept } from '@/api/dept';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
@@ -135,14 +144,28 @@ const deptTree = ref<Dept[]>([]);
 const selectedDeptId = ref<number | undefined>(undefined);
 const selectedDeptKeys = ref<number[]>([]);
 
+const pagination = reactive({
+  current: 1,
+  pageSize: 10,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (total: number) => `共 ${total} 条`
+});
+
+const handleTableChange = (pag: any) => {
+  pagination.current = pag.current;
+  pagination.pageSize = pag.pageSize;
+};
+
 const columns: ColumnType[] = [
+  { title: '序号', key: 'index', width: 60, align: 'center' },
+  { title: '岗位编码', dataIndex: 'code', key: 'code', width: 120 },
   { title: '岗位名称', dataIndex: 'name', key: 'name' },
-  { title: '岗位编码', dataIndex: 'code', key: 'code' },
   { title: '所属部门', dataIndex: 'deptName', key: 'deptName' },
-  { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', align: 'center' as const },
+  { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', width: '80px', align: 'center' as const },
   { title: '描述', dataIndex: 'description', key: 'description' },
-  { title: '状态', key: 'isActive', align: 'center' as const },
-  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+  { title: '状态', key: 'isActive', width: '80px', align: 'center' as const },
+  { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt', width: '180px', align: 'center' as const },
   { title: '操作', key: 'action', width: '150px', fixed: 'right' as const }
 ];
 
@@ -151,6 +174,7 @@ const fetchPosts = async () => {
   try {
     const res = await getPostList(selectedDeptId.value);
     postList.value = res || [];
+    pagination.current = 1; // Reset to first page on new search
   } catch (error) {
     console.error(error);
   } finally {
@@ -299,9 +323,9 @@ const handleModalOk = async () => {
   }
 };
 
-onMounted(() => {
-  fetchPosts();
-});
+// onMounted(() => {
+//   fetchPosts();
+// });
 </script>
 <style lang="scss" scoped>
   .sys-post-container {
@@ -315,11 +339,38 @@ onMounted(() => {
   }
   :deep(.ant-card-body) {
     flex: 1;
-    overflow: hidden;
+    overflow: auto;
   }
   .content-card {
     height: 100%;
     display: flex;
     flex-direction: column;
+    :deep(.ant-card-body) {
+      padding: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      
+      .ant-table-wrapper {
+        height: 100%;
+        .ant-spin-nested-loading {
+          height: 100%;
+          .ant-spin-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            .ant-table {
+              flex: 1;
+              overflow: auto;
+            }
+            .ant-table-pagination {
+              padding: 0 16px 16px 16px;
+              margin: 0 !important;
+            }
+          }
+        }
+      }
+    }
   }
 </style>

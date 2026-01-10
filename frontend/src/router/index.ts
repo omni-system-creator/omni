@@ -52,6 +52,18 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/sales',
+      component: () => import('../layouts/MainLayout.vue'),
+      children: [
+        {
+          path: 'bid/detail/:id',
+          name: 'BidDetail',
+          component: () => import('../views/sales/Bid/BidDetail.vue'),
+          meta: { title: '招投标详情' }
+        }
+      ]
+    },
     // 404 页面 (嵌入到 MainLayout 中)
     {
       path: '/error',
@@ -62,24 +74,6 @@ const router = createRouter({
           name: 'NotFoundInTab',
           component: () => import('../views/error/404.vue'),
           meta: { title: '页面不存在' }
-        }
-      ]
-    },
-    {
-      path: '/help',
-      component: () => import('../layouts/MainLayout.vue'),
-      children: [
-        {
-          path: 'manual',
-          name: 'HelpManual',
-          component: () => import('../views/help/HelpManual.vue'),
-          meta: { title: '使用文档' }
-        },
-        {
-          path: 'admin-manual',
-          name: 'AdminManual',
-          component: () => import('../views/help/AdminManual.vue'),
-          meta: { title: '运维手册', roles: ['admin'] }
         }
       ]
     },

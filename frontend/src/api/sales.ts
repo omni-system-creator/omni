@@ -163,6 +163,48 @@ export interface RegistrationSearchParams {
   pageSize?: number;
 }
 
+// --- Bid Project Interfaces ---
+
+export interface BidProjectDto {
+  id: string;
+  code: string;
+  name: string;
+  customer?: string;
+  region?: string;
+  type?: string;
+  budget?: string;
+  bidTime?: string;
+  leader?: string;
+  status: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CreateBidProjectDto {
+  code: string;
+  name: string;
+  customer?: string;
+  region?: string;
+  type?: string;
+  budget?: string;
+  bidTime?: string;
+  leader?: string;
+  status?: string;
+  description?: string;
+}
+
+export interface UpdateBidProjectDto extends Partial<CreateBidProjectDto> {}
+
+export interface BidProjectSearchParams {
+  keyword?: string;
+  region?: string;
+  type?: string;
+  status?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 // ==========================================
 // API Functions
 // ==========================================
@@ -342,4 +384,26 @@ export function deleteRegistration(id: string) {
 
 export function generateRegistration() {
   return request.post<any, CreateRegistrationDto>('/sales/registrations/generate', {}, { timeout: 60000 });
+}
+
+// --- Bid Project APIs ---
+
+export function getBidProjects(params?: BidProjectSearchParams) {
+  return request.get<any, { items: BidProjectDto[]; total: number }>('/sales/bid-project', { params });
+}
+
+export function getBidProject(id: string) {
+  return request.get<any, BidProjectDto>(`/sales/bid-project/${id}`);
+}
+
+export function createBidProject(data: CreateBidProjectDto) {
+  return request.post<any, BidProjectDto>('/sales/bid-project', data);
+}
+
+export function updateBidProject(id: string, data: UpdateBidProjectDto) {
+  return request.put<any, BidProjectDto>(`/sales/bid-project/${id}`, data);
+}
+
+export function deleteBidProject(id: string) {
+  return request.delete<any, boolean>(`/sales/bid-project/${id}`);
 }

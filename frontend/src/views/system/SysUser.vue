@@ -39,11 +39,16 @@
             :data-source="filteredUsers"
             :loading="loading"
             row-key="id"
-            :pagination="{ pageSize: 10 }"
+            :pagination="pagination"
+            @change="handleTableChange"
             :scroll="{ x: 1000 }"
+            style="flex: 1"
           >
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'avatar'">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'index'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
+              <template v-else-if="column.key === 'avatar'">
                 <a-avatar :src="record.avatar">
                   <template #icon><UserOutlined /></template>
                 </a-avatar>
@@ -239,7 +244,7 @@ import type { TreeSelectProps } from 'ant-design-vue/es/tree-select';
 import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
 import { getUserList, createUser, updateUser, deleteUser, resetUserPassword, type UserListDto } from '@/api/user';
 import { getRoleList, type RoleDto } from '@/api/role';
-import { type Dept } from '@/api/dept';
+import { getDeptTree, type Dept } from '@/api/dept';
 import { getPostList, type Post } from '@/api/post';
 import { generatePassword } from '@/utils/password';
 import dayjs from 'dayjs';
@@ -258,7 +263,27 @@ const selectedDeptKeys = ref<number[]>([]);
 const userStore = useUserStore();
 const currentOrgId = computed(() => userStore.currentOrg?.id);
 
+// 监听组织切换，清空选中部门
+watch(currentOrgId, (newVal) => {
+  console.log('SysUser: currentOrgId changed to', newVal);
+  selectedDeptKeys.value = [];
+});
+
+const pagination = reactive({
+  current: 1,
+  pageSize: 10,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (total: number) => `共 ${total} 条`
+});
+
+const handleTableChange = (pag: any) => {
+  pagination.current = pag.current;
+  pagination.pageSize = pag.pageSize;
+};
+
 const columns: ColumnType[] = [
+  { title: '序号', key: 'index', width: 60, align: 'center' as const, fixed: 'left' as const },
   { title: '头像', key: 'avatar', width: 60, align: 'center' as const },
   { title: '用户名', dataIndex: 'username', key: 'username' },
   { title: '昵称', dataIndex: 'nickname', key: 'nickname' },
@@ -344,6 +369,15 @@ const loadRoles = async () => {
   try {
     const res = await getRoleList();
     roleOptions.value = res;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const loadAllDepts = async () => {
+  try {
+    const res = await getDeptTree();
+    deptTreeData.value = res || [];
   } catch (error) {
     console.error(error);
   }
@@ -563,8 +597,6 @@ const handleSearch = () => {
 };
 
 const onDeptLoaded = (data: Dept[]) => {
-  deptTreeData.value = data;
-  
   // Check if current selection is valid in the new tree
   let isValidSelection = false;
   if (selectedDeptKeys.value.length > 0) {
@@ -619,28 +651,60 @@ onMounted(() => {
   // loadData(); // Deferred to watch(selectedDeptKeys)
   loadRoles();
   loadPosts();
+  loadAllDepts();
 });
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .sys-user-container {
   flex: 1;
   padding: 10px;
 }
+
 .dept-card {
   height: 100%;
   display: flex;
   flex-direction: column;
 }
+
 :deep(.ant-card-body) {
   flex: 1;
   overflow: hidden;
 }
+
 .content-card {
   height: 100%;
   display: flex;
   flex-direction: column;
+  :deep(.ant-card-body) {
+    padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    
+    .ant-table-wrapper {
+      height: 100%;
+      .ant-spin-nested-loading {
+        height: 100%;
+        .ant-spin-container {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          .ant-table {
+            flex: 1;
+            overflow: auto;
+          }
+          .ant-table-pagination {
+            padding: 0 16px 16px 16px;
+            margin: 0 !important;
+          }
+        }
+      }
+    }
+  }
 }
+
 .text-danger {
   color: #ff4d4f;
 }

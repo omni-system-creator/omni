@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20260109144707_AddTenderInfoFields")]
+    partial class AddTenderInfoFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2407,10 +2410,6 @@ namespace omsapi.Migrations
                     b.Property<DateTime?>("OpenBidTime")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("open_bid_time");
-
-                    b.Property<DateTime?>("PublishTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("publish_time");
 
                     b.Property<string>("Qualification")
                         .HasColumnType("longtext")

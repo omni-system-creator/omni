@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20260109132813_AddSalesTenderAnalysisFileFields")]
+    partial class AddSalesTenderAnalysisFileFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2355,38 +2358,18 @@ namespace omsapi.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("AgencyName")
-                        .HasColumnType("longtext")
-                        .HasColumnName("agency_name");
-
                     b.Property<string>("BidBond")
                         .HasColumnType("longtext")
                         .HasColumnName("bid_bond");
-
-                    b.Property<DateTime?>("BidEndTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("bid_end_time");
 
                     b.Property<string>("BidProjectId")
                         .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("bid_project_id");
 
-                    b.Property<DateTime?>("BidStartTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("bid_start_time");
-
                     b.Property<string>("Budget")
                         .HasColumnType("longtext")
                         .HasColumnName("budget");
-
-                    b.Property<string>("ContactName")
-                        .HasColumnType("longtext")
-                        .HasColumnName("contact_name");
-
-                    b.Property<string>("ContactPhone")
-                        .HasColumnType("longtext")
-                        .HasColumnName("contact_phone");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)")
@@ -2396,6 +2379,10 @@ namespace omsapi.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("deadline");
 
+                    b.Property<long?>("FileId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("file_id");
+
                     b.Property<string>("FileName")
                         .HasColumnType("longtext")
                         .HasColumnName("file_name");
@@ -2404,21 +2391,9 @@ namespace omsapi.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("file_url");
 
-                    b.Property<DateTime?>("OpenBidTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("open_bid_time");
-
-                    b.Property<DateTime?>("PublishTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("publish_time");
-
                     b.Property<string>("Qualification")
                         .HasColumnType("longtext")
                         .HasColumnName("qualification");
-
-                    b.Property<DateTime?>("TenderStartTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("tender_start_time");
 
                     b.Property<string>("TenderType")
                         .IsRequired()
@@ -2432,74 +2407,6 @@ namespace omsapi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("sales_bid_analysis");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Sales.SalesTenderAnalysisLog", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("BidProjectId")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("bid_project_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("message");
-
-                    b.Property<long>("RunId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("run_id");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("sales_bid_analysis_log");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Sales.SalesTenderAnalysisRun", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("BidProjectId")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("bid_project_id");
-
-                    b.Property<long>("CreatedBy")
-                        .HasColumnType("bigint")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTime?>("FinishedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("finished_at");
-
-                    b.Property<DateTime>("StartedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("started_at");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("status");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("sales_bid_analysis_run");
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.Sales.SalesTenderChapter", b =>

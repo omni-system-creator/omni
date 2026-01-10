@@ -28,9 +28,12 @@
           </template>
 
           <a-table :columns="columns" :data-source="roles" :loading="loading" row-key="id"
-            :pagination="{ pageSize: 10 }">
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'isSystem'">
+            :pagination="pagination" @change="handleTableChange" style="flex: 1">
+            <template #bodyCell="{ column, record, index }">
+              <template v-if="column.key === 'index'">
+                {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+              </template>
+              <template v-else-if="column.key === 'isSystem'">
                 <a-tag :color="record.isSystem ? 'orange' : 'green'">
                   {{ record.isSystem ? '系统内置' : '自定义' }}
                 </a-tag>
@@ -99,7 +102,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, reactive, computed } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { TreeProps } from 'ant-design-vue/es/tree';
@@ -124,8 +127,22 @@ const userStore = useUserStore();
 const isAdmin = computed(() => userStore.isAdmin);
 const currentOrgId = computed(() => userStore.currentOrg?.id);
 
+const pagination = reactive({
+  current: 1,
+  pageSize: 10,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (total: number) => `共 ${total} 条`
+});
+
+const handleTableChange = (pag: any) => {
+  pagination.current = pag.current;
+  pagination.pageSize = pag.pageSize;
+};
+
 const columns = computed(() => {
   const base: ColumnType[] = [
+    { title: '序号', key: 'index', width: 80, align: 'center' },
     { title: '角色名称', dataIndex: 'name', key: 'name' },
     { title: '角色编码', dataIndex: 'code', key: 'code' },
     { title: '类型', key: 'isSystem', width: 100 },
@@ -227,18 +244,9 @@ watch(selectedDeptKeys, (val) => {
     }
 });
 
-const initData = async () => {
-  try {
-    // DeptTree loads depts automatically
-    await loadData();
-  } catch (error) {
-    console.error(error);
-  }
-};
-
 // --- Modal Logic ---
-const modalVisible = ref(false);
 const confirmLoading = ref(false);
+const modalVisible = ref(false);
 const modalTitle = ref('新增角色');
 const currentId = ref<number | null>(null);
 const formRef = ref();
@@ -398,12 +406,10 @@ const handlePermOk = async () => {
   }
 };
 
-onMounted(() => {
-  initData();
-});
+
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .sys-role-container {
   flex: 1;
   padding: 10px;
@@ -424,6 +430,33 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  :deep(.ant-card-body) {
+    padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    
+    .ant-table-wrapper {
+      height: 100%;
+      .ant-spin-nested-loading {
+        height: 100%;
+        .ant-spin-container {
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          .ant-table {
+            flex: 1;
+            overflow: auto;
+          }
+          .ant-table-pagination {
+            padding: 0 16px 16px 16px;
+            margin: 0 !important;
+          }
+        }
+      }
+    }
+  }
 }
 
 .text-danger {
