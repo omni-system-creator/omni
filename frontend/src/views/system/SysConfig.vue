@@ -146,7 +146,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed, reactive } from 'vue';
+import { ref, onMounted, computed, reactive, watch } from 'vue';
 import { message } from 'ant-design-vue';
 
 import { useUserStore } from '@/stores/user';
@@ -333,6 +333,10 @@ const handleModalOk = async () => {
 };
 
 onMounted(() => {
+  loadConfigs();
+});
+
+watch(() => userStore.currentOrg?.id, () => {
   loadConfigs();
 });
 </script>

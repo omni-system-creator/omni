@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import { usePermissionStore } from './permission';
 import router, { resetRouter } from '@/router';
 import { useTabsStore } from './tabs';
+import { useSystemStore } from './system';
 import { getUserOrgs, switchUserOrg, type UserOrgDto } from '@/api/user';
 
 export const useUserStore = defineStore('user', () => {
@@ -106,9 +107,14 @@ export const useUserStore = defineStore('user', () => {
       
       // Reload permissions and routes
       const permissionStore = usePermissionStore();
+      const systemStore = useSystemStore();
+      
       permissionStore.resetPermission();
       resetRouter();
       
+      // Refresh system configs for the new org
+      systemStore.fetchConfigs();
+
       const accessRoutes = await permissionStore.generateRoutes();
       await permissionStore.loadPermissions();
       

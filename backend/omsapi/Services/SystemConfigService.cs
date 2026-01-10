@@ -35,6 +35,11 @@ namespace omsapi.Services
             return null;
         }
 
+        private bool IsSuperAdmin()
+        {
+            return _httpContextAccessor.HttpContext?.User?.IsInRole("SuperAdmin") ?? false;
+        }
+
         public async Task<(bool Success, string Message, List<SystemConfigDto>? Data)> GetAllConfigsAsync()
         {
             var orgId = await GetCurrentOrgIdAsync();
@@ -126,7 +131,7 @@ namespace omsapi.Services
                 if (orgId.HasValue)
                 {
                     // User belongs to an Org, so they are trying to override
-                    if (!config.IsOverridable)
+                    if (!config.IsOverridable && !IsSuperAdmin())
                     {
                         return (false, "该配置项不允许修改");
                     }
@@ -164,7 +169,7 @@ namespace omsapi.Services
             else
             {
                 // It is an existing org config
-                if (orgId.HasValue && config.OrgId != orgId)
+                if (orgId.HasValue && config.OrgId != orgId && !IsSuperAdmin())
                 {
                     return (false, "无权修改其他组织的配置");
                 }
@@ -209,7 +214,7 @@ namespace omsapi.Services
             else
             {
                 // Org Config
-                if (orgId.HasValue && config.OrgId != orgId)
+                if (orgId.HasValue && config.OrgId != orgId && !IsSuperAdmin())
                 {
                     return (false, "无权删除其他组织的配置");
                 }
