@@ -19,6 +19,7 @@ namespace omsapi.Models.Flow
         public string? Path { get; set; }
         public string? Method { get; set; }
         public string? SourceId { get; set; }
+        public string? DatabaseName { get; set; }
         public string? OpType { get; set; }
         public string? Sql { get; set; }
         public string? Url { get; set; }

@@ -15,7 +15,7 @@
           <a-select-option value="mysql">MySQL</a-select-option>
           <a-select-option value="postgresql" disabled>PostgreSQL</a-select-option>
           <a-select-option value="oracle" disabled>Oracle</a-select-option>
-          <a-select-option value="sqlserver" disabled>SQL Server</a-select-option>
+          <a-select-option value="sqlserver">SQL Server</a-select-option>
         </a-select>
       </a-form-item>
       <a-form-item label="主机地址" required>
@@ -68,6 +68,17 @@ const formState = reactive<CreateDataSourceDto>({
   password: '',
   database: '',
 });
+
+watch(
+  () => formState.type,
+  (val) => {
+    if (val === 'mysql') {
+      formState.port = '3306';
+    } else if (val === 'sqlserver') {
+      formState.port = '1433';
+    }
+  }
+);
 
 watch(
   () => props.open,

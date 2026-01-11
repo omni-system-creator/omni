@@ -406,71 +406,142 @@ namespace omsapi.Services
             if (string.IsNullOrWhiteSpace(sql)) return null;
 
             log($"Executing SQL: {sql}");
-            
-            var connection = _context.Database.GetDbConnection();
-            if (connection.State != ConnectionState.Open) await connection.OpenAsync();
 
-            using var command = connection.CreateCommand();
-            command.CommandText = sql;
-
-            // Basic Parameter Injection
-            foreach (var kvp in context)
+            long? sourceId = null;
+            if (node.Data.SourceId != null)
             {
-                object? value = kvp.Value;
-                if (value is JsonElement element)
-                {
-                    switch (element.ValueKind)
-                    {
-                        case JsonValueKind.String:
-                            value = element.GetString();
-                            break;
-                        case JsonValueKind.Number:
-                            if (element.TryGetInt64(out var l)) value = l;
-                            else value = element.GetDouble();
-                            break;
-                        case JsonValueKind.True:
-                            value = true;
-                            break;
-                        case JsonValueKind.False:
-                            value = false;
-                            break;
-                        case JsonValueKind.Null:
-                            value = null;
-                            break;
-                    }
-                }
-
-                if (value != null && (value is string || value is int || value is long || value is double || value is bool || value is DateTime))
-                {
-                    var p = command.CreateParameter();
-                    p.ParameterName = "@" + kvp.Key;
-                    p.Value = value;
-                    command.Parameters.Add(p);
-                    log($"Added param @{kvp.Key} = {value}");
-                }
+                if (long.TryParse(node.Data.SourceId, out var pl)) sourceId = pl;
             }
+            
+            string? databaseName = node.Data.DatabaseName;
 
-            if (node.Data.OpType?.ToLower() == "select")
+            System.Data.Common.DbConnection connection;
+            bool isExternal = false;
+
+            if (sourceId.HasValue && sourceId.Value > 0)
             {
-                using var reader = await command.ExecuteReaderAsync();
-                var results = new List<object>();
-                while (await reader.ReadAsync())
+                var connEntity = await _context.DataSourceConnections.FindAsync(sourceId.Value);
+                if (connEntity == null) throw new Exception($"Data source connection {sourceId} not found");
+                
+                // Use adapter to build connection string or create connection
+                // But adapters are internal to DataSourceService/Adapters.
+                // We can duplicate simple logic here or inject IDataSourceService? 
+                // Adapters are not DI injected usually, instantiated in Service.
+                // Let's implement basic connection creation here for now to support MySQL/SQLServer
+                // Or better, reuse logic.
+                
+                string connStr = "";
+                if (connEntity.Type.ToLower() == "mysql")
                 {
-                    var row = new Dictionary<string, object?>();
-                    for (int i = 0; i < reader.FieldCount; i++)
+                    var builder = new MySqlConnector.MySqlConnectionStringBuilder
                     {
-                        row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                    }
-                    results.Add(row!);
+                        Server = connEntity.Host,
+                        Port = uint.Parse(connEntity.Port),
+                        UserID = connEntity.User,
+                        Password = connEntity.Password,
+                        Database = !string.IsNullOrEmpty(databaseName) ? databaseName : connEntity.Database
+                    };
+                    connStr = builder.ConnectionString;
+                    connection = new MySqlConnector.MySqlConnection(connStr);
                 }
-                log($"SQL returned {results.Count} rows.");
-                return results;
+                else if (connEntity.Type.ToLower() == "sqlserver")
+                {
+                    var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+                    {
+                        DataSource = $"{connEntity.Host},{connEntity.Port}",
+                        UserID = connEntity.User,
+                        Password = connEntity.Password,
+                        InitialCatalog = !string.IsNullOrEmpty(databaseName) ? databaseName : connEntity.Database,
+                        TrustServerCertificate = true
+                    };
+                    connStr = builder.ConnectionString;
+                    connection = new Microsoft.Data.SqlClient.SqlConnection(connStr);
+                }
+                else
+                {
+                    throw new Exception($"Unsupported database type: {connEntity.Type}");
+                }
+                isExternal = true;
             }
             else
             {
-                var affected = await command.ExecuteNonQueryAsync();
-                log($"SQL affected {affected} rows.");
-                return new { affectedRows = affected };
+                // Default to system DB
+                connection = _context.Database.GetDbConnection();
+            }
+
+            if (connection.State != ConnectionState.Open) await connection.OpenAsync();
+
+            try 
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = sql;
+
+                // Basic Parameter Injection
+                foreach (var kvp in context)
+                {
+                    object? value = kvp.Value;
+                    if (value is JsonElement element)
+                    {
+                        switch (element.ValueKind)
+                        {
+                            case JsonValueKind.String:
+                                value = element.GetString();
+                                break;
+                            case JsonValueKind.Number:
+                                if (element.TryGetInt64(out var l)) value = l;
+                                else value = element.GetDouble();
+                                break;
+                            case JsonValueKind.True:
+                                value = true;
+                                break;
+                            case JsonValueKind.False:
+                                value = false;
+                                break;
+                            case JsonValueKind.Null:
+                                value = null;
+                                break;
+                        }
+                    }
+
+                    if (value != null && (value is string || value is int || value is long || value is double || value is bool || value is DateTime))
+                    {
+                        var p = command.CreateParameter();
+                        p.ParameterName = "@" + kvp.Key;
+                        p.Value = value;
+                        command.Parameters.Add(p);
+                        log($"Added param @{kvp.Key} = {value}");
+                    }
+                }
+
+                if (node.Data.OpType?.ToLower() == "select")
+                {
+                    using var reader = await command.ExecuteReaderAsync();
+                    var results = new List<object>();
+                    while (await reader.ReadAsync())
+                    {
+                        var row = new Dictionary<string, object?>();
+                        for (int i = 0; i < reader.FieldCount; i++)
+                        {
+                            row[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                        }
+                        results.Add(row!);
+                    }
+                    log($"SQL returned {results.Count} rows.");
+                    return results;
+                }
+                else
+                {
+                    var affected = await command.ExecuteNonQueryAsync();
+                    log($"SQL affected {affected} rows.");
+                    return new { affectedRows = affected };
+                }
+            }
+            finally
+            {
+                if (isExternal && connection != null)
+                {
+                    await connection.DisposeAsync();
+                }
             }
         }
         private async Task<object?> ExecuteApiNode(FlowNode node, Dictionary<string, object> context, Action<string> log)

@@ -45,11 +45,13 @@
             <a-select v-model:value="record.dataType" style="width: 100%">
               <a-select-option value="int">int</a-select-option>
               <a-select-option value="varchar">varchar</a-select-option>
+              <a-select-option value="nvarchar">nvarchar</a-select-option>
               <a-select-option value="text">text</a-select-option>
               <a-select-option value="datetime">datetime</a-select-option>
               <a-select-option value="decimal">decimal</a-select-option>
               <a-select-option value="bigint">bigint</a-select-option>
               <a-select-option value="tinyint">tinyint</a-select-option>
+              <a-select-option value="bit">bit</a-select-option>
               <a-select-option value="double">double</a-select-option>
               <a-select-option value="date">date</a-select-option>
             </a-select>

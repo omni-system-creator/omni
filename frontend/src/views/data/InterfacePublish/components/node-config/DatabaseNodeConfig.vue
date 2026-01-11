@@ -10,10 +10,16 @@
     </template>
   </a-alert>
   <a-form-item label="数据源">
-    <a-select v-model:value="node.data.sourceId" @change="onChange">
-      <a-select-option value="db1">主业务库 (MySQL)</a-select-option>
-      <a-select-option value="db2">日志库 (MongoDB)</a-select-option>
-    </a-select>
+    <a-tree-select
+      v-model:value="treeValue"
+      style="width: 100%"
+      :dropdown-style="{ maxHeight: '400px', overflow: 'auto' }"
+      :tree-data="treeData"
+      placeholder="请选择数据源"
+      tree-default-expand-all
+      :load-data="onLoadData"
+      @change="onTreeSelectChange"
+    />
   </a-form-item>
   <a-form-item label="操作类型">
     <a-select v-model:value="node.data.opType" @change="onChange">
@@ -29,12 +35,118 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, watch } from 'vue';
+import { message } from 'ant-design-vue';
+import { getDataSources, getDatabases, type DataSourceConnection } from '@/api/dataSource';
+
 const props = defineProps<{
   node: any;
   readOnly?: boolean;
 }>();
 
 const emit = defineEmits(['change']);
+
+const treeData = ref<any[]>([]);
+const treeValue = ref<string>();
+const loading = ref(false);
+
+const loadDataSources = async () => {
+  loading.value = true;
+  try {
+    const res = await getDataSources();
+    if (res) {
+      treeData.value = res.map((ds: DataSourceConnection) => ({
+        title: ds.name,
+        value: `conn-${ds.id}`,
+        key: `conn-${ds.id}`,
+        isLeaf: false,
+        dataRef: ds
+      }));
+
+      // If there is an initial selection with databaseName, preload that connection's databases
+      if (props.node.data.sourceId && props.node.data.databaseName) {
+        const connNode = treeData.value.find(n => n.key === `conn-${props.node.data.sourceId}`);
+        if (connNode) {
+          await loadDatabasesForNode(connNode);
+        }
+      }
+      // Force update to ensure TreeSelect picks up the children
+      treeData.value = [...treeData.value];
+    }
+  } catch (error) {
+    message.error('加载数据源失败');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const loadDatabasesForNode = async (treeNode: any) => {
+  try {
+    const ds = treeNode.dataRef;
+    const dbs = await getDatabases(ds.id);
+    if (dbs) {
+      treeNode.children = dbs.map((db: any) => ({
+        title: db.name,
+        value: `db-${ds.id}-${db.name}`,
+        key: `db-${ds.id}-${db.name}`,
+        isLeaf: true
+      }));
+    } else {
+      treeNode.isLeaf = true;
+    }
+  } catch (e) {
+    message.error('加载数据库失败');
+    treeNode.isLeaf = true;
+  }
+};
+
+const onLoadData = (treeNode: any) => {
+  return new Promise<void>(async (resolve) => {
+    if (treeNode.children) {
+      resolve();
+      return;
+    }
+    await loadDatabasesForNode(treeNode);
+    treeData.value = [...treeData.value];
+    resolve();
+  });
+};
+
+// Sync node.data to treeValue
+watch(() => [props.node.data.sourceId, props.node.data.databaseName], ([sourceId, dbName]) => {
+  if (!sourceId) {
+    treeValue.value = undefined;
+    return;
+  }
+  if (dbName) {
+    treeValue.value = `db-${sourceId}-${dbName}`;
+  } else {
+    treeValue.value = `conn-${sourceId}`;
+  }
+}, { immediate: true });
+
+onMounted(() => {
+  loadDataSources();
+});
+
+const onTreeSelectChange = (value: string) => {
+  if (!value) {
+    props.node.data.sourceId = undefined;
+    props.node.data.databaseName = undefined;
+  } else if (value.startsWith('conn-')) {
+    const id = value.split('-')[1];
+    props.node.data.sourceId = Number(id);
+    props.node.data.databaseName = undefined;
+  } else if (value.startsWith('db-')) {
+    const parts = value.split('-');
+    // db-{id}-{name}
+    const id = parts[1];
+    const name = parts.slice(2).join('-');
+    props.node.data.sourceId = Number(id);
+    props.node.data.databaseName = name;
+  }
+  emit('change');
+};
 
 const onChange = () => {
   emit('change');
