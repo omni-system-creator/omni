@@ -262,7 +262,7 @@ defineExpose({
 <style scoped>
 .right-panel {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
   background: #fff;
   display: flex;
   flex-direction: column;

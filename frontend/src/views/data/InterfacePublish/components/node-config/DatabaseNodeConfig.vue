@@ -55,19 +55,37 @@ const loadDataSources = async () => {
   try {
     const res = await getDataSources();
     if (res) {
-      treeData.value = res.map((ds: DataSourceConnection) => ({
-        title: ds.name,
-        value: `conn-${ds.id}`,
-        key: `conn-${ds.id}`,
-        isLeaf: false,
-        dataRef: ds
+      // Group by type
+      const groups: Record<string, DataSourceConnection[]> = {};
+      res.forEach(ds => {
+        const type = ds.type || 'Other';
+        if (!groups[type]) groups[type] = [];
+        groups[type].push(ds);
+      });
+
+      treeData.value = Object.keys(groups).map(type => ({
+        title: type.toUpperCase(),
+        value: `type-${type}`,
+        key: `type-${type}`,
+        selectable: false,
+        children: groups[type]!.map(ds => ({
+          title: ds.name,
+          value: `conn-${ds.id}`,
+          key: `conn-${ds.id}`,
+          isLeaf: false,
+          dataRef: ds
+        }))
       }));
 
       // If there is an initial selection with databaseName, preload that connection's databases
       if (props.node.data.sourceId && props.node.data.databaseName) {
-        const connNode = treeData.value.find(n => n.key === `conn-${props.node.data.sourceId}`);
-        if (connNode) {
-          await loadDatabasesForNode(connNode);
+        // Find connection node in the grouped tree
+        for (const typeNode of treeData.value) {
+          const connNode = typeNode.children?.find((n: any) => n.key === `conn-${props.node.data.sourceId}`);
+          if (connNode) {
+            await loadDatabasesForNode(connNode);
+            break;
+          }
         }
       }
       // Force update to ensure TreeSelect picks up the children

@@ -313,6 +313,7 @@ defineExpose({
 <style lang="scss" scoped>
 .table-details {
   height: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   padding: 16px;
