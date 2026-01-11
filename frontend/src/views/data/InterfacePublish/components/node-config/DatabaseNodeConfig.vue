@@ -169,14 +169,14 @@ const onTreeSelectChange = (value: string) => {
     props.node.data.databaseName = undefined;
   } else if (value.startsWith('conn-')) {
     const id = value.split('-')[1];
-    props.node.data.sourceId = Number(id);
+    props.node.data.sourceId = id;
     props.node.data.databaseName = undefined;
   } else if (value.startsWith('db-')) {
     const parts = value.split('-');
     // db-{id}-{name}
     const id = parts[1];
     const name = parts.slice(2).join('-');
-    props.node.data.sourceId = Number(id);
+    props.node.data.sourceId = id;
     props.node.data.databaseName = name;
   }
   emit('change');
