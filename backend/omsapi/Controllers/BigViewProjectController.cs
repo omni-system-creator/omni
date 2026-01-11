@@ -97,7 +97,7 @@ namespace omsapi.Controllers
         [HttpPost("publish")]
         public async Task<ApiResponse<object>> Publish([FromBody] PublishBigViewProjectDto dto)
         {
-             var (success, message) = await _service.ChangeReleaseStateAsync(dto.Id, dto.State);
+             var (success, message) = await _service.ChangeReleaseStateAsync(dto.Id, dto.State.ToString());
              if (!success) return ApiResponse<object>.Error(message);
              return ApiResponse<object>.Success(null);
         }

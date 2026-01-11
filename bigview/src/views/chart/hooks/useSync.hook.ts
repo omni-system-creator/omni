@@ -229,7 +229,7 @@ export const useSync = () => {
     projectName: string,
     indexImage: string,
     remarks: string,
-    state: number
+    state: number | string
   }) => {
     const { id, projectName, remarks, indexImage, state } = projectData
     // ID
@@ -241,7 +241,7 @@ export const useSync = () => {
     // 缩略图
     chartEditStore.setProjectInfo(ProjectInfoEnum.THUMBNAIL, indexImage)
     // 发布
-    chartEditStore.setProjectInfo(ProjectInfoEnum.RELEASE, state === 1)
+    chartEditStore.setProjectInfo(ProjectInfoEnum.RELEASE, state == 1)
   }
 
   // * 数据获取

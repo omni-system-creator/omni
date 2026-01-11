@@ -24,7 +24,7 @@ namespace omsapi.Models.Dtos.BigView
     public class PublishBigViewProjectDto
     {
         public long Id { get; set; }
-        public string State { get; set; } = "-1";
+        public int State { get; set; } = -1;
     }
 
     public class BigViewProjectDto

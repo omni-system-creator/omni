@@ -92,7 +92,7 @@ export const useDataListInit = () => {
     const res = await changeProjectReleaseApi({
       id: id,
       // [-1未发布, 1发布]
-      state: !release ? 1 : -1
+      state: !release ? '1' : '-1'
     })
     if (res && res.code === ResultEnum.SUCCESS) {
       list.value = []
