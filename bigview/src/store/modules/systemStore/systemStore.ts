@@ -47,16 +47,27 @@ export const useSystemStore = defineStore({
             if (!this.getToken) return false;
             // get user info
             const res = await getUserInfoApi()
-            if (res && res.data && res.data.user) {
-                const {nickName, userName, userId} = res.data.user
-                this.setItem(SystemStoreEnum.USER_INFO, {
-                    [SystemStoreUserInfoEnum.USER_TOKEN]: this.getToken,
-                    [SystemStoreUserInfoEnum.NICK_NAME]: nickName,
-                    [SystemStoreUserInfoEnum.USER_NAME]: userName,
-                    [SystemStoreUserInfoEnum.USER_ID]: String(userId),
-                })
-                goHome ? routerTurnByName(PageEnum.BASE_HOME_NAME, true) : ''
-                return true;
+            if (res && res.data) {
+                // 兼容后端直接返回 UserDto 对象的情况
+                // 后端字段: id, username, nickname
+                // 前端字段: userId, userName, nickName
+                const data = res.data as any
+                const userObj = data.user || data // 优先尝试取 user 属性，如果没有则直接使用 data
+                
+                const userId = userObj.userId || userObj.id
+                const userName = userObj.userName || userObj.username
+                const nickName = userObj.nickName || userObj.nickname
+
+                if (userId) {
+                    this.setItem(SystemStoreEnum.USER_INFO, {
+                        [SystemStoreUserInfoEnum.USER_TOKEN]: this.getToken,
+                        [SystemStoreUserInfoEnum.NICK_NAME]: nickName,
+                        [SystemStoreUserInfoEnum.USER_NAME]: userName,
+                        [SystemStoreUserInfoEnum.USER_ID]: String(userId),
+                    })
+                    goHome ? routerTurnByName(PageEnum.BASE_HOME_NAME, true) : ''
+                    return true;
+                }
             }
             return false;
         },
