@@ -1,0 +1,102 @@
+<Window x:Class="OmsDesktop.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:local="clr-namespace:OmsDesktop"
+        mc:Ignorable="d"
+        Title="Login" Height="480" Width="320"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        AllowsTransparency="True"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="Auto">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="5" />
+    </WindowChrome.WindowChrome>
+
+    <Border Background="{DynamicResource LoginWindowBackground}" CornerRadius="8" MouseLeftButtonDown="Window_MouseDown">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="10" ShadowDepth="0" Opacity="0.2" Color="Black" />
+        </Border.Effect>
+        
+        <Grid>
+            <!-- Login View -->
+            <Grid x:Name="LoginView" Margin="20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /> <!-- Window Controls -->
+                    <RowDefinition Height="Auto" /> <!-- Logo -->
+                    <RowDefinition Height="*" />    <!-- Inputs -->
+                    <RowDefinition Height="Auto" /> <!-- Footer -->
+                </Grid.RowDefinitions>
+
+                <!-- Window Controls -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                     <Button Style="{StaticResource MaterialDesignIconForegroundButton}" Click="Minimize_Click" Width="30" Height="30" ToolTip="Minimize">
+                        <materialDesign:PackIcon Kind="WindowMinimize" />
+                    </Button>
+                    <Button Style="{StaticResource MaterialDesignIconForegroundButton}" Click="Close_Click" Width="30" Height="30" ToolTip="Close">
+                        <materialDesign:PackIcon Kind="WindowClose" />
+                    </Button>
+                </StackPanel>
+
+                <!-- Logo/Title -->
+                <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,20,0,30">
+                     <Image Source="pack://application:,,,/logo.png" Width="64" Height="64" RenderOptions.BitmapScalingMode="HighQuality" />
+                     <TextBlock Text="OMS Desktop" FontSize="20" FontWeight="Bold" Margin="0,10,0,0" HorizontalAlignment="Center" Foreground="{DynamicResource TextPrimary}"/>
+                </StackPanel>
+
+                <!-- Inputs -->
+                <StackPanel Grid.Row="2" VerticalAlignment="Center">
+                    <TextBox x:Name="TxtUsername" materialDesign:HintAssist.Hint="账号" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,15" FontSize="14" />
+                    <PasswordBox x:Name="TxtPassword" materialDesign:HintAssist.Hint="密码" Style="{StaticResource MaterialDesignFloatingHintPasswordBox}" Margin="0,0,0,15" FontSize="14" />
+                    
+                    <CheckBox x:Name="ChkRememberMe" Content="记住我" Margin="0,0,0,25" />
+
+                    <Button Content="登 录" IsDefault="True" Height="40" FontSize="16" Click="Login_Click" Background="{DynamicResource BrandColor}" BorderThickness="0" />
+                </StackPanel>
+
+                <!-- Footer / Settings -->
+                <Grid Grid.Row="3" Margin="0,20,0,0">
+                    <Button Style="{StaticResource MaterialDesignFlatButton}" HorizontalAlignment="Center" Click="ShowSettings_Click" Foreground="{DynamicResource TextSecondary}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Cog" VerticalAlignment="Center" Margin="0,0,5,0" />
+                            <TextBlock Text="服务器设置" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Grid>
+
+            <!-- Settings View (Initially Hidden) -->
+            <Grid x:Name="SettingsView" Margin="20" Visibility="Collapsed" Background="{DynamicResource LoginWindowBackground}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <Button Style="{StaticResource MaterialDesignIconForegroundButton}" HorizontalAlignment="Left" Click="BackToLogin_Click">
+                        <materialDesign:PackIcon Kind="ArrowLeft" />
+                    </Button>
+                    <TextBlock Text="服务器设置" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,-30,0,20" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" VerticalAlignment="Center">
+                    <TextBox x:Name="TxtServerAddress" materialDesign:HintAssist.Hint="服务器地址 (例如: 192.168.1.100)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,15" />
+                    <TextBox x:Name="TxtServerPort" materialDesign:HintAssist.Hint="端口 (例如: 8080)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,15" />
+                    <CheckBox x:Name="ChkHttps" Content="使用 HTTPS" Margin="0,10" />
+                </StackPanel>
+
+                <Button Grid.Row="2" Content="保存" Height="40" Click="SaveSettings_Click" Background="{DynamicResource BrandColor}" BorderThickness="0" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>
