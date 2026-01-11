@@ -69,7 +69,7 @@ const loadDataSources = async () => {
         key: `type-${type}`,
         selectable: false,
         children: groups[type]!.map(ds => ({
-          title: ds.name,
+          title: `${ds.name} (${ds.host}:${ds.port})`,
           value: `conn-${ds.id}`,
           key: `conn-${ds.id}`,
           selectable: false,
