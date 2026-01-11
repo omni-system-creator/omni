@@ -256,7 +256,7 @@ namespace omsapi.Services.DataSourceAdapters
                     // Simplify ColumnType mapping
                     ColumnType = $"{reader.GetString(1)}({reader.GetInt16(2)})",
                     IsNullable = reader.GetBoolean(3),
-                    IsPrimaryKey = reader.GetInt32(4) == 1,
+                    IsPrimaryKey = reader.GetBoolean(4),
                     DefaultValue = reader.IsDBNull(5) ? null : reader.GetString(5),
                     Comment = reader.IsDBNull(6) ? null : reader.GetString(6).ToString(),
                     OrdinalPosition = reader.GetInt32(7)

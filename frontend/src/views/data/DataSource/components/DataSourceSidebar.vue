@@ -283,9 +283,9 @@ defineExpose({
 :deep(.full-width-tree) {
   flex: 1;
   width: 100%;
-  height: 100%;
   padding: 12px;
   border-radius: 0 !important;
+  background-color: transparent;
 }
 
 :deep(.ant-tree-treenode) {
