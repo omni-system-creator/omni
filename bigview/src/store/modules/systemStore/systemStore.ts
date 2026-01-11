@@ -42,19 +42,23 @@ export const useSystemStore = defineStore({
             });
             setLocalStorage(GO_SYSTEM_STORE, this.$state)
         },
-        async afterLoginAction(goHome?: boolean) {
+        async afterLoginAction(goHome?: boolean): Promise<boolean> {
             console.log(this.getToken, 'this.getTokenthis.getTokenthis.getToken')
-            if (!this.getToken) return null;
+            if (!this.getToken) return false;
             // get user info
-            // const res = await getUserInfoApi()
-            // const {nickName, userName, userId} = res.user
-            this.setItem(SystemStoreEnum.USER_INFO, {
-                [SystemStoreUserInfoEnum.USER_TOKEN]: this.getToken,
-                // ...res.user,
-                // roles: res.roles,
-                // permissions: res.permissions,
-            })
-            goHome ? routerTurnByName(PageEnum.BASE_HOME_NAME, true) : ''
+            const res = await getUserInfoApi()
+            if (res && res.data && res.data.user) {
+                const {nickName, userName, userId} = res.data.user
+                this.setItem(SystemStoreEnum.USER_INFO, {
+                    [SystemStoreUserInfoEnum.USER_TOKEN]: this.getToken,
+                    [SystemStoreUserInfoEnum.NICK_NAME]: nickName,
+                    [SystemStoreUserInfoEnum.USER_NAME]: userName,
+                    [SystemStoreUserInfoEnum.USER_ID]: String(userId),
+                })
+                goHome ? routerTurnByName(PageEnum.BASE_HOME_NAME, true) : ''
+                return true;
+            }
+            return false;
         },
         // 解密token
         decryptToken() {

@@ -1,4 +1,4 @@
-import axios, { AxiosResponse, AxiosRequestConfig, Axios, AxiosError } from 'axios'
+import axios, { AxiosResponse, AxiosRequestConfig, Axios, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { RequestHttpHeaderEnum, ResultEnum, ModuleTypeEnum } from '@/enums/httpEnum'
 import { PageEnum, ErrorPageNameMap } from '@/enums/pageEnum'
 import { StorageEnum } from '@/enums/storageEnum'
@@ -26,20 +26,16 @@ const axiosInstance = axios.create({
 }) as unknown as MyRequestInstance
 
 axiosInstance.interceptors.request.use(
-    (config: AxiosRequestConfig) => {
+    (config: InternalAxiosRequestConfig) => {
         // 白名单校验
         if (includes(fetchAllowList, config.url)) return config
-        // // 获取 token
-        // const info = getLocalStorage(StorageEnum.GO_SYSTEM_STORE)
-        // console.log(info, 'infoinfoinfoinfoinfo')
-        // // TODO 重新登录
-        // if (!info) {
-        //     // routerTurnByName(PageEnum.BASE_LOGIN_NAME)
-        //     window.location.href = '/login'
-        //     return config
-        // }
-        // const token = info[SystemStoreEnum.TOKEN]
-        // config.headers['authorization'] = 'Bearer ' + token || ''
+        // 获取 token
+        const info = getLocalStorage(StorageEnum.GO_SYSTEM_STORE)
+        if (info && info[SystemStoreEnum.TOKEN]) {
+            const token = info[SystemStoreEnum.TOKEN]
+            // @ts-ignore
+            config.headers['Authorization'] = 'Bearer ' + token
+        }
         return config
     },
     (err: AxiosError) => {
@@ -63,13 +59,12 @@ axiosInstance.interceptors.response.use(
             return Promise.resolve(res.data)
         }
 
-        // // TODO 登录过期
-        // if (code === ResultEnum.TOKEN_OVERDUE) {
-        //     window['$message'].error(window['$t']('http.token_overdue_message'))
-        //     // routerTurnByName(PageEnum.BASE_LOGIN_NAME)
-        //     window.location.href = '/login' // 直接跳转到根目录
-        //     return Promise.resolve(res.data)
-        // }
+        // 登录过期
+        if (code === ResultEnum.TOKEN_OVERDUE) {
+            window['$message'].error(window['$t']('http.token_overdue_message'))
+            routerTurnByName(PageEnum.BASE_LOGIN_NAME)
+            return new Promise(() => {})
+        }
 
         // 固定错误码重定向
         if (ErrorPageNameMap.get(code)) {
@@ -86,12 +81,11 @@ axiosInstance.interceptors.response.use(
         switch (status) {
             case 401:
                 routerTurnByName(PageEnum.BASE_LOGIN_NAME)
-                Promise.reject(err)
-                break
+                // 返回一个永远不会 resolve 的 Promise，防止后续代码继续执行并报错，等待路由跳转
+                return new Promise(() => {})
 
             default:
-                Promise.reject(err)
-                break
+                return Promise.reject(err)
         }
     }
 )

@@ -1,4 +1,4 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, ConfigEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import { resolve } from 'path'
@@ -12,8 +12,8 @@ function pathResolve(dir: string) {
   return resolve(process.cwd(), '.', dir)
 }
 
-export default ({ mode }) => defineConfig({
-  base: process.env.NODE_ENV === 'production' ? './' : '/',
+export default ({ mode }: ConfigEnv) => defineConfig({
+  base: mode === 'production' ? '/bigview/' : '/',
   // 路径重定向
   resolve: {
     alias: [

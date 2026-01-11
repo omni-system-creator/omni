@@ -9,6 +9,8 @@ using Serilog;
 using Pgvector.EntityFrameworkCore;
 
 Console.OutputEncoding = Encoding.UTF8;
+// 禁用默认的 Claim 类型映射，防止 "sub" 被映射为 ClaimTypes.NameIdentifier 等
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 var builder = WebApplication.CreateBuilder(args);
 

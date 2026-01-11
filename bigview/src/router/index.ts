@@ -1,5 +1,5 @@
 import type { App } from 'vue'
-import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import { createRouterGuards } from './router-guards'
 import { PageEnum } from '@/enums/pageEnum'
 import { HttpErrorPage, LoginRoute, ReloadRoute, RedirectRoute } from '@/router/base'
@@ -31,7 +31,7 @@ const RootRoute: Array<RouteRecordRaw> = [
 export const constantRouter: any[] = [LoginRoute, ...RootRoute, ReloadRoute];
 
 const router = createRouter({
-  history: createWebHashHistory(''),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: constantRouter,
   strict: true,
 })

@@ -6,7 +6,7 @@ import {LoginResult, UserInfoResult} from './system'
 // * 登录
 export const loginApi = async (data: object) => {
   try {
-    const res = await http(RequestHttpEnum.POST)<LoginResult>(`/login`, data) //  await http(RequestHttpEnum.POST)<LoginResult>(`${ModuleTypeEnum.SYSTEM}/login`, data)
+    const res = await http(RequestHttpEnum.POST)<LoginResult>(`/Auth/login`, data)
     return res
   } catch (err) {
     httpErrorHandle()
@@ -16,7 +16,7 @@ export const loginApi = async (data: object) => {
 // * 登出
 export const logoutApi = async () => {
   try {
-    const res = await http(RequestHttpEnum.GET)(`/logout`) //  await http(RequestHttpEnum.GET)(`${ModuleTypeEnum.SYSTEM}/logout`)
+    const res = await http(RequestHttpEnum.GET)(`/logout`) // 后端暂无 logout 接口，前端只需清除 token
     return res
   } catch (err) {
     httpErrorHandle()
@@ -26,7 +26,7 @@ export const logoutApi = async () => {
 // * 获取用户信息
 export const getUserInfoApi = async () => {
   try {
-    const res = await http(RequestHttpEnum.GET)<UserInfoResult>(`/getInfo`) //  await http(RequestHttpEnum.POST)<LoginResult>(`${ModuleTypeEnum.SYSTEM}/login`, data)
+    const res = await http(RequestHttpEnum.GET)<UserInfoResult>(`/User/me`)
     return res
   } catch (err) {
     httpErrorHandle()

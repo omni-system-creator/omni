@@ -147,7 +147,7 @@ export const openGiteeSourceCode = () => {
  * @returns boolean
  */
 export const isPreview = () => {
-  return document.location.hash.includes('preview')
+  return document.location.href.includes('preview')
 }
 
 /**
@@ -170,7 +170,11 @@ export const fetchRouteParams = () => {
 export const fetchRouteParamsLocation = () => {
   try {
     // 防止添加query参数的时候，解析ID异常
-    return document.location.hash.split('?')[0].split('/').pop() || ''
+    // 兼容 Hash 路由: 只有包含 '/' 的 hash 才被视为路由路径，避免 #top 这种锚点干扰
+    if (document.location.hash && document.location.hash.includes('/')) {
+      return document.location.hash.split('?')[0].split('/').pop() || ''
+    }
+    return document.location.pathname.split('/').pop() || ''
   } catch (error) {
     window['$message'].warning('查询路由信息失败，请联系管理员！')
     return ''
@@ -208,7 +212,15 @@ export const loginCheck = () => {
  */
  export const previewPath = (id?: string | number) => {
   const { origin, pathname } = document.location
-  const path = fetchPathByName(PreviewEnum.CHART_PREVIEW_NAME, 'href')
-  const previewPath = `${origin}${pathname}${path}/${id || fetchRouteParamsLocation()}`
+  const { href } = router.resolve({
+    name: PreviewEnum.CHART_PREVIEW_NAME,
+    params: {
+      id: String(id || fetchRouteParamsLocation())
+    }
+  })
+  if (href.startsWith('#')) {
+    return `${origin}${pathname}${href}`
+  }
+  const previewPath = `${origin}${href}`
   return previewPath
 }

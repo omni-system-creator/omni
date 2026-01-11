@@ -32,9 +32,9 @@
         <div class="login-account-container">
           <n-collapse-transition :appear="true" :show="show">
             <n-card class="login-account-card" :title="$t('login.desc')">
-              <div class="login-account-top">
+              <!-- <div class="login-account-top">
                 <img class="login-account-top-logo" src="~@/assets/images/login/input.png" alt="展示图片" />
-              </div>
+              </div> -->
               <n-form ref="formRef" label-placement="left" size="large" :model="formInline" :rules="rules">
                 <n-form-item path="username">
                   <n-input
@@ -120,8 +120,8 @@ const systemStore = useSystemStore()
 const t = window['$t']
 
 const formInline = reactive({
-  username: 'admin',
-  password: '123456'
+  username: '',
+  password: ''
 })
 
 const rules = {
@@ -175,9 +175,11 @@ const handleSubmit = async (e: Event) => {
         // 存储到 pinia
         systemStore.setItem(SystemStoreEnum.TOKEN, tokenValue)
 
-        await systemStore.afterLoginAction()
-        window['$message'].success(t('login.login_success'))
-        routerTurnByName(PageEnum.BASE_HOME_NAME, true)
+        const isSuccess = await systemStore.afterLoginAction()
+        if (isSuccess) {
+            window['$message'].success(t('login.login_success'))
+            routerTurnByName(PageEnum.BASE_HOME_NAME, true)
+        }
       } else {
         window['$message'].error(res?.msg || '登录失败')
       }
