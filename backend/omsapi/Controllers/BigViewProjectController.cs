@@ -12,6 +12,7 @@ namespace omsapi.Controllers
     /// </summary>
     [Route("api/bigview/project")]
     [ApiController]
+    [Authorize]
     public class BigViewProjectController : ControllerBase
     {
         private readonly IBigViewProjectService _service;
