@@ -140,7 +140,7 @@ const sendHandle = async () => {
   const res = await changeProjectReleaseApi({
     id: fetchRouteParamsLocation(),
     // 反过来
-    state: release.value ? 0 : 1
+    state: release.value ? -1 : 1
   })
 
   if (res && res.code === ResultEnum.SUCCESS) {
@@ -171,13 +171,13 @@ const btnList = [
     icon: renderIcon(BrowsersOutlineIcon),
     event: previewHandle
   },
-  // {
-  //   key: 'release',
-  //   title: () => (release.value ? '已发布' : '发布'),
-  //   icon: renderIcon(SendIcon),
-  //   type: () => (release.value ? 'primary' : 'default'),
-  //   event: modelShowHandle
-  // }
+  {
+    key: 'release',
+    title: () => (release.value ? '已发布' : '发布'),
+    icon: renderIcon(SendIcon),
+    type: () => (release.value ? 'primary' : 'default'),
+    event: modelShowHandle
+  }
 ]
 
 const comBtnList = computed(() => {

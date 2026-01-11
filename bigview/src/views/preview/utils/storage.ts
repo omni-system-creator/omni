@@ -22,7 +22,7 @@ export const getSessionStorageInfo = async () => {
     const res = await fetchProjectApi({ id })
     if (res && res.code === ResultEnum.SUCCESS) {
       const { content, state } = res.data
-      if (state === -1) {
+      if (state == -1) {
         // 跳转未发布页
         return { isRelease: false }
       }

@@ -38,7 +38,7 @@ export const useDataListInit = () => {
           createId: createUserId,
           time: createTime,
           image: indexImage,
-          release: state !== 0,
+          release: state == 1,
 
         }
       })
@@ -91,8 +91,8 @@ export const useDataListInit = () => {
     const { id, release } = cardData
     const res = await changeProjectReleaseApi({
       id: id,
-      // [0未发布, 1发布]
-      state: !release ? 1 : 0
+      // [-1未发布, 1发布]
+      state: !release ? 1 : -1
     })
     if (res && res.code === ResultEnum.SUCCESS) {
       list.value = []
