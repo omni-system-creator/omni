@@ -10,6 +10,10 @@ export enum PreviewEnum {
   //  图表预览
   CHART_PREVIEW = '/chart/preview/:id(.*)*',
   CHART_PREVIEW_NAME = 'ChartPreview',
+
+  //  图表查看(已发布)
+  CHART_VIEW = '/chart/view/:id(.*)*',
+  CHART_VIEW_NAME = 'ChartView',
 }
 
 export enum EditEnum {

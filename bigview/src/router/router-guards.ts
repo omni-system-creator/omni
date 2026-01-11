@@ -9,7 +9,9 @@ const routerAllowList = [
   // 登录
   PageEnum.BASE_LOGIN_NAME,
   // 预览
-  PreviewEnum.CHART_PREVIEW_NAME
+  PreviewEnum.CHART_PREVIEW_NAME,
+  // 查看
+  PreviewEnum.CHART_VIEW_NAME
 ]
 
 export function createRouterGuards(router: Router) {

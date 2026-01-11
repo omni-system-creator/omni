@@ -147,7 +147,7 @@ export const openGiteeSourceCode = () => {
  * @returns boolean
  */
 export const isPreview = () => {
-  return document.location.href.includes('preview')
+  return document.location.href.includes('/preview/') || document.location.href.includes('/view/')
 }
 
 /**
