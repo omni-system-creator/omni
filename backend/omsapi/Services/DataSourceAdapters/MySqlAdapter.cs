@@ -45,7 +45,14 @@ namespace omsapi.Services.DataSourceAdapters
             await mySqlConnection.OpenAsync();
 
             var databases = new List<DatabaseSchemaDto>();
-            var sql = "SELECT SCHEMA_NAME, DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') ORDER BY SCHEMA_NAME";
+            var sql = @"
+                SELECT 
+                    SCHEMA_NAME, 
+                    DEFAULT_COLLATION_NAME,
+                    (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = SCHEMA_NAME) as TableCount
+                FROM information_schema.SCHEMATA 
+                WHERE SCHEMA_NAME NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys') 
+                ORDER BY SCHEMA_NAME";
 
             using var command = new MySqlCommand(sql, mySqlConnection);
             using var reader = await command.ExecuteReaderAsync();
@@ -55,7 +62,8 @@ namespace omsapi.Services.DataSourceAdapters
                 databases.Add(new DatabaseSchemaDto
                 {
                     Name = reader.GetString(0),
-                    Collation = reader.GetString(1)
+                    Collation = reader.GetString(1),
+                    TableCount = reader.GetInt64(2)
                 });
             }
 

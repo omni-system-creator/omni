@@ -42,12 +42,24 @@ namespace omsapi.Services.DataSourceAdapters
             await sqlConnection.OpenAsync();
 
             var databases = new List<DatabaseSchemaDto>();
-            // Exclude system databases
+            // Use dynamic SQL to query table counts from each database
             var sql = @"
-                SELECT name, collation_name
+                DECLARE @sql NVARCHAR(MAX) = N'';
+                
+                SELECT @sql = @sql + N'SELECT ''' + REPLACE(name, '''', '''''') + N''' AS Name, ' + 
+                                     N'''' + ISNULL(CAST(collation_name AS NVARCHAR(128)), '') + N''' AS Collation, ' + 
+                                     N'(SELECT COUNT(*) FROM ' + QUOTENAME(name) + N'.sys.tables) AS TableCount UNION ALL '
                 FROM sys.databases 
                 WHERE name NOT IN ('master', 'tempdb', 'model', 'msdb')
-                ORDER BY name";
+                AND state = 0 -- Online
+                AND HAS_DBACCESS(name) = 1; -- User has access
+
+                IF LEN(@sql) > 0
+                BEGIN
+                    SET @sql = LEFT(@sql, LEN(@sql) - 10);
+                    SET @sql = @sql + N' ORDER BY Name';
+                    EXEC sp_executesql @sql;
+                END";
 
             using var command = new SqlCommand(sql, sqlConnection);
             using var reader = await command.ExecuteReaderAsync();
@@ -57,7 +69,8 @@ namespace omsapi.Services.DataSourceAdapters
                 databases.Add(new DatabaseSchemaDto
                 {
                     Name = reader.GetString(0),
-                    Collation = reader.IsDBNull(1) ? null : reader.GetString(1)
+                    Collation = reader.GetString(1),
+                    TableCount = reader.GetInt32(2)
                 });
             }
 
@@ -91,12 +104,13 @@ namespace omsapi.Services.DataSourceAdapters
             var sql = @"
                 SELECT 
                     t.name,
-                    ep.value as comment,
-                    p.rows,
+                    CAST(ep.value AS NVARCHAR(MAX)) as comment,
+                    SUM(p.rows) as rows,
                     t.create_date
                 FROM sys.tables t
                 LEFT JOIN sys.extended_properties ep ON t.object_id = ep.major_id AND ep.minor_id = 0 AND ep.name = 'MS_Description'
                 LEFT JOIN sys.partitions p ON t.object_id = p.object_id AND p.index_id IN (0,1)
+                GROUP BY t.name, CAST(ep.value AS NVARCHAR(MAX)), t.create_date
                 ORDER BY t.name";
 
             using var command = new SqlCommand(sql, sqlConnection);

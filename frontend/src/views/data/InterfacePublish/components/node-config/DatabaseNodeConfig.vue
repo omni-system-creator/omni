@@ -72,6 +72,7 @@ const loadDataSources = async () => {
           title: ds.name,
           value: `conn-${ds.id}`,
           key: `conn-${ds.id}`,
+          selectable: false,
           isLeaf: false,
           dataRef: ds
         }))
@@ -120,11 +121,26 @@ const loadDatabasesForNode = async (treeNode: any) => {
 
 const onLoadData = (treeNode: any) => {
   return new Promise<void>(async (resolve) => {
-    if (treeNode.children) {
+    const { key } = treeNode;
+    // Find the node in treeData
+    const findNode = (nodes: any[], targetKey: string): any => {
+      for (const node of nodes) {
+        if (node.key === targetKey) return node;
+        if (node.children) {
+          const res = findNode(node.children, targetKey);
+          if (res) return res;
+        }
+      }
+      return null;
+    };
+
+    const targetNode = findNode(treeData.value, key);
+    if (!targetNode || (targetNode.children && targetNode.children.length > 0)) {
       resolve();
       return;
     }
-    await loadDatabasesForNode(treeNode);
+    
+    await loadDatabasesForNode(targetNode);
     treeData.value = [...treeData.value];
     resolve();
   });
