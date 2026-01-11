@@ -38,12 +38,17 @@ export function createRouterGuards(router: Router) {
       next({ name: PageEnum.ERROR_PAGE_NAME_404 })
     }
 
-    // // @ts-ignore TODO Login Check
-    // if (!routerAllowList.includes(to.name) && !loginCheck()) {
-    //   // next({ name: PageEnum.BASE_LOGIN_NAME })
-    //   window.location.href="/login";
-    //   return;
-    // }
+    // @ts-ignore TODO Login Check
+    if (!routerAllowList.includes(to.name) && !loginCheck()) {
+      next({ 
+        name: PageEnum.BASE_LOGIN_NAME,
+        query: {
+          redirect: to.fullPath,
+          ...to.query // 保留原有的 query 参数
+        }
+      })
+      return;
+    }
 
 
 

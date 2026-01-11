@@ -13,12 +13,38 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, type CSSProperties } from 'vue';
+import { computed, type CSSProperties, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTabsStore } from '@/stores/tabs';
 
 const route = useRoute();
 const tabsStore = useTabsStore();
+
+const messageHandler = (event: MessageEvent) => {
+  if (event.data && event.data.type === 'GET_TOKEN') {
+    try {
+      const authData = JSON.parse(localStorage.getItem('oms.auth') || '{}');
+      const token = authData.token;
+      if (token && event.source) {
+        // Send token back to the iframe
+        (event.source as Window).postMessage({
+          type: 'LOGIN_TOKEN',
+          token: token
+        }, '*'); 
+      }
+    } catch (e) {
+      console.error('Error handling GET_TOKEN message', e);
+    }
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('message', messageHandler);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('message', messageHandler);
+});
 
 function getIframeStyle(item: any): CSSProperties {
   const isCurrent = tabsStore.getTabIdentity(route.fullPath) === tabsStore.getTabIdentity(item.fullPath);

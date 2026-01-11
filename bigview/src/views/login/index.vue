@@ -105,8 +105,9 @@ import { LayoutFooter } from '@/layout/components/LayoutFooter'
 import { PageEnum } from '@/enums/pageEnum'
 import { StorageEnum } from '@/enums/storageEnum'
 import { icon } from '@/plugins'
-import { routerTurnByName } from '@/utils'
+import { routerTurnByName, routerTurnByPath } from '@/utils'
 import {getUserInfoApi, loginApi} from '@/api/path'
+import { useRoute } from 'vue-router'
 
 const { PersonOutlineIcon, LockClosedOutlineIcon } = icon.ionicons5
 
@@ -116,6 +117,7 @@ const autoLogin = ref(true)
 const show = ref(false)
 const showBg = ref(false)
 const systemStore = useSystemStore()
+const route = useRoute()
 
 const t = window['$t']
 
@@ -123,6 +125,16 @@ const formInline = reactive({
   username: '',
   password: ''
 })
+
+const loginSuccessHandle = () => {
+    window['$message'].success(t('login.login_success'))
+    const redirect = route.query.redirect as string
+    if (redirect) {
+        routerTurnByPath(redirect)
+    } else {
+        routerTurnByName(PageEnum.BASE_HOME_NAME, true)
+    }
+}
 
 const rules = {
   username: {
@@ -177,8 +189,7 @@ const handleSubmit = async (e: Event) => {
 
         const isSuccess = await systemStore.afterLoginAction()
         if (isSuccess) {
-            window['$message'].success(t('login.login_success'))
-            routerTurnByName(PageEnum.BASE_HOME_NAME, true)
+            loginSuccessHandle()
         }
       } else {
         window['$message'].error(res?.msg || '登录失败')
@@ -200,6 +211,41 @@ onMounted(() => {
   }, 100)
 
   shuffleHandle()
+  
+  // 检查是否在 iframe 中
+  if (window.self !== window.top) {
+    try {
+      // 尝试从父页面获取 token，这里假设父页面在 localStorage 中存储了 token
+      // 注意：这需要父页面和子页面同源，或者配置了跨域策略
+      // 如果不同源，需要使用 postMessage 进行通信
+      
+      // 方式1：尝试直接读取父页面的 localStorage (需同源)
+      // const parentToken = window.parent.localStorage.getItem(SystemStoreEnum.TOKEN)
+      
+      // 方式2：使用 postMessage 监听 (推荐，支持跨域)
+      window.addEventListener('message', async (event) => {
+        if (event.data && event.data.type === 'LOGIN_TOKEN') {
+           const token = event.data.token
+           if (token) {
+             loading.value = true
+             systemStore.setItem(SystemStoreEnum.TOKEN, token)
+             const isSuccess = await systemStore.afterLoginAction()
+             if (isSuccess) {
+                 loginSuccessHandle()
+             } else {
+                 loading.value = false
+             }
+           }
+        }
+      })
+      
+      // 主动向父页面请求 token
+      window.parent.postMessage({ type: 'GET_TOKEN' }, '*')
+      
+    } catch (e) {
+      console.error('Failed to communicate with parent window', e)
+    }
+  }
 })
 </script>
 
