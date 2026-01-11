@@ -22,8 +22,8 @@
 
       <n-list-item>
         <n-space :size="10">
-          <n-alert :show-icon="false" title="预览地址：" type="success">
-            {{ previewPath() }}
+          <n-alert :show-icon="false" :title="addressTitle" type="success">
+            {{ addressUrl }}
           </n-alert>
           <n-space vertical>
             <n-button tertiary type="primary" @click="copyPreviewPath()"> 复制地址 </n-button>
@@ -56,6 +56,7 @@ import { ProjectInfoEnum } from '@/store/modules/chartEditStore/chartEditStore.d
 import { changeProjectReleaseApi } from '@/api/path'
 import {
   previewPath,
+  viewPath,
   renderIcon,
   fetchPathByName,
   routerTurnByPath,
@@ -70,13 +71,20 @@ import { cloneDeep } from 'lodash'
 const { BrowsersOutlineIcon, SendIcon, AnalyticsIcon, CloseIcon } = icon.ionicons5
 const chartEditStore = useChartEditStore()
 
-const previewPathRef = ref(previewPath())
-const { copy, isSupported } = useClipboard({ source: previewPathRef })
-
-const routerParamsInfo = useRoute()
-
 const modelShow = ref<boolean>(false)
 const release = ref<boolean>(false)
+
+const addressUrl = computed(() => {
+  return release.value ? viewPath() : previewPath()
+})
+
+const addressTitle = computed(() => {
+  return release.value ? '发布地址：' : '预览地址：'
+})
+
+const { copy, isSupported } = useClipboard({ source: addressUrl })
+
+const routerParamsInfo = useRoute()
 
 watchEffect(() => {
   release.value = chartEditStore.getProjectInfo.release || false

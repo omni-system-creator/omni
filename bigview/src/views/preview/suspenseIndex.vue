@@ -37,10 +37,17 @@ import { useStore } from './hooks/useStore.hook'
 import { PreviewScaleEnum } from '@/enums/styleEnum'
 import type { ChartEditStorageType } from './index.d'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
+import { PageEnum } from '@/enums/pageEnum'
+import { routerTurnByName } from '@/utils'
 
 // const localStorageInfo: ChartEditStorageType = getSessionStorageInfo() as ChartEditStorageType
 
-await getSessionStorageInfo()
+const localStorageInfo = await getSessionStorageInfo() as unknown as ChartEditStorageType & { isRelease?: boolean }
+
+if (localStorageInfo && localStorageInfo.isRelease === false) {
+  routerTurnByName(PageEnum.REDIRECT_UN_PUBLISH_NAME)
+}
+
 const chartEditStore = useChartEditStore() as unknown as ChartEditStorageType
 
 setTitle(`预览-${chartEditStore.editCanvasConfig.projectName}`)

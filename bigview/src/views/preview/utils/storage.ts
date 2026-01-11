@@ -4,6 +4,8 @@ import { StorageEnum } from '@/enums/storageEnum'
 import { ChartEditStorage } from '@/store/modules/chartEditStore/chartEditStore.d'
 import { fetchProjectApi } from '@/api/path'
 import { useChartEditStore } from '@/store/modules/chartEditStore/chartEditStore'
+import router from '@/router'
+import { PreviewEnum } from '@/enums/pageEnum'
 
 const chartEditStore = useChartEditStore()
 
@@ -22,7 +24,8 @@ export const getSessionStorageInfo = async () => {
     const res = await fetchProjectApi({ id })
     if (res && res.code === ResultEnum.SUCCESS) {
       const { content, state } = res.data
-      if (state == -1) {
+      const currentName = router.currentRoute.value.name
+      if (currentName === PreviewEnum.CHART_VIEW_NAME && state == -1) {
         // 跳转未发布页
         return { isRelease: false }
       }

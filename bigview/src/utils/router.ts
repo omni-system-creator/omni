@@ -224,3 +224,22 @@ export const loginCheck = () => {
   const previewPath = `${origin}${href}`
   return previewPath
 }
+
+/**
+ * * 查看地址
+ * @returns 
+ */
+ export const viewPath = (id?: string | number) => {
+  const { origin, pathname } = document.location
+  const { href } = router.resolve({
+    name: PreviewEnum.CHART_VIEW_NAME,
+    params: {
+      id: String(id || fetchRouteParamsLocation())
+    }
+  })
+  if (href.startsWith('#')) {
+    return `${origin}${pathname}${href}`
+  }
+  const viewPath = `${origin}${href}`
+  return viewPath
+}

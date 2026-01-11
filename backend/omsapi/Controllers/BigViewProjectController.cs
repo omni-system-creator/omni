@@ -38,10 +38,23 @@ namespace omsapi.Controllers
         /// 获取项目详情
         /// </summary>
         [HttpGet("detail")]
+        [AllowAnonymous]
         public async Task<ApiResponse<BigViewProjectDto>> GetDetail([FromQuery] long id)
         {
             var (success, message, data) = await _service.GetByIdAsync(id);
             if (!success) return ApiResponse<BigViewProjectDto>.Error(message);
+
+            // 权限检查：
+            // 1. 如果已发布 (State == "1")，允许匿名访问
+            // 2. 如果未发布，必须已登录
+            var isPublished = data!.State == "1";
+            var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+
+            if (!isPublished && !isAuthenticated)
+            {
+                return ApiResponse<BigViewProjectDto>.Error("Unauthorized", 401);
+            }
+
             return ApiResponse<BigViewProjectDto>.Success(data!);
         }
 
