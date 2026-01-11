@@ -86,6 +86,7 @@
 import { onMounted, computed, provide } from 'vue'
 import { chartColors } from '@/settings/chartThemes/index'
 import { MenuEnum } from '@/enums/editPageEnum'
+import { ThemeEnum } from '@/enums/styleEnum'
 import { CreateComponentType, CreateComponentGroupType } from '@/packages/index.d'
 import {
   animationsClass,
@@ -187,11 +188,19 @@ const rangeStyle = computed(() => {
   const background = chartEditStore.getEditCanvasConfig.background
   const backgroundImage = chartEditStore.getEditCanvasConfig.backgroundImage
   const selectColor = chartEditStore.getEditCanvasConfig.selectColor
-  const backgroundColor = background ? background : undefined
+  const previewTheme = chartEditStore.getEditCanvasConfig.previewTheme
 
-  const computedBackground = selectColor
-    ? { background: backgroundColor }
-    : { background: `url(${backgroundImage}) no-repeat center center / cover !important` }
+  const themeBackgroundColor = previewTheme === ThemeEnum.LIGHT ? '#ffffff' : '#18181c'
+
+  let computedBackground
+  if (selectColor) {
+    const backgroundColor = background ? background : themeBackgroundColor
+    computedBackground = { background: backgroundColor }
+  } else {
+    computedBackground = backgroundImage
+      ? { background: `url(${backgroundImage}) no-repeat center center / cover !important` }
+      : { background: themeBackgroundColor }
+  }
 
   // @ts-ignore
   return {
