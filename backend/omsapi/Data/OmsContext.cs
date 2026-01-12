@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using omsapi.Models.Entities;
+using omsapi.Models.Entities.System;
 using omsapi.Models.Entities.Archive;
 using omsapi.Models.Entities.BigView;
 using omsapi.Models.Entities.Data;
@@ -37,6 +38,8 @@ namespace omsapi.Data
         public DbSet<SystemFile> Files { get; set; }
         public DbSet<SystemFileShare> FileShares { get; set; }
         public DbSet<omsapi.Models.Entities.System.SysOrgRegistration> OrgRegistrations { get; set; }
+        public DbSet<SystemAnonce> Anonces { get; set; }
+        public DbSet<AiGeneratedContent> AiGeneratedContents { get; set; }
         
         // Archive Entities
         public DbSet<ArchFond> ArchFonds { get; set; }
@@ -119,6 +122,7 @@ namespace omsapi.Data
             base.OnModelCreating(modelBuilder);
             var isSqlServer = this.Database.IsSqlServer();
             var isPostgres = this.Database.IsNpgsql();
+            var isMySql = !isSqlServer && !isPostgres; // Assume MySQL if not SQL Server or Postgres
 
             string longTextType;
             string textType;
@@ -137,6 +141,28 @@ namespace omsapi.Data
             {
                 longTextType = "longtext";
                 textType = "text";
+            }
+
+            // MySQL DateTime precision fix
+            if (isMySql)
+            {
+                // Fix for MySQL datetime precision issue
+                // "datetime2" is a SQL Server type, MySQL uses "datetime(6)" for high precision or just "datetime"
+                // EF Core 8+ for MySQL might default to datetime(6) which is fine, 
+                // but if there are explicit column type definitions they need to be handled.
+                // The error suggests some migration or code is trying to use 'datetime2' on MySQL.
+                
+                // Inspect all entities and properties to ensure no 'datetime2' is explicitly set for MySQL
+                foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+                {
+                    foreach (var property in entityType.GetProperties())
+                    {
+                        if (property.GetColumnType() == "datetime2")
+                        {
+                            property.SetColumnType("datetime(6)");
+                        }
+                    }
+                }
             }
 
             modelBuilder.Entity<InterfaceDefinition>().Property(p => p.FlowConfig).HasColumnType(longTextType);
@@ -386,6 +412,9 @@ namespace omsapi.Data
             modelBuilder.Entity<ProjectPhase>().HasKey(p => new { p.Id, p.ProjectCode });
             modelBuilder.Entity<ProjectSwimlane>().HasKey(s => new { s.Id, s.ProjectCode });
             modelBuilder.Entity<ProjectTask>().HasKey(t => new { t.Id, t.ProjectCode });
+
+            // Apply XML Documentation Comments to Database Tables and Columns
+            modelBuilder.ApplyXmlDocumentation();
         }
     }
 }

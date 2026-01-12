@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using omsapi.Data;
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations.PostgreSql
 {
     [DbContext(typeof(OmsContextPostgreSql))]
-    partial class OmsContextPostgreSqlModelSnapshot : ModelSnapshot
+    [Migration("20260112082340_AddAnonceTable")]
+    partial class AddAnonceTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2569,41 +2572,6 @@ namespace omsapi.Migrations.PostgreSql
                     b.HasIndex("ParentId");
 
                     b.ToTable("sales_bid_chapter");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.System.AiGeneratedContent", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("类型：greeting (问候语), slogan (标语)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("sys_ai_generated_content");
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.System.SysOrgRegistration", b =>

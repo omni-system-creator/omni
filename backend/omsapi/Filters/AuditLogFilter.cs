@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using omsapi.Models.Entities;
 using omsapi.Services.Interfaces;
+using omsapi.Infrastructure.Extensions;
 using System.Security.Claims;
 
 namespace omsapi.Filters
@@ -71,7 +72,7 @@ namespace omsapi.Filters
                 Action = actionName,
                 Route = request.Path,
                 Method = method,
-                IpAddress = context.HttpContext.Connection.RemoteIpAddress?.ToString(),
+                IpAddress = context.HttpContext.GetClientIp(),
                 UserAgent = request.Headers["User-Agent"].ToString(),
                 IsSuccess = executedContext.Exception == null,
                 ErrorMessage = executedContext.Exception?.Message,

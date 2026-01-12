@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using omsapi.Data;
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations.PostgreSql
 {
     [DbContext(typeof(OmsContextPostgreSql))]
-    partial class OmsContextPostgreSqlModelSnapshot : ModelSnapshot
+    [Migration("20260112095208_AddAiGeneratedContent")]
+    partial class AddAiGeneratedContent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2586,14 +2589,6 @@ namespace omsapi.Migrations.PostgreSql
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Type")
                         .IsRequired()

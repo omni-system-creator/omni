@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Security.Claims;
 using omsapi.Data;
+using omsapi.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace omsapi.Hubs
@@ -74,7 +75,7 @@ namespace omsapi.Hubs
                     Avatar = avatar,
                     CurrentOrgId = currentOrgId,
                     LoginTime = DateTime.Now,
-                    IpAddress = Context.GetHttpContext()?.Connection?.RemoteIpAddress?.ToString()
+                    IpAddress = Context.GetHttpContext()?.GetClientIp()
                 };
 
                 _onlineUsers.TryAdd(Context.ConnectionId, userInfo);

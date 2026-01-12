@@ -482,7 +482,8 @@ namespace omsapi.Migrations.SqlServer
                     b.Property<string>("State")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
-                        .HasColumnName("state");
+                        .HasColumnName("state")
+                        .HasComment("状态 [-1未发布,1发布]");
 
                     b.HasKey("Id");
 
@@ -527,10 +528,12 @@ namespace omsapi.Migrations.SqlServer
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<long?>("RelatedId")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasComment("关联ID。 对于群组(Type=1)，此处存GroupId。 对于系统/应用(Type=2/3)，如果模块有ID则存ID；如果只有字符串代码(如 \"workflow\")，则此处存null，通过 ConversationKey 区分。");
 
                     b.Property<int>("Type")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasComment("0=Private, 1=Group, 2=System, 3=App");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -2568,6 +2571,41 @@ namespace omsapi.Migrations.SqlServer
                     b.ToTable("sales_bid_chapter");
                 });
 
+            modelBuilder.Entity("omsapi.Models.Entities.System.AiGeneratedContent", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasComment("类型：greeting (问候语), slogan (标语)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("sys_ai_generated_content");
+                });
+
             modelBuilder.Entity("omsapi.Models.Entities.System.SysOrgRegistration", b =>
                 {
                     b.Property<long>("Id")
@@ -2640,6 +2678,72 @@ namespace omsapi.Migrations.SqlServer
                     b.HasKey("Id");
 
                     b.ToTable("sys_org_registration");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.System.SystemAnonce", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasComment("主键ID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasComment("公告内容");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasComment("创建时间");
+
+                    b.Property<long?>("CreatedBy")
+                        .HasColumnType("bigint")
+                        .HasComment("创建人ID");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasComment("优先级 (high, normal, low)");
+
+                    b.Property<DateTime?>("PublishTime")
+                        .HasColumnType("datetime2")
+                        .HasComment("发布时间");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasComment("状态 (draft:草稿, published:已发布, revoked:已撤回)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasComment("公告标题");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasComment("公告类型 (关联字典 anonce_type)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasComment("更新时间");
+
+                    b.Property<long?>("UpdatedBy")
+                        .HasColumnType("bigint")
+                        .HasComment("更新人ID");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("sys_anonce", t =>
+                        {
+                            t.HasComment("系统公告表");
+                        });
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.SystemAuditLog", b =>

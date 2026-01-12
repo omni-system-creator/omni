@@ -85,7 +85,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   MenuUnfoldOutlined,
@@ -106,6 +106,7 @@ import IframeView from './components/IframeView.vue';
 import DynamicIcon from '@/components/DynamicIcon.vue';
 
 import SideMenu from './components/SideMenu.vue';
+import { getAiSlogan } from '@/api/dashboard';
 import type { MenuItem } from '@/types/menu';
 
 const getSettings = () => {
@@ -237,7 +238,18 @@ const breadcrumbs = computed(() => {
   return matched;
 });
 
-const welcomeText = '集中管理各种信息数据的系统，类似包括但不只是OA、ERP、WMS、CRM等，各种能做的都可以做。';
+const welcomeText = ref('集中管理各种信息数据的系统，类似包括但不只是OA、ERP、WMS、CRM等，各种能做的都可以做。');
+
+onMounted(async () => {
+  try {
+    const slogan = await getAiSlogan();
+    if (slogan) {
+      welcomeText.value = slogan as unknown as string;
+    }
+  } catch (error) {
+    console.error('Failed to get AI slogan', error);
+  }
+});
 
 const openLink = (site: 'github' | 'gitee') => {
   const urls: Record<string, string> = {

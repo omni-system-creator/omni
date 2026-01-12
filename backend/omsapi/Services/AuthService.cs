@@ -7,6 +7,7 @@ using omsapi.Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using omsapi.Infrastructure.Extensions;
 using System.Text;
 
 using omsapi.Infrastructure.Attributes;
@@ -36,7 +37,7 @@ namespace omsapi.Services
         public async Task<(bool Success, string Message, LoginResultDto? Data)> LoginAsync(LoginRequest request)
         {
             var startTime = DateTime.Now;
-            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            var ipAddress = _httpContextAccessor.HttpContext?.GetClientIp();
             var userAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
 
             if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
@@ -98,7 +99,7 @@ namespace omsapi.Services
         public async Task<(bool Success, string Message, object? Data)> RegisterAsync(RegisterRequest request)
         {
             var startTime = DateTime.Now;
-            var ipAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            var ipAddress = _httpContextAccessor.HttpContext?.GetClientIp();
             var userAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString();
 
             if (string.IsNullOrEmpty(request.OrgName) || string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))

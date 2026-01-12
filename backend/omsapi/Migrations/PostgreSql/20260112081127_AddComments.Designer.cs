@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using omsapi.Data;
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations.PostgreSql
 {
     [DbContext(typeof(OmsContextPostgreSql))]
-    partial class OmsContextPostgreSqlModelSnapshot : ModelSnapshot
+    [Migration("20260112081127_AddComments")]
+    partial class AddComments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2571,41 +2574,6 @@ namespace omsapi.Migrations.PostgreSql
                     b.ToTable("sales_bid_chapter");
                 });
 
-            modelBuilder.Entity("omsapi.Models.Entities.System.AiGeneratedContent", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("类型：greeting (问候语), slogan (标语)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("sys_ai_generated_content");
-                });
-
             modelBuilder.Entity("omsapi.Models.Entities.System.SysOrgRegistration", b =>
                 {
                     b.Property<long>("Id")
@@ -2684,66 +2652,52 @@ namespace omsapi.Migrations.PostgreSql
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasComment("主键ID");
+                        .HasColumnType("bigint");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasComment("公告内容");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasComment("创建时间");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long?>("CreatedBy")
-                        .HasColumnType("bigint")
-                        .HasComment("创建人ID");
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasComment("优先级 (high, normal, low)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime?>("PublishTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasComment("发布时间");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
-                        .HasComment("状态 (draft:草稿, published:已发布, revoked:已撤回)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasComment("公告标题");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("公告类型 (关联字典 anonce_type)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasComment("更新时间");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long?>("UpdatedBy")
-                        .HasColumnType("bigint")
-                        .HasComment("更新人ID");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
-                    b.ToTable("sys_anonce", t =>
-                        {
-                            t.HasComment("系统公告表");
-                        });
+                    b.ToTable("sys_anonce");
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.SystemAuditLog", b =>
