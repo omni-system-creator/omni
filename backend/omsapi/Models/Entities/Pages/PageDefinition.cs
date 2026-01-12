@@ -16,13 +16,10 @@ namespace omsapi.Models.Entities.Pages
 
         public long? CategoryId { get; set; }
 
-        [Column(TypeName = "longtext")]
         public string? Code { get; set; } // TSX Code
 
-        [Column(TypeName = "longtext")]
         public string? Config { get; set; } // Visual Config (JSON)
 
-        [Column(TypeName = "longtext")]
         public string? ApiBindings { get; set; } // JSON ApiBindings
 
         [MaxLength(500)]

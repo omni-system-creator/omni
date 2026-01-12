@@ -36,12 +36,12 @@ namespace omsapi.Filters
                 return;
             }
 
-            var startTime = DateTime.Now;
+            var startTime = DateTime.UtcNow;
 
             // 执行 Action
             var executedContext = await next();
 
-            var duration = (long)(DateTime.Now - startTime).TotalMilliseconds;
+            var duration = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
             var user = context.HttpContext.User;
             
             long? userId = null;
@@ -76,7 +76,7 @@ namespace omsapi.Filters
                 IsSuccess = executedContext.Exception == null,
                 ErrorMessage = executedContext.Exception?.Message,
                 ExecutionDuration = duration,
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow
             };
 
             // 记录参数 (可选，注意敏感信息脱敏)

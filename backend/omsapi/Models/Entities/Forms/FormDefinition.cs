@@ -22,7 +22,6 @@ namespace omsapi.Models.Entities.Forms
         [MaxLength(500)]
         public string? Description { get; set; }
 
-        [Column(TypeName = "longtext")]
         public string? FormItems { get; set; } // JSON string
 
         public bool IsPublished { get; set; } = false;

@@ -37,6 +37,6 @@ namespace omsapi.Models.Entities
 
         public long ExecutionDuration { get; set; } // ms
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

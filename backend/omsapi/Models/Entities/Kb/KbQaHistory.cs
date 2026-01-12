@@ -14,15 +14,12 @@ namespace OmsApi.Models.Entities.Kb
 
         public Guid? UserId { get; set; }
 
-        [Column(TypeName = "text")]
         public string Question { get; set; } = string.Empty;
 
-        [Column(TypeName = "longtext")]
         public string? Answer { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        [Column(TypeName = "text")]
         public string? SourcesJson { get; set; } // Simplified storage for sources
 
         [ForeignKey(nameof(KbId))]

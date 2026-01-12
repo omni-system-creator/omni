@@ -19,6 +19,10 @@ namespace omsapi.Data
         {
         }
 
+        protected OmsContext(DbContextOptions options) : base(options)
+        {
+        }
+
         public DbSet<SystemUser> Users { get; set; }
         public DbSet<SystemRole> Roles { get; set; }
         public DbSet<SystemPermission> Permissions { get; set; }
@@ -113,6 +117,54 @@ namespace omsapi.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            var isSqlServer = this.Database.IsSqlServer();
+            var isPostgres = this.Database.IsNpgsql();
+
+            string longTextType;
+            string textType;
+
+            if (isSqlServer)
+            {
+                longTextType = "nvarchar(max)";
+                textType = "nvarchar(max)";
+            }
+            else if (isPostgres)
+            {
+                longTextType = "text";
+                textType = "text";
+            }
+            else // MySQL
+            {
+                longTextType = "longtext";
+                textType = "text";
+            }
+
+            modelBuilder.Entity<InterfaceDefinition>().Property(p => p.FlowConfig).HasColumnType(longTextType);
+            
+            modelBuilder.Entity<KbQaHistory>().Property(p => p.Answer).HasColumnType(longTextType);
+            modelBuilder.Entity<KbQaHistory>().Property(p => p.Question).HasColumnType(textType);
+            modelBuilder.Entity<KbQaHistory>().Property(p => p.SourcesJson).HasColumnType(textType);
+
+            modelBuilder.Entity<PageDefinition>().Property(p => p.Code).HasColumnType(longTextType);
+            modelBuilder.Entity<PageDefinition>().Property(p => p.Config).HasColumnType(longTextType);
+            modelBuilder.Entity<PageDefinition>().Property(p => p.ApiBindings).HasColumnType(longTextType);
+
+            modelBuilder.Entity<FormDefinition>().Property(p => p.FormItems).HasColumnType(longTextType);
+
+            if (isSqlServer)
+            {
+                modelBuilder.Entity<SystemFileShare>()
+                    .HasOne(p => p.SharedByUser)
+                    .WithMany()
+                    .HasForeignKey(p => p.SharedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                modelBuilder.Entity<SystemFileShare>()
+                    .HasOne(p => p.SharedToUser)
+                    .WithMany()
+                    .HasForeignKey(p => p.SharedToUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            }
 
             // Ignore KbNode as it is managed by OmsPgContext
             modelBuilder.Ignore<KbNode>();
@@ -149,6 +201,24 @@ namespace omsapi.Data
             modelBuilder.Entity<SystemRole>(entity =>
             {
                 entity.HasIndex(r => r.Code).IsUnique();
+            });
+
+            // 配置 SalesOpportunity
+            modelBuilder.Entity<omsapi.Models.Entities.Sales.SalesOpportunity>(entity =>
+            {
+                entity.Property(e => e.Amount).HasPrecision(18, 2);
+            });
+
+            // 配置 SalesRegistration
+            modelBuilder.Entity<omsapi.Models.Entities.Sales.SalesRegistration>(entity =>
+            {
+                entity.Property(e => e.Amount).HasPrecision(18, 2);
+            });
+
+            // 配置 SalesTenderChapter
+            modelBuilder.Entity<omsapi.Models.Entities.Sales.SalesTenderChapter>(entity =>
+            {
+                entity.Property(e => e.ScoreWeight).HasPrecision(18, 2);
             });
 
             // 配置 SystemConfig
@@ -242,7 +312,7 @@ namespace omsapi.Data
                 Password = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9", // admin123 的 SHA256
                 Nickname = "超级管理员",
                 IsActive = true,
-                CreatedAt = new DateTime(2024, 1, 1)
+                CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
             });
 
             // 初始化超级管理员角色
@@ -253,7 +323,7 @@ namespace omsapi.Data
                 Code = "ADMIN",
                 Description = "系统最高权限",
                 IsSystem = true,
-                CreatedAt = new DateTime(2024, 1, 1)
+                CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
             });
 
             // 关联超级管理员用户和角色
@@ -261,22 +331,22 @@ namespace omsapi.Data
             {
                 UserId = 1,
                 RoleId = 1,
-                CreatedAt = new DateTime(2024, 1, 1)
+                CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
             });
 
             // 初始化系统配置
             modelBuilder.Entity<SystemConfig>().HasData(
-                new SystemConfig { Id = 1, Category = "Basic", Key = "SystemName", Value = "金兰®综合信息管理系统", Description = "系统名称", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1) },
-                new SystemConfig { Id = 2, Category = "Basic", Key = "SystemLogo", Value = "/logo.svg", Description = "系统Logo路径", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1) },
-                new SystemConfig { Id = 3, Category = "Basic", Key = "Copyright", Value = "©2025 Created by jinlan.info", Description = "底部版权信息", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1) },
-                new SystemConfig { Id = 4, Category = "Security", Key = "PasswordMinLength", Value = "6", Description = "密码最小长度", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1) },
-                new SystemConfig { Id = 5, Category = "Security", Key = "SessionTimeout", Value = "30", Description = "会话超时时间(分钟)", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1) }
+                new SystemConfig { Id = 1, Category = "Basic", Key = "SystemName", Value = "金兰®综合信息管理系统", Description = "系统名称", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new SystemConfig { Id = 2, Category = "Basic", Key = "SystemLogo", Value = "/logo.svg", Description = "系统Logo路径", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new SystemConfig { Id = 3, Category = "Basic", Key = "Copyright", Value = "©2025 Created by jinlan.info", Description = "底部版权信息", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new SystemConfig { Id = 4, Category = "Security", Key = "PasswordMinLength", Value = "6", Description = "密码最小长度", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new SystemConfig { Id = 5, Category = "Security", Key = "SessionTimeout", Value = "30", Description = "会话超时时间(分钟)", IsSystem = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
             );
 
             // Seed Archive Permissions
             // 注意：档案模块菜单（Id: 46, 47, 74）由历史数据脚本初始化（见 oms.sql），
             // 这里仅新增按钮级权限（Id: 102–113），避免与现有主键/唯一键冲突。
-            var fixedDate = new DateTime(2025, 12, 22, 12, 0, 0);
+            var fixedDate = new DateTime(2025, 12, 22, 12, 0, 0, DateTimeKind.Utc);
             modelBuilder.Entity<SystemPermission>().HasData(
                 // Buttons for Manage
                 new SystemPermission { Id = 102, ParentId = 47, Name = "全宗查看", Code = "archive:fond:view", Type = "BUTTON", SortOrder = 1, IsVisible = false, CreatedAt = fixedDate },

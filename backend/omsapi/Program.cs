@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using omsapi.Data;
 using omsapi.Infrastructure.Extensions;
@@ -25,14 +26,40 @@ builder.Host.UseSerilog(
 
 // Add services to the container.
 
-builder.Services.AddDbContext<OmsContext>(
-    options =>
-        options.UseMySql(
-            builder.Configuration.GetConnectionString("DefaultConnection"),
-            new MySqlServerVersion(new Version(8, 0, 21)),
-            mySqlOptions => mySqlOptions.EnableRetryOnFailure()
-        )
-);
+var dbType = builder.Configuration["DatabaseType"]?.ToLower() ?? "mysql";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection_"+dbType);
+
+switch (dbType)
+{
+    case "sqlserver":
+    case "mssql":
+        builder.Services.AddDbContext<OmsContext, OmsContextSqlServer>(options =>
+            options.UseSqlServer(
+                connectionString,
+                sqlOptions => sqlOptions.EnableRetryOnFailure()
+            )
+        );
+        break;
+    case "postgresql":
+    case "postgres":
+        builder.Services.AddDbContext<OmsContext, OmsContextPostgreSql>(options =>
+            options.UseNpgsql(
+                connectionString,
+                pgOptions => pgOptions.EnableRetryOnFailure()
+            )
+        );
+        break;
+    case "mysql":
+    default:
+        builder.Services.AddDbContext<OmsContext>(options =>
+            options.UseMySql(
+                connectionString,
+                new MySqlServerVersion(new Version(8, 0, 21)),
+                mySqlOptions => mySqlOptions.EnableRetryOnFailure()
+            )
+        );
+        break;
+}
 
 builder.Services.AddDbContext<OmsPgContext>(
     options =>
@@ -74,8 +101,7 @@ builder.Services.AddCors(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder
-    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -129,11 +155,38 @@ using (var scope = app.Services.CreateScope())
         var pgContext = services.GetRequiredService<omsapi.Data.OmsPgContext>();
         
         // 自动应用迁移
-        context.Database.Migrate();
-        pgContext.Database.Migrate();
+        // 注意：如果数据库中已存在表结构，Migrate() 可能会失败。
+        // 在开发环境中，如果确认数据库结构是最新的，可以注释掉下面两行；
+        // 或者先清空数据库再运行。
+        try 
+        {
+            if (context.Database.IsRelational())
+            {
+                // 检查是否有待应用的迁移
+                var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+                if (pendingMigrations.Any())
+                {
+                    // context.Database.Migrate(); // 暂时注释，避免“对象已存在”错误
+                    Console.WriteLine($"发现 {pendingMigrations.Count()} 个待应用的主数据库迁移，但已跳过自动执行。请手动确认数据库状态。");
+                }
+            }
 
-        // 初始化种子数据
-        await omsapi.Data.DbInitializer.InitializeAsync(context, pgContext);
+            // OmsPgContext 总是使用 PostgreSQL
+            var pgPendingMigrations = await pgContext.Database.GetPendingMigrationsAsync();
+            if (pgPendingMigrations.Any())
+            {
+                // pgContext.Database.Migrate(); // 暂时注释
+                Console.WriteLine($"发现 {pgPendingMigrations.Count()} 个待应用的向量数据库迁移，但已跳过自动执行。请手动确认数据库状态。");
+            }
+
+            // 初始化种子数据
+            await omsapi.Data.DbInitializer.InitializeAsync(context, pgContext);
+        }
+        catch (Exception ex)
+        {
+             var logger = services.GetRequiredService<ILogger<Program>>();
+             logger.LogError(ex, "An error occurred during database initialization.");
+        }
     }
     catch (Exception ex)
     {

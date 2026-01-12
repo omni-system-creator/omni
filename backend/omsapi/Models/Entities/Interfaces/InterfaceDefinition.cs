@@ -42,7 +42,6 @@ namespace omsapi.Models.Entities.Interfaces
         [MaxLength(200)]
         public string? ManageRoles { get; set; } // Who can edit/delete/publish/offline/view stats
 
-        [Column(TypeName = "longtext")]
         public string? FlowConfig { get; set; } // JSON configuration of the API flow (nodes, edges)
 
         public bool IsPublished { get; set; } = false;

@@ -8,10 +8,10 @@ using omsapi.Data;
 
 #nullable disable
 
-namespace omsapi.Migrations
+namespace omsapi.Migrations.SqlServer
 {
-    [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(OmsContextSqlServer))]
+    partial class OmsContextSqlServerModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -146,7 +146,7 @@ namespace omsapi.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Answer")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -156,10 +156,10 @@ namespace omsapi.Migrations
 
                     b.Property<string>("Question")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SourcesJson")
-                        .HasColumnType("text");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -1414,7 +1414,7 @@ namespace omsapi.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("FormItems")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsPublished")
                         .HasColumnType("bit");
@@ -1547,7 +1547,7 @@ namespace omsapi.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("FlowConfig")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsPublished")
                         .HasColumnType("bit");
@@ -1626,16 +1626,16 @@ namespace omsapi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("ApiBindings")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<long?>("CategoryId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Code")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Config")
-                        .HasColumnType("longtext");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2062,6 +2062,7 @@ namespace omsapi.Migrations
                         .HasColumnName("id");
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("amount");
 
@@ -2197,6 +2198,7 @@ namespace omsapi.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Contact")
@@ -2544,6 +2546,7 @@ namespace omsapi.Migrations
                         .HasColumnName("risk_level");
 
                     b.Property<decimal?>("ScoreWeight")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("score_weight");
 
@@ -2752,7 +2755,7 @@ namespace omsapi.Migrations
                         {
                             Id = 1L,
                             Category = "Basic",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "系统名称",
                             IsOverridable = true,
                             IsSystem = true,
@@ -2764,7 +2767,7 @@ namespace omsapi.Migrations
                         {
                             Id = 2L,
                             Category = "Basic",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "系统Logo路径",
                             IsOverridable = true,
                             IsSystem = true,
@@ -2776,7 +2779,7 @@ namespace omsapi.Migrations
                         {
                             Id = 3L,
                             Category = "Basic",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "底部版权信息",
                             IsOverridable = true,
                             IsSystem = true,
@@ -2788,7 +2791,7 @@ namespace omsapi.Migrations
                         {
                             Id = 4L,
                             Category = "Security",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "密码最小长度",
                             IsOverridable = true,
                             IsSystem = true,
@@ -2800,7 +2803,7 @@ namespace omsapi.Migrations
                         {
                             Id = 5L,
                             Category = "Security",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "会话超时时间(分钟)",
                             IsOverridable = true,
                             IsSystem = true,
@@ -3039,7 +3042,7 @@ namespace omsapi.Migrations
                         {
                             Id = 102L,
                             Code = "archive:fond:view",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "全宗查看",
                             ParentId = 47L,
@@ -3050,7 +3053,7 @@ namespace omsapi.Migrations
                         {
                             Id = 103L,
                             Code = "archive:fond:add",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "全宗新增",
                             ParentId = 47L,
@@ -3061,7 +3064,7 @@ namespace omsapi.Migrations
                         {
                             Id = 104L,
                             Code = "archive:fond:edit",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "全宗编辑",
                             ParentId = 47L,
@@ -3072,7 +3075,7 @@ namespace omsapi.Migrations
                         {
                             Id = 105L,
                             Code = "archive:fond:delete",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "全宗删除",
                             ParentId = 47L,
@@ -3083,7 +3086,7 @@ namespace omsapi.Migrations
                         {
                             Id = 108L,
                             Code = "archive:file:view",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "档案查看",
                             ParentId = 47L,
@@ -3094,7 +3097,7 @@ namespace omsapi.Migrations
                         {
                             Id = 109L,
                             Code = "archive:file:add",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "档案新增",
                             ParentId = 47L,
@@ -3105,7 +3108,7 @@ namespace omsapi.Migrations
                         {
                             Id = 110L,
                             Code = "archive:file:edit",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "档案编辑",
                             ParentId = 47L,
@@ -3116,7 +3119,7 @@ namespace omsapi.Migrations
                         {
                             Id = 111L,
                             Code = "archive:file:delete",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "档案删除",
                             ParentId = 47L,
@@ -3127,7 +3130,7 @@ namespace omsapi.Migrations
                         {
                             Id = 106L,
                             Code = "archive:type:view",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "分类查看",
                             ParentId = 74L,
@@ -3138,7 +3141,7 @@ namespace omsapi.Migrations
                         {
                             Id = 107L,
                             Code = "archive:type:add",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "分类新增",
                             ParentId = 74L,
@@ -3149,7 +3152,7 @@ namespace omsapi.Migrations
                         {
                             Id = 112L,
                             Code = "archive:type:edit",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "分类编辑",
                             ParentId = 74L,
@@ -3160,7 +3163,7 @@ namespace omsapi.Migrations
                         {
                             Id = 113L,
                             Code = "archive:type:delete",
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc),
                             IsVisible = false,
                             Name = "分类删除",
                             ParentId = 74L,
@@ -3264,7 +3267,7 @@ namespace omsapi.Migrations
                         {
                             Id = 1L,
                             Code = "ADMIN",
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "系统最高权限",
                             IsSystem = true,
                             Name = "超级管理员"
@@ -3306,73 +3309,73 @@ namespace omsapi.Migrations
                         {
                             RoleId = 1L,
                             PermissionId = 102L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 103L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 104L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 105L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 106L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 107L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 112L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 113L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 108L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 109L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 110L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             RoleId = 1L,
                             PermissionId = 111L,
-                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2025, 12, 22, 12, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -3441,7 +3444,7 @@ namespace omsapi.Migrations
                         new
                         {
                             Id = 1L,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
                             Nickname = "超级管理员",
                             Password = "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
@@ -3492,7 +3495,7 @@ namespace omsapi.Migrations
                         {
                             UserId = 1L,
                             RoleId = 1L,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -3807,12 +3810,13 @@ namespace omsapi.Migrations
                     b.HasOne("omsapi.Models.Entities.SystemUser", "SharedByUser")
                         .WithMany()
                         .HasForeignKey("SharedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("omsapi.Models.Entities.SystemUser", "SharedToUser")
                         .WithMany()
-                        .HasForeignKey("SharedToUserId");
+                        .HasForeignKey("SharedToUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("File");
 

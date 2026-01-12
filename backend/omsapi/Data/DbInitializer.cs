@@ -35,7 +35,7 @@ namespace omsapi.Data
             }
 
             var permissions = new List<SystemPermission>();
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             // 辅助方法：添加菜单
             void AddMenu(string name, string code, string path, string component, string icon, long? parentId, int sortOrder, out long id)
@@ -210,7 +210,7 @@ namespace omsapi.Data
 
         private static async Task SeedDictDataAsync(OmsContext context)
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             // 1. 字典分类 (SysDictCategory)
             var categories = new List<SysDictCategory>
@@ -517,7 +517,7 @@ namespace omsapi.Data
 
         private static async Task SeedSalesDataAsync(OmsContext context)
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             // 1. 客户数据
             if (!await context.SalesCustomers.AnyAsync())
@@ -790,7 +790,7 @@ namespace omsapi.Data
                         Region = "华东区 - 江苏省",
                         Type = "信息化/软件开发",
                         Budget = "¥ 5,000,000",
-                        BidTime = DateTime.Parse("2024-05-01 09:30"),
+                        BidTime = DateTime.SpecifyKind(DateTime.Parse("2024-05-01 09:30"), DateTimeKind.Utc),
                         Leader = "张三",
                         Status = "进行中",
                         Description = "本项目旨在通过引入先进的大数据技术，对现有的智慧城市平台进行升级改造，提升城市管理的智能化水平。主要内容包括数据中心扩容、城市大脑升级、智慧交通子系统开发等。",
@@ -805,7 +805,7 @@ namespace omsapi.Data
                         Region = "华北区 - 北京市",
                         Type = "企业管理软件",
                         Budget = "¥ 8,500,000",
-                        BidTime = DateTime.Parse("2024-06-15 14:00"),
+                        BidTime = DateTime.SpecifyKind(DateTime.Parse("2024-06-15 14:00"), DateTimeKind.Utc),
                         Leader = "李四",
                         Status = "已中标",
                         Description = "针对集团现有ERP系统性能瓶颈及功能缺失进行全面升级，涵盖供应链、生产制造、财务核算等核心模块，要求支持云端部署及移动端应用。",
@@ -820,7 +820,7 @@ namespace omsapi.Data
                         Region = "华南区 - 广东省",
                         Type = "云计算/基础设施",
                         Budget = "¥ 12,000,000",
-                        BidTime = DateTime.Parse("2024-07-20 10:00"),
+                        BidTime = DateTime.SpecifyKind(DateTime.Parse("2024-07-20 10:00"), DateTimeKind.Utc),
                         Leader = "王五",
                         Status = "未中标",
                         Description = "采购一批高性能服务器、存储设备及网络安全设备，构建省流政务云平台基础设施，并提供为期3年的运维服务。",
@@ -835,7 +835,7 @@ namespace omsapi.Data
                         Region = "西南区 - 四川省",
                         Type = "系统集成",
                         Budget = "¥ 3,200,000",
-                        BidTime = DateTime.Parse("2024-08-10 09:00"),
+                        BidTime = DateTime.SpecifyKind(DateTime.Parse("2024-08-10 09:00"), DateTimeKind.Utc),
                         Leader = "赵六",
                         Status = "进行中",
                         Description = "建设覆盖全校的智能一卡通系统，实现身份识别、消费支付、图书借阅、门禁管理等一卡通用功能，支持手机NFC及二维码。",
@@ -850,7 +850,7 @@ namespace omsapi.Data
                         Region = "华中区 - 湖北省",
                         Type = "运维服务",
                         Budget = "¥ 1,500,000",
-                        BidTime = DateTime.Parse("2024-05-25 15:00"),
+                        BidTime = DateTime.SpecifyKind(DateTime.Parse("2024-05-25 15:00"), DateTimeKind.Utc),
                         Leader = "孙七",
                         Status = "流标",
                         Description = "提供为期一年的HIS系统驻场运维服务，保障医院核心业务系统7x24小时稳定运行，负责故障排查、系统优化及数据备份。",
@@ -864,7 +864,7 @@ namespace omsapi.Data
 
         private static async Task SeedContractDataAsync(OmsContext context)
         {
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             // 1. 合同模板
             if (!await context.ContractTemplates.AnyAsync())
@@ -1022,10 +1022,10 @@ namespace omsapi.Data
                         ContractName = "企业云服务年度订阅",
                         Type = "sales",
                         PartnerName = "YY科技股份有限公司",
-                        SignDate = DateTime.Parse("2025-12-05"),
+                        SignDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-05"), DateTimeKind.Utc),
                         TotalAmount = 50000.00m,
                         PaidAmount = 20000.00m,
-                        LatestTransactionDate = DateTime.Parse("2025-12-10"),
+                        LatestTransactionDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-10"), DateTimeKind.Utc),
                         Status = "completed",
                         Description = "按季度付款",
                         Manager = "Sales Manager",
@@ -1037,7 +1037,7 @@ namespace omsapi.Data
                         ContractName = "CRM系统维护服务",
                         Type = "sales",
                         PartnerName = "BB网络科技有限公司",
-                        SignDate = DateTime.Parse("2025-12-15"),
+                        SignDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-15"), DateTimeKind.Utc),
                         TotalAmount = 12000.00m,
                         PaidAmount = 0.00m,
                         Status = "executing",
@@ -1051,10 +1051,10 @@ namespace omsapi.Data
                         ContractName = "数据中心扩容硬件销售",
                         Type = "sales",
                         PartnerName = "CC数据中心",
-                        SignDate = DateTime.Parse("2025-11-20"),
+                        SignDate = DateTime.SpecifyKind(DateTime.Parse("2025-11-20"), DateTimeKind.Utc),
                         TotalAmount = 450000.00m,
                         PaidAmount = 450000.00m,
-                        LatestTransactionDate = DateTime.Parse("2025-11-25"),
+                        LatestTransactionDate = DateTime.SpecifyKind(DateTime.Parse("2025-11-25"), DateTimeKind.Utc),
                         Status = "completed",
                         Description = "已全额到账",
                         Manager = "Sales Manager",
@@ -1067,10 +1067,10 @@ namespace omsapi.Data
                         ContractName = "智慧城市二期项目采购合同",
                         Type = "purchase",
                         PartnerName = "XX市政集团",
-                        SignDate = DateTime.Parse("2025-12-01"),
+                        SignDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-01"), DateTimeKind.Utc),
                         TotalAmount = 1200000.00m,
                         PaidAmount = 400000.00m,
-                        LatestTransactionDate = DateTime.Parse("2025-12-05"),
+                        LatestTransactionDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-05"), DateTimeKind.Utc),
                         Status = "executing",
                         Description = "预付款已付",
                         Manager = "Purchase Manager",
@@ -1082,10 +1082,10 @@ namespace omsapi.Data
                         ContractName = "办公设备采购协议",
                         Type = "purchase",
                         PartnerName = "AA贸易公司",
-                        SignDate = DateTime.Parse("2025-12-10"),
+                        SignDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-10"), DateTimeKind.Utc),
                         TotalAmount = 120000.00m,
                         PaidAmount = 12000.00m,
-                        LatestTransactionDate = DateTime.Parse("2025-12-11"),
+                        LatestTransactionDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-11"), DateTimeKind.Utc),
                         Status = "executing",
                         Description = "定金已付",
                         Manager = "Purchase Manager",
@@ -1097,10 +1097,10 @@ namespace omsapi.Data
                         ContractName = "服务器集群采购",
                         Type = "purchase",
                         PartnerName = "Dell供应商",
-                        SignDate = DateTime.Parse("2025-11-15"),
+                        SignDate = DateTime.SpecifyKind(DateTime.Parse("2025-11-15"), DateTimeKind.Utc),
                         TotalAmount = 500000.00m,
                         PaidAmount = 500000.00m,
-                        LatestTransactionDate = DateTime.Parse("2025-11-20"),
+                        LatestTransactionDate = DateTime.SpecifyKind(DateTime.Parse("2025-11-20"), DateTimeKind.Utc),
                         Status = "completed",
                         Description = "设备已验收",
                         Manager = "Purchase Manager",
@@ -1120,7 +1120,7 @@ namespace omsapi.Data
                     {
                         ContractId = detailContract.Id,
                         Phase = "第一期",
-                        DueDate = DateTime.Parse("2025-12-10"),
+                        DueDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-10"), DateTimeKind.Utc),
                         Amount = 20000.00m,
                         Condition = "合同签订后5个工作日",
                         Status = "paid"
@@ -1129,7 +1129,7 @@ namespace omsapi.Data
                     {
                         ContractId = detailContract.Id,
                         Phase = "第二期",
-                        DueDate = DateTime.Parse("2026-03-10"),
+                        DueDate = DateTime.SpecifyKind(DateTime.Parse("2026-03-10"), DateTimeKind.Utc),
                         Amount = 15000.00m,
                         Condition = "项目中期验收",
                         Status = "pending"
@@ -1138,7 +1138,7 @@ namespace omsapi.Data
                     {
                         ContractId = detailContract.Id,
                         Phase = "第三期",
-                        DueDate = DateTime.Parse("2026-06-10"),
+                        DueDate = DateTime.SpecifyKind(DateTime.Parse("2026-06-10"), DateTimeKind.Utc),
                         Amount = 15000.00m,
                         Condition = "项目终验",
                         Status = "pending"
@@ -1150,7 +1150,7 @@ namespace omsapi.Data
                     new ContractPaymentRecord
                     {
                         ContractId = detailContract.Id,
-                        PaymentDate = DateTime.Parse("2025-12-10"),
+                        PaymentDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-10"), DateTimeKind.Utc),
                         Amount = 20000.00m,
                         Method = "银行转账",
                         Operator = "张三",
@@ -1164,7 +1164,7 @@ namespace omsapi.Data
                     {
                         ContractId = detailContract.Id,
                         InvoiceNo = "FP20251210001",
-                        InvoiceDate = DateTime.Parse("2025-12-10"),
+                        InvoiceDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-10"), DateTimeKind.Utc),
                         Amount = 20000.00m,
                         Type = "增值税专用发票",
                         Status = "issued"
@@ -1199,7 +1199,7 @@ namespace omsapi.Data
                         FileName = "合同扫描件.pdf",
                         FilePath = "/uploads/contracts/scan_20251205.pdf",
                         Size = "2.5 MB",
-                        UploadDate = DateTime.Parse("2025-12-05")
+                        UploadDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-05"), DateTimeKind.Utc)
                     },
                     new ContractAttachment
                     {
@@ -1207,7 +1207,7 @@ namespace omsapi.Data
                         FileName = "技术协议.docx",
                         FilePath = "/uploads/contracts/tech_20251205.docx",
                         Size = "1.2 MB",
-                        UploadDate = DateTime.Parse("2025-12-05")
+                        UploadDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-05"), DateTimeKind.Utc)
                     },
                     new ContractAttachment
                     {
@@ -1215,7 +1215,7 @@ namespace omsapi.Data
                         FileName = "补充协议一.pdf",
                         FilePath = "/uploads/contracts/supp_20251215.pdf",
                         Size = "0.8 MB",
-                        UploadDate = DateTime.Parse("2025-12-15")
+                        UploadDate = DateTime.SpecifyKind(DateTime.Parse("2025-12-15"), DateTimeKind.Utc)
                     }
                 );
 
@@ -1231,7 +1231,7 @@ namespace omsapi.Data
                 return;
             }
 
-            var now = DateTime.Now;
+            var now = DateTime.UtcNow;
 
             // 1. 文物保护管理规划
             var kb1 = new KbInfo
