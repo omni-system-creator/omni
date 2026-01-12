@@ -145,56 +145,6 @@ app.MapHub<omsapi.Hubs.DebugHub>("/hubs/debug");
 app.MapHub<omsapi.Hubs.ProjectHub>("/hubs/project");
 app.MapHub<omsapi.Hubs.UserHub>("/hubs/user");
 
-// 初始化数据库
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<omsapi.Data.OmsContext>();
-        var pgContext = services.GetRequiredService<omsapi.Data.OmsPgContext>();
-        
-        // 自动应用迁移
-        // 注意：如果数据库中已存在表结构，Migrate() 可能会失败。
-        // 在开发环境中，如果确认数据库结构是最新的，可以注释掉下面两行；
-        // 或者先清空数据库再运行。
-        try 
-        {
-            if (context.Database.IsRelational())
-            {
-                // 检查是否有待应用的迁移
-                var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
-                if (pendingMigrations.Any())
-                {
-                    // context.Database.Migrate(); // 暂时注释，避免“对象已存在”错误
-                    Console.WriteLine($"发现 {pendingMigrations.Count()} 个待应用的主数据库迁移，但已跳过自动执行。请手动确认数据库状态。");
-                }
-            }
-
-            // OmsPgContext 总是使用 PostgreSQL
-            var pgPendingMigrations = await pgContext.Database.GetPendingMigrationsAsync();
-            if (pgPendingMigrations.Any())
-            {
-                // pgContext.Database.Migrate(); // 暂时注释
-                Console.WriteLine($"发现 {pgPendingMigrations.Count()} 个待应用的向量数据库迁移，但已跳过自动执行。请手动确认数据库状态。");
-            }
-
-            // 初始化种子数据
-            await omsapi.Data.DbInitializer.InitializeAsync(context, pgContext);
-        }
-        catch (Exception ex)
-        {
-             var logger = services.GetRequiredService<ILogger<Program>>();
-             logger.LogError(ex, "An error occurred during database initialization.");
-        }
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred creating the DB.");
-    }
-}
-
 Console.WriteLine("后端服务启动成功！");
 
 app.Run();
