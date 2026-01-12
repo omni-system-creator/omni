@@ -20,10 +20,6 @@
           <template #icon><PlusOutlined /></template>
           新增客户
         </a-button>
-        <a-button>
-          <template #icon><ExportOutlined /></template>
-          导出
-        </a-button>
       </div>
     </div>
 
@@ -35,8 +31,11 @@
       @change="handleTableChange"
       row-key="id"
     >
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'status'">
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'index'">
+          {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+        </template>
+        <template v-else-if="column.key === 'status'">
           <a-tag :color="getStatusColor(record.status)">
             {{ getStatusText(record.status) }}
           </a-tag>
@@ -53,7 +52,16 @@
     </a-table>
 
     <!-- Create/Edit Modal -->
-    <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleModalOk">
+    <a-modal v-model:open="modalVisible" :wrap-class-name="wrapClassName" @ok="handleModalOk">
+      <template #title>
+        <div style="width: 100%; cursor: move" @mousedown="handleTitleMouseDown">{{ modalTitle }}</div>
+      </template>
+      <div v-if="!currentId" style="margin-bottom: 16px; text-align: right; padding-right: 40px;">
+        <a-button type="dashed" size="small" @click="handleAiGenerate" :loading="isGenerating">
+          <template #icon><ThunderboltOutlined /></template>
+          AI 自动填充
+        </a-button>
+      </div>
       <a-form :model="formData" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
         <a-form-item label="客户名称" required>
           <a-input v-model:value="formData.name" />
@@ -91,11 +99,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { PlusOutlined, ExportOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
-import { getCustomers, deleteCustomer, createCustomer, updateCustomer, type CustomerDto, type CreateCustomerDto } from '@/api/sales';
+import { getCustomers, deleteCustomer, createCustomer, updateCustomer, generateCustomerData, type CustomerDto, type CreateCustomerDto } from '@/api/sales';
 import { getDictDataByCode } from '@/api/dict';
 import type { DictDataDto } from '@/api/dict';
+import { useDraggableModal } from '@/hooks/useDraggableModal';
 
 const searchText = ref('');
 const filterStatus = ref('all');
@@ -110,9 +119,11 @@ const pagination = reactive({
   total: 0,
   showSizeChanger: true,
   showQuickJumper: true,
+  showTotal: (total: number) => `共 ${total} 条`,
 });
 
 const columns: ColumnType[] = [
+  { title: '序号', key: 'index', width: 80, align: 'center' },
   { title: '客户名称', dataIndex: 'name', key: 'name' },
   { title: '行业', dataIndex: 'industry', key: 'industry' },
   { title: '联系人', dataIndex: 'contact', key: 'contact' },
@@ -178,6 +189,8 @@ const onDelete = (id: string) => {
 
 // Modal Logic
 const modalVisible = ref(false);
+const { wrapClassName, handleTitleMouseDown } = useDraggableModal(modalVisible);
+
 const modalTitle = ref('新增客户');
 const formData = reactive<CreateCustomerDto>({
   name: '',
@@ -193,16 +206,43 @@ let currentId = '';
 const handleAdd = () => {
   modalTitle.value = '新增客户';
   currentId = '';
+  
+  // Find default status from dict
+  const defaultStatus = statusDictOptions.value.find(item => item.isDefault)?.value || 
+                        (statusDictOptions.value.length > 0 ? statusDictOptions.value[0]?.value : 'active');
+
+  // Find default level from dict
+  const defaultLevel = levelDictOptions.value.find(item => item.isDefault)?.value || 
+                        (levelDictOptions.value.length > 0 ? levelDictOptions.value[0]?.value : 'B');
+
   Object.assign(formData, { 
     name: '', 
     industry: '', 
     contact: '', 
     phone: '', 
-    level: 'C级', 
-    status: 'active', 
+    level: defaultLevel, 
+    status: defaultStatus, 
     owner: '' 
   });
   modalVisible.value = true;
+};
+
+const isGenerating = ref(false);
+const handleAiGenerate = async () => {
+  isGenerating.value = true;
+  try {
+    const data = await generateCustomerData();
+    // Keep owner empty or as default if needed, but AI might return it. 
+    // Usually owner should be current user, but for fake data, AI returns a name.
+    // Let's overwrite fields.
+    Object.assign(formData, data);
+    message.success('AI 数据生成成功');
+  } catch (error) {
+    console.error(error);
+    message.error('AI 数据生成失败');
+  } finally {
+    isGenerating.value = false;
+  }
 };
 
 const handleEdit = (record: CustomerDto) => {

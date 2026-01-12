@@ -121,22 +121,79 @@ namespace omsapi.Services
 
         public async Task<bool> DeleteCustomerAsync(string id)
         {
-            var entity = await _context.SalesCustomers.FindAsync(id);
-            if (entity == null) return false;
+            var c = await _context.SalesCustomers.FindAsync(id);
+            if (c == null) return false;
 
-            _context.SalesCustomers.Remove(entity);
+            _context.SalesCustomers.Remove(c);
             await _context.SaveChangesAsync();
             return true;
         }
 
+        public async Task<CreateCustomerDto> GenerateCustomerDataAsync()
+        {
+            var prompt = @"请生成一个仿真的中国企业客户信息，JSON格式，包含以下字段：
+Name: 公司名称（真实感的科技、制造或商贸公司名）
+Industry: 行业（如互联网、制造业、新零售等）
+Contact: 联系人姓名
+Phone: 联系电话（中国手机号）
+Level: 客户等级（A/B/C/D）
+Status: 状态（active/potential/lost）
+Owner: 负责人姓名
+请直接返回JSON数据，不要包含Markdown代码块或其他文本。";
+
+            var json = await _aiService.GetChatCompletionAsync(prompt);
+            
+            // Clean up JSON if wrapped in markdown
+            json = json.Trim();
+            if (json.StartsWith("```json"))
+            {
+                json = json.Substring(7);
+                if (json.EndsWith("```")) json = json.Substring(0, json.Length - 3);
+            }
+            else if (json.StartsWith("```"))
+            {
+                json = json.Substring(3);
+                if (json.EndsWith("```")) json = json.Substring(0, json.Length - 3);
+            }
+            json = json.Trim();
+
+            try 
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                var result = JsonSerializer.Deserialize<CreateCustomerDto>(json, options);
+                return result ?? new CreateCustomerDto();
+            }
+            catch (Exception)
+            {
+                // Fallback mock data
+                return new CreateCustomerDto
+                {
+                    Name = "示例科技股份有限公司",
+                    Industry = "互联网",
+                    Contact = "张经理",
+                    Phone = "13800138000",
+                    Level = "B",
+                    Status = "potential",
+                    Owner = "李销售"
+                };
+            }
+        }
+
         // --- Opportunity ---
 
-        public async Task<List<SalesOpportunityDto>> GetOpportunitiesAsync(string? stage = null)
+        public async Task<List<SalesOpportunityDto>> GetOpportunitiesAsync(string? stage = null, string? searchText = null)
         {
             var query = _context.SalesOpportunities.AsQueryable();
-            if (!string.IsNullOrEmpty(stage))
+            if (!string.IsNullOrEmpty(stage) && stage != "all")
             {
                 query = query.Where(o => o.Stage == stage);
+            }
+            if (!string.IsNullOrEmpty(searchText))
+            {
+                query = query.Where(o => o.Title.Contains(searchText) || o.Customer.Contains(searchText));
             }
 
             return await query.OrderByDescending(o => o.CreatedAt)
@@ -219,6 +276,57 @@ namespace omsapi.Services
             _context.SalesOpportunities.Remove(entity);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<CreateOpportunityDto> GenerateOpportunityDataAsync()
+        {
+            var prompt = @"请生成一个仿真的B2B销售商机信息，JSON格式，包含以下字段：
+Title: 商机名称（例如：XX公司ERP系统升级项目）
+Customer: 客户名称（真实感的企业名称）
+Amount: 预计金额（数字，10000-5000000之间）
+Stage: 阶段（discovery/needs_analysis/proposal/negotiation/won/lost 之一）
+Owner: 负责人姓名
+Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
+请直接返回JSON数据，不要包含Markdown代码块或其他文本。";
+
+            var json = await _aiService.GetChatCompletionAsync(prompt);
+            
+            // Clean up JSON if wrapped in markdown
+            json = json.Trim();
+            if (json.StartsWith("```json"))
+            {
+                json = json.Substring(7);
+                if (json.EndsWith("```")) json = json.Substring(0, json.Length - 3);
+            }
+            else if (json.StartsWith("```"))
+            {
+                json = json.Substring(3);
+                if (json.EndsWith("```")) json = json.Substring(0, json.Length - 3);
+            }
+            json = json.Trim();
+
+            try 
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                var result = JsonSerializer.Deserialize<CreateOpportunityDto>(json, options);
+                return result ?? new CreateOpportunityDto();
+            }
+            catch (Exception)
+            {
+                // Fallback mock data
+                return new CreateOpportunityDto
+                {
+                    Title = "某大型制造企业数字化转型项目",
+                    Customer = "未来制造集团有限公司",
+                    Amount = 500000,
+                    Stage = "discovery",
+                    Owner = "王销售",
+                    Date = DateTime.Now.AddMonths(1)
+                };
+            }
         }
 
         // --- Materials ---

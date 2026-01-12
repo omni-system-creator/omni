@@ -76,15 +76,25 @@ namespace omsapi.Controllers
             return ApiResponse<bool>.Success(result);
         }
 
+        /// <summary>
+        /// 生成仿真客户数据
+        /// </summary>
+        [HttpPost("customers/generate")]
+        public async Task<ApiResponse<CreateCustomerDto>> GenerateCustomerData()
+        {
+            var result = await _salesService.GenerateCustomerDataAsync();
+            return ApiResponse<CreateCustomerDto>.Success(result);
+        }
+
         // --- Opportunities ---
 
         /// <summary>
         /// 获取商机列表
         /// </summary>
         [HttpGet("opportunities")]
-        public async Task<ApiResponse<List<SalesOpportunityDto>>> GetOpportunities([FromQuery] string stage = null)
+        public async Task<ApiResponse<List<SalesOpportunityDto>>> GetOpportunities([FromQuery] string? stage = null, [FromQuery] string? searchText = null)
         {
-            var result = await _salesService.GetOpportunitiesAsync(stage);
+            var result = await _salesService.GetOpportunitiesAsync(stage, searchText);
             return ApiResponse<List<SalesOpportunityDto>>.Success(result);
         }
 
@@ -118,6 +128,16 @@ namespace omsapi.Controllers
         {
             var result = await _salesService.DeleteOpportunityAsync(id);
             return ApiResponse<bool>.Success(result);
+        }
+
+        /// <summary>
+        /// 生成仿真商机数据
+        /// </summary>
+        [HttpPost("opportunities/generate")]
+        public async Task<ApiResponse<CreateOpportunityDto>> GenerateOpportunityData()
+        {
+            var result = await _salesService.GenerateOpportunityDataAsync();
+            return ApiResponse<CreateOpportunityDto>.Success(result);
         }
 
         // --- Materials ---

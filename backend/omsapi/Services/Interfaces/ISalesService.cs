@@ -11,12 +11,14 @@ namespace omsapi.Services.Interfaces
         Task<SalesCustomerDto?> CreateCustomerAsync(CreateCustomerDto dto);
         Task<SalesCustomerDto?> UpdateCustomerAsync(string id, UpdateCustomerDto dto);
         Task<bool> DeleteCustomerAsync(string id);
+        Task<CreateCustomerDto> GenerateCustomerDataAsync();
 
         // Opportunity
-        Task<List<SalesOpportunityDto>> GetOpportunitiesAsync(string? stage = null);
+        Task<List<SalesOpportunityDto>> GetOpportunitiesAsync(string? stage = null, string? searchText = null);
         Task<SalesOpportunityDto> CreateOpportunityAsync(CreateOpportunityDto dto);
         Task<SalesOpportunityDto?> UpdateOpportunityAsync(string id, UpdateOpportunityDto dto);
         Task<bool> DeleteOpportunityAsync(string id);
+        Task<CreateOpportunityDto> GenerateOpportunityDataAsync();
 
         // Materials
         Task<List<SalesScriptDto>> GetSalesScriptsAsync();

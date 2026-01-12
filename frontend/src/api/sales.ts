@@ -231,6 +231,10 @@ export function deleteCustomer(id: string) {
   return request.delete<any, boolean>(`/sales/customers/${id}`);
 }
 
+export function generateCustomerData() {
+  return request.post<any, CreateCustomerDto>('/sales/customers/generate');
+}
+
 export function exportCustomers(params?: CustomerSearchParams) {
   return request.get<any, Blob>('/sales/customers/export', { 
     params,
@@ -254,6 +258,10 @@ export function updateOpportunity(id: string, data: UpdateOpportunityDto) {
 
 export function deleteOpportunity(id: string) {
   return request.delete<any, boolean>(`/sales/opportunities/${id}`);
+}
+
+export function generateOpportunityData() {
+  return request.post<any, CreateOpportunityDto>('/sales/opportunities/generate');
 }
 
 // --- Materials APIs ---

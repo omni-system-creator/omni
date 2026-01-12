@@ -1,11 +1,19 @@
 <template>
   <div class="page-container">
     <div class="action-header">
-      <div class="left-actions">
-        <a-radio-group v-model:value="viewMode" button-style="solid">
-          <a-radio-button value="kanban"><AppstoreOutlined /> 看板</a-radio-button>
-          <a-radio-button value="list"><BarsOutlined /> 列表</a-radio-button>
-        </a-radio-group>
+      <div class="search-area">
+        <a-input-search
+          v-model:value="searchText"
+          placeholder="搜索商机名称/客户"
+          style="width: 250px"
+          @search="onSearch"
+        />
+        <a-select v-model:value="filterStage" style="width: 120px; margin-left: 8px" @change="onSearch">
+          <a-select-option value="all">所有阶段</a-select-option>
+          <a-select-option v-for="item in stageDictOptions" :key="item.value" :value="item.value">
+            {{ item.label }}
+          </a-select-option>
+        </a-select>
       </div>
       <div class="right-actions">
         <a-button type="primary" @click="handleAdd">
@@ -18,30 +26,20 @@
     <div v-if="loading" style="text-align: center; padding: 50px;">
       <a-spin />
     </div>
-    <div v-else-if="viewMode === 'kanban'" class="kanban-board">
-      <div class="kanban-column" v-for="stage in stages" :key="stage.key">
-        <div class="column-header">
-          <span class="stage-name">{{ stage.name }}</span>
-          <span class="stage-count">{{ getOpportunitiesByStage(stage.key).length }}</span>
-        </div>
-        <div class="column-content">
-          <div class="opportunity-card" v-for="opp in getOpportunitiesByStage(stage.key)" :key="opp.id" @click="handleEdit(opp)">
-            <div class="card-title">{{ opp.title }}</div>
-            <div class="card-customer">{{ opp.customer }}</div>
-            <div class="card-amount">¥ {{ opp.amount.toLocaleString() }}</div>
-            <div class="card-footer">
-              <a-avatar size="small" style="background-color: #87d068">{{ opp.owner[0] }}</a-avatar>
-              <span class="date">{{ opp.date }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div v-else class="list-view">
-      <a-table :columns="columns" :data-source="opportunities" row-key="id">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'stage'">
+      <a-table 
+        :columns="columns" 
+        :data-source="opportunities" 
+        :pagination="pagination"
+        row-key="id"
+        @change="handleTableChange"
+      >
+        <template #bodyCell="{ column, record, index }">
+          <template v-if="column.key === 'index'">
+            {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+          </template>
+          <template v-else-if="column.key === 'stage'">
             <a-tag :color="getStageColor(record.stage)">{{ getStageName(record.stage) }}</a-tag>
           </template>
           <template v-else-if="column.key === 'action'">
@@ -53,7 +51,16 @@
       </a-table>
     </div>
 
-    <a-modal v-model:open="modalVisible" :title="modalTitle" @ok="handleModalOk">
+    <a-modal v-model:open="modalVisible" :wrap-class-name="wrapClassName" @ok="handleModalOk">
+      <template #title>
+        <div style="width: 100%; cursor: move" @mousedown="handleTitleMouseDown">{{ modalTitle }}</div>
+      </template>
+      <div v-if="!currentId" style="margin-bottom: 16px; text-align: right; padding-right: 40px;">
+        <a-button type="dashed" size="small" @click="handleAiGenerate" :loading="isGenerating">
+          <template #icon><ThunderboltOutlined /></template>
+          AI 自动填充
+        </a-button>
+      </div>
       <a-form :model="formData" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
           <a-form-item label="商机名称" required>
               <a-input v-model:value="formData.title" />
@@ -66,7 +73,7 @@
           </a-form-item>
           <a-form-item label="阶段">
                <a-select v-model:value="formData.stage">
-                  <a-select-option v-for="s in stages" :key="s.key" :value="s.key">{{s.name}}</a-select-option>
+                  <a-select-option v-for="s in stageDictOptions" :key="s.value" :value="s.value">{{s.label}}</a-select-option>
                </a-select>
           </a-form-item>
           <a-form-item label="负责人">
@@ -82,31 +89,59 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { AppstoreOutlined, BarsOutlined, PlusOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
 import { message, Modal } from 'ant-design-vue';
 import dayjs, { type Dayjs } from 'dayjs';
-import { getOpportunities, createOpportunity, updateOpportunity, deleteOpportunity, type OpportunityDto, type CreateOpportunityDto } from '@/api/sales';
+import { getOpportunities, createOpportunity, updateOpportunity, deleteOpportunity, generateOpportunityData, type OpportunityDto, type CreateOpportunityDto } from '@/api/sales';
+import { getDictDataByCode, type DictDataDto } from '@/api/dict';
+import { useDraggableModal } from '@/hooks/useDraggableModal';
 
-const viewMode = ref('kanban');
 const opportunities = ref<OpportunityDto[]>([]);
 const loading = ref(false);
+const searchText = ref('');
+const filterStage = ref('all');
 
-const stages = [
-  { key: 'new', name: '初步接洽', color: 'blue' },
-  { key: 'proposition', name: '方案报价', color: 'cyan' },
-  { key: 'negotiation', name: '商务谈判', color: 'orange' },
-  { key: 'won', name: '赢单', color: 'green' },
-  { key: 'lost', name: '输单', color: 'red' },
-];
+const stageDictOptions = ref<DictDataDto[]>([]);
+const stageColors: Record<string, string> = {
+  discovery: 'blue',
+  needs_analysis: 'cyan',
+  proposal: 'purple',
+  negotiation: 'orange',
+  won: 'green',
+  lost: 'red',
+};
+
+const pagination = reactive({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (total: number) => `共 ${total} 条`,
+});
 
 const loadData = async () => {
     loading.value = true;
     try {
-        const res = await getOpportunities();
+        const res = await getOpportunities({
+            searchText: searchText.value,
+            stage: filterStage.value === 'all' ? undefined : filterStage.value
+        });
         opportunities.value = res.map(o => ({
             ...o,
             date: o.date ? dayjs(o.date).format('YYYY-MM-DD') : ''
         }));
+        pagination.total = res.length; // Backend doesn't return total for list yet? Wait, GetOpportunities returns List<Dto>, not PagedResult.
+        // The user asked for "bottom show total and per page".
+        // But GetOpportunities returns a list, not paged result.
+        // I should probably paginate on client side or update backend to return paged result.
+        // Given the time, I'll paginate on client side for now, or just show all.
+        // The user asked for "show total and per page", implying pagination.
+        // If I use client side pagination:
+        // Update Table :pagination="pagination"
+        // And use slice in template or computed? Ant Design Vue Table handles client side pagination if data-source is full list.
+        // So if I pass full list to Table and provide pagination config, it works.
+        // Yes.
     } catch (e) {
         console.error(e);
         message.error('获取商机列表失败');
@@ -115,12 +150,31 @@ const loadData = async () => {
     }
 };
 
+const onSearch = () => {
+  loadData();
+};
+
+const handleTableChange = (pag: any) => {
+  pagination.current = pag.current;
+  pagination.pageSize = pag.pageSize;
+};
+
+const loadStageDict = async () => {
+  try {
+    stageDictOptions.value = await getDictDataByCode('sales_opportunity_stage');
+  } catch (error) {
+    console.error('加载商机阶段字典失败:', error);
+  }
+};
+
 onMounted(() => {
+    loadStageDict();
     loadData();
 });
 
 
 const columns: ColumnType[] = [
+  { title: '序号', key: 'index', width: 80, align: 'center' },
   { title: '商机名称', dataIndex: 'title', key: 'title' },
   { title: '客户', dataIndex: 'customer', key: 'customer' },
   { title: '预计金额', dataIndex: 'amount', key: 'amount' },
@@ -130,20 +184,17 @@ const columns: ColumnType[] = [
   { title: '操作', key: 'action', width: 150 },
 ];
 
-const getOpportunitiesByStage = (stageKey: string) => {
-  return opportunities.value.filter(o => o.stage === stageKey);
-};
-
 const getStageColor = (key: string) => {
-  return stages.find(s => s.key === key)?.color || 'default';
+  return stageColors[key] || 'default';
 };
 
 const getStageName = (key: string) => {
-  return stages.find(s => s.key === key)?.name || key;
+  return stageDictOptions.value.find(s => s.value === key)?.label || key;
 };
 
 // Modal Logic
 const modalVisible = ref(false);
+const { wrapClassName, handleTitleMouseDown } = useDraggableModal(modalVisible);
 const modalTitle = ref('新建商机');
 
 interface FormState {
@@ -159,7 +210,7 @@ const formData = reactive<FormState>({
     title: '',
     customer: '',
     amount: 0,
-    stage: 'new',
+    stage: 'discovery',
     owner: '',
     date: undefined
 });
@@ -168,10 +219,36 @@ let currentId = '';
 const handleAdd = () => {
     modalTitle.value = '新建商机';
     currentId = '';
+
+    const defaultStage = stageDictOptions.value.find(item => item.isDefault)?.value || 
+                         (stageDictOptions.value.length > 0 ? stageDictOptions.value[0]?.value : 'discovery');
+
     Object.assign(formData, {
-        title: '', customer: '', amount: 0, stage: 'new', owner: '', date: undefined
+        title: '', customer: '', amount: 0, stage: defaultStage, owner: '', date: undefined
     });
     modalVisible.value = true;
+};
+
+const isGenerating = ref(false);
+const handleAiGenerate = async () => {
+    isGenerating.value = true;
+    try {
+        const data = await generateOpportunityData();
+        Object.assign(formData, {
+            title: data.title,
+            customer: data.customer,
+            amount: data.amount,
+            stage: data.stage,
+            owner: data.owner,
+            date: data.date ? dayjs(data.date) : undefined
+        });
+        message.success('AI 数据生成成功');
+    } catch (error) {
+        console.error(error);
+        message.error('AI 数据生成失败');
+    } finally {
+        isGenerating.value = false;
+    }
 };
 
 const handleEdit = (record: OpportunityDto) => {
@@ -240,84 +317,12 @@ const handleModalOk = async () => {
 .page-container {
   padding: 24px;
   background: #fff;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  min-height: 100%;
 }
 
 .action-header {
   display: flex;
   justify-content: space-between;
   margin-bottom: 24px;
-}
-
-.kanban-board {
-  flex: 1;
-  display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 16px;
-}
-
-.kanban-column {
-  width: 280px;
-  flex-shrink: 0;
-  background: #f5f5f5;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-}
-
-.column-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 12px;
-  font-weight: bold;
-  color: #333;
-}
-
-.column-content {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.opportunity-card {
-  background: #fff;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.opportunity-card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.card-title {
-  font-weight: 500;
-  margin-bottom: 8px;
-}
-
-.card-customer {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
-}
-
-.card-amount {
-  font-weight: bold;
-  color: #faad14;
-  margin-bottom: 8px;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  color: #999;
 }
 </style>

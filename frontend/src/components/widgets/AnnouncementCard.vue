@@ -58,7 +58,7 @@
       :title="null"
       width="900px"
       :body-style="{ padding: '0' }"
-      wrap-class-name="anonce-detail-modal"
+      :wrap-class-name="wrapClassName"
       :modal-render="(args: any) => args.originVNode"
     >
       <div class="anonce-detail">
@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import DynamicIcon from '@/components/DynamicIcon.vue';
 import { DoubleRightOutlined } from '@ant-design/icons-vue';
 import { getAnonceList, getAnonce } from '@/api/anonce';
@@ -108,6 +108,7 @@ import dayjs from 'dayjs';
 import { getDictDataByCode } from '@/api/dict';
 import { usePermissionStore } from '@/stores/permission';
 import { useRouter } from 'vue-router';
+import { useDraggableModal } from '@/hooks/useDraggableModal';
 
 const permissionStore = usePermissionStore();
 const router = useRouter();
@@ -121,6 +122,9 @@ const priorityTypes = ref<any[]>([]);
 // --- Detail Modal Data ---
 const detailVisible = ref(false);
 const detailData = ref<AnonceDto | null>(null);
+
+// --- Modal Drag Logic ---
+const { wrapClassName, handleTitleMouseDown } = useDraggableModal(detailVisible);
 
 // --- Helpers ---
 const hasPermission = (permission: string) => {
@@ -167,49 +171,6 @@ const getStatusColor = (status: string | undefined) => {
   };
   return status ? map[status] || 'default' : 'default';
 };
-
-// --- Modal Drag Logic ---
-let startX = 0;
-let startY = 0;
-let transformX = 0;
-let transformY = 0;
-
-const handleTitleMouseDown = (e: MouseEvent) => {
-  const modalContent = document.querySelector('.anonce-detail-modal .ant-modal-content') as HTMLElement;
-  if (!modalContent) return;
-  startX = e.clientX;
-  startY = e.clientY;
-  const transform = window.getComputedStyle(modalContent).transform;
-  const matrix = new DOMMatrix(transform);
-  transformX = matrix.m41;
-  transformY = matrix.m42;
-  document.addEventListener('mousemove', handleMouseMove);
-  document.addEventListener('mouseup', handleMouseUp);
-};
-
-const handleMouseMove = (e: MouseEvent) => {
-  const modalContent = document.querySelector('.anonce-detail-modal .ant-modal-content') as HTMLElement;
-  if (!modalContent) return;
-  const moveX = e.clientX - startX;
-  const moveY = e.clientY - startY;
-  modalContent.style.transform = `translate(${transformX + moveX}px, ${transformY + moveY}px)`;
-};
-
-const handleMouseUp = () => {
-  document.removeEventListener('mousemove', handleMouseMove);
-  document.removeEventListener('mouseup', handleMouseUp);
-};
-
-watch(detailVisible, (val) => {
-  if (val) {
-    setTimeout(() => {
-      const modalContent = document.querySelector('.anonce-detail-modal .ant-modal-content') as HTMLElement;
-      if (modalContent) {
-        modalContent.style.transform = 'none';
-      }
-    }, 0);
-  }
-});
 
 // --- Actions ---
 const handleDetail = async (id: number) => {
