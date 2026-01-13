@@ -1794,6 +1794,11 @@ namespace omsapi.Migrations.SqlServer
                         .HasColumnType("nvarchar(50)")
                         .HasColumnName("child_id");
 
+                    b.Property<string>("ChildVersion")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("child_version");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("created_at");

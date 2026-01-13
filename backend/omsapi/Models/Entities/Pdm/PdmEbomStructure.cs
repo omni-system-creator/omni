@@ -23,6 +23,10 @@ namespace omsapi.Models.Entities.Pdm
         [Column("quantity")]
         public decimal Quantity { get; set; } = 1;
 
+        [MaxLength(20)]
+        [Column("child_version")]
+        public string? ChildVersion { get; set; }
+
         [Column("sort_order")]
         public int SortOrder { get; set; }
 

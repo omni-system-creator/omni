@@ -40,7 +40,20 @@ namespace omsapi.Models.Dtos.Pdm
         public string Designer { get; set; } = "工程师A";
         public List<EbomDocumentDto> RelatedDocuments { get; set; } = new List<EbomDocumentDto>();
         public string ParentId { get; set; } = string.Empty;
+        public decimal Qty { get; set; } = 1;
         public bool IsLeaf { get; set; } = true;
+    }
+
+    public class AddChildItemDto
+    {
+        public string ParentId { get; set; } = string.Empty;
+        public string ChildId { get; set; } = string.Empty;
+        public decimal Qty { get; set; } = 1;
+    }
+
+    public class UpdateChildItemQtyDto
+    {
+        public decimal Qty { get; set; }
     }
 
     public class UpdateEbomItemDto

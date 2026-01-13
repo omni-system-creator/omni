@@ -100,6 +100,13 @@ namespace OmsDesktop
                     MainWindow mainWindow = new MainWindow();
                     System.Windows.Application.Current.MainWindow = mainWindow; // Set as main window
                     mainWindow.Show();
+
+                    // Check for pending preview
+                    if (!string.IsNullOrEmpty(App.PendingDocId))
+                    {
+                        var viewer = new DwgViewerWindow(App.PendingDocId, App.PendingDocName ?? "Preview");
+                        viewer.Show();
+                    }
                     
                     // Restore shutdown mode to close app when main window closes
                     System.Windows.Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;

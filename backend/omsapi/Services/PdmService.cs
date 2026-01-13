@@ -6,6 +6,8 @@ using omsapi.Models.Entities.Pdm;
 using omsapi.Services.Interfaces;
 using omsapi.Infrastructure.Attributes;
 using System.Security.Claims;
+using NPOI.XSSF.UserModel;
+using NPOI.SS.UserModel;
 
 namespace omsapi.Services
 {
@@ -99,6 +101,10 @@ namespace omsapi.Services
                     {
                         var childDto = BuildTree(childNode, allItems, allRelations, allDocuments);
                         childDto.Qty = rel.Quantity;
+                        if (!string.IsNullOrEmpty(rel.ChildVersion))
+                        {
+                            childDto.Version = rel.ChildVersion;
+                        }
                         dto.Children.Add(childDto);
                     }
                 }
@@ -174,7 +180,7 @@ namespace omsapi.Services
                         Unit = child.Unit,
                         Status = child.Status,
                         ProductType = child.ProductType,
-                        Version = child.Version,
+                        Version = !string.IsNullOrEmpty(rel.ChildVersion) ? rel.ChildVersion : child.Version,
                         Designer = child.Designer,
                         IsLeaf = child.IsLeaf,
                         Qty = rel.Quantity,
@@ -253,7 +259,7 @@ namespace omsapi.Services
                 {
                     ParentId = dto.ParentId,
                     ChildId = dto.Key,
-                    Quantity = 1, // Default quantity
+                    Quantity = dto.Qty, // Use DTO Qty
                     SortOrder = 0 // Default sort
                 };
                 _context.PdmEbomStructures.Add(relation);
@@ -287,7 +293,7 @@ namespace omsapi.Services
                 Designer = item.Designer,
                 RelatedDocuments = savedDocs,
                 IsLeaf = item.IsLeaf,
-                Qty = 1
+                Qty = dto.Qty
             };
         }
 
@@ -456,6 +462,87 @@ namespace omsapi.Services
             _context.PdmEbomItems.Remove(item);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<bool> AddChildItemAsync(AddChildItemDto dto)
+        {
+            if (dto.ParentId == dto.ChildId) throw new InvalidOperationException("Cannot add item as its own child.");
+            
+            var parent = await _context.PdmEbomItems.FindAsync(dto.ParentId);
+            if (parent == null) throw new InvalidOperationException("Parent not found.");
+            
+            var child = await _context.PdmEbomItems.FindAsync(dto.ChildId);
+            if (child == null) throw new InvalidOperationException("Child not found.");
+
+            // Check existing
+            var exists = await _context.PdmEbomStructures.AnyAsync(x => x.ParentId == dto.ParentId && x.ChildId == dto.ChildId);
+            if (exists) throw new InvalidOperationException("Child already exists in this parent.");
+
+            var relation = new PdmEbomStructure
+            {
+                ParentId = dto.ParentId,
+                ChildId = dto.ChildId,
+                Quantity = dto.Qty,
+                SortOrder = 0,
+                ChildVersion = child.Version // Snapshot current version
+            };
+            _context.PdmEbomStructures.Add(relation);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateChildItemQtyAsync(string parentId, string childId, decimal qty)
+        {
+            var relation = await _context.PdmEbomStructures
+                .FirstOrDefaultAsync(x => x.ParentId == parentId && x.ChildId == childId);
+            
+            if (relation == null) throw new InvalidOperationException("Relation not found.");
+
+            relation.Quantity = qty;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RemoveChildItemAsync(string parentId, string childId)
+        {
+            var relation = await _context.PdmEbomStructures
+                .FirstOrDefaultAsync(x => x.ParentId == parentId && x.ChildId == childId);
+            
+            if (relation == null) throw new InvalidOperationException("Relation not found.");
+
+            _context.PdmEbomStructures.Remove(relation);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<List<EbomItemDto>> SearchEbomItemsAsync(string keyword, string excludeId)
+        {
+            var query = _context.PdmEbomItems.AsQueryable();
+            
+            if (!string.IsNullOrEmpty(excludeId))
+            {
+                query = query.Where(x => x.Id != excludeId);
+            }
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(x => x.Id.Contains(keyword) || x.Name.Contains(keyword));
+            }
+
+            var items = await query.Take(20).ToListAsync();
+            
+            return items.Select(x => new EbomItemDto
+            {
+                Key = x.Id,
+                Title = x.Name,
+                Spec = x.Spec,
+                Unit = x.Unit,
+                Status = x.Status,
+                ProductType = x.ProductType,
+                IsLeaf = x.IsLeaf,
+                Version = x.Version,
+                Designer = x.Designer
+            }).ToList();
         }
 
         public async Task InitEbomDataAsync()
@@ -689,6 +776,201 @@ namespace omsapi.Services
             else if (ext == ".txt") contentType = "text/plain";
             
             return (true, "获取成功", contentType, stream, doc.Name);
+        }
+
+        public async Task<(bool Success, string Message, byte[]? FileContent, string? FileName)> ExportEbomAsync(string? rootId)
+        {
+            try
+            {
+                var items = await GetEbomTreesAsync();
+                if (!string.IsNullOrEmpty(rootId))
+                {
+                    items = items.Where(x => x.Key == rootId).ToList();
+                }
+
+                using var memoryStream = new MemoryStream();
+                {
+                    var workbook = new XSSFWorkbook();
+                    var sheet = workbook.CreateSheet("EBOM");
+                    
+                    var headerRow = sheet.CreateRow(0);
+                    string[] headers = { "层级", "物料编码", "物料名称", "规格型号", "数量", "单位", "状态", "版本", "设计者" };
+                    for (int i = 0; i < headers.Length; i++)
+                    {
+                        headerRow.CreateCell(i).SetCellValue(headers[i]);
+                    }
+
+                    int rowIndex = 1;
+                    foreach (var item in items)
+                    {
+                        WriteItemToSheet(sheet, item, 0, ref rowIndex);
+                    }
+
+                    workbook.Write(memoryStream);
+                }
+
+                return (true, "导出成功", memoryStream.ToArray(), $"EBOM_Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"导出失败: {ex.Message}", null, null);
+            }
+        }
+
+        private void WriteItemToSheet(ISheet sheet, EbomItemDto item, int level, ref int rowIndex)
+        {
+            var row = sheet.CreateRow(rowIndex++);
+            row.CreateCell(0).SetCellValue(level);
+            row.CreateCell(1).SetCellValue(item.Key);
+            row.CreateCell(2).SetCellValue(item.Title);
+            row.CreateCell(3).SetCellValue(item.Spec);
+            row.CreateCell(4).SetCellValue((double)item.Qty);
+            row.CreateCell(5).SetCellValue(item.Unit);
+            row.CreateCell(6).SetCellValue(item.Status);
+            row.CreateCell(7).SetCellValue(item.Version);
+            row.CreateCell(8).SetCellValue(item.Designer);
+
+            if (item.Children != null)
+            {
+                foreach (var child in item.Children)
+                {
+                    WriteItemToSheet(sheet, child, level + 1, ref rowIndex);
+                }
+            }
+        }
+
+        public async Task<(bool Success, string Message)> ImportEbomAsync(IFormFile file)
+        {
+            // Placeholder: In a real app, read stream with NPOI, parse, and update DB.
+            await Task.Delay(100); 
+            return (true, "导入成功 (模拟)");
+        }
+
+        public async Task<(bool Success, string Message, object? ComparisonResult)> CompareEbomAsync(List<string> itemIds)
+        {
+            if (itemIds == null || itemIds.Count < 2)
+            {
+                return (false, "请至少选择两个项目进行对比", null);
+            }
+
+            try
+            {
+                // 1. Gather data for all requested items
+                var parents = new List<EbomDetailDto>();
+                var childrenMap = new Dictionary<string, List<EbomItemDto>>();
+
+                foreach (var id in itemIds)
+                {
+                    var parent = await GetEbomItemAsync(id);
+                    if (parent != null)
+                    {
+                        parents.Add(parent);
+                        var children = await GetEbomChildrenAsync(id);
+                        childrenMap[id] = children;
+                    }
+                }
+
+                if (parents.Count < 2)
+                {
+                    return (false, "有效对比项目不足两个 (部分项目可能不存在)", null);
+                }
+
+                // 2. Identify all unique child keys (Part Number / ID) across all parents
+                var allChildKeys = childrenMap.Values
+                    .SelectMany(c => c)
+                    .Select(c => c.Key)
+                    .Distinct()
+                    .OrderBy(k => k)
+                    .ToList();
+
+                // 3. Build the comparison matrix
+                var rows = new List<object>();
+                int diffCount = 0;
+
+                foreach (var childKey in allChildKeys)
+                {
+                    // Find basic info from the first occurrence
+                    var referenceChild = childrenMap.Values
+                        .SelectMany(c => c)
+                        .First(c => c.Key == childKey);
+
+                    var rowData = new Dictionary<string, object>
+                    {
+                        { "Key", referenceChild.Key },
+                        { "Title", referenceChild.Title },
+                        { "Spec", referenceChild.Spec },
+                        { "Unit", referenceChild.Unit }
+                    };
+
+                    bool isPresentInAll = true;
+                    bool isIdentical = true;
+                    decimal? firstQty = null;
+                    string? firstVersion = null;
+                    bool firstSet = false;
+
+                    var cells = new Dictionary<string, object?>();
+
+                    foreach (var parent in parents)
+                    {
+                        var childInParent = childrenMap[parent.Key].FirstOrDefault(c => c.Key == childKey);
+
+                        if (childInParent != null)
+                        {
+                            cells[parent.Key] = new { Exists = true, Qty = childInParent.Qty, Version = childInParent.Version };
+
+                            if (!firstSet)
+                            {
+                                firstQty = childInParent.Qty;
+                                firstVersion = childInParent.Version;
+                                firstSet = true;
+                            }
+                            else
+                            {
+                                if (childInParent.Qty != firstQty || childInParent.Version != firstVersion)
+                                {
+                                    isIdentical = false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            cells[parent.Key] = new { Exists = false };
+                            isPresentInAll = false;
+                            isIdentical = false;
+                        }
+                    }
+
+                    string diffType = "Common"; // Default
+                    if (!isPresentInAll)
+                    {
+                        diffType = "Unique"; // Missing in some
+                        diffCount++;
+                    }
+                    else if (!isIdentical)
+                    {
+                        diffType = "Modified"; // Present in all but values differ
+                        diffCount++;
+                    }
+
+                    rowData["DiffType"] = diffType;
+                    rowData["Cells"] = cells;
+                    rows.Add(rowData);
+                }
+
+                // 4. Construct response
+                var result = new
+                {
+                    Headers = parents.Select(p => new { Id = p.Key, Name = p.Title, Version = p.Version }).ToList(),
+                    Rows = rows,
+                    DiffCount = diffCount
+                };
+
+                return (true, "对比完成", result);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"对比失败: {ex.Message}", null);
+            }
         }
     }
 }

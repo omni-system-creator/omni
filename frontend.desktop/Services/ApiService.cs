@@ -99,20 +99,37 @@ public class ApiService
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse<object>>();
                 if (result != null && result.Code == 200)
                 {
-                    // Refresh user info to get updated context if needed, 
-                    // or just update local CurrentUser if the API doesn't return the full user object.
-                    // Ideally, we fetch the user info again.
+                    // Update user info
                     await GetUserInfoAsync();
                     return (true, "切换成功");
                 }
                 return (false, result?.Message ?? "切换失败");
             }
-            return (false, $"请求失败: {response.StatusCode}");
+            return (false, "请求失败");
         }
         catch (Exception ex)
         {
-            return (false, $"连接错误: {ex.Message}");
+            return (false, ex.Message);
         }
+    }
+
+    public async Task<System.IO.Stream?> DownloadDwgPreviewAsync(string docId)
+    {
+        try
+        {
+            // The preview endpoint returns DXF text
+            // /pdm/preview/dwg/{id}
+            var response = await _httpClient.GetAsync($"pdm/preview/dwg/{docId}");
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadAsStreamAsync();
+            }
+        }
+        catch
+        {
+            // Log error
+        }
+        return null;
     }
 
     public void Logout()

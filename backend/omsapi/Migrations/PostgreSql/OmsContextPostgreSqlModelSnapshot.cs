@@ -1794,6 +1794,11 @@ namespace omsapi.Migrations.PostgreSql
                         .HasColumnType("character varying(50)")
                         .HasColumnName("child_id");
 
+                    b.Property<string>("ChildVersion")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("child_version");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");

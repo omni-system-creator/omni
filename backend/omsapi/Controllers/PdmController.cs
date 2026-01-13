@@ -89,6 +89,62 @@ namespace omsapi.Controllers
             }
         }
 
+        [HttpPost("ebom/items/children")]
+        public async Task<ApiResponse<bool>> AddChildItem([FromBody] AddChildItemDto dto)
+        {
+            try
+            {
+                var result = await _pdmService.AddChildItemAsync(dto);
+                return ApiResponse<bool>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.Error(ex.Message);
+            }
+        }
+
+        [HttpPut("ebom/items/{parentId}/children/{childId}/qty")]
+        public async Task<ApiResponse<bool>> UpdateChildItemQty(string parentId, string childId, [FromBody] UpdateChildItemQtyDto dto)
+        {
+            try
+            {
+                var result = await _pdmService.UpdateChildItemQtyAsync(parentId, childId, dto.Qty);
+                return ApiResponse<bool>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.Error(ex.Message);
+            }
+        }
+
+        [HttpDelete("ebom/items/{parentId}/children/{childId}")]
+        public async Task<ApiResponse<bool>> RemoveChildItem(string parentId, string childId)
+        {
+            try
+            {
+                var result = await _pdmService.RemoveChildItemAsync(parentId, childId);
+                return ApiResponse<bool>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.Error(ex.Message);
+            }
+        }
+
+        [HttpGet("ebom/search")]
+        public async Task<ApiResponse<List<EbomItemDto>>> SearchEbomItems([FromQuery] string keyword = "", [FromQuery] string excludeId = "")
+        {
+            try
+            {
+                var result = await _pdmService.SearchEbomItemsAsync(keyword, excludeId);
+                return ApiResponse<List<EbomItemDto>>.Success(result);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<EbomItemDto>>.Error(ex.Message);
+            }
+        }
+
         [HttpPost("ebom/documents/upload")]
         public async Task<ApiResponse<EbomDocumentDto>> UploadEbomDocument(IFormFile file)
         {
@@ -116,6 +172,51 @@ namespace omsapi.Controllers
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("ebom/import")]
+        public async Task<ApiResponse<bool>> ImportEbom(IFormFile file)
+        {
+            try
+            {
+                var (success, message) = await _pdmService.ImportEbomAsync(file);
+                if (!success) return ApiResponse<bool>.Error(message);
+                return ApiResponse<bool>.Success(true, message);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<bool>.Error(ex.Message);
+            }
+        }
+
+        [HttpGet("ebom/export")]
+        public async Task<IActionResult> ExportEbom([FromQuery] string? rootId)
+        {
+            try
+            {
+                var (success, message, content, fileName) = await _pdmService.ExportEbomAsync(rootId);
+                if (!success || content == null) return BadRequest(message);
+                return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("ebom/compare")]
+        public async Task<ApiResponse<object>> CompareEbom([FromQuery] List<string> itemIds)
+        {
+            try
+            {
+                var (success, message, result) = await _pdmService.CompareEbomAsync(itemIds);
+                if (!success) return ApiResponse<object>.Error(message);
+                return ApiResponse<object>.Success(result, message);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<object>.Error(ex.Message);
             }
         }
     }

@@ -1,0 +1,41 @@
+<Window x:Class="OmsDesktop.DwgViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:OmsDesktop.Controls"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="DWG预览" Height="600" Width="800"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ToolBarTray Grid.Row="0">
+            <ToolBar Style="{DynamicResource MaterialDesignToolBar}" ClipToBounds="False">
+                <Button Content="适应窗口" Click="FitView_Click"/>
+                <Separator/>
+                <TextBlock Text="{Binding FileName}" VerticalAlignment="Center" Margin="10,0"/>
+            </ToolBar>
+        </ToolBarTray>
+
+        <controls:DxfCanvas x:Name="dxfCanvas" Grid.Row="1" ClipToBounds="True"/>
+
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock x:Name="statusText" Text="准备就绪"/>
+            </StatusBarItem>
+        </StatusBar>
+        
+        <Grid Grid.Row="1" x:Name="loadingOverlay" Background="#80FFFFFF" Visibility="Collapsed">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{DynamicResource MaterialDesignCircularProgressBar}" Value="0" IsIndeterminate="True"/>
+                <TextBlock Text="正在加载..." Margin="0,10,0,0"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

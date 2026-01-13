@@ -29,6 +29,12 @@ const router = createRouter({
       component: () => import('../views/data/Forms/Submit.vue'),
       meta: { title: '表单填写', public: true }
     },
+    {
+      path: '/preview/dwg/pdm/ebom/document/:id',
+      name: 'DwgPreview',
+      component: () => import('../views/preview/DwgPreview.vue'),
+      meta: { title: 'DWG预览', public: true }
+    },
     // 基础路由，不需要权限
     {
       path: '/basic', // 避免和动态路由的 / 冲突

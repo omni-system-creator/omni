@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="../frontend.desktop/OmsDesktop.csproj" />
   <Project Path="omsapi/omsapi.csproj" />
 </Solution>
