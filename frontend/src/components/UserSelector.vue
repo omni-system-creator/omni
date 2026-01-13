@@ -45,6 +45,7 @@
           v-else-if="treeData.length > 0"
           v-model:checkedKeys="checkedKeys"
           v-model:selectedKeys="selectedKeys"
+          :class="{ 'search-mode': isSearchResult }"
           :tree-data="treeData"
           :load-data="onLoadData"
           :checkable="multiple"
@@ -56,23 +57,25 @@
         >
           <template #title="{ title, isLeaf, organization, dataRef, dataType }">
             <span v-if="isLeaf" class="tree-node-content">
-              <span class="tree-node-title">
-                <UserOutlined style="color: #1890ff; margin-right: 4px" />
-                {{ title }}
-              </span>
-              <div v-if="organization || (dataRef && dataRef.organization)" class="tree-node-subtitle">
-                {{ organization || dataRef?.organization }}
+              <UserOutlined style="color: #1890ff; margin: 0 6px" />
+              <div class="tree-node-text">
+                <span class="tree-node-title">
+                  {{ title }}
+                </span>
+                <div v-if="organization || (dataRef && dataRef.organization)" class="tree-node-subtitle">
+                  {{ organization || dataRef?.organization }}
+                </div>
               </div>
             </span>
-            <span v-else>
+            <span v-else class="tree-node-title">
                <span v-if="dataType == 1">
-                 <BankOutlined style="color: #faad14; margin-right: 4px" />
+                 <BankOutlined style="color: #faad14; margin: 0 6px" />
                </span>
                <span v-else-if="dataType == 2">
-                 <ApartmentOutlined style="color: #1890ff; margin-right: 4px" />
+                 <ApartmentOutlined style="color: #1890ff; margin: 0 6px" />
                </span>
                <span v-else>
-                 <ClusterOutlined style="color: #8c8c8c; margin-right: 4px" />
+                 <ClusterOutlined style="color: #8c8c8c; margin: 0 6px" />
                </span>
                {{ title }}
              </span>
@@ -146,6 +149,7 @@ const treeData = ref<any[]>([]);
 const cachedDeptTree = ref<Dept[]>([]);
 const searchValue = ref('');
 const searching = ref(false);
+const isSearchResult = ref(false);
 
 // Internal state for the modal
 const tempSelectedUsers = ref<UserInfo[]>([]);
@@ -200,6 +204,7 @@ const updateTreeData = (list: any[], key: string, children: any[]): boolean => {
 const loadTree = async () => {
   if (treeData.value.length > 0 && !searchValue.value) return;
   
+  isSearchResult.value = false;
   searching.value = true;
   try {
       let res = cachedDeptTree.value;
@@ -266,7 +271,7 @@ const onSearch = async (val: string) => {
              return {
                   title: `${u.nickname || u.username} (${u.username})${postNames}`,
                   value: u.username,
-                  key: u.username,
+                  key: `user-${u.username}-${u.dept?.id || '0'}`, // Ensure unique key for user nodes
                   isLeaf: true,
                   isUser: true,
                   organization: showOrg ? orgDisplayName : '',
@@ -280,6 +285,7 @@ const onSearch = async (val: string) => {
                   }
              };
         });
+        isSearchResult.value = true;
     } catch (e) {
         console.error(e);
     } finally {
@@ -289,6 +295,7 @@ const onSearch = async (val: string) => {
 
 watch(searchValue, (val) => {
     if (!val) {
+        isSearchResult.value = false;
         treeData.value = [];
         loadTree();
     }
@@ -594,9 +601,16 @@ const displayValue = computed(() => {
 }
 .tree-node-content {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   padding: 4px 0;
   width: 100%;
+}
+.tree-node-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
 }
 .tree-node-title {
   display: flex;
@@ -608,25 +622,34 @@ const displayValue = computed(() => {
   font-size: 12px;
   line-height: 1.2;
 }
-:deep(.ant-tree-node-content-wrapper) {
-  height: auto !important;
-  min-height: 24px;
-  flex: 1;
-  display: flex;
-}
 :deep(.ant-tree-treenode) {
   width: 100%;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  padding: 4px 0;
 }
-:deep(.ant-tree-indent) {
-  flex-shrink: 0;
-}
-:deep(.ant-tree-switcher),
-:deep(.ant-tree-checkbox) {
-  margin-top: 4px;
+:deep(.ant-tree-node-content-wrapper) {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  line-height: 32px;
+  height: auto !important;
 }
 :deep(.ant-tree-title) {
   flex: 1;
+  display: flex;
+  align-items: center;
+}
+:deep(.search-mode .ant-tree-indent) {
+  display: none;
+}
+:deep(.search-mode .ant-tree-switcher) {
+  display: none;
+}
+:deep(.ant-tree-switcher),
+:deep(.ant-tree-checkbox) {
+  margin: 0;
+  align-self: center;
 }
 </style>
