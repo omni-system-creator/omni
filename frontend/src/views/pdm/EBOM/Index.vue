@@ -11,17 +11,24 @@
             </a-tooltip>
           </template>
           <div class="card-tools">
-            <a-input-search style="margin-bottom: 8px" placeholder="搜索零部件" />
+            <a-input-search v-model:value="searchValue" style="margin-bottom: 8px" placeholder="搜索零部件" @change="onSearchChange" />
           </div>
           <div class="scroll-panel">
             <a-tree
               :tree-data="(treeData as any)"
               v-model:expanded-keys="expandedKeys"
+              :auto-expand-parent="autoExpandParent"
               :selected-keys="selectedKeys"
+              @expand="onExpand"
               @select="onSelect"
             >
               <template #title="{ title }">
-                <span>{{ title }}</span>
+                <span v-if="title.toLowerCase().indexOf(searchValue.toLowerCase()) > -1">
+                    {{ title.substring(0, title.toLowerCase().indexOf(searchValue.toLowerCase())) }}
+                    <span style="color: #f50">{{ title.substring(title.toLowerCase().indexOf(searchValue.toLowerCase()), title.toLowerCase().indexOf(searchValue.toLowerCase()) + searchValue.length) }}</span>
+                    {{ title.substring(title.toLowerCase().indexOf(searchValue.toLowerCase()) + searchValue.length) }}
+                </span>
+                <span v-else>{{ title }}</span>
               </template>
             </a-tree>
           </div>
@@ -56,7 +63,22 @@
             </a-space>
           </template>
           <div class="scroll-panel">
-            <a-descriptions title="当前节点信息" bordered size="small" style="margin-bottom: 24px">
+            <a-descriptions bordered size="small" style="margin-bottom: 24px">
+              <template #title>
+                <a-breadcrumb>
+                  <a-breadcrumb-item v-for="(item, index) in breadcrumbs" :key="item.key">
+                     <a-tooltip>
+                        <template #title>
+                            <div>编码: {{ item.key }}</div>
+                            <div>名称: {{ item.title }}</div>
+                            <div>版本: {{ item.version || '-' }}</div>
+                        </template>
+                        <span v-if="index === breadcrumbs.length - 1">{{ item.title }}</span>
+                        <a v-else @click="handleBreadcrumbClick(item.key)">{{ item.title }}</a>
+                     </a-tooltip>
+                  </a-breadcrumb-item>
+                </a-breadcrumb>
+              </template>
               <template #extra>
                 <a-space>
                   <a-button type="link" size="small" @click="handleEdit">
@@ -328,7 +350,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive, h } from 'vue';
+import { ref, computed, onMounted, reactive, h, watch } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, UploadOutlined, MoreOutlined } from '@ant-design/icons-vue';
 import type { TreeProps, UploadChangeParam, UploadFile } from 'ant-design-vue';
@@ -353,6 +375,49 @@ const selectedKeys = ref<Key[]>([]);
 const expandedKeys = ref<Key[]>([]);
 const treeData = ref<EbomItemDto[]>([]);
 const loading = ref(false);
+
+// Search
+const searchValue = ref('');
+const autoExpandParent = ref(true);
+
+const onExpand = (keys: Key[]) => {
+  expandedKeys.value = keys;
+  autoExpandParent.value = false;
+};
+
+const onSearchChange = (e: any) => {
+    const value = e.target.value;
+    if (!value) {
+        // Optional: collapse all or restore default state
+        return;
+    }
+    
+    const expanded: Key[] = [];
+    const filterExpandedKeys = (data: EbomItemDto[], val: string): boolean => {
+        let anyChildMatch = false;
+        for (const item of data) {
+            let match = item.title.toLowerCase().includes(val.toLowerCase());
+            let childMatch = false;
+            if (item.children) {
+                childMatch = filterExpandedKeys(item.children, val);
+            }
+            
+            if (childMatch) {
+                expanded.push(item.key);
+                anyChildMatch = true;
+            }
+            
+            if (match) {
+                anyChildMatch = true;
+            }
+        }
+        return anyChildMatch;
+    };
+    
+    filterExpandedKeys(treeData.value, value);
+    expandedKeys.value = expanded;
+    autoExpandParent.value = true;
+};
 
 // Compare List
 const compareList = ref<{ key: string, title: string, version: string }[]>([]);
@@ -817,7 +882,17 @@ const handleDelete = () => {
 
 const columns: ColumnType[] = [
   { title: '序号', key: 'index', width: 60, align: 'center' },
-  { title: '物料编码', dataIndex: 'key', key: 'key', width: 150 },
+  { title: '物料编码', dataIndex: 'key', key: 'key', width: 150, customRender: ({ text, record }: { text: string, record: any }) => {
+      return h('a', {
+          onClick: () => {
+              selectedKeys.value = [record.key];
+              // Ensure parent is expanded
+              if (selectedKeys.value.length > 0) {
+                 expandedKeys.value = [...expandedKeys.value, currentNode.value.key];
+              }
+          }
+      }, text);
+  }},
   { title: '物料名称', dataIndex: 'title', key: 'title' },
   { title: '规格型号', dataIndex: 'spec', key: 'spec' },
   { title: '版本', dataIndex: 'version', key: 'version', width: 80 },
@@ -856,6 +931,33 @@ const onSelect: TreeProps['onSelect'] = (keys, _info) => {
   if (keys.length > 0) {
     selectedKeys.value = keys;
   }
+};
+
+const breadcrumbs = computed(() => {
+    const key = selectedKeys.value[0];
+    if (!key) return [];
+    
+    const path: any[] = [];
+    const findPath = (data: any[], targetKey: string, currentPath: any[]): boolean => {
+        for (const item of data) {
+            const newPath = [...currentPath, { key: item.key, title: item.title, version: item.version }];
+            if (item.key === targetKey) {
+                path.push(...newPath);
+                return true;
+            }
+            if (item.children && findPath(item.children, targetKey, newPath)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    
+    findPath(treeData.value, key as string, []);
+    return path;
+});
+
+const handleBreadcrumbClick = (key: string) => {
+    selectedKeys.value = [key];
 };
 </script>
 
