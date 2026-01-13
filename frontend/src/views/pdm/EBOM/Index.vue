@@ -350,7 +350,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, reactive, h, watch } from 'vue';
+import { ref, computed, onMounted, reactive, h } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, UploadOutlined, MoreOutlined } from '@ant-design/icons-vue';
 import type { TreeProps, UploadChangeParam, UploadFile } from 'ant-design-vue';
