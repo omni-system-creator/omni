@@ -310,6 +310,22 @@ namespace omsapi.Data
                 }
             }
 
+            // PDM管理
+            await AddData("product_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "成品", Value = "finished", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "半成品", Value = "semi_finished", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "原材料", Value = "raw_material", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+
+            // PDM管理
+            await AddData("product_type", new List<SysDictData>
+            {
+                new SysDictData { Label = "成品", Value = "finished", Sort = 1, IsDefault = true, Status = "normal" },
+                new SysDictData { Label = "半成品", Value = "semi_finished", Sort = 2, IsDefault = false, Status = "normal" },
+                new SysDictData { Label = "原材料", Value = "raw_material", Sort = 3, IsDefault = false, Status = "normal" }
+            });
+
             // 系统通用
             await AddData("sys_user_status", new List<SysDictData>
             {

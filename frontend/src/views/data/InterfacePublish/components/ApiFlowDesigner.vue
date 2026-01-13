@@ -63,9 +63,9 @@
       <div class="props-content">
         <a-form layout="vertical" :disabled="readOnly">
           <a-form-item label="节点标识 (ID/Key)">
-             <a-input :value="selectedNode?.id" @change="(e: any) => selectedNode && updateNodeId(selectedNode.id, e.target.value)" />
+             <a-input :value="selectedNode?.id || ''" @change="(e: any) => updateNodeId(selectedNode?.id || '', (e.target as HTMLInputElement).value)" />
              <div style="font-size: 12px; color: #888; margin-top: 4px;">
-               唯一标识，后续节点可通过 @{{selectedNode?.id}} 引用结果
+               唯一标识，后续节点可通过 @{{selectedNode.id}} 引用结果
              </div>
           </a-form-item>
           <a-form-item label="节点名称">

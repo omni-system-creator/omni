@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
@@ -11,9 +12,11 @@ using omsapi.Data;
 namespace omsapi.Migrations.SqlServer
 {
     [DbContext(typeof(OmsContextSqlServer))]
-    partial class OmsContextSqlServerModelSnapshot : ModelSnapshot
+    [Migration("20260113015754_AddPdmEntities")]
+    partial class AddPdmEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1662,57 +1665,6 @@ namespace omsapi.Migrations.SqlServer
                     b.ToTable("page_definitions");
                 });
 
-            modelBuilder.Entity("omsapi.Models.Entities.Pdm.PdmEbomDocument", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("EbomItemId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("ebom_item_id");
-
-                    b.Property<string>("FileType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("file_type");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Path")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("path");
-
-                    b.Property<long>("Size")
-                        .HasColumnType("bigint")
-                        .HasColumnName("size");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("uploaded_at");
-
-                    b.Property<string>("UploadedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("uploaded_by");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("pdm_ebom_documents");
-                });
-
             modelBuilder.Entity("omsapi.Models.Entities.Pdm.PdmEbomItem", b =>
                 {
                     b.Property<string>("Id")
@@ -1739,12 +1691,6 @@ namespace omsapi.Migrations.SqlServer
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("name");
-
-                    b.Property<string>("ProductType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasColumnName("product_type");
 
                     b.Property<string>("Spec")
                         .IsRequired()

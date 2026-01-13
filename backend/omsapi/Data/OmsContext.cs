@@ -106,6 +106,11 @@ namespace omsapi.Data
         public DbSet<omsapi.Models.Entities.Dict.SysDictType> DictTypes { get; set; }
         public DbSet<omsapi.Models.Entities.Dict.SysDictData> DictDatas { get; set; }
 
+        // Pdm Entities
+        public DbSet<omsapi.Models.Entities.Pdm.PdmEbomItem> PdmEbomItems { get; set; }
+        public DbSet<omsapi.Models.Entities.Pdm.PdmEbomStructure> PdmEbomStructures { get; set; }
+        public DbSet<omsapi.Models.Entities.Pdm.PdmEbomDocument> PdmEbomDocuments { get; set; }
+
         // Kb Entities
         public DbSet<KbInfo> KbInfos { get; set; }
         public DbSet<KbFile> KbFiles { get; set; }
