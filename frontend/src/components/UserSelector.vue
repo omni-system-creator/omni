@@ -338,7 +338,7 @@ const onLoadData = async (treeNode: any) => {
           return {
               title: `${u.nickname || u.username} (${u.username})${postNames}`,
               value: u.username,
-              key: u.username,
+              key: `user-${u.username}-${deptId}`,
               isLeaf: true,
               isUser: true,
               userData: {
@@ -354,9 +354,32 @@ const onLoadData = async (treeNode: any) => {
       updateTreeData(treeData.value, treeNode.key, childNodes);
       // Force update treeData to trigger reactivity if needed
       treeData.value = [...treeData.value];
+      
+      // Sync checked keys after loading new nodes
+      syncCheckedKeys();
   } catch (e) {
       console.error(e);
   }
+};
+
+const getAllKeysFromTree = (tree: any[], usernames: string[]): string[] => {
+    let keys: string[] = [];
+    for (const node of tree) {
+        if (node.isUser && node.userData && usernames.includes(node.userData.username)) {
+            keys.push(node.key);
+        }
+        if (node.children && node.children.length > 0) {
+            keys = keys.concat(getAllKeysFromTree(node.children, usernames));
+        }
+    }
+    return keys;
+};
+
+const syncCheckedKeys = () => {
+    if (!props.multiple) return;
+    const usernames = tempSelectedUsers.value.map(u => u.username);
+    const keys = getAllKeysFromTree(treeData.value, usernames);
+    checkedKeys.value = keys;
 };
 
 const openDialog = async () => {
@@ -374,13 +397,17 @@ const openDialog = async () => {
   }
   
   // Sync keys
-  const keys = tempSelectedUsers.value.map(u => u.username);
   if (props.multiple) {
-      checkedKeys.value = keys;
+      syncCheckedKeys();
   } else {
+      const keys = tempSelectedUsers.value.map(u => u.username);
       selectedKeys.value = keys;
   }
 };
+
+watch(tempSelectedUsers, () => {
+    syncCheckedKeys();
+}, { deep: true });
 
 const handleOk = () => {
   const values = tempSelectedUsers.value.map(u => u.username);
@@ -520,7 +547,7 @@ const displayValue = computed(() => {
 .panel-body {
   padding: 12px;
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
 }
 .selected-list {
   padding: 12px;
@@ -566,11 +593,14 @@ const displayValue = computed(() => {
   padding: 20px;
 }
 .tree-node-content {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   padding: 4px 0;
+  width: 100%;
 }
 .tree-node-title {
+  display: flex;
+  align-items: center;
   line-height: 1.5;
 }
 .tree-node-subtitle {
@@ -587,6 +617,14 @@ const displayValue = computed(() => {
 :deep(.ant-tree-treenode) {
   width: 100%;
   display: flex;
+  align-items: flex-start;
+}
+:deep(.ant-tree-indent) {
+  flex-shrink: 0;
+}
+:deep(.ant-tree-switcher),
+:deep(.ant-tree-checkbox) {
+  margin-top: 4px;
 }
 :deep(.ant-tree-title) {
   flex: 1;
