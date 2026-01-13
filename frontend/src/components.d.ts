@@ -115,6 +115,7 @@ declare module 'vue' {
     TabsView: typeof import('./components/TabsView.vue')['default']
     TeamSchedule: typeof import('./components/widgets/TeamSchedule.vue')['default']
     TodoCalendar: typeof import('./components/widgets/TodoCalendar.vue')['default']
+    UserSelector: typeof import('./components/UserSelector.vue')['default']
     WelcomeCard: typeof import('./components/widgets/WelcomeCard.vue')['default']
   }
 }
