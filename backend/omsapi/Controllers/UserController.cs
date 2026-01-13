@@ -150,14 +150,14 @@ namespace omsapi.Controllers
         /// </summary>
         [HttpGet]
         //[Authorize(Roles = "ADMIN")] // 暂不开启严格的角色验证，方便调试
-        public async Task<ApiResponse<List<UserListDto>>> GetAll([FromQuery] long? deptId = null)
+        public async Task<ApiResponse<List<UserListDto>>> GetAll([FromQuery] long? deptId = null, [FromQuery] string? keyword = null)
         {
             var userIdClaim = User.FindFirst("id");
             if (userIdClaim == null || !long.TryParse(userIdClaim.Value, out long userId))
             {
                 return ApiResponse<List<UserListDto>>.Error("无法获取用户信息", 401);
             }
-            var (success, message, data) = await _userService.GetAllUsersAsync(userId, deptId);
+            var (success, message, data) = await _userService.GetAllUsersAsync(userId, deptId, keyword);
             if (!success) return ApiResponse<List<UserListDto>>.Error(message);
             return ApiResponse<List<UserListDto>>.Success(data!);
         }

@@ -31,11 +31,11 @@ namespace omsapi.Services
             }
 
             // 验证文件类型
-            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
             if (!allowedExtensions.Contains(extension))
             {
-                return (false, "仅支持 jpg, jpeg, png, gif 格式的图片", null);
+                return (false, "仅支持 jpg, jpeg, png, gif, webp 格式的图片", null);
             }
 
             // 验证文件大小 (例如 2MB)
@@ -343,7 +343,7 @@ namespace omsapi.Services
             return result;
         }
 
-        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync(long userId, long? deptId = null)
+        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync(long userId, long? deptId = null, string? keyword = null)
         {
             var isAdmin = await IsAdminAsync(userId);
 
@@ -360,6 +360,11 @@ namespace omsapi.Services
             if (deptId.HasValue)
             {
                 query = query.Where(u => u.DeptId == deptId.Value || u.UserPosts.Any(up => up.DeptId == deptId.Value));
+            }
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = query.Where(u => u.Username.Contains(keyword) || (u.Nickname != null && u.Nickname.Contains(keyword)));
             }
 
             if (!isAdmin)

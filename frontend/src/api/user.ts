@@ -99,7 +99,7 @@ export const switchUserOrg = (orgId: number) => {
   return request.post<any, boolean>(`/user/switch-org/${orgId}`);
 };
 
-export const getUserList = (params?: { deptId?: number }) => {
+export const getUserList = (params?: { deptId?: number; keyword?: string }) => {
   return request.get<any, UserListDto[]>('/user', { params });
 };
 

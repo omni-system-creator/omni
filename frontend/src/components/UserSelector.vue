@@ -30,38 +30,58 @@
         <div class="left-panel">
           <div class="panel-header">组织架构</div>
           <div class="panel-body">
-            <a-input-search
-              v-model:value="searchValue"
-              style="margin-bottom: 8px"
-              placeholder="搜索部门或人员"
-              allow-clear
-            />
-            <a-tree
-              v-if="treeData.length > 0"
-              v-model:checkedKeys="checkedKeys"
-              v-model:selectedKeys="selectedKeys"
-              :tree-data="treeData"
-              :load-data="onLoadData"
-              :checkable="multiple"
-              :checkStrictly="true"
-              :selectable="!multiple"
-              :height="400"
-              @check="onCheck"
-              @select="onSelect"
-            >
-              <template #title="{ title, isLeaf }">
-                <span v-if="isLeaf">
-                  {{ title }}
-                </span>
-                <span v-else>
-                  {{ title }}
-                </span>
-              </template>
-            </a-tree>
-            <div v-else class="loading-tree">
-              <a-spin />
-            </div>
-          </div>
+        <a-input-search
+          v-model:value="searchValue"
+          style="margin-bottom: 8px"
+          placeholder="搜索部门或人员"
+          allow-clear
+          :loading="searching"
+          @search="onSearch"
+        />
+        <div v-if="searching" class="loading-tree">
+          <a-spin />
+        </div>
+        <a-tree
+          v-else-if="treeData.length > 0"
+          v-model:checkedKeys="checkedKeys"
+          v-model:selectedKeys="selectedKeys"
+          :tree-data="treeData"
+          :load-data="onLoadData"
+          :checkable="multiple"
+          :checkStrictly="true"
+          :selectable="!multiple"
+          :height="400"
+          @check="onCheck"
+          @select="onSelect"
+        >
+          <template #title="{ title, isLeaf, organization, dataRef, dataType }">
+            <span v-if="isLeaf" class="tree-node-content">
+              <span class="tree-node-title">
+                <UserOutlined style="color: #1890ff; margin-right: 4px" />
+                {{ title }}
+              </span>
+              <div v-if="organization || (dataRef && dataRef.organization)" class="tree-node-subtitle">
+                {{ organization || dataRef?.organization }}
+              </div>
+            </span>
+            <span v-else>
+               <span v-if="dataType == 1">
+                 <BankOutlined style="color: #faad14; margin-right: 4px" />
+               </span>
+               <span v-else-if="dataType == 2">
+                 <ApartmentOutlined style="color: #1890ff; margin-right: 4px" />
+               </span>
+               <span v-else>
+                 <ClusterOutlined style="color: #8c8c8c; margin-right: 4px" />
+               </span>
+               {{ title }}
+             </span>
+          </template>
+        </a-tree>
+        <div v-else class="empty-tip">
+          暂无数据
+        </div>
+      </div>
         </div>
         <div class="right-panel">
           <div class="panel-header">
@@ -87,8 +107,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { SearchOutlined, CloseOutlined } from '@ant-design/icons-vue';
+import { ref, computed, watch } from 'vue';
+import { 
+  SearchOutlined, 
+  CloseOutlined,
+  BankOutlined,
+  ApartmentOutlined,
+  ClusterOutlined,
+  UserOutlined
+} from '@ant-design/icons-vue';
 import { getDeptTree, type Dept } from '@/api/dept';
 import { getUserList } from '@/api/user';
 import { useUserStore } from '@/stores/user';
@@ -118,6 +145,7 @@ const { wrapClassName, handleTitleMouseDown } = useDraggableModal(visible);
 const treeData = ref<any[]>([]);
 const cachedDeptTree = ref<Dept[]>([]);
 const searchValue = ref('');
+const searching = ref(false);
 
 // Internal state for the modal
 const tempSelectedUsers = ref<UserInfo[]>([]);
@@ -131,6 +159,22 @@ const findDept = (depts: Dept[], id: number): Dept | null => {
     if (dept.children) {
       const found = findDept(dept.children, id);
       if (found) return found;
+    }
+  }
+  return null;
+};
+
+// Helper to get full dept path
+const getDeptFullPath = (depts: Dept[], id: number): string | null => {
+  for (const dept of depts) {
+    if (dept.id === id) {
+      return dept.name;
+    }
+    if (dept.children) {
+      const childPath = getDeptFullPath(dept.children, id);
+      if (childPath) {
+        return `${dept.name}-${childPath}`;
+      }
     }
   }
   return null;
@@ -154,21 +198,101 @@ const updateTreeData = (list: any[], key: string, children: any[]): boolean => {
 
 // Load initial tree
 const loadTree = async () => {
-  if (treeData.value.length > 0) return;
+  if (treeData.value.length > 0 && !searchValue.value) return;
+  
+  searching.value = true;
   try {
-    const res = await getDeptTree();
-    cachedDeptTree.value = res || [];
-    treeData.value = (res || []).map(d => ({
-      title: d.name,
-      value: `dept-${d.id}`,
-      key: `dept-${d.id}`,
-      isLeaf: false,
-      dataRef: d
-    }));
-  } catch (e) {
-    console.error(e);
+      let res = cachedDeptTree.value;
+      if (res.length === 0) {
+          try {
+            res = await getDeptTree();
+            cachedDeptTree.value = res || [];
+          } catch (e) {
+            console.error(e);
+            return;
+          }
+      }
+
+      treeData.value = (res || []).map(d => ({
+        title: d.name,
+        value: `dept-${d.id}`,
+        key: `dept-${d.id}`,
+        isLeaf: false,
+        dataType: d.type,
+        dataRef: d
+      }));
+  } finally {
+      searching.value = false;
   }
 };
+
+const onSearch = async (val: string) => {
+    if (!val) {
+        treeData.value = [];
+        await loadTree();
+        return;
+    }
+
+    // Ensure tree is loaded for path lookup
+    if (cachedDeptTree.value.length === 0) {
+        await loadTree();
+    }
+
+    searching.value = true;
+    try {
+        const users = await getUserList({ keyword: val });
+        treeData.value = users.map(u => {
+             const postNames = u.posts && u.posts.length > 0 ? ` - ${u.posts.map(p => p.postName).join(', ')}` : '';
+             
+             const currentOrgName = userStore.currentOrg?.name;
+             const currentOrgId = userStore.currentOrg?.id;
+             
+             let orgDisplayName = u.dept?.name || '';
+             if (u.dept?.id) {
+                 const fullPath = getDeptFullPath(cachedDeptTree.value, u.dept.id);
+                 if (fullPath) orgDisplayName = fullPath;
+             }
+
+             let isSame = false;
+             if (currentOrgId && u.dept?.id) {
+                 isSame = u.dept.id === currentOrgId;
+             } else {
+                 isSame = u.dept?.name === currentOrgName;
+             }
+
+             const showOrg = !isSame && orgDisplayName;
+             // const orgSuffix = showOrg ? ` - ${orgDisplayName}` : '';
+
+             return {
+                  title: `${u.nickname || u.username} (${u.username})${postNames}`,
+                  value: u.username,
+                  key: u.username,
+                  isLeaf: true,
+                  isUser: true,
+                  organization: showOrg ? orgDisplayName : '',
+                  dataRef: {
+                      organization: showOrg ? orgDisplayName : ''
+                  },
+                  userData: {
+                      username: u.username,
+                      name: u.nickname || u.username,
+                      organization: orgDisplayName
+                  }
+             };
+        });
+    } catch (e) {
+        console.error(e);
+    } finally {
+        searching.value = false;
+    }
+};
+
+watch(searchValue, (val) => {
+    if (!val) {
+        treeData.value = [];
+        loadTree();
+    }
+});
 
 const onLoadData = async (treeNode: any) => {
   const { value } = treeNode;
@@ -179,9 +303,9 @@ const onLoadData = async (treeNode: any) => {
 
   // Avoid reloading if already loaded
   // We check if the node already has children populated in the tree structure
-  // if (treeNode.children && treeNode.children.length > 0) {
-  //     return;
-  // }
+  if (treeNode.children && treeNode.children.length > 0) {
+      return;
+  }
 
   try {
       const users = await getUserList({ deptId });
@@ -191,6 +315,13 @@ const onLoadData = async (treeNode: any) => {
       const currentDept = findDept(cachedDeptTree.value, deptId);
       const subDepts = currentDept?.children || [];
 
+      // Calculate full path for currentDept
+      let deptPath = currentDept?.name || '';
+      if (currentDept) {
+          const fullPath = getDeptFullPath(cachedDeptTree.value, currentDept.id);
+          if (fullPath) deptPath = fullPath;
+      }
+
       const deptNodes = subDepts.map(d => ({
         title: d.name,
         value: `dept-${d.id}`,
@@ -198,7 +329,7 @@ const onLoadData = async (treeNode: any) => {
         isLeaf: false,
         selectable: false,
         disableCheckbox: true,
-        disabled: true,
+        type: d.type,
         dataRef: d
       }));
 
@@ -213,7 +344,7 @@ const onLoadData = async (treeNode: any) => {
               userData: {
                   username: u.username,
                   name: u.nickname || u.username,
-                  organization: currentDept?.name || ''
+                  organization: deptPath
               }
           };
       });
@@ -433,5 +564,31 @@ const displayValue = computed(() => {
 .loading-tree {
   text-align: center;
   padding: 20px;
+}
+.tree-node-content {
+  display: inline-flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+.tree-node-title {
+  line-height: 1.5;
+}
+.tree-node-subtitle {
+  color: #999;
+  font-size: 12px;
+  line-height: 1.2;
+}
+:deep(.ant-tree-node-content-wrapper) {
+  height: auto !important;
+  min-height: 24px;
+  flex: 1;
+  display: flex;
+}
+:deep(.ant-tree-treenode) {
+  width: 100%;
+  display: flex;
+}
+:deep(.ant-tree-title) {
+  flex: 1;
 }
 </style>
