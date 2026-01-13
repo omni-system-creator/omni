@@ -2,7 +2,7 @@
 import { ref, watch, reactive, onMounted } from 'vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import { TreeSelect } from 'ant-design-vue';
-import { getUserList, type UserListDto } from '@/api/user';
+import { getUserList } from '@/api/user';
 import { getDeptTree, type Dept } from '@/api/dept';
 import type { ProjectInfo } from '@/types/project';
 import { useUserStore } from '@/stores/user';
