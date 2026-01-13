@@ -16,6 +16,7 @@
           <div class="scroll-panel">
             <a-tree
               :tree-data="(treeData as any)"
+              blockNode
               v-model:expanded-keys="expandedKeys"
               :auto-expand-parent="autoExpandParent"
               :selected-keys="selectedKeys"
@@ -23,12 +24,14 @@
               @select="onSelect"
             >
               <template #title="{ title }">
-                <span v-if="title.toLowerCase().indexOf(searchValue.toLowerCase()) > -1">
-                    {{ title.substring(0, title.toLowerCase().indexOf(searchValue.toLowerCase())) }}
-                    <span style="color: #f50">{{ title.substring(title.toLowerCase().indexOf(searchValue.toLowerCase()), title.toLowerCase().indexOf(searchValue.toLowerCase()) + searchValue.length) }}</span>
-                    {{ title.substring(title.toLowerCase().indexOf(searchValue.toLowerCase()) + searchValue.length) }}
-                </span>
-                <span v-else>{{ title }}</span>
+                <a-tooltip placement="topLeft" :title="title">
+                  <span class="tree-node-title" v-if="title.toLowerCase().indexOf(searchValue.toLowerCase()) > -1">
+                      {{ title.substring(0, title.toLowerCase().indexOf(searchValue.toLowerCase())) }}
+                      <span style="color: #f50">{{ title.substring(title.toLowerCase().indexOf(searchValue.toLowerCase()), title.toLowerCase().indexOf(searchValue.toLowerCase()) + searchValue.length) }}</span>
+                      {{ title.substring(title.toLowerCase().indexOf(searchValue.toLowerCase()) + searchValue.length) }}
+                  </span>
+                  <span class="tree-node-title" v-else>{{ title }}</span>
+                </a-tooltip>
               </template>
             </a-tree>
           </div>
@@ -1012,8 +1015,20 @@ const handleBreadcrumbClick = (key: string) => {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overflow-x: hidden;
 }
 .card-tools {
   padding-right: 16px;
+}
+.tree-node-title {
+  display: inline-block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+.tree-card :deep(.ant-tree.ant-tree-block-node .ant-tree-list-holder-inner .ant-tree-node-content-wrapper) {
+  overflow: hidden;
 }
 </style>
