@@ -98,22 +98,22 @@ const myConnectionId = ref<string>('');
 
 const uniqueUsers = computed(() => {
   const map = new Map<string, OnlineUser>();
-  const currentOrgId = userStore.currentOrg?.id;
+  const currentRootOrgId = userStore.currentOrg?.id;
 
   allConnections.value.forEach(conn => {
-    // Filter by Organization
-    if (currentOrgId !== undefined && conn.currentOrgId !== currentOrgId) {
+    const connRootOrgId = conn.currentOrgId;
+
+    // Filter: only show users under same root organization
+    if (currentRootOrgId !== undefined && connRootOrgId !== undefined && connRootOrgId !== currentRootOrgId) {
       return;
     }
 
-    // Group by userId if available, otherwise userName
     const key = conn.userId || conn.userName;
     const existing = map.get(key);
     
     if (!existing) {
       map.set(key, { ...conn });
     } else {
-      // Prioritize the current connection if duplicate found
       if (conn.connectionId === myConnectionId.value) {
         map.set(key, { ...conn });
       }
