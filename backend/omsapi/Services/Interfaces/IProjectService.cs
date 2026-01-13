@@ -4,8 +4,8 @@ namespace omsapi.Services.Interfaces
 {
     public interface IProjectService
     {
-        Task<List<ProjectListItemDto>> GetProjectsAsync();
-        Task<ProjectFullDto?> GetProjectAsync(string code);
-        Task<bool> SaveProjectAsync(ProjectFullDto projectDto);
+        Task<List<ProjectListItemDto>> GetProjectsAsync(string username, bool isAdmin = false);
+        Task<ProjectFullDto?> GetProjectAsync(string code, string username, bool isAdmin = false);
+        Task<bool> SaveProjectAsync(ProjectFullDto projectDto, string username);
     }
 }

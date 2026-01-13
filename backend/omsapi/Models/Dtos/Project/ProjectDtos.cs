@@ -15,8 +15,17 @@ namespace omsapi.Models.Dtos.Project
         public string? Type { get; set; }
         public string? Description { get; set; }
         public string? Manager { get; set; }
+        public List<ProjectMemberDto>? Members { get; set; }
         public DateTime? PlannedStartDate { get; set; }
         public DateTime? PlannedEndDate { get; set; }
+    }
+
+    public class ProjectMemberDto
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Organization { get; set; } = string.Empty;
+        public string Role { get; set; } = "Member"; // Manager, Member, Viewer
     }
 
     public class PhaseDto

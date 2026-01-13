@@ -81,6 +81,7 @@ namespace omsapi.Data
 
         // Project Flow Entities
         public DbSet<ProjectInfo> ProjectInfos { get; set; }
+        public DbSet<ProjectMember> ProjectMembers { get; set; }
         public DbSet<ProjectPhase> ProjectPhases { get; set; }
         public DbSet<ProjectSwimlane> ProjectSwimlanes { get; set; }
         public DbSet<ProjectTask> ProjectTasks { get; set; }

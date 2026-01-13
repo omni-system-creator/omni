@@ -11,7 +11,7 @@ namespace omsapi.Services.Interfaces
         Task<(bool Success, string Message)> ChangePasswordAsync(long userId, ChangePasswordDto dto);
         
         // 管理员接口
-        Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync(long userId);
+        Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync(long userId, long? deptId = null);
         Task<(bool Success, string Message, UserListDto? Data)> GetUserByIdAsync(long id);
         Task<(bool Success, string Message)> CreateUserAsync(CreateUserDto dto);
         Task<(bool Success, string Message)> UpdateUserAsync(long id, UpdateUserDto dto);

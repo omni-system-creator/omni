@@ -1,9 +1,17 @@
+export interface ProjectMember {
+  username: string
+  name?: string
+  organization?: string
+  role: string // 'Manager' | 'Member' | 'Viewer'
+}
+
 export interface ProjectInfo {
   code: string
   name: string
   type?: string
   description?: string
   manager?: string
+  members?: ProjectMember[]
   plannedStartDate?: string
   plannedEndDate?: string
 }
@@ -92,6 +100,7 @@ export interface ProjectListItem {
   name: string
   type: string
   manager: string
+  members?: ProjectMember[]
   status: string
   progress: number
   plannedEndDate?: string

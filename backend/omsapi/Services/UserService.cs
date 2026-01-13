@@ -343,7 +343,7 @@ namespace omsapi.Services
             return result;
         }
 
-        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync(long userId)
+        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync(long userId, long? deptId = null)
         {
             var isAdmin = await IsAdminAsync(userId);
 
@@ -356,6 +356,11 @@ namespace omsapi.Services
                 .ThenInclude(up => up.Post)
                 .Include(u => u.UserPosts)
                 .ThenInclude(up => up.Dept);
+
+            if (deptId.HasValue)
+            {
+                query = query.Where(u => u.DeptId == deptId.Value || u.UserPosts.Any(up => up.DeptId == deptId.Value));
+            }
 
             if (!isAdmin)
             {

@@ -23,6 +23,19 @@
              <KanbanView />
           </div>
         </a-tab-pane>
+        <a-tab-pane key="members" tab="成员">
+          <div class="tab-view-container" style="padding: 16px; overflow: auto;">
+             <a-table :columns="memberColumns" :data-source="store.projectInfo?.members || []" :pagination="false">
+               <template #bodyCell="{ column, record }">
+                  <template v-if="column.key === 'role'">
+                    <a-tag :color="record.role === 'Manager' ? 'blue' : (record.role === 'Viewer' ? 'default' : 'green')">
+                      {{ record.role === 'Manager' ? '负责人' : (record.role === 'Viewer' ? '只读' : '成员') }}
+                    </a-tag>
+                  </template>
+               </template>
+             </a-table>
+          </div>
+        </a-tab-pane>
       </a-tabs>
       <StatusBar />
     </div>
@@ -50,6 +63,13 @@ const route = useRoute();
 const store = useProjectFlowStore();
 const tabsStore = useTabsStore();
 const activeTab = ref('flowchart');
+
+const memberColumns = [
+  { title: '姓名', dataIndex: 'name', key: 'name' },
+  { title: '账号', dataIndex: 'username', key: 'username' },
+  { title: '所属组织', dataIndex: 'organization', key: 'organization' },
+  { title: '角色', dataIndex: 'role', key: 'role' }
+];
 
 onMounted(async () => {
   const projectId = route.params.id as string;
