@@ -121,7 +121,11 @@ const handleCancel = () => {
 const handleTestConnection = async () => {
   testingConnection.value = true;
   try {
-    const res = await api.testConnection(formState);
+    const data = { ...formState };
+    if (isEditMode.value && props.editId) {
+      data.id = props.editId;
+    }
+    const res = await api.testConnection(data);
     if (res) {
       message.success('连接成功');
     } else {

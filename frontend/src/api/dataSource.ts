@@ -13,6 +13,7 @@ export interface DataSourceConnection {
 }
 
 export interface CreateDataSourceDto {
+  id?: number;
   name: string;
   type: string;
   host: string;

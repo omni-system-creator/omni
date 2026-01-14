@@ -136,13 +136,23 @@ namespace omsapi.Services
 
         public async Task<bool> TestConnectionAsync(CreateDataSourceConnectionDto connectionDto)
         {
+            var password = connectionDto.Password;
+            if (string.IsNullOrEmpty(password) && connectionDto.Id.HasValue)
+            {
+                var existing = await _context.DataSourceConnections.FindAsync(connectionDto.Id.Value);
+                if (existing != null)
+                {
+                    password = existing.Password;
+                }
+            }
+
             var tempConnection = new DataSourceConnection
             {
                 Type = connectionDto.Type,
                 Host = connectionDto.Host,
                 Port = connectionDto.Port,
                 User = connectionDto.User,
-                Password = connectionDto.Password,
+                Password = password,
                 Database = connectionDto.Database
             };
 
