@@ -50,6 +50,7 @@ namespace omsapi.Hubs
                 string? nickname = null;
                 string? avatar = null;
                 long? currentOrgId = null;
+                var affiliatedRootOrgIds = new HashSet<long>();
 
                 if (long.TryParse(userId, out long uid))
                 {
@@ -57,12 +58,35 @@ namespace omsapi.Hubs
                     // We create a new scope or use the injected context. 
                     // Hub lifetime is per-invocation, but OnConnectedAsync is an invocation.
                     // However, ensure DbContext is not disposed if we were to access it later, but here we just await it.
-                    var dbUser = await _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == uid);
+                    var dbUser = await _context.Users
+                        .AsNoTracking()
+                        .Include(u => u.Dept)
+                        .Include(u => u.UserPosts)
+                        .FirstOrDefaultAsync(u => u.Id == uid);
+
                     if (dbUser != null)
                     {
                         nickname = dbUser.Nickname;
                         avatar = dbUser.Avatar;
                         currentOrgId = dbUser.CurrentOrgId;
+
+                        // Calculate affiliated root orgs
+                        // 1. Main Dept
+                        if (dbUser.DeptId.HasValue)
+                        {
+                            var rootId = await GetRootOrgIdAsync(dbUser.DeptId.Value);
+                            if (rootId > 0) affiliatedRootOrgIds.Add(rootId);
+                        }
+
+                        // 2. Part-time Posts
+                        if (dbUser.UserPosts != null)
+                        {
+                            foreach (var post in dbUser.UserPosts)
+                            {
+                                var rootId = await GetRootOrgIdAsync(post.DeptId);
+                                if (rootId > 0) affiliatedRootOrgIds.Add(rootId);
+                            }
+                        }
                     }
                 }
 
@@ -74,6 +98,7 @@ namespace omsapi.Hubs
                     Nickname = nickname,
                     Avatar = avatar,
                     CurrentOrgId = currentOrgId,
+                    AffiliatedRootOrgIds = affiliatedRootOrgIds.ToList(),
                     LoginTime = DateTime.Now,
                     IpAddress = Context.GetHttpContext()?.GetClientIp()
                 };
@@ -85,6 +110,21 @@ namespace omsapi.Hubs
             }
 
             await base.OnConnectedAsync();
+        }
+
+        private async Task<long> GetRootOrgIdAsync(long deptId)
+        {
+            var dept = await _context.Depts.FindAsync(deptId);
+            if (dept == null) return 0;
+
+            var current = dept;
+            while (current.ParentId != null)
+            {
+                var parent = await _context.Depts.FindAsync(current.ParentId);
+                if (parent == null) break;
+                current = parent;
+            }
+            return current.Id;
         }
 
         public async Task SwitchOrganization(long orgId)
@@ -117,6 +157,7 @@ namespace omsapi.Hubs
         public string? Nickname { get; set; }
         public string? Avatar { get; set; }
         public long? CurrentOrgId { get; set; }
+        public List<long> AffiliatedRootOrgIds { get; set; } = new();
         public DateTime LoginTime { get; set; }
         public string? IpAddress { get; set; }
     }

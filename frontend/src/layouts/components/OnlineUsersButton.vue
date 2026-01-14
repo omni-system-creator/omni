@@ -86,6 +86,7 @@ interface OnlineUser {
   loginTime: string;
   ipAddress?: string;
   currentOrgId?: number;
+  affiliatedRootOrgIds?: number[];
 }
 
 const router = useRouter();
@@ -101,11 +102,14 @@ const uniqueUsers = computed(() => {
   const currentRootOrgId = userStore.currentOrg?.id;
 
   allConnections.value.forEach(conn => {
-    const connRootOrgId = conn.currentOrgId;
-
     // Filter: only show users under same root organization
-    if (currentRootOrgId !== undefined && connRootOrgId !== undefined && connRootOrgId !== currentRootOrgId) {
-      return;
+    if (currentRootOrgId !== undefined) {
+      const isCurrentMatch = conn.currentOrgId === currentRootOrgId;
+      const isAffiliatedMatch = conn.affiliatedRootOrgIds?.includes(currentRootOrgId);
+      
+      if (!isCurrentMatch && !isAffiliatedMatch) {
+        return;
+      }
     }
 
     const key = conn.userId || conn.userName;
