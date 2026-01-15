@@ -29,12 +29,24 @@ namespace omsapi.Models.Entities.Contract
         [Column("amount", TypeName = "decimal(18, 2)")]
         public decimal Amount { get; set; }
 
+        [MaxLength(20)]
+        [Column("direction")]
+        public string Direction { get; set; } = "output";
+
         [MaxLength(50)]
         [Column("type")]
-        public string? Type { get; set; } // VAT Special Invoice, etc.
+        public string? Type { get; set; }
 
         [MaxLength(20)]
         [Column("status")]
-        public string Status { get; set; } = "issued"; // issued, cancelled
+        public string Status { get; set; } = "issued";
+
+        [MaxLength(255)]
+        [Column("attachment_file_path")]
+        public string? AttachmentFilePath { get; set; }
+
+        [MaxLength(255)]
+        [Column("attachment_file_name")]
+        public string? AttachmentFileName { get; set; }
     }
 }

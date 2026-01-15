@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
 #nullable disable
 
-namespace omsapi.Migrations
+namespace omsapi.Migrations.MySql
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20260115042430_AddContractInvoiceFields")]
+    partial class AddContractInvoiceFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1053,31 +1056,6 @@ namespace omsapi.Migrations
                     b.HasIndex("ContractId");
 
                     b.ToTable("contract_payment_record");
-                });
-
-            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractRelation", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("ContractId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("contract_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("created_at");
-
-                    b.Property<long>("RelatedContractId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("related_contract_id");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("contract_relation");
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractStat", b =>

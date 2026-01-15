@@ -24,6 +24,10 @@ namespace omsapi.Models.Entities.Contract
         [Column("amount", TypeName = "decimal(18, 2)")]
         public decimal Amount { get; set; }
 
+        [MaxLength(20)]
+        [Column("type")]
+        public string? Type { get; set; } // collection, payment
+
         [MaxLength(50)]
         [Column("method")]
         public string? Method { get; set; } // Bank Transfer, Check, etc.
@@ -34,5 +38,13 @@ namespace omsapi.Models.Entities.Contract
 
         [Column("remark")]
         public string? Remark { get; set; }
+
+        [MaxLength(255)]
+        [Column("voucher_file_path")]
+        public string? VoucherFilePath { get; set; }
+
+        [MaxLength(255)]
+        [Column("voucher_file_name")]
+        public string? VoucherFileName { get; set; }
     }
 }

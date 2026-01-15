@@ -20,6 +20,8 @@ export interface ContractDto {
   paymentMethod?: string;
   taxId?: string;
   status: string;
+  lifecycleStatus?: string;
+  pricingType?: string;
   description?: string;
   latestTransactionDate?: string;
   files?: string;
@@ -28,6 +30,7 @@ export interface ContractDto {
 }
 
 export interface CreateContractDto {
+  contractNo?: string;
   contractName: string;
   type: string;
   partnerName: string;
@@ -39,6 +42,8 @@ export interface CreateContractDto {
   currency?: string;
   paymentMethod?: string;
   taxId?: string;
+  lifecycleStatus?: string;
+  pricingType?: string;
   description?: string;
   files?: string;
 }
@@ -129,6 +134,38 @@ export interface CreateContractKnowledgeFileDto {
   uploader?: string;
 }
 
+export interface ContractInvoiceDto {
+  id: number;
+  invoiceNo: string;
+  invoiceDate: string;
+  amount: number;
+  direction: string;
+  type?: string;
+  status: string;
+  attachmentFilePath?: string;
+  attachmentFileName?: string;
+}
+
+export interface ContractAttachmentDto {
+  id: number;
+  fileName: string;
+  filePath?: string;
+  size?: string;
+  uploadDate: string;
+}
+
+export interface RelatedContractDto {
+  id: number;
+  contractNo: string;
+  contractName: string;
+  type: string;
+  manager?: string;
+  totalAmount: number;
+  currency: string;
+  status: string;
+  signDate?: string;
+}
+
 export interface ContractDetailDto {
   id: number;
   contractNo: string;
@@ -140,30 +177,10 @@ export interface ContractDetailDto {
   receivedAmount: number;
   latestCollectionDate?: string;
   remark?: string;
-  paymentPlans: {
-    id: number;
-    phase: number;
-    dueDate?: string;
-    amount: number;
-    condition: string;
-    status: string;
-  }[];
-  paymentRecords: {
-    id: number;
-    paymentDate: string;
-    amount: number;
-    method: string;
-    operator: string;
-    remark?: string;
-  }[];
-  invoices: {
-    id: number;
-    invoiceNo: string;
-    invoiceDate: string;
-    amount: number;
-    type: string;
-    status: string;
-  }[];
+  paymentPlans: ContractPaymentPlanDto[];
+  paymentRecords: ContractPaymentRecordDto[];
+  invoices: ContractInvoiceDto[];
+  relatedContracts: RelatedContractDto[];
   contacts: {
     id: number;
     name: string;
@@ -171,23 +188,70 @@ export interface ContractDetailDto {
     phone: string;
     email: string;
   }[];
-  attachments: {
-    id: number;
-    fileName: string;
-    size?: string;
-    uploadDate: string;
-  }[];
+  attachments: ContractAttachmentDto[];
 }
 
-// --- API Methods ---
+export interface ContractPaymentPlanDto {
+  id: number;
+  phase: string;
+  dueDate?: string;
+  amount: number;
+  condition?: string;
+  status: string;
+}
+
+export interface ContractPaymentRecordDto {
+  id: number;
+  paymentDate: string;
+  amount: number;
+  type?: string;
+  method?: string;
+  operator?: string;
+  remark?: string;
+  voucherFilePath?: string;
+  voucherFileName?: string;
+}
+
+export interface ContractCustomerSelectDto {
+  id: string;
+  name: string;
+  industry: string;
+  contact: string;
+  phone: string;
+  level: string;
+}
+
+export interface SetRelatedContractsDto {
+  relatedContractIds: number[];
+}
+
+// --- API Functions ---
 
 // Contracts
-export const getContracts = (type?: string, keyword?: string) => {
-  return request.get<any, ContractDto[]>('/contract', { params: { type, keyword } });
+export const getContracts = (type?: string, keyword?: string, expiryStatus?: string) => {
+  return request.get<any, ContractDto[]>('/contract', { params: { type, keyword, expiryStatus } });
+};
+
+export const getContractCustomers = (keyword?: string) => {
+  return request.get<any, ContractCustomerSelectDto[]>('/contract/customers', { params: { keyword } });
 };
 
 export const getContractById = (id: number) => {
   return request.get<any, ContractDetailDto>(`/contract/${id}`);
+};
+
+export const getRelatedContracts = (id: number) => {
+  return request.get<any, RelatedContractDto[]>(`/contract/${id}/related-contracts`);
+};
+
+export const uploadContractAttachment = (contractId: number, file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request.post<any, ContractAttachmentDto>(`/contract/${contractId}/attachments`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
 };
 
 export const createContract = (data: CreateContractDto) => {
@@ -200,6 +264,103 @@ export const updateContract = (id: number, data: UpdateContractDto) => {
 
 export const deleteContract = (id: number) => {
   return request.delete(`/contract/${id}`);
+};
+
+export const setRelatedContracts = (id: number, data: SetRelatedContractsDto) => {
+  return request.post<any, RelatedContractDto[]>(`/contract/${id}/related-contracts`, data);
+};
+
+export const deleteContractAttachment = (id: number) => {
+  return request.delete(`/contract/attachments/${id}`);
+};
+
+// Payments
+export interface CreateContractPaymentPlanDto {
+  phase: string;
+  dueDate?: string;
+  amount: number;
+  condition?: string;
+  status?: string;
+}
+
+export interface UpdateContractPaymentPlanDto extends CreateContractPaymentPlanDto {}
+
+export interface CreateContractPaymentRecordDto {
+  paymentDate: string;
+  amount: number;
+  type?: string;
+  method?: string;
+  operator?: string;
+  remark?: string;
+}
+
+export interface UpdateContractPaymentRecordDto extends CreateContractPaymentRecordDto {}
+
+export interface CreateContractInvoiceDto {
+  invoiceNo: string;
+  invoiceDate: string;
+  amount: number;
+  direction: string;
+  type?: string;
+  status?: string;
+}
+
+export interface UpdateContractInvoiceDto extends CreateContractInvoiceDto {}
+
+export const createPaymentPlan = (contractId: number, data: CreateContractPaymentPlanDto) => {
+  return request.post<any, ContractPaymentPlanDto>(`/contract/${contractId}/payment-plans`, data);
+};
+
+export const updatePaymentPlan = (id: number, data: UpdateContractPaymentPlanDto) => {
+  return request.put<any, ContractPaymentPlanDto>(`/contract/payment-plans/${id}`, data);
+};
+
+export const deletePaymentPlan = (id: number) => {
+  return request.delete(`/contract/payment-plans/${id}`);
+};
+
+export const createPaymentRecord = (contractId: number, data: CreateContractPaymentRecordDto) => {
+  return request.post<any, ContractPaymentRecordDto>(`/contract/${contractId}/payment-records`, data);
+};
+
+export const updatePaymentRecord = (id: number, data: UpdateContractPaymentRecordDto) => {
+  return request.put<any, ContractPaymentRecordDto>(`/contract/payment-records/${id}`, data);
+};
+
+export const deletePaymentRecord = (id: number) => {
+  return request.delete(`/contract/payment-records/${id}`);
+};
+
+export const uploadPaymentRecordVoucher = (id: number, file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request.post<any, ContractPaymentRecordDto>(`/contract/payment-records/${id}/voucher`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};
+
+export const createInvoice = (contractId: number, data: CreateContractInvoiceDto) => {
+  return request.post<any, ContractInvoiceDto>(`/contract/${contractId}/invoices`, data);
+};
+
+export const updateInvoice = (id: number, data: UpdateContractInvoiceDto) => {
+  return request.put<any, ContractInvoiceDto>(`/contract/invoices/${id}`, data);
+};
+
+export const deleteInvoice = (id: number) => {
+  return request.delete(`/contract/invoices/${id}`);
+};
+
+export const uploadInvoiceAttachment = (id: number, file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request.post<any, ContractInvoiceDto>(`/contract/invoices/${id}/attachment`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
 };
 
 // Templates

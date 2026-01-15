@@ -78,6 +78,7 @@ namespace omsapi.Data
         public DbSet<ContractInvoice> ContractInvoices { get; set; }
         public DbSet<ContractContact> ContractContacts { get; set; }
         public DbSet<ContractAttachment> ContractAttachments { get; set; }
+        public DbSet<ContractRelation> ContractRelations { get; set; }
 
         // Project Flow Entities
         public DbSet<ProjectInfo> ProjectInfos { get; set; }

@@ -27,10 +27,23 @@ namespace omsapi.Controllers
         /// 获取合同列表
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<IEnumerable<ContractDto>>>> GetContracts([FromQuery] string? type, [FromQuery] string? keyword)
+        public async Task<ActionResult<ApiResponse<IEnumerable<ContractDto>>>> GetContracts(
+            [FromQuery] string? type,
+            [FromQuery] string? keyword,
+            [FromQuery] string? expiryStatus)
         {
-            var result = await _contractService.GetContractsAsync(type, keyword);
+            var result = await _contractService.GetContractsAsync(type, keyword, expiryStatus);
             return Ok(ApiResponse<IEnumerable<ContractDto>>.Success(result));
+        }
+
+        /// <summary>
+        /// 获取客户列表（用于下拉选择）
+        /// </summary>
+        [HttpGet("customers")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<ContractCustomerSelectDto>>>> GetCustomers([FromQuery] string? keyword)
+        {
+            var result = await _contractService.GetCustomersAsync(keyword);
+            return Ok(ApiResponse<IEnumerable<ContractCustomerSelectDto>>.Success(result));
         }
 
         /// <summary>
@@ -42,6 +55,26 @@ namespace omsapi.Controllers
             var result = await _contractService.GetContractByIdAsync(id);
             if (result == null) return NotFound(ApiResponse<object>.Error("Contract not found"));
             return Ok(ApiResponse<ContractDetailDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 获取关联合同列表
+        /// </summary>
+        [HttpGet("{id}/related-contracts")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<RelatedContractDto>>>> GetRelatedContracts(long id)
+        {
+            var result = await _contractService.GetRelatedContractsAsync(id);
+            return Ok(ApiResponse<IEnumerable<RelatedContractDto>>.Success(result));
+        }
+
+        /// <summary>
+        /// 设置关联合同（后端自动互相关联）
+        /// </summary>
+        [HttpPost("{id}/related-contracts")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<RelatedContractDto>>>> SetRelatedContracts(long id, [FromBody] SetRelatedContractsDto dto)
+        {
+            var result = await _contractService.SetRelatedContractsAsync(id, dto);
+            return Ok(ApiResponse<IEnumerable<RelatedContractDto>>.Success(result));
         }
 
         /// <summary>
@@ -73,6 +106,149 @@ namespace omsapi.Controllers
         {
             var result = await _contractService.DeleteContractAsync(id);
             if (!result) return NotFound(ApiResponse<object>.Error("Contract not found"));
+            return Ok(ApiResponse<object>.Success(null));
+        }
+
+        /// <summary>
+        /// 创建收付款计划
+        /// </summary>
+        [HttpPost("{contractId}/payment-plans")]
+        public async Task<ActionResult<ApiResponse<ContractPaymentPlanDto>>> CreatePaymentPlan(long contractId, [FromBody] CreateContractPaymentPlanDto dto)
+        {
+            dto.ContractId = contractId;
+            var result = await _contractService.CreatePaymentPlanAsync(dto);
+            return Ok(ApiResponse<ContractPaymentPlanDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 更新收付款计划
+        /// </summary>
+        [HttpPut("payment-plans/{id}")]
+        public async Task<ActionResult<ApiResponse<ContractPaymentPlanDto>>> UpdatePaymentPlan(long id, [FromBody] UpdateContractPaymentPlanDto dto)
+        {
+            var result = await _contractService.UpdatePaymentPlanAsync(id, dto);
+            if (result == null) return NotFound(ApiResponse<object>.Error("Payment plan not found"));
+            return Ok(ApiResponse<ContractPaymentPlanDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 删除收付款计划
+        /// </summary>
+        [HttpDelete("payment-plans/{id}")]
+        public async Task<ActionResult<ApiResponse<object>>> DeletePaymentPlan(long id)
+        {
+            var result = await _contractService.DeletePaymentPlanAsync(id);
+            if (!result) return NotFound(ApiResponse<object>.Error("Payment plan not found"));
+            return Ok(ApiResponse<object>.Success(null));
+        }
+
+        /// <summary>
+        /// 创建收付款记录
+        /// </summary>
+        [HttpPost("{contractId}/payment-records")]
+        public async Task<ActionResult<ApiResponse<ContractPaymentRecordDto>>> CreatePaymentRecord(long contractId, [FromBody] CreateContractPaymentRecordDto dto)
+        {
+            dto.ContractId = contractId;
+            var result = await _contractService.CreatePaymentRecordAsync(dto);
+            return Ok(ApiResponse<ContractPaymentRecordDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 更新收付款记录
+        /// </summary>
+        [HttpPut("payment-records/{id}")]
+        public async Task<ActionResult<ApiResponse<ContractPaymentRecordDto>>> UpdatePaymentRecord(long id, [FromBody] UpdateContractPaymentRecordDto dto)
+        {
+            var result = await _contractService.UpdatePaymentRecordAsync(id, dto);
+            if (result == null) return NotFound(ApiResponse<object>.Error("Payment record not found"));
+            return Ok(ApiResponse<ContractPaymentRecordDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 删除收付款记录
+        /// </summary>
+        [HttpDelete("payment-records/{id}")]
+        public async Task<ActionResult<ApiResponse<object>>> DeletePaymentRecord(long id)
+        {
+            var result = await _contractService.DeletePaymentRecordAsync(id);
+            if (!result) return NotFound(ApiResponse<object>.Error("Payment record not found"));
+            return Ok(ApiResponse<object>.Success(null));
+        }
+
+        /// <summary>
+        /// 上传收付款记录凭证附件
+        /// </summary>
+        [HttpPost("payment-records/{id}/voucher")]
+        public async Task<ActionResult<ApiResponse<ContractPaymentRecordDto>>> UploadPaymentRecordVoucher(long id, IFormFile file)
+        {
+            var result = await _contractService.UploadPaymentRecordVoucherAsync(id, file);
+            if (result == null) return NotFound(ApiResponse<object>.Error("Payment record not found or file invalid"));
+            return Ok(ApiResponse<ContractPaymentRecordDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 创建发票记录
+        /// </summary>
+        [HttpPost("{contractId}/invoices")]
+        public async Task<ActionResult<ApiResponse<ContractInvoiceDto>>> CreateInvoice(long contractId, [FromBody] CreateContractInvoiceDto dto)
+        {
+            dto.ContractId = contractId;
+            var result = await _contractService.CreateInvoiceAsync(dto);
+            return Ok(ApiResponse<ContractInvoiceDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 更新发票记录
+        /// </summary>
+        [HttpPut("invoices/{id}")]
+        public async Task<ActionResult<ApiResponse<ContractInvoiceDto>>> UpdateInvoice(long id, [FromBody] UpdateContractInvoiceDto dto)
+        {
+            var result = await _contractService.UpdateInvoiceAsync(id, dto);
+            if (result == null) return NotFound(ApiResponse<object>.Error("Invoice not found"));
+            return Ok(ApiResponse<ContractInvoiceDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 删除发票记录
+        /// </summary>
+        [HttpDelete("invoices/{id}")]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteInvoice(long id)
+        {
+            var result = await _contractService.DeleteInvoiceAsync(id);
+            if (!result) return NotFound(ApiResponse<object>.Error("Invoice not found"));
+            return Ok(ApiResponse<object>.Success(null));
+        }
+
+        /// <summary>
+        /// 上传发票附件
+        /// </summary>
+        [HttpPost("invoices/{id}/attachment")]
+        public async Task<ActionResult<ApiResponse<ContractInvoiceDto>>> UploadInvoiceAttachment(long id, IFormFile file)
+        {
+            var result = await _contractService.UploadInvoiceAttachmentAsync(id, file);
+            if (result == null) return NotFound(ApiResponse<object>.Error("Invoice not found or file invalid"));
+            return Ok(ApiResponse<ContractInvoiceDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 上传合同附件
+        /// </summary>
+        [HttpPost("{contractId}/attachments")]
+        public async Task<ActionResult<ApiResponse<ContractAttachmentDto>>> UploadContractAttachment(long contractId, IFormFile file)
+        {
+            var result = await _contractService.UploadContractAttachmentAsync(contractId, file);
+            if (result == null) return NotFound(ApiResponse<object>.Error("Contract not found or file invalid"));
+            return Ok(ApiResponse<ContractAttachmentDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 删除合同附件
+        /// </summary>
+        [HttpDelete("attachments/{id}")]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteContractAttachment(long id)
+        {
+            var result = await _contractService.DeleteContractAttachmentAsync(id);
+            if (!result) return NotFound(ApiResponse<object>.Error("Attachment not found"));
             return Ok(ApiResponse<object>.Success(null));
         }
 

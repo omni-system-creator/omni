@@ -23,7 +23,7 @@ namespace omsapi.Services
 
         // --- Contracts ---
 
-        public async Task<IEnumerable<ContractDto>> GetContractsAsync(string? type = null, string? keyword = null)
+        public async Task<IEnumerable<ContractDto>> GetContractsAsync(string? type = null, string? keyword = null, string? expiryStatus = null)
         {
             var query = _context.Contracts.AsQueryable();
 
@@ -37,9 +37,53 @@ namespace omsapi.Services
                 query = query.Where(c => c.ContractName.Contains(keyword) || c.ContractNo.Contains(keyword) || c.PartnerName.Contains(keyword));
             }
 
+            if (!string.IsNullOrEmpty(expiryStatus))
+            {
+                var today = DateTime.Today;
+                var next7 = today.AddDays(7);
+
+                if (expiryStatus == "expired")
+                {
+                    query = query.Where(c => c.EndDate != null && c.EndDate < today);
+                }
+                else if (expiryStatus == "within7")
+                {
+                    query = query.Where(c => c.EndDate != null && c.EndDate >= today && c.EndDate <= next7);
+                }
+                else if (expiryStatus == "notExpired")
+                {
+                    query = query.Where(c => c.EndDate == null || c.EndDate > next7);
+                }
+            }
+
             var entities = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
 
             return entities.Select(MapToDto);
+        }
+
+        public async Task<IEnumerable<ContractCustomerSelectDto>> GetCustomersAsync(string? keyword = null)
+        {
+            var query = _context.SalesCustomers.AsQueryable();
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(c => c.Name.Contains(keyword) || c.Contact.Contains(keyword));
+            }
+
+            var customers = await query
+                .OrderBy(c => c.Name)
+                .Select(c => new ContractCustomerSelectDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Industry = c.Industry,
+                    Contact = c.Contact,
+                    Phone = c.Phone,
+                    Level = c.Level
+                })
+                .ToListAsync();
+            
+            return customers;
         }
 
         public async Task<ContractDetailDto?> GetContractByIdAsync(long id)
@@ -52,14 +96,48 @@ namespace omsapi.Services
                 .Include(c => c.Attachments)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
-            return entity == null ? null : MapToDetailDto(entity);
+            if (entity == null) return null;
+
+            var dto = MapToDetailDto(entity);
+
+            var relatedIds = await _context.ContractRelations
+                .Where(r => r.ContractId == id)
+                .Select(r => r.RelatedContractId)
+                .Distinct()
+                .ToListAsync();
+
+            if (relatedIds.Any())
+            {
+                var relatedContracts = await _context.Contracts
+                    .Where(c => relatedIds.Contains(c.Id))
+                    .ToListAsync();
+
+                dto.RelatedContracts = relatedContracts
+                    .Select(c => new RelatedContractDto
+                    {
+                        Id = c.Id,
+                        ContractNo = c.ContractNo,
+                        ContractName = c.ContractName,
+                        Type = c.Type,
+                        Manager = c.Manager,
+                        TotalAmount = c.TotalAmount,
+                        Currency = c.Currency,
+                        Status = c.Status,
+                        SignDate = c.SignDate
+                    })
+                    .ToList();
+            }
+
+            return dto;
         }
 
         public async Task<ContractDto> CreateContractAsync(CreateContractDto dto)
         {
             var entity = new ContractMain
             {
-                ContractNo = "CNT-" + DateTime.Now.ToString("yyyyMMddHHmmss"), // Simple generation
+                ContractNo = !string.IsNullOrWhiteSpace(dto.ContractNo) 
+                    ? dto.ContractNo 
+                    : "CNT-" + DateTime.Now.ToString("yyyyMMddHHmmss"),
                 ContractName = dto.ContractName,
                 Type = dto.Type,
                 PartnerName = dto.PartnerName,
@@ -73,6 +151,8 @@ namespace omsapi.Services
                 TaxId = dto.TaxId,
                 Description = dto.Description,
                 Files = dto.Files,
+                LifecycleStatus = dto.LifecycleStatus ?? "draft",
+                PricingType = dto.PricingType ?? "fixed",
                 CreatedAt = DateTime.Now
             };
 
@@ -102,6 +182,7 @@ namespace omsapi.Services
             entity.Files = dto.Files;
             entity.UpdatedAt = DateTime.Now;
 
+            if (dto.PricingType != null) entity.PricingType = dto.PricingType;
             if (dto.Status != null) entity.Status = dto.Status;
             if (dto.PaidAmount != null) entity.PaidAmount = dto.PaidAmount.Value;
             if (dto.InvoicedAmount != null) entity.InvoicedAmount = dto.InvoicedAmount.Value;
@@ -118,6 +199,430 @@ namespace omsapi.Services
             if (entity == null) return false;
 
             _context.Contracts.Remove(entity);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<ContractPaymentPlanDto> CreatePaymentPlanAsync(CreateContractPaymentPlanDto dto)
+        {
+            var plan = new ContractPaymentPlan
+            {
+                ContractId = dto.ContractId,
+                Phase = dto.Phase,
+                DueDate = dto.DueDate,
+                Amount = dto.Amount,
+                Condition = dto.Condition,
+                Status = dto.Status
+            };
+
+            _context.ContractPaymentPlans.Add(plan);
+            await _context.SaveChangesAsync();
+
+            return new ContractPaymentPlanDto
+            {
+                Id = plan.Id,
+                Phase = plan.Phase,
+                DueDate = plan.DueDate,
+                Amount = plan.Amount,
+                Condition = plan.Condition,
+                Status = plan.Status
+            };
+        }
+
+        public async Task<ContractPaymentPlanDto?> UpdatePaymentPlanAsync(long id, UpdateContractPaymentPlanDto dto)
+        {
+            var plan = await _context.ContractPaymentPlans.FindAsync(id);
+            if (plan == null) return null;
+
+            plan.Phase = dto.Phase;
+            plan.DueDate = dto.DueDate;
+            plan.Amount = dto.Amount;
+            plan.Condition = dto.Condition;
+            plan.Status = dto.Status;
+
+            await _context.SaveChangesAsync();
+
+            return new ContractPaymentPlanDto
+            {
+                Id = plan.Id,
+                Phase = plan.Phase,
+                DueDate = plan.DueDate,
+                Amount = plan.Amount,
+                Condition = plan.Condition,
+                Status = plan.Status
+            };
+        }
+
+        public async Task<bool> DeletePaymentPlanAsync(long id)
+        {
+            var plan = await _context.ContractPaymentPlans.FindAsync(id);
+            if (plan == null) return false;
+
+            _context.ContractPaymentPlans.Remove(plan);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<ContractPaymentRecordDto> CreatePaymentRecordAsync(CreateContractPaymentRecordDto dto)
+        {
+            var record = new ContractPaymentRecord
+            {
+                ContractId = dto.ContractId,
+                PaymentDate = dto.PaymentDate,
+                Amount = dto.Amount,
+                Type = dto.Type,
+                Method = dto.Method,
+                Operator = dto.Operator,
+                Remark = dto.Remark
+            };
+
+            _context.ContractPaymentRecords.Add(record);
+            await _context.SaveChangesAsync();
+
+            return new ContractPaymentRecordDto
+            {
+                Id = record.Id,
+                PaymentDate = record.PaymentDate,
+                Amount = record.Amount,
+                Type = record.Type,
+                Method = record.Method,
+                Operator = record.Operator,
+                Remark = record.Remark,
+                VoucherFilePath = record.VoucherFilePath,
+                VoucherFileName = record.VoucherFileName
+            };
+        }
+
+        public async Task<ContractPaymentRecordDto?> UpdatePaymentRecordAsync(long id, UpdateContractPaymentRecordDto dto)
+        {
+            var record = await _context.ContractPaymentRecords.FindAsync(id);
+            if (record == null) return null;
+
+            record.PaymentDate = dto.PaymentDate;
+            record.Amount = dto.Amount;
+            record.Type = dto.Type;
+            record.Method = dto.Method;
+            record.Operator = dto.Operator;
+            record.Remark = dto.Remark;
+
+            await _context.SaveChangesAsync();
+
+            return new ContractPaymentRecordDto
+            {
+                Id = record.Id,
+                PaymentDate = record.PaymentDate,
+                Amount = record.Amount,
+                Type = record.Type,
+                Method = record.Method,
+                Operator = record.Operator,
+                Remark = record.Remark,
+                VoucherFilePath = record.VoucherFilePath,
+                VoucherFileName = record.VoucherFileName
+            };
+        }
+
+        public async Task<bool> DeletePaymentRecordAsync(long id)
+        {
+            var record = await _context.ContractPaymentRecords.FindAsync(id);
+            if (record == null) return false;
+
+            if (!string.IsNullOrEmpty(record.VoucherFilePath))
+            {
+                var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var relativePath = record.VoucherFilePath.TrimStart('/', '\\');
+                var fullPath = Path.Combine(webRootPath, relativePath);
+                if (File.Exists(fullPath))
+                {
+                    try
+                    {
+                        File.Delete(fullPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            _context.ContractPaymentRecords.Remove(record);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<ContractPaymentRecordDto?> UploadPaymentRecordVoucherAsync(long id, IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            var record = await _context.ContractPaymentRecords.FindAsync(id);
+            if (record == null) return null;
+
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadDir = Path.Combine(webRootPath, "uploads", "contract", "payment-vouchers");
+            if (!Directory.Exists(uploadDir))
+            {
+                Directory.CreateDirectory(uploadDir);
+            }
+
+            if (!string.IsNullOrEmpty(record.VoucherFilePath))
+            {
+                var oldRelative = record.VoucherFilePath.TrimStart('/', '\\');
+                var oldFullPath = Path.Combine(webRootPath, oldRelative);
+                if (File.Exists(oldFullPath))
+                {
+                    try
+                    {
+                        File.Delete(oldFullPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            var ext = Path.GetExtension(file.FileName);
+            var fileName = $"{id}_{Guid.NewGuid():N}{ext}";
+            var fullPath = Path.Combine(uploadDir, fileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativeUrl = $"/uploads/contract/payment-vouchers/{fileName}";
+
+            record.VoucherFilePath = relativeUrl;
+            record.VoucherFileName = file.FileName;
+
+            await _context.SaveChangesAsync();
+
+            return new ContractPaymentRecordDto
+            {
+                Id = record.Id,
+                PaymentDate = record.PaymentDate,
+                Amount = record.Amount,
+                Type = record.Type,
+                Method = record.Method,
+                Operator = record.Operator,
+                Remark = record.Remark,
+                VoucherFilePath = record.VoucherFilePath,
+                VoucherFileName = record.VoucherFileName
+            };
+        }
+
+        public async Task<ContractInvoiceDto> CreateInvoiceAsync(CreateContractInvoiceDto dto)
+        {
+            var invoice = new ContractInvoice
+            {
+                ContractId = dto.ContractId,
+                InvoiceNo = dto.InvoiceNo,
+                InvoiceDate = dto.InvoiceDate,
+                Amount = dto.Amount,
+                Direction = dto.Direction,
+                Type = dto.Type,
+                Status = dto.Status
+            };
+
+            _context.ContractInvoices.Add(invoice);
+            await _context.SaveChangesAsync();
+
+            return new ContractInvoiceDto
+            {
+                Id = invoice.Id,
+                InvoiceNo = invoice.InvoiceNo,
+                InvoiceDate = invoice.InvoiceDate,
+                Amount = invoice.Amount,
+                Direction = invoice.Direction,
+                Type = invoice.Type,
+                Status = invoice.Status,
+                AttachmentFilePath = invoice.AttachmentFilePath,
+                AttachmentFileName = invoice.AttachmentFileName
+            };
+        }
+
+        public async Task<ContractInvoiceDto?> UpdateInvoiceAsync(long id, UpdateContractInvoiceDto dto)
+        {
+            var invoice = await _context.ContractInvoices.FindAsync(id);
+            if (invoice == null) return null;
+
+            invoice.InvoiceNo = dto.InvoiceNo;
+            invoice.InvoiceDate = dto.InvoiceDate;
+            invoice.Amount = dto.Amount;
+            invoice.Direction = dto.Direction;
+            invoice.Type = dto.Type;
+            invoice.Status = dto.Status;
+
+            await _context.SaveChangesAsync();
+
+            return new ContractInvoiceDto
+            {
+                Id = invoice.Id,
+                InvoiceNo = invoice.InvoiceNo,
+                InvoiceDate = invoice.InvoiceDate,
+                Amount = invoice.Amount,
+                Direction = invoice.Direction,
+                Type = invoice.Type,
+                Status = invoice.Status,
+                AttachmentFilePath = invoice.AttachmentFilePath,
+                AttachmentFileName = invoice.AttachmentFileName
+            };
+        }
+
+        public async Task<bool> DeleteInvoiceAsync(long id)
+        {
+            var invoice = await _context.ContractInvoices.FindAsync(id);
+            if (invoice == null) return false;
+
+            if (!string.IsNullOrEmpty(invoice.AttachmentFilePath))
+            {
+                var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var relativePath = invoice.AttachmentFilePath.TrimStart('/', '\\');
+                var fullPath = Path.Combine(webRootPath, relativePath);
+                if (File.Exists(fullPath))
+                {
+                    try
+                    {
+                        File.Delete(fullPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            _context.ContractInvoices.Remove(invoice);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<ContractInvoiceDto?> UploadInvoiceAttachmentAsync(long id, IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            var invoice = await _context.ContractInvoices.FindAsync(id);
+            if (invoice == null) return null;
+
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadDir = Path.Combine(webRootPath, "uploads", "contract", "invoice-attachments");
+            if (!Directory.Exists(uploadDir))
+            {
+                Directory.CreateDirectory(uploadDir);
+            }
+
+            if (!string.IsNullOrEmpty(invoice.AttachmentFilePath))
+            {
+                var oldRelative = invoice.AttachmentFilePath.TrimStart('/', '\\');
+                var oldFullPath = Path.Combine(webRootPath, oldRelative);
+                if (File.Exists(oldFullPath))
+                {
+                    try
+                    {
+                        File.Delete(oldFullPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            var ext = Path.GetExtension(file.FileName);
+            var fileName = $"{id}_{Guid.NewGuid():N}{ext}";
+            var fullPath = Path.Combine(uploadDir, fileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativeUrl = $"/uploads/contract/invoice-attachments/{fileName}";
+
+            invoice.AttachmentFilePath = relativeUrl;
+            invoice.AttachmentFileName = file.FileName;
+
+            await _context.SaveChangesAsync();
+
+            return new ContractInvoiceDto
+            {
+                Id = invoice.Id,
+                InvoiceNo = invoice.InvoiceNo,
+                InvoiceDate = invoice.InvoiceDate,
+                Amount = invoice.Amount,
+                Direction = invoice.Direction,
+                Type = invoice.Type,
+                Status = invoice.Status,
+                AttachmentFilePath = invoice.AttachmentFilePath,
+                AttachmentFileName = invoice.AttachmentFileName
+            };
+        }
+
+        public async Task<ContractAttachmentDto?> UploadContractAttachmentAsync(long contractId, IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            var contract = await _context.Contracts.FindAsync(contractId);
+            if (contract == null) return null;
+
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadDir = Path.Combine(webRootPath, "uploads", "contract", "attachments");
+            if (!Directory.Exists(uploadDir))
+            {
+                Directory.CreateDirectory(uploadDir);
+            }
+
+            var ext = Path.GetExtension(file.FileName);
+            var fileName = $"{contractId}_{Guid.NewGuid():N}{ext}";
+            var fullPath = Path.Combine(uploadDir, fileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativeUrl = $"/uploads/contract/attachments/{fileName}";
+
+            var entity = new ContractAttachment
+            {
+                ContractId = contractId,
+                FileName = file.FileName,
+                FilePath = relativeUrl,
+                Size = FormatFileSize(file.Length),
+                UploadDate = DateTime.Now
+            };
+
+            _context.ContractAttachments.Add(entity);
+            await _context.SaveChangesAsync();
+
+            return new ContractAttachmentDto
+            {
+                Id = entity.Id,
+                FileName = entity.FileName,
+                FilePath = entity.FilePath,
+                Size = entity.Size,
+                UploadDate = entity.UploadDate
+            };
+        }
+
+        public async Task<bool> DeleteContractAttachmentAsync(long id)
+        {
+            var entity = await _context.ContractAttachments.FindAsync(id);
+            if (entity == null) return false;
+
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            if (!string.IsNullOrEmpty(entity.FilePath))
+            {
+                var relative = entity.FilePath.TrimStart('/', '\\');
+                var fullPath = Path.Combine(webRootPath, relative);
+                if (File.Exists(fullPath))
+                {
+                    try
+                    {
+                        File.Delete(fullPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            _context.ContractAttachments.Remove(entity);
             await _context.SaveChangesAsync();
             return true;
         }
@@ -143,6 +648,8 @@ namespace omsapi.Services
                 PaymentMethod = entity.PaymentMethod,
                 TaxId = entity.TaxId,
                 Status = entity.Status,
+                LifecycleStatus = entity.LifecycleStatus,
+                PricingType = entity.PricingType,
                 Description = entity.Description,
                 LatestTransactionDate = entity.LatestTransactionDate,
                 Files = entity.Files,
@@ -191,9 +698,12 @@ namespace omsapi.Services
                     Id = r.Id,
                     PaymentDate = r.PaymentDate,
                     Amount = r.Amount,
+                    Type = r.Type,
                     Method = r.Method,
                     Operator = r.Operator,
-                    Remark = r.Remark
+                    Remark = r.Remark,
+                    VoucherFilePath = r.VoucherFilePath,
+                    VoucherFileName = r.VoucherFileName
                 }).ToList(),
                 Invoices = entity.Invoices.Select(i => new ContractInvoiceDto
                 {
@@ -201,8 +711,11 @@ namespace omsapi.Services
                     InvoiceNo = i.InvoiceNo,
                     InvoiceDate = i.InvoiceDate,
                     Amount = i.Amount,
+                    Direction = i.Direction,
                     Type = i.Type,
-                    Status = i.Status
+                    Status = i.Status,
+                    AttachmentFilePath = i.AttachmentFilePath,
+                    AttachmentFileName = i.AttachmentFileName
                 }).ToList(),
                 Contacts = entity.Contacts.Select(c => new ContractContactDto
                 {
@@ -221,6 +734,104 @@ namespace omsapi.Services
                     UploadDate = a.UploadDate
                 }).ToList()
             };
+        }
+
+        private static string FormatFileSize(long bytes)
+        {
+            if (bytes < 1024) return $"{bytes} B";
+            var kb = bytes / 1024.0;
+            if (kb < 1024) return $"{kb:0.#} KB";
+            var mb = kb / 1024.0;
+            return $"{mb:0.#} MB";
+        }
+
+        public async Task<IEnumerable<RelatedContractDto>> GetRelatedContractsAsync(long contractId)
+        {
+            var relatedIds = await _context.ContractRelations
+                .Where(r => r.ContractId == contractId)
+                .Select(r => r.RelatedContractId)
+                .Distinct()
+                .ToListAsync();
+
+            if (!relatedIds.Any())
+            {
+                return Enumerable.Empty<RelatedContractDto>();
+            }
+
+            var entities = await _context.Contracts
+                .Where(c => relatedIds.Contains(c.Id))
+                .ToListAsync();
+
+            return entities.Select(c => new RelatedContractDto
+            {
+                Id = c.Id,
+                ContractNo = c.ContractNo,
+                ContractName = c.ContractName,
+                Type = c.Type,
+                Manager = c.Manager,
+                TotalAmount = c.TotalAmount,
+                Currency = c.Currency,
+                Status = c.Status,
+                SignDate = c.SignDate
+            });
+        }
+
+        public async Task<IEnumerable<RelatedContractDto>> SetRelatedContractsAsync(long contractId, SetRelatedContractsDto dto)
+        {
+            var contract = await _context.Contracts.FindAsync(contractId);
+            if (contract == null)
+            {
+                return Enumerable.Empty<RelatedContractDto>();
+            }
+
+            var targetIds = dto.RelatedContractIds
+                .Where(id => id != contractId)
+                .Distinct()
+                .ToList();
+
+            var existingTargets = await _context.Contracts
+                .Where(c => targetIds.Contains(c.Id))
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            targetIds = targetIds
+                .Where(id => existingTargets.Contains(id))
+                .ToList();
+
+            var toDelete = await _context.ContractRelations
+                .Where(r => r.ContractId == contractId || (r.RelatedContractId == contractId && targetIds.Contains(r.ContractId)))
+                .ToListAsync();
+
+            _context.ContractRelations.RemoveRange(toDelete);
+
+            var now = DateTime.Now;
+            var newRelations = new List<ContractRelation>();
+
+            foreach (var relatedId in targetIds)
+            {
+                newRelations.Add(new ContractRelation
+                {
+                    ContractId = contractId,
+                    RelatedContractId = relatedId,
+                    CreatedAt = now
+                });
+
+                newRelations.Add(new ContractRelation
+                {
+                    ContractId = relatedId,
+                    RelatedContractId = contractId,
+                    CreatedAt = now
+                });
+            }
+
+            if (newRelations.Count > 0)
+            {
+                await _context.ContractRelations.AddRangeAsync(newRelations);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return await GetRelatedContractsAsync(contractId);
         }
 
         // --- Templates ---

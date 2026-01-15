@@ -52,7 +52,6 @@ const handleSubmit = () => {
           totalAmount: formState.amount,
           currency: formState.currency,
           paymentMethod: formState.paymentMethod,
-          taxId: formState.taxId,
           description: formState.description,
           files: JSON.stringify(formState.fileList.map((f: any) => ({
             uid: f.uid,

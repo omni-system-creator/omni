@@ -70,6 +70,14 @@ namespace omsapi.Models.Entities.Contract
         [Column("status")]
         public string Status { get; set; } = "executing"; // executing, completed, abnormal
 
+        [MaxLength(20)]
+        [Column("lifecycle_status")]
+        public string LifecycleStatus { get; set; } = "draft"; // draft, approving, signed, canceled
+
+        [MaxLength(20)]
+        [Column("pricing_type")]
+        public string PricingType { get; set; } = "fixed"; // fixed, non_fixed
+
         [Column("description")]
         public string? Description { get; set; }
 

@@ -3,113 +3,151 @@
     v-model:open="visible"
     title="合同详情"
     placement="right"
-    width="85%"
+    width="900"
     :body-style="{ paddingBottom: '80px' }"
     @close="onClose"
   >
     <!-- 顶部基本信息 -->
     <a-descriptions title="基本信息" bordered :column="3" size="small">
-      <a-descriptions-item label="合同编号">{{ contract.contractNo }}</a-descriptions-item>
       <a-descriptions-item label="合同名称">{{ contract.contractName }}</a-descriptions-item>
+      <a-descriptions-item label="合同编号">{{ contract.contractNo }}</a-descriptions-item>
       <a-descriptions-item label="状态">
         <a-tag :color="getStatusColor(contract.status)">{{ getStatusText(contract.status) }}</a-tag>
       </a-descriptions-item>
-      <a-descriptions-item label="客户名称">{{ contract.customerName }}</a-descriptions-item>
-      <a-descriptions-item label="签订时间">{{ contract.signDate }}</a-descriptions-item>
+      <a-descriptions-item label="客户名称">
+        {{ contract.partnerName || contract.customerName }}
+      </a-descriptions-item>
+      <a-descriptions-item label="签订时间">
+        {{ contract.signDate ? contract.signDate.split('T')[0] : '-' }}
+      </a-descriptions-item>
       <a-descriptions-item label="总金额">{{ contract.totalAmount }}</a-descriptions-item>
-      <a-descriptions-item label="已收款">{{ contract.receivedAmount }}</a-descriptions-item>
-      <a-descriptions-item label="最新收款时间">{{ contract.latestCollectionDate || '-' }}</a-descriptions-item>
-      <a-descriptions-item label="备注" :span="3">{{ contract.remark }}</a-descriptions-item>
+      <a-descriptions-item label="已收款">{{ formatAmount(receivedAmount) }}</a-descriptions-item>
+      <a-descriptions-item label="最新收款时间">{{ latestCollectionDate || '-' }}</a-descriptions-item>
+      <a-descriptions-item label="负责人" :span="3">{{ contract.manager || '-' }}</a-descriptions-item>
     </a-descriptions>
 
     <a-divider style="margin: 16px 0" />
 
-    <!-- 详情标签页 -->
     <a-tabs v-model:activeKey="activeTab">
-      <!-- 财务信息 -->
-      <a-tab-pane key="financial" tab="财务信息">
-        <div class="tab-content">
-          <a-card title="收付款计划" size="small" style="margin-bottom: 16px">
-            <a-table :columns="planColumns" :data-source="planData" size="small" :pagination="false" />
-          </a-card>
-          
-          <a-card title="收付款记录" size="small" style="margin-bottom: 16px">
-            <a-table :columns="recordColumns" :data-source="recordData" size="small" :pagination="false" />
-          </a-card>
+      <!-- 合同信息 (Replaced basic info if needed, or keep it as summary and show full here) -->
+      <a-tab-pane key="info" tab="合同信息">
+        <a-descriptions bordered :column="2">
+          <a-descriptions-item label="合同名称">{{ contract.contractName }}</a-descriptions-item>
+          <a-descriptions-item label="合同编号">{{ contract.contractNo }}</a-descriptions-item>
+          <a-descriptions-item label="合同类型">
+            <a-tag :color="getContractTypeColor(contract.type)">
+              {{ getContractTypeLabel(contract.type) }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="总价类型">
+            <a-tag :color="getPricingTypeColor(contract.pricingType)">
+              {{ getPricingTypeLabel(contract.pricingType) }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="客户名称">{{ contract.partnerName || contract.customerName }}</a-descriptions-item>
+          <a-descriptions-item label="负责人">{{ contract.manager || '-' }}</a-descriptions-item>
+          <a-descriptions-item label="签订日期">{{ contract.signDate ? contract.signDate.split('T')[0] : '-' }}</a-descriptions-item>
+          <a-descriptions-item label="有效期限">
+            {{ contract.startDate ? contract.startDate.split('T')[0] : '' }} ~ 
+            {{ contract.endDate ? contract.endDate.split('T')[0] : '' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="合同金额">{{ formatAmount(contract.totalAmount) }} {{ contract.currency }}</a-descriptions-item>
+          <a-descriptions-item label="付款方式">
+            <a-tag>{{ getPaymentMethodLabel(contract.paymentMethod) }}</a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="合同状态">
+            <a-tag :color="getStatusColor(contract.status)">
+              {{ getStatusText(contract.status) }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="备注" :span="2">{{ contract.description || contract.remark }}</a-descriptions-item>
+        </a-descriptions>
+      </a-tab-pane>
 
-          <a-card title="发票记录" size="small">
-            <a-table :columns="invoiceColumns" :data-source="invoiceData" size="small" :pagination="false" />
-          </a-card>
+      <!-- 账款管理 -->
+      <a-tab-pane key="financial" tab="账款管理">
+        <div class="tab-content">
+          <PaymentPlanList
+            :contract-id="contract.id"
+            :plans="contract.paymentPlans"
+            @changed="handlePaymentsChanged"
+          />
+          <PaymentRecordList
+            :contract-id="contract.id"
+            :records="contract.paymentRecords"
+            @changed="handlePaymentsChanged"
+          />
         </div>
       </a-tab-pane>
 
-      <!-- 执行记录 -->
-      <a-tab-pane key="execution" tab="执行记录">
-        <a-timeline mode="left" style="margin-top: 20px">
-          <a-timeline-item color="green" label="2025-12-05">合同签订完成，状态变更为【执行中】</a-timeline-item>
-          <a-timeline-item color="blue" label="2025-12-10">收到第一笔款项 20,000.00 元</a-timeline-item>
-          <a-timeline-item color="blue" label="2025-12-12">项目启动会议召开</a-timeline-item>
-          <a-timeline-item color="gray" label="2025-12-01">合同草稿创建</a-timeline-item>
-        </a-timeline>
+      <!-- 发票管理 -->
+      <a-tab-pane key="invoices" tab="发票管理">
+        <div class="tab-content">
+          <InvoiceList
+            :contract-id="contract.id"
+            :invoices="contract.invoices"
+            @changed="handleInvoicesChanged"
+          />
+        </div>
       </a-tab-pane>
 
-      <!-- 联系人 -->
-      <a-tab-pane key="contacts" tab="联系人">
-        <a-table :columns="contactColumns" :data-source="contactData" size="small" :pagination="false" />
+      <!-- 关联合同 -->
+      <a-tab-pane key="related" tab="关联合同">
+        <RelatedContractList
+          :contract-id="contract.id"
+          :related-contracts="contract.relatedContracts || []"
+          @changed="handleRelatedChanged"
+          @open-contract="handleOpenRelatedContract"
+        />
       </a-tab-pane>
 
       <!-- 附件 -->
       <a-tab-pane key="attachments" tab="附件">
-        <a-list :grid="{ gutter: 16, column: 4 }" :data-source="attachmentData">
-          <template #renderItem="{ item }">
-            <a-list-item>
-              <a-card :title="item.name" size="small">
-                <template #extra><a href="#">下载</a></template>
-                <div style="text-align: center; color: #999">
-                  <file-text-outlined style="font-size: 32px; margin-bottom: 8px" />
-                  <div>{{ item.size }}</div>
-                  <div>{{ item.date }}</div>
-                </div>
-              </a-card>
-            </a-list-item>
-          </template>
-        </a-list>
+        <ContractAttachmentList
+          :contract-id="contract.id"
+          :attachments="contract.attachments || []"
+          @changed="handleAttachmentsChanged"
+        />
       </a-tab-pane>
     </a-tabs>
 
     <template #footer>
       <a-space style="float: right">
         <a-button @click="onClose">关闭</a-button>
-        <a-button type="primary">编辑合同</a-button>
       </a-space>
     </template>
   </a-drawer>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
-import { FileTextOutlined } from '@ant-design/icons-vue';
-import type { ContractDetailDto } from '@/api/contract';
+import { ref, computed, onMounted } from 'vue'
+import type { ContractDetailDto } from '@/api/contract'
+import { getDictDataByCode, type DictDataDto } from '@/api/dict'
+import PaymentPlanList from './PaymentPlanList.vue'
+import PaymentRecordList from './PaymentRecordList.vue'
+import InvoiceList from './InvoiceList.vue'
+import RelatedContractList from './RelatedContractList.vue'
+import ContractAttachmentList from './ContractAttachmentList.vue'
 
 const props = defineProps<{
-  open: boolean;
-  contractData: ContractDetailDto | null;
-}>();
+  open: boolean
+  contractData: ContractDetailDto | null
+}>()
 
-const emit = defineEmits(['update:open']);
+const emit = defineEmits(['update:open', 'refresh', 'open-contract'])
 
 const visible = computed({
   get: () => props.open,
-  set: (val) => emit('update:open', val)
-});
+  set: val => emit('update:open', val)
+})
 
 const onClose = () => {
-  visible.value = false;
-};
+  visible.value = false
+}
 
-const activeTab = ref('financial');
+const activeTab = ref('info')
 // Mock empty data structure for safe access if contractData is null
-const emptyContract: ContractDetailDto = {
+const emptyContract: any = {
   id: 0,
   contractNo: '',
   contractName: '',
@@ -121,12 +159,71 @@ const emptyContract: ContractDetailDto = {
   paymentPlans: [],
   paymentRecords: [],
   invoices: [],
+  relatedContracts: [],
   contacts: [],
   attachments: []
+}
+
+const contract = computed(() => props.contractData || emptyContract)
+
+const receivedAmount = computed(() => {
+  const records = contract.value.paymentRecords || []
+  return records
+    .filter((r: any) => r.type === 'collection')
+    .reduce((sum: number, r: any) => sum + (r.amount || 0), 0)
+})
+
+const latestCollectionDate = computed(() => {
+  const records = contract.value.paymentRecords || []
+  const collectionRecords = records.filter((r: any) => r.type === 'collection' && r.paymentDate)
+  if (!collectionRecords.length) return ''
+  const latest = collectionRecords
+    .map((r: any) => new Date(r.paymentDate as string).getTime())
+    .reduce((max: number, t: number) => (t > max ? t : max), 0)
+  return new Date(latest).toISOString().split('T')[0]
+})
+
+const contractTypeOptions = ref<DictDataDto[]>([])
+const pricingTypeOptions = ref<DictDataDto[]>([])
+const paymentMethodOptions = ref<DictDataDto[]>([])
+
+const formatAmount = (value?: number) => {
+  if (value == null) return '-'
+  return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+onMounted(async () => {
+  const [typeRes, pricingRes, paymentRes] = await Promise.all([
+    getDictDataByCode('contract_type'),
+    getDictDataByCode('contract_pricing_type'),
+    getDictDataByCode('contract_payment_method')
+  ])
+  contractTypeOptions.value = typeRes || []
+  pricingTypeOptions.value = pricingRes || []
+  paymentMethodOptions.value = paymentRes || []
+})
+
+const getDictLabel = (options: DictDataDto[], value?: string) => {
+  if (!value) return '-';
+  const item = options.find(item => item.value === value);
+  return item ? item.label : value;
 };
 
-const contract = computed(() => props.contractData || emptyContract);
-const detailData = computed(() => props.contractData);
+const getContractTypeLabel = (value?: string) => getDictLabel(contractTypeOptions.value, value);
+const getPricingTypeLabel = (value?: string) => getDictLabel(pricingTypeOptions.value, value);
+const getPaymentMethodLabel = (value?: string) => getDictLabel(paymentMethodOptions.value, value);
+
+const getContractTypeColor = (value?: string) => {
+  if (value === 'sales') return 'blue';
+  if (value === 'purchase') return 'orange';
+  return 'default';
+};
+
+const getPricingTypeColor = (value?: string) => {
+  if (value === 'fixed') return 'cyan';
+  if (value === 'non_fixed') return 'purple';
+  return 'cyan';
+};
 
 // Helpers
 const getStatusColor = (status: string) => {
@@ -147,93 +244,24 @@ const getStatusText = (status: string) => {
   }
 };
 
-// Data Definitions
-const planColumns: ColumnType[] = [
-  { title: '期数', dataIndex: 'phase', key: 'phase', width: 80 },
-  { title: '计划付款日期', dataIndex: 'dueDate', key: 'dueDate' },
-  { title: '计划金额', dataIndex: 'amount', key: 'amount', align: 'right' as const },
-  { title: '付款条件', dataIndex: 'condition', key: 'condition' },
-  { title: '状态', dataIndex: 'status', key: 'status' },
-];
+const handlePaymentsChanged = () => {
+  emit('refresh');
+};
 
-const planData = computed(() => {
-  if (!detailData.value?.paymentPlans) return [];
-  return detailData.value.paymentPlans.map((p: any) => ({
-    key: p.id.toString(),
-    phase: p.phase,
-    dueDate: p.dueDate ? new Date(p.dueDate).toISOString().split('T')[0] : '',
-    amount: p.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    condition: p.condition,
-    status: p.status === 'paid' ? '已支付' : '未支付' // Simple mapping
-  }));
-});
+const handleInvoicesChanged = () => {
+  emit('refresh');
+};
 
-const recordColumns: ColumnType[] = [
-  { title: '日期', dataIndex: 'date', key: 'date' },
-  { title: '金额', dataIndex: 'amount', key: 'amount', align: 'right' as const },
-  { title: '方式', dataIndex: 'method', key: 'method' },
-  { title: '经办人', dataIndex: 'operator', key: 'operator' },
-  { title: '备注', dataIndex: 'remark', key: 'remark' },
-];
+const handleRelatedChanged = () => {
+  emit('refresh');
+};
 
-const recordData = computed(() => {
-  if (!detailData.value?.paymentRecords) return [];
-  return detailData.value.paymentRecords.map((r: any) => ({
-    key: r.id.toString(),
-    date: new Date(r.paymentDate).toISOString().split('T')[0],
-    amount: r.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    method: r.method,
-    operator: r.operator,
-    remark: r.remark
-  }));
-});
-
-const invoiceColumns: ColumnType[] = [
-  { title: '发票号码', dataIndex: 'invoiceNo', key: 'invoiceNo' },
-  { title: '开票日期', dataIndex: 'date', key: 'date' },
-  { title: '金额', dataIndex: 'amount', key: 'amount', align: 'right' as const },
-  { title: '类型', dataIndex: 'type', key: 'type' },
-  { title: '状态', dataIndex: 'status', key: 'status' },
-];
-
-const invoiceData = computed(() => {
-  if (!detailData.value?.invoices) return [];
-  return detailData.value.invoices.map((i: any) => ({
-    key: i.id.toString(),
-    invoiceNo: i.invoiceNo,
-    date: new Date(i.invoiceDate).toISOString().split('T')[0],
-    amount: i.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-    type: i.type,
-    status: i.status // Map status text if needed
-  }));
-});
-
-const contactColumns: ColumnType[] = [
-  { title: '姓名', dataIndex: 'name', key: 'name' },
-  { title: '角色', dataIndex: 'role', key: 'role' },
-  { title: '电话', dataIndex: 'phone', key: 'phone' },
-  { title: '邮箱', dataIndex: 'email', key: 'email' },
-];
-
-const contactData = computed(() => {
-  if (!detailData.value?.contacts) return [];
-  return detailData.value.contacts.map((c: any) => ({
-    key: c.id.toString(),
-    name: c.name,
-    role: c.role,
-    phone: c.phone,
-    email: c.email
-  }));
-});
-
-const attachmentData = computed(() => {
-  if (!detailData.value?.attachments) return [];
-  return detailData.value.attachments.map((a: any) => ({
-    name: a.fileName,
-    size: a.size || '-',
-    date: new Date(a.uploadDate).toISOString().split('T')[0]
-  }));
-});
+const handleOpenRelatedContract = (id: number) => {
+  emit('open-contract', id);
+};
+const handleAttachmentsChanged = () => {
+  emit('refresh');
+};
 </script>
 
 <style scoped>
