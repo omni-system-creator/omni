@@ -893,13 +893,31 @@ namespace omsapi.Services
             var entity = await _context.ContractTemplates.FindAsync(id);
             if (entity == null) return null;
 
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+
             entity.Name = dto.Name;
             entity.Type = dto.Type;
             entity.Description = dto.Description;
             entity.Status = dto.Status;
             
-            if (!string.IsNullOrEmpty(dto.FilePath))
+            if (!string.IsNullOrEmpty(dto.FilePath) && dto.FilePath != entity.FilePath)
             {
+                if (!string.IsNullOrEmpty(entity.FilePath))
+                {
+                    var oldRelative = entity.FilePath.TrimStart('/', '\\');
+                    var oldFullPath = Path.Combine(webRootPath, oldRelative);
+                    if (File.Exists(oldFullPath))
+                    {
+                        try
+                        {
+                            File.Delete(oldFullPath);
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+
                 entity.FilePath = dto.FilePath;
             }
             if (!string.IsNullOrEmpty(dto.FileName))
@@ -930,9 +948,129 @@ namespace omsapi.Services
             var entity = await _context.ContractTemplates.FindAsync(id);
             if (entity == null) return false;
 
+            if (!string.IsNullOrEmpty(entity.FilePath))
+            {
+                var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var relativePath = entity.FilePath.TrimStart('/', '\\');
+                var fullPath = Path.Combine(webRootPath, relativePath);
+                if (File.Exists(fullPath))
+                {
+                    try
+                    {
+                        File.Delete(fullPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
             _context.ContractTemplates.Remove(entity);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<ContractTemplateDto?> UploadTemplateFileAsync(long id, IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            var entity = await _context.ContractTemplates.FindAsync(id);
+            if (entity == null) return null;
+
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadDir = Path.Combine(webRootPath, "uploads", "contract", "templates");
+            if (!Directory.Exists(uploadDir))
+            {
+                Directory.CreateDirectory(uploadDir);
+            }
+
+            if (!string.IsNullOrEmpty(entity.FilePath))
+            {
+                var oldRelative = entity.FilePath.TrimStart('/', '\\');
+                var oldFullPath = Path.Combine(webRootPath, oldRelative);
+                if (File.Exists(oldFullPath))
+                {
+                    try
+                    {
+                        File.Delete(oldFullPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            var ext = Path.GetExtension(file.FileName);
+            var fileName = $"{id}_{Guid.NewGuid():N}{ext}";
+            var fullPath = Path.Combine(uploadDir, fileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativeUrl = $"/uploads/contract/templates/{fileName}";
+
+            entity.FilePath = relativeUrl;
+            entity.FileName = file.FileName;
+            entity.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return new ContractTemplateDto
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Type = entity.Type,
+                Description = entity.Description,
+                FilePath = entity.FilePath,
+                FileName = entity.FileName,
+                Status = entity.Status,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt
+            };
+        }
+
+        public async Task<ContractTemplateDto?> DeleteTemplateFileAsync(long id)
+        {
+            var entity = await _context.ContractTemplates.FindAsync(id);
+            if (entity == null) return null;
+
+            if (!string.IsNullOrEmpty(entity.FilePath))
+            {
+                var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                var relativePath = entity.FilePath.TrimStart('/', '\\');
+                var fullPath = Path.Combine(webRootPath, relativePath);
+                if (File.Exists(fullPath))
+                {
+                    try
+                    {
+                        File.Delete(fullPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+
+            entity.FilePath = null;
+            entity.FileName = null;
+            entity.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return new ContractTemplateDto
+            {
+                Id = entity.Id,
+                Name = entity.Name,
+                Type = entity.Type,
+                Description = entity.Description,
+                FilePath = entity.FilePath,
+                FileName = entity.FileName,
+                Status = entity.Status,
+                CreatedAt = entity.CreatedAt,
+                UpdatedAt = entity.UpdatedAt
+            };
         }
 
         // --- Stats ---

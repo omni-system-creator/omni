@@ -286,6 +286,28 @@ namespace omsapi.Controllers
         }
 
         /// <summary>
+        /// 上传合同模板文件
+        /// </summary>
+        [HttpPost("templates/{id}/file")]
+        public async Task<ActionResult<ApiResponse<ContractTemplateDto>>> UploadTemplateFile(long id, IFormFile file)
+        {
+            var result = await _contractService.UploadTemplateFileAsync(id, file);
+            if (result == null) return NotFound(ApiResponse<object>.Error("Template not found or file invalid"));
+            return Ok(ApiResponse<ContractTemplateDto>.Success(result));
+        }
+
+        /// <summary>
+        /// 删除合同模板文件
+        /// </summary>
+        [HttpDelete("templates/{id}/file")]
+        public async Task<ActionResult<ApiResponse<ContractTemplateDto>>> DeleteTemplateFile(long id)
+        {
+            var result = await _contractService.DeleteTemplateFileAsync(id);
+            if (result == null) return NotFound(ApiResponse<object>.Error("Template not found"));
+            return Ok(ApiResponse<ContractTemplateDto>.Success(result));
+        }
+
+        /// <summary>
         /// 删除合同模板
         /// </summary>
         [HttpDelete("templates/{id}")]

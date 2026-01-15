@@ -76,6 +76,11 @@ export interface CreateContractTemplateDto {
   status?: string;
 }
 
+export interface ContractTemplateFileUploadResultDto {
+  filePath: string;
+  fileName: string;
+}
+
 export interface ContractStatDto {
   id: number;
   periodType: string;
@@ -378,6 +383,20 @@ export const updateTemplate = (id: number, data: CreateContractTemplateDto) => {
 
 export const deleteTemplate = (id: number) => {
   return request.delete(`/contract/templates/${id}`);
+};
+
+export const uploadTemplateFile = (id: number, file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request.post<any, ContractTemplateDto>(`/contract/templates/${id}/file`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};
+
+export const deleteTemplateFile = (id: number) => {
+  return request.delete(`/contract/templates/${id}/file`);
 };
 
 // Stats

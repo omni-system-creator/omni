@@ -16,11 +16,13 @@
           allowClear
           @change="handleSearch"
         >
-          <a-select-option value="sales">销售合同</a-select-option>
-          <a-select-option value="purchase">采购合同</a-select-option>
-          <a-select-option value="service">服务合同</a-select-option>
-          <a-select-option value="labor">劳动合同</a-select-option>
-          <a-select-option value="other">其他</a-select-option>
+          <a-select-option
+            v-for="item in contractTypeOptions"
+            :key="item.value"
+            :value="item.value"
+          >
+            {{ item.label }}
+          </a-select-option>
         </a-select>
       </div>
       <a-button type="primary" @click="showAddModal">
@@ -37,14 +39,19 @@
       rowKey="id"
       class="template-table"
     >
-      <template #bodyCell="{ column, record }">
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'index'">
+          {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+        </template>
         <template v-if="column.key === 'type'">
           <a-tag :color="getTypeColor(record.type)">
             {{ getTypeName(record.type) }}
           </a-tag>
         </template>
         <template v-if="column.key === 'status'">
-          <a-badge :status="record.status === 'active' ? 'success' : 'default'" :text="record.status === 'active' ? '启用' : '停用'" />
+          <a-tag :color="getStatusColor(record.status)">
+            {{ getStatusLabel(record.status) }}
+          </a-tag>
         </template>
         <template v-if="column.key === 'action'">
           <a-space>
@@ -86,11 +93,13 @@
           :rules="[{ required: true, message: '请选择模板类型' }]"
         >
           <a-select v-model:value="formState.type" placeholder="请选择模板类型">
-            <a-select-option value="sales">销售合同</a-select-option>
-            <a-select-option value="purchase">采购合同</a-select-option>
-            <a-select-option value="service">服务合同</a-select-option>
-            <a-select-option value="labor">劳动合同</a-select-option>
-            <a-select-option value="other">其他</a-select-option>
+            <a-select-option
+              v-for="item in contractTypeOptions"
+              :key="item.value"
+              :value="item.value"
+            >
+              {{ item.label }}
+            </a-select-option>
           </a-select>
         </a-form-item>
 
@@ -103,9 +112,10 @@
             v-model:fileList="fileList"
             name="file"
             :multiple="false"
-            action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
             @change="handleFileChange"
             :before-upload="beforeUpload"
+            @remove="handleFileRemove"
+            @preview="handleFilePreview"
           >
             <p class="ant-upload-drag-icon">
               <InboxOutlined />
@@ -119,8 +129,13 @@
         
         <a-form-item label="状态" name="status">
            <a-radio-group v-model:value="formState.status">
-              <a-radio value="active">启用</a-radio>
-              <a-radio value="inactive">停用</a-radio>
+              <a-radio
+                v-for="item in statusOptions"
+                :key="item.value"
+                :value="item.value"
+              >
+                {{ item.label }}
+              </a-radio>
            </a-radio-group>
         </a-form-item>
       </a-form>
@@ -140,6 +155,9 @@
                     <FileTextOutlined style="font-size: 48px; color: #1890ff; margin-bottom: 16px;" />
                     <p>此处为文档预览区域</p>
                     <p>{{ previewData?.fileName }}</p>
+                    <p v-if="previewData?.filePath">
+                      <a :href="previewData.filePath" target="_blank">下载附件</a>
+                    </p>
                 </div>
             </div>
         </div>
@@ -158,8 +176,9 @@ import {
 import { message } from 'ant-design-vue';
 import type { UploadChangeParam, UploadProps } from 'ant-design-vue';
 import type { ColumnType } from 'ant-design-vue/es/table';
-import { getTemplates, createTemplate, updateTemplate, deleteTemplate } from '@/api/contract';
-import type { ContractTemplateDto, CreateContractTemplateDto } from '@/api/contract';
+import { getTemplates, createTemplate, updateTemplate, deleteTemplate, uploadTemplateFile, deleteTemplateFile } from '@/api/contract';
+import type { ContractTemplateDto } from '@/api/contract';
+import { getDictDataByCode, type DictDataDto } from '@/api/dict';
 
 // --- 类型定义 ---
 interface TemplateItem {
@@ -170,7 +189,11 @@ interface TemplateItem {
   status: 'active' | 'inactive';
   updatedAt: string;
   fileName: string;
+  filePath: string;
 }
+
+const contractTypeOptions = ref<DictDataDto[]>([]);
+const statusOptions = ref<DictDataDto[]>([]);
 
 // --- 状态 ---
 const searchText = ref('');
@@ -190,9 +213,13 @@ const formState = reactive({
   name: '',
   type: undefined as string | undefined,
   description: '',
-  status: 'active',
-  fileName: ''
+  status: '' as string | undefined,
+  fileName: '',
+  filePath: ''
 });
+
+const currentUploadFile = ref<File | null>(null);
+const removeExistingFile = ref(false);
 
 // 模拟数据
 const dataSource = ref<TemplateItem[]>([]);
@@ -207,59 +234,50 @@ const fetchTemplates = async () => {
         name: item.name,
         type: item.type,
         description: item.description || '',
-        status: (item.status as 'active' | 'inactive') || 'active',
+        status: item.status as 'active' | 'inactive',
         updatedAt: item.updatedAt ? new Date(item.updatedAt).toLocaleString() : new Date(item.createdAt).toLocaleString(),
         fileName: item.fileName || '',
+        filePath: item.filePath || '',
       }));
     }
   } catch (error) {
     console.error('Failed to fetch templates:', error);
-    // Fallback mock data
-    dataSource.value = [
-      {
-        id: '1',
-        name: '标准产品销售合同',
-        type: 'sales',
-        description: '适用于一般标准产品的销售业务',
-        status: 'active',
-        updatedAt: '2023-12-01 10:00:00',
-        fileName: 'standard_sales_contract_v1.docx'
-      },
-      {
-        id: '2',
-        name: '原材料采购框架协议',
-        type: 'purchase',
-        description: '适用于长期原材料采购合作',
-        status: 'active',
-        updatedAt: '2023-11-20 14:30:00',
-        fileName: 'material_purchase_agreement.pdf'
-      },
-      {
-        id: '3',
-        name: '技术服务合同',
-        type: 'service',
-        description: '适用于软件开发及技术支持服务',
-        status: 'active',
-        updatedAt: '2023-12-05 09:15:00',
-        fileName: 'tech_service_contract.docx'
-      },
-      {
-        id: '4',
-        name: '员工劳动合同（标准版）',
-        type: 'labor',
-        description: '全职员工标准劳动合同',
-        status: 'active',
-        updatedAt: '2023-10-15 16:00:00',
-        fileName: 'employee_labor_contract.docx'
-      },
-    ];
+    dataSource.value = [];
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(() => {
-  fetchTemplates();
+onMounted(async () => {
+  const [typeRes, statusRes] = await Promise.all([
+    getDictDataByCode('contract_type'),
+    getDictDataByCode('status')
+  ]);
+  contractTypeOptions.value = typeRes || [];
+  statusOptions.value = statusRes || [];
+
+  if (!filterType.value && contractTypeOptions.value.length > 0) {
+    const defaultType = contractTypeOptions.value.find(item => item.isDefault) || contractTypeOptions.value[0];
+    if (defaultType) {
+      filterType.value = defaultType.value;
+    }
+  }
+
+  if (!formState.type && contractTypeOptions.value.length > 0) {
+    const defaultType = contractTypeOptions.value.find(item => item.isDefault) || contractTypeOptions.value[0];
+    if (defaultType) {
+      formState.type = defaultType.value;
+    }
+  }
+
+  if (!formState.status && statusOptions.value.length > 0) {
+    const defaultStatus = statusOptions.value.find(item => item.isDefault) || statusOptions.value[0];
+    if (defaultStatus) {
+      formState.status = defaultStatus.value;
+    }
+  }
+
+  await fetchTemplates();
 });
 
 // --- Actions ---
@@ -273,9 +291,12 @@ const showAddModal = () => {
   formState.name = '';
   formState.type = undefined;
   formState.description = '';
-  formState.status = 'active';
+  formState.status = statusOptions.value.find(item => item.isDefault)?.value || statusOptions.value[0]?.value || '';
   formState.fileName = '';
+  formState.filePath = '';
   fileList.value = [];
+  currentUploadFile.value = null;
+  removeExistingFile.value = false;
   modalVisible.value = true;
 };
 
@@ -287,11 +308,15 @@ const handleEdit = (record: any) => {
   formState.description = record.description;
   formState.status = record.status;
   formState.fileName = record.fileName;
+  formState.filePath = record.filePath;
   fileList.value = record.fileName ? [{
     uid: '-1',
     name: record.fileName,
     status: 'done',
+    url: record.filePath,
   }] : [];
+  currentUploadFile.value = null;
+  removeExistingFile.value = false;
   modalVisible.value = true;
 };
 
@@ -308,34 +333,41 @@ const handleDelete = async (id: string) => {
 
 const handleModalOk = async () => {
   formRef.value.validate().then(async () => {
-    // 如果是新增且没有文件
-    if (!formState.id && !formState.fileName && fileList.value.length === 0) {
-       message.warning('请上传模板文件');
-       return;
-    }
-
     modalLoading.value = true;
     try {
-      const dto: CreateContractTemplateDto = {
-        name: formState.name,
-        type: formState.type!,
-        description: formState.description,
-        status: formState.status,
-        fileName: formState.fileName || (fileList.value[0] as any)?.name || 'unknown.docx',
-        filePath: '/uploads/templates/' + (formState.fileName || 'unknown.docx')
-      };
-
       if (formState.id) {
-        // Edit logic
-        await updateTemplate(Number(formState.id), dto);
+        await updateTemplate(Number(formState.id), {
+          name: formState.name,
+          type: formState.type!,
+          description: formState.description,
+          status: formState.status
+        });
+        if (currentUploadFile.value) {
+          await uploadTemplateFile(Number(formState.id), currentUploadFile.value);
+        } else if (removeExistingFile.value) {
+          await deleteTemplateFile(Number(formState.id));
+        }
         message.success('模板更新成功');
       } else {
-        // Create logic
-        await createTemplate(dto);
+        const created = await createTemplate({
+          name: formState.name,
+          type: formState.type!,
+          description: formState.description,
+          status: formState.status
+        });
+        if (currentUploadFile.value) {
+          await uploadTemplateFile(created.id, currentUploadFile.value);
+        }
         message.success('创建模板成功');
+        if (formState.type) {
+          filterType.value = formState.type;
+        }
       }
       
       modalVisible.value = false;
+      currentUploadFile.value = null;
+      fileList.value = [];
+      removeExistingFile.value = false;
       fetchTemplates();
     } catch (error) {
       message.error('操作失败');
@@ -353,22 +385,41 @@ const handlePreview = (record: any) => {
 
 // --- File Upload ---
 const beforeUpload: UploadProps['beforeUpload'] = file => {
-  formState.fileName = file.name;
+  currentUploadFile.value = file as File;
   fileList.value = [file];
-  return false; // Prevent auto upload
+  removeExistingFile.value = false;
+  return false;
 };
 
 const handleFileChange = (info: UploadChangeParam) => {
   let resFileList = [...info.fileList];
   resFileList = resFileList.slice(-1); // Only keep the last file
   fileList.value = resFileList;
-  const file = resFileList[0];
-  if (file && file.originFileObj) {
-     formState.fileName = file.name || '';
+};
+
+const handleFileRemove: UploadProps['onRemove'] = () => {
+  fileList.value = [];
+  currentUploadFile.value = null;
+  if (formState.id) {
+    removeExistingFile.value = true;
+  }
+  return true;
+};
+
+const handleFilePreview: UploadProps['onPreview'] = file => {
+  const url = (file.url as string) || formState.filePath;
+  if (url) {
+    window.open(url, '_blank');
   }
 };
 
 // --- Computed ---
+const getDictLabel = (options: DictDataDto[], value?: string) => {
+  if (!value) return '';
+  const item = options.find(item => item.value === value);
+  return item ? item.label : value;
+};
+
 const filteredData = computed(() => {
   let data = dataSource.value;
   if (searchText.value) {
@@ -382,16 +433,7 @@ const filteredData = computed(() => {
   return data;
 });
 
-const getTypeName = (type: string | undefined) => {
-  const map: Record<string, string> = {
-    sales: '销售合同',
-    purchase: '采购合同',
-    service: '服务合同',
-    labor: '劳动合同',
-    other: '其他'
-  };
-  return type ? map[type] || type : '';
-};
+const getTypeName = (type: string | undefined) => getDictLabel(contractTypeOptions.value, type);
 
 const getTypeColor = (type: string | undefined) => {
   const map: Record<string, string> = {
@@ -404,8 +446,24 @@ const getTypeColor = (type: string | undefined) => {
   return type ? map[type] || 'default' : 'default';
 };
 
+const getStatusLabel = (status: string | undefined) => getDictLabel(statusOptions.value, status);
+
+const getStatusColor = (status: string | undefined) => {
+  switch (status) {
+    case '1':
+      return 'success';
+    case '0':
+      return 'default';
+  }
+};
+
 // --- 表格配置 ---
 const columns: ColumnType[] = [
+  {
+    title: '序号',
+    key: 'index',
+    width: 80,
+  },
   {
     title: '模板名称',
     dataIndex: 'name',
@@ -442,16 +500,29 @@ const columns: ColumnType[] = [
   },
 ];
 
-const pagination = {
+const pagination = reactive({
+  current: 1,
   pageSize: 10,
-};
+  showSizeChanger: true,
+  pageSizeOptions: ['10', '20', '50', '100'],
+  position: ['bottomRight'] as ('bottomLeft' | 'bottomCenter' | 'bottomRight')[],
+  showTotal: (total: number) => `共 ${total} 条`,
+  onChange: (page: number, pageSize: number) => {
+    pagination.current = page;
+    pagination.pageSize = pageSize;
+  },
+  onShowSizeChange: (page: number, pageSize: number) => {
+    pagination.current = page;
+    pagination.pageSize = pageSize;
+  },
+});
 </script>
 
 <style scoped>
 .contract-template-container {
   background: #fff;
   padding: 24px;
-  min-height: 100%;
+  flex: 1;
 }
 
 .header-actions {

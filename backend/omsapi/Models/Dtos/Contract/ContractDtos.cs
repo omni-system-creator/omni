@@ -282,6 +282,12 @@ namespace omsapi.Models.Dtos.Contract
     {
     }
 
+    public class ContractTemplateFileUploadResultDto
+    {
+        public string FilePath { get; set; } = string.Empty;
+        public string FileName { get; set; } = string.Empty;
+    }
+
     // --- Contract Stats DTOs ---
 
     public class ContractStatDto

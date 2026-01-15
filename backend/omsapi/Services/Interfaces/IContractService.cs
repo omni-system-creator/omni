@@ -26,6 +26,8 @@ namespace omsapi.Services.Interfaces
         Task<ContractTemplateDto> CreateTemplateAsync(CreateContractTemplateDto dto);
         Task<ContractTemplateDto?> UpdateTemplateAsync(long id, UpdateContractTemplateDto dto);
         Task<bool> DeleteTemplateAsync(long id);
+        Task<ContractTemplateDto?> UploadTemplateFileAsync(long id, IFormFile file);
+        Task<ContractTemplateDto?> DeleteTemplateFileAsync(long id);
 
         // Stats
         Task<ContractStatDto?> GetCurrentStatsAsync(string periodType);
