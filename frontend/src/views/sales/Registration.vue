@@ -31,7 +31,10 @@
       @change="handleTableChange"
       row-key="id"
     >
-      <template #bodyCell="{ column, record }">
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'index'">
+          {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+        </template>
         <template v-if="column.key === 'status'">
           <a-tag :color="getStatusColor(record.status)">
             {{ getStatusText(record.status) }}
@@ -46,40 +49,42 @@
         <template v-else-if="column.key === 'action'">
           <a-space>
             <a @click="handleDetail(record as SalesRegistrationDto)">详情</a>
-            <a-divider type="vertical" />
-            <a-dropdown>
-              <a class="ant-dropdown-link" @click.prevent>
-                <MoreOutlined style="font-size: 16px; cursor: pointer; color: #1890ff;" />
-              </a>
-              <template #overlay>
-                <a-menu>
-                  <a-menu-item key="edit" @click="handleEdit(record as SalesRegistrationDto)">
-                    编辑
-                  </a-menu-item>
-                  
-                  <template v-if="record.status === 'pending'">
-                    <a-menu-divider />
-                    <a-menu-item key="approve">
-                      <a-popconfirm title="确定通过这条报备吗？" @confirm="handleStatusChange(record as SalesRegistrationDto, 'approved')">
-                        <span style="color: #52c41a">通过</span>
-                      </a-popconfirm>
+            <template v-if="isSalesAdmin">
+              <a-divider type="vertical" />
+              <a-dropdown>
+                <a class="ant-dropdown-link" @click.prevent>
+                  <MoreOutlined style="font-size: 16px; cursor: pointer; color: #1890ff;" />
+                </a>
+                <template #overlay>
+                  <a-menu>
+                    <a-menu-item key="edit" @click="handleEdit(record as SalesRegistrationDto)">
+                      编辑
                     </a-menu-item>
-                    <a-menu-item key="reject">
-                      <a-popconfirm title="确定驳回这条报备吗？" @confirm="handleStatusChange(record as SalesRegistrationDto, 'rejected')">
-                        <span style="color: #ff4d4f">驳回</span>
-                      </a-popconfirm>
-                    </a-menu-item>
-                  </template>
+                    
+                    <template v-if="record.status === 'pending'">
+                      <a-menu-divider />
+                      <a-menu-item key="approve">
+                        <a-popconfirm title="确定通过这条报备吗？" @confirm="handleStatusChange(record as SalesRegistrationDto, 'approved')">
+                          <span style="color: #52c41a">通过</span>
+                        </a-popconfirm>
+                      </a-menu-item>
+                      <a-menu-item key="reject">
+                        <a-popconfirm title="确定驳回这条报备吗？" @confirm="handleStatusChange(record as SalesRegistrationDto, 'rejected')">
+                          <span style="color: #ff4d4f">驳回</span>
+                        </a-popconfirm>
+                      </a-menu-item>
+                    </template>
 
-                  <a-menu-divider />
-                  <a-menu-item key="delete">
-                    <a-popconfirm title="确定要删除这条报备吗？" @confirm="onDelete(record.id)">
-                      <span style="color: #ff4d4f">删除</span>
-                    </a-popconfirm>
-                  </a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
+                    <a-menu-divider />
+                    <a-menu-item key="delete">
+                      <a-popconfirm title="确定要删除这条报备吗？" @confirm="onDelete(record.id)">
+                        <span style="color: #ff4d4f">删除</span>
+                      </a-popconfirm>
+                    </a-menu-item>
+                  </a-menu>
+                </template>
+              </a-dropdown>
+            </template>
           </a-space>
         </template>
       </template>
@@ -146,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, computed } from 'vue';
 import { PlusOutlined, ThunderboltOutlined, MoreOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { FormInstance } from 'ant-design-vue';
@@ -161,6 +166,7 @@ import {
   type SalesRegistrationDto,
   type CreateRegistrationDto
 } from '@/api/sales';
+import { usePermissionStore } from '@/stores/permission';
 
 const searchText = ref('');
 const filterStatus = ref('all');
@@ -173,6 +179,9 @@ const formRef = ref<FormInstance>();
 const editingId = ref<string | null>(null);
 const currentDetail = ref<SalesRegistrationDto | null>(null);
 
+const permissionStore = usePermissionStore();
+const isSalesAdmin = computed(() => permissionStore.hasPermission('SalesRegistration:Admin'));
+
 const statusOptions = [
   { label: '审核中', value: 'pending' },
   { label: '已通过', value: 'approved' },
@@ -180,6 +189,7 @@ const statusOptions = [
 ];
 
 const columns: ColumnType[] = [
+  { title: '序号', key: 'index', width: 70 },
   { title: '项目名称', dataIndex: 'projectName', key: 'projectName' },
   { title: '客户名称', dataIndex: 'customerName', key: 'customerName' },
   { title: '联系人', dataIndex: 'contact', key: 'contact' },
@@ -188,7 +198,7 @@ const columns: ColumnType[] = [
   { title: '报备日期', dataIndex: 'date', key: 'date' },
   { title: '状态', dataIndex: 'status', key: 'status' },
   { title: '负责人', dataIndex: 'owner', key: 'owner' },
-  { title: '操作', key: 'action' },
+  { title: '操作', key: 'action', width: 120 },
 ];
 
 const registrationList = ref<SalesRegistrationDto[]>([]);

@@ -110,6 +110,8 @@ namespace omsapi.Data
             AddMenu("客户管理", "SalesCustomer", "/sales/customer", "views/sales/Customer.vue", null, salesId, 62, out _);
             AddMenu("销售资料", "SalesMaterials", "/sales/materials", "views/sales/Materials.vue", null, salesId, 63, out _);
             AddMenu("销售目标", "SalesTargets", "/sales/targets", "views/sales/Targets.vue", null, salesId, 64, out _);
+            AddMenu("销售报备", "SalesRegistration", "/sales/registration", "views/sales/Registration.vue", null, salesId, 65, out long salesRegistrationId);
+            AddButton("报备管理", "SalesRegistration:Admin", salesRegistrationId);
 
             // 7. 采购管理
             AddMenu("采购管理", "procurement", "/procurement", "Layout", "ant-design:shopping-outlined", null, 70, out long procurementId);

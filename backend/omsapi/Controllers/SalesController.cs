@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using omsapi.Models.Common;
 using omsapi.Models.Dtos.Sales;
 using omsapi.Services.Interfaces;
+using omsapi.Infrastructure.Attributes;
 using System.Text.Json;
 
 namespace omsapi.Controllers
@@ -351,6 +352,7 @@ namespace omsapi.Controllers
         /// 创建报备
         /// </summary>
         [HttpPost("registrations")]
+        [Permission("SalesRegistration:Admin")]
         public async Task<ApiResponse<SalesRegistrationDto>> CreateRegistration([FromBody] CreateRegistrationDto dto)
         {
             var result = await _salesService.CreateRegistrationAsync(dto);
@@ -361,6 +363,7 @@ namespace omsapi.Controllers
         /// 更新报备
         /// </summary>
         [HttpPut("registrations/{id}")]
+        [Permission("SalesRegistration:Admin")]
         public async Task<ApiResponse<SalesRegistrationDto>> UpdateRegistration(string id, [FromBody] UpdateRegistrationDto dto)
         {
             var result = await _salesService.UpdateRegistrationAsync(id, dto);
@@ -373,6 +376,7 @@ namespace omsapi.Controllers
         /// 删除报备
         /// </summary>
         [HttpDelete("registrations/{id}")]
+        [Permission("SalesRegistration:Admin")]
         public async Task<ApiResponse<bool>> DeleteRegistration(string id)
         {
             var result = await _salesService.DeleteRegistrationAsync(id);
