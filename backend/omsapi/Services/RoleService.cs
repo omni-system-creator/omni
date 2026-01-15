@@ -396,6 +396,95 @@ namespace omsapi.Services
             });
         }
 
+        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetRoleUsersAsync(long roleId)
+        {
+            var role = await _context.Roles.FindAsync(roleId);
+            if (role == null) return (false, "角色不存在", null);
+
+            var users = await _context.UserRoles
+                .Where(ur => ur.RoleId == roleId)
+                .Include(ur => ur.User)
+                .ThenInclude(u => u.Dept)
+                .Select(ur => ur.User)
+                .ToListAsync();
+
+            var userDtos = users.Select(u => new UserListDto
+            {
+                Id = u.Id,
+                Username = u.Username,
+                Nickname = u.Nickname,
+                Email = u.Email,
+                Phone = u.Phone,
+                Avatar = u.Avatar,
+                Status = u.Status,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt,
+                LastLoginAt = u.LastLoginAt,
+                Dept = u.Dept != null ? new DeptDto 
+                { 
+                    Id = u.Dept.Id, 
+                    Name = u.Dept.Name,
+                    Code = u.Dept.Code,
+                    Type = u.Dept.Type,
+                    ParentId = u.Dept.ParentId,
+                    SortOrder = u.Dept.SortOrder,
+                    IsActive = u.Dept.IsActive,
+                    CreatedAt = u.Dept.CreatedAt
+                } : null
+            }).ToList();
+
+            return (true, "获取成功", userDtos);
+        }
+
+        public async Task<(bool Success, string Message, List<long>? Data)> GetRoleUserIdsAsync(long roleId)
+        {
+            var ids = await _context.UserRoles
+                .Where(ur => ur.RoleId == roleId)
+                .Select(ur => ur.UserId)
+                .ToListAsync();
+
+            return (true, "获取成功", ids);
+        }
+
+        public async Task<(bool Success, string Message)> AssignRoleUsersAsync(long roleId, List<long> userIds)
+        {
+            var role = await _context.Roles.FindAsync(roleId);
+            if (role == null) return (false, "角色不存在");
+
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // 移除旧用户关联
+                    var oldUserRoles = await _context.UserRoles.Where(ur => ur.RoleId == roleId).ToListAsync();
+                    _context.UserRoles.RemoveRange(oldUserRoles);
+
+                    // 添加新用户关联
+                    if (userIds != null && userIds.Any())
+                    {
+                        var uniqueIds = userIds.Distinct().ToList();
+                        var newUserRoles = uniqueIds.Select(uid => new omsapi.Models.Entities.SystemUserRole
+                        {
+                            UserId = uid,
+                            RoleId = roleId
+                        });
+                        _context.UserRoles.AddRange(newUserRoles);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    return (true, "用户分配成功");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return (false, "分配失败: " + ex.Message);
+                }
+            });
+        }
+
         private List<PermissionTreeDto> BuildPermissionTree(List<PermissionTreeDto> all, long? parentId)
         {
             return all

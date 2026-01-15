@@ -86,5 +86,21 @@ namespace omsapi.Controllers
             if (!success) return ApiResponse<object>.Error(message);
             return ApiResponse<object>.Success(null, message);
         }
+
+        [HttpGet("{id}/users")]
+        public async Task<ApiResponse<List<UserListDto>>> GetRoleUsers(long id)
+        {
+            var (success, message, data) = await _roleService.GetRoleUsersAsync(id);
+            if (!success) return ApiResponse<List<UserListDto>>.Error(message);
+            return ApiResponse<List<UserListDto>>.Success(data!);
+        }
+
+        [HttpPost("{id}/users")]
+        public async Task<ApiResponse<object>> AssignRoleUsers(long id, [FromBody] List<long> userIds)
+        {
+            var (success, message) = await _roleService.AssignRoleUsersAsync(id, userIds);
+            if (!success) return ApiResponse<object>.Error(message);
+            return ApiResponse<object>.Success(null, message);
+        }
     }
 }

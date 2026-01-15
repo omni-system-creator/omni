@@ -1,4 +1,5 @@
 import request from '@/utils/request';
+import { type UserListDto } from './user';
 
 export interface RoleDto {
   id: number;
@@ -66,4 +67,12 @@ export const getRolePermissionIds = (roleId: number) => {
 
 export const assignRolePermissions = (roleId: number, permissionIds: number[]) => {
   return request.post(`/role/${roleId}/permissions`, { permissionIds });
+};
+
+export const getRoleUsers = (roleId: number) => {
+  return request.get<any, UserListDto[]>(`/role/${roleId}/users`);
+};
+
+export const assignRoleUsers = (roleId: number, userIds: number[]) => {
+  return request.post(`/role/${roleId}/users`, userIds);
 };

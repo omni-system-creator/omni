@@ -15,12 +15,26 @@ namespace omsapi.Services
         private readonly OmsContext _context;
         private readonly IAiService _aiService;
         private readonly IWebHostEnvironment _environment;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public SalesService(OmsContext context, IAiService aiService, IWebHostEnvironment environment)
+        public SalesService(OmsContext context, IAiService aiService, IWebHostEnvironment environment, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _aiService = aiService;
             _environment = environment;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private async Task<long?> GetCurrentOrgIdAsync()
+        {
+            var userIdStr = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
+            if (long.TryParse(userIdStr, out var userId))
+            {
+                var user = await _context.Users.FindAsync(userId);
+                return user?.CurrentOrgId;
+            }
+
+            return null;
         }
 
         // --- Customer ---
@@ -976,7 +990,19 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
 
         public async Task<PagedResult<SalesRegistrationDto>> GetRegistrationsAsync(RegistrationSearchParams searchParams)
         {
-            var query = _context.SalesRegistrations.AsQueryable();
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue)
+            {
+                return new PagedResult<SalesRegistrationDto>
+                {
+                    Items = new List<SalesRegistrationDto>(),
+                    Total = 0,
+                    Page = searchParams.Page,
+                    PageSize = searchParams.PageSize
+                };
+            }
+
+            var query = _context.SalesRegistrations.Where(r => r.OrgId == orgId.Value);
 
             if (!string.IsNullOrEmpty(searchParams.SearchText))
             {
@@ -995,6 +1021,7 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
                 .Select(r => new SalesRegistrationDto
                 {
                     Id = r.Id,
+                    OrgId = r.OrgId,
                     ProjectName = r.ProjectName,
                     CustomerName = r.CustomerName,
                     Contact = r.Contact ?? string.Empty,
@@ -1020,6 +1047,7 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
             return new SalesRegistrationDto
             {
                 Id = r.Id,
+                OrgId = r.OrgId,
                 ProjectName = r.ProjectName,
                 CustomerName = r.CustomerName,
                 Contact = r.Contact ?? string.Empty,
@@ -1036,6 +1064,12 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
 
         public async Task<SalesRegistrationDto> CreateRegistrationAsync(CreateRegistrationDto dto)
         {
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue)
+            {
+                throw new Exception("当前用户未选择组织，无法创建报备");
+            }
+
             var entity = new SalesRegistration
             {
                 Id = Guid.NewGuid().ToString("N"),
@@ -1047,6 +1081,7 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
                 Date = dto.Date,
                 Status = "pending",
                 Owner = "当前用户",
+                OrgId = orgId.Value,
                 Remarks = dto.Remarks,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -1060,8 +1095,19 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
 
         public async Task<SalesRegistrationDto?> UpdateRegistrationAsync(string id, UpdateRegistrationDto dto)
         {
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue)
+            {
+                return null;
+            }
+
             var entity = await _context.SalesRegistrations.FindAsync(id);
             if (entity == null) return null;
+
+            if (entity.OrgId.HasValue && entity.OrgId != orgId.Value)
+            {
+                return null;
+            }
 
             if (!string.IsNullOrEmpty(dto.ProjectName)) entity.ProjectName = dto.ProjectName;
             if (!string.IsNullOrEmpty(dto.CustomerName)) entity.CustomerName = dto.CustomerName;
@@ -1079,8 +1125,19 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
 
         public async Task<bool> DeleteRegistrationAsync(string id)
         {
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue)
+            {
+                return false;
+            }
+
             var entity = await _context.SalesRegistrations.FindAsync(id);
             if (entity == null) return false;
+
+            if (entity.OrgId.HasValue && entity.OrgId != orgId.Value)
+            {
+                return false;
+            }
 
             _context.SalesRegistrations.Remove(entity);
             await _context.SaveChangesAsync();

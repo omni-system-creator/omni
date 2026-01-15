@@ -9,6 +9,8 @@ namespace omsapi.Models.Entities.Sales
         [Key]
         public string Id { get; set; } = string.Empty;
 
+        public long? OrgId { get; set; }
+
         [Required]
         [MaxLength(200)]
         public string ProjectName { get; set; } = string.Empty;

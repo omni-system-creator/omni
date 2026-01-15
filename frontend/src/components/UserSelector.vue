@@ -1,6 +1,6 @@
 <template>
   <div class="user-selector">
-    <div class="selector-display" @click="openDialog">
+    <div class="selector-display" @click="openDialog" v-if="showTrigger">
       <a-input
         readonly
         :value="displayValue"
@@ -45,11 +45,12 @@
           v-else-if="treeData.length > 0"
           v-model:checkedKeys="checkedKeys"
           v-model:selectedKeys="selectedKeys"
+          v-model:expandedKeys="expandedKeys"
           :class="{ 'search-mode': isSearchResult }"
           :tree-data="treeData"
           :load-data="onLoadData"
           :checkable="multiple"
-          :checkStrictly="true"
+          :checkStrictly="false"
           :selectable="!multiple"
           :height="400"
           @check="onCheck"
@@ -73,6 +74,9 @@
                </span>
                <span v-else-if="dataType == 2">
                  <ApartmentOutlined style="color: #1890ff; margin: 0 6px" />
+               </span>
+               <span v-else-if="dataType === 'global'">
+                <GlobalOutlined style="color: #722ed1; margin: 0 6px" />
                </span>
                <span v-else>
                  <ClusterOutlined style="color: #8c8c8c; margin: 0 6px" />
@@ -117,33 +121,49 @@ import {
   BankOutlined,
   ApartmentOutlined,
   ClusterOutlined,
-  UserOutlined
+  UserOutlined,
+  GlobalOutlined
 } from '@ant-design/icons-vue';
 import { getDeptTree, type Dept } from '@/api/dept';
 import { getUserList } from '@/api/user';
 import { useUserStore } from '@/stores/user';
 import { useDraggableModal } from '@/hooks/useDraggableModal';
 
+const GLOBAL_DEPT_ID = -1;
+
 interface UserInfo {
+  id?: number;
   username: string;
   name: string;
   organization: string;
+  deptId?: number;
 }
 
 const userStore = useUserStore();
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   value?: string | string[];
   multiple?: boolean;
   placeholder?: string;
   title?: string;
   initialDisplayData?: UserInfo[]; // Pass existing user details to populate display
-}>();
+  showTrigger?: boolean;
+}>(), {
+  showTrigger: true
+});
 
 const emit = defineEmits(['update:value', 'change']);
 
 const visible = ref(false);
 const { wrapClassName, handleTitleMouseDown } = useDraggableModal(visible);
+
+const open = () => {
+  openDialog();
+};
+
+defineExpose({
+  open
+});
 
 const treeData = ref<any[]>([]);
 const cachedDeptTree = ref<Dept[]>([]);
@@ -156,6 +176,9 @@ const tempSelectedUsers = ref<UserInfo[]>([]);
 const checkedKeys = ref<string[]>([]); // For checkbox mode (multiple)
 const selectedKeys = ref<string[]>([]); // For select mode (single)
 
+const expandedKeys = ref<string[]>([]);
+const pendingDeptActions = ref<Record<string, boolean>>({});
+
 // Helper to find dept in cache
 const findDept = (depts: Dept[], id: number): Dept | null => {
   for (const dept of depts) {
@@ -166,6 +189,21 @@ const findDept = (depts: Dept[], id: number): Dept | null => {
     }
   }
   return null;
+};
+
+// Helper to find path to dept
+const findDeptPathIds = (depts: Dept[], targetId: number, path: number[] = []): number[] | null => {
+    for (const dept of depts) {
+        const currentPath = [...path, dept.id];
+        if (dept.id === targetId) {
+            return currentPath;
+        }
+        if (dept.children) {
+            const result = findDeptPathIds(dept.children, targetId, currentPath);
+            if (result) return result;
+        }
+    }
+    return null;
 };
 
 // Helper to get full dept path
@@ -223,9 +261,23 @@ const loadTree = async () => {
         value: `dept-${d.id}`,
         key: `dept-${d.id}`,
         isLeaf: false,
+        selectable: false,
         dataType: d.type,
         dataRef: d
       }));
+
+      // Add Global Node for Admins
+      if (userStore.isAdmin) {
+          treeData.value = [{
+              title: '全局用户',
+              value: `dept-${GLOBAL_DEPT_ID}`,
+              key: `dept-${GLOBAL_DEPT_ID}`,
+              isLeaf: false,
+              selectable: false,
+              dataType: 'global',
+              children: []
+          }, ...treeData.value];
+      }
   } finally {
       searching.value = false;
   }
@@ -279,9 +331,11 @@ const onSearch = async (val: string) => {
                       organization: showOrg ? orgDisplayName : ''
                   },
                   userData: {
+                      id: u.id,
                       username: u.username,
                       name: u.nickname || u.username,
-                      organization: orgDisplayName
+                      organization: showOrg ? orgDisplayName : '',
+                      deptId: u.dept?.id
                   }
              };
         });
@@ -305,7 +359,7 @@ const onLoadData = async (treeNode: any) => {
   const { value } = treeNode;
   if (!value || !value.startsWith('dept-')) return;
   
-  const deptId = parseInt(value.split('-')[1]);
+  const deptId = parseInt(value.replace('dept-', ''));
   if (isNaN(deptId)) return;
 
   // Avoid reloading if already loaded
@@ -315,18 +369,27 @@ const onLoadData = async (treeNode: any) => {
   }
 
   try {
-      const users = await getUserList({ deptId });
-      
-      // We use dataRef to access the original Dept object to find sub-departments
-      // Note: treeNode.dataRef refers to the 'dataRef' property we added to the tree data item
-      const currentDept = findDept(cachedDeptTree.value, deptId);
-      const subDepts = currentDept?.children || [];
+      let users: any[] = [];
+      let subDepts: Dept[] = [];
+      let deptPath = '';
 
-      // Calculate full path for currentDept
-      let deptPath = currentDept?.name || '';
-      if (currentDept) {
-          const fullPath = getDeptFullPath(cachedDeptTree.value, currentDept.id);
-          if (fullPath) deptPath = fullPath;
+      if (deptId === GLOBAL_DEPT_ID) {
+          users = await getUserList({ noDept: true });
+          deptPath = '全局用户';
+      } else {
+          users = await getUserList({ deptId });
+      
+          // We use dataRef to access the original Dept object to find sub-departments
+          // Note: treeNode.dataRef refers to the 'dataRef' property we added to the tree data item
+          const currentDept = findDept(cachedDeptTree.value, deptId);
+          subDepts = currentDept?.children || [];
+
+          // Calculate full path for currentDept
+          deptPath = currentDept?.name || '';
+          if (currentDept) {
+              const fullPath = getDeptFullPath(cachedDeptTree.value, currentDept.id);
+              if (fullPath) deptPath = fullPath;
+          }
       }
 
       const deptNodes = subDepts.map(d => ({
@@ -335,13 +398,13 @@ const onLoadData = async (treeNode: any) => {
         key: `dept-${d.id}`,
         isLeaf: false,
         selectable: false,
-        disableCheckbox: true,
         type: d.type,
+        dataType: d.type,
         dataRef: d
       }));
 
-      const userNodes = users.map(u => {
-          const postNames = u.posts && u.posts.length > 0 ? ` - ${u.posts.map(p => p.postName).join(', ')}` : '';
+      const userNodes = users.map((u: any) => {
+          const postNames = u.posts && u.posts.length > 0 ? ` - ${u.posts.map((p: any) => p.postName).join(', ')}` : '';
           return {
               title: `${u.nickname || u.username} (${u.username})${postNames}`,
               value: u.username,
@@ -349,9 +412,11 @@ const onLoadData = async (treeNode: any) => {
               isLeaf: true,
               isUser: true,
               userData: {
+                  id: u.id,
                   username: u.username,
                   name: u.nickname || u.username,
-                  organization: deptPath
+                  organization: deptPath,
+                  deptId: deptId
               }
           };
       });
@@ -362,6 +427,25 @@ const onLoadData = async (treeNode: any) => {
       // Force update treeData to trigger reactivity if needed
       treeData.value = [...treeData.value];
       
+      // Check for pending actions on this node (from onCheck)
+      if (treeNode.key in pendingDeptActions.value) {
+          const shouldCheck = pendingDeptActions.value[treeNode.key];
+          delete pendingDeptActions.value[treeNode.key];
+          
+          if (shouldCheck) {
+              // Select all loaded users
+              userNodes.forEach(u => {
+                  if (u.userData && !tempSelectedUsers.value.find(existing => existing.username === u.userData.username)) {
+                      tempSelectedUsers.value.push(u.userData);
+                  }
+              });
+          } else {
+              // Deselect all loaded users
+              const usernamesToRemove = userNodes.map(u => u.userData.username);
+              tempSelectedUsers.value = tempSelectedUsers.value.filter(u => !usernamesToRemove.includes(u.username));
+          }
+      }
+
       // Sync checked keys after loading new nodes
       syncCheckedKeys();
   } catch (e) {
@@ -403,6 +487,31 @@ const openDialog = async () => {
       tempSelectedUsers.value = props.initialDisplayData.filter(u => values.includes(u.username));
   }
   
+  // Auto expand depts of selected users
+  const keysToExpand = new Set<string>();
+  
+  // Also expand root nodes by default if needed, but AntDV might do it.
+  // Let's expand based on selection.
+  if (treeData.value.length > 0) {
+     // Optional: expand root
+     // treeData.value.forEach(node => keysToExpand.add(node.key));
+  }
+
+  tempSelectedUsers.value.forEach(u => {
+      if (u.deptId === GLOBAL_DEPT_ID) {
+          keysToExpand.add(`dept-${GLOBAL_DEPT_ID}`);
+      } else if (u.deptId) {
+          const pathIds = findDeptPathIds(cachedDeptTree.value, u.deptId);
+          if (pathIds) {
+              pathIds.forEach(id => keysToExpand.add(`dept-${id}`));
+          }
+      }
+  });
+  
+  if (keysToExpand.size > 0) {
+      expandedKeys.value = Array.from(keysToExpand);
+  }
+
   // Sync keys
   if (props.multiple) {
       syncCheckedKeys();
@@ -434,30 +543,64 @@ const handleCancel = () => {
 
 // Handle Tree Check (Multiple)
 const onCheck = (_checked: any, info: any) => {
-    // checked might be { checked: [], halfChecked: [] } if checkStrictly is true
-    // We only care about user nodes
-    // info.checkedNodes might contain dept nodes if we didn't disable them.
-    // But we disabled dept nodes.
+    const { node, checked } = info;
     
-    // Rebuild tempSelectedUsers based on checked nodes
-    // Issue: If a node is checked but not currently loaded in tree (e.g. pre-selected but not expanded),
-    // we might lose its details if we just rely on info.checkedNodes.
-    // Strategy: Merge existing known users with new ones from info.checkedNodes.
-    
-    // Actually, AntDV Tree CheckStrictly: true returns keys.
-    // info.node is the node that was checked/unchecked.
-    
-    const node = info.node;
-    if (!node.isUser) return; // Should not happen if depts disabled
-    
-    const userData = node.userData;
-    
-    if (info.checked) {
-        if (!tempSelectedUsers.value.find(u => u.username === userData.username)) {
-            tempSelectedUsers.value.push(userData);
+    // Helper to collect all users from a node (recursive)
+    // We traverse the node structure to find all user nodes under the checked node
+    const collectUsers = (n: any): UserInfo[] => {
+        let users: UserInfo[] = [];
+        // AntDV node might have dataRef or be the data itself depending on usage.
+        // But here we rely on the properties we set in treeData (isUser, userData, children)
+        // Note: info.node is the EventDataNode which wraps the data. 
+        // We should access dataRef or the properties directly if they are exposed.
+        // In AntDV 3/4, custom props are usually spread onto the node.
+        
+        if (n.isUser && n.userData) {
+            users.push(n.userData);
         }
+        
+        // Check children
+        // info.node.children might be the VNode children or data children. 
+        // Safer to check dataRef.children if available, or children from the tree data.
+        // However, AntDV passes the tree node instance. 
+        // Let's try to access children from the node directly as we populated them in treeData.
+        
+        const children = n.children || (n.dataRef && n.dataRef.children);
+        if (children && Array.isArray(children)) {
+            children.forEach((child: any) => {
+                users = users.concat(collectUsers(child));
+            });
+        }
+        
+        return users;
+    };
+
+    const affectedUsers = collectUsers(node);
+    
+    // If it's a dept node, we might need to load its children to select them
+    if (!node.isUser) {
+        // Record the intent
+        pendingDeptActions.value[node.key] = checked;
+        
+        // Auto expand if not already expanded
+        if (!expandedKeys.value.includes(node.key)) {
+            expandedKeys.value = [...expandedKeys.value, node.key];
+        }
+        // If it's already expanded (loaded), the collectUsers logic below handles visible children.
+        // But we also kept the logic below for immediate feedback on already loaded nodes.
+    }
+
+    if (checked) {
+        // Add users if not exists
+        affectedUsers.forEach(u => {
+            if (!tempSelectedUsers.value.find(existing => existing.username === u.username)) {
+                tempSelectedUsers.value.push(u);
+            }
+        });
     } else {
-        tempSelectedUsers.value = tempSelectedUsers.value.filter(u => u.username !== userData.username);
+        // Remove users
+        const usernamesToRemove = affectedUsers.map(u => u.username);
+        tempSelectedUsers.value = tempSelectedUsers.value.filter(u => !usernamesToRemove.includes(u.username));
     }
 };
 

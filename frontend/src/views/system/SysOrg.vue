@@ -75,7 +75,12 @@
           <a-input v-model:value="formState.code" placeholder="请输入编码" />
         </a-form-item>
         <a-form-item label="负责人" name="leader">
-          <a-input v-model:value="formState.leader" placeholder="请输入负责人姓名" />
+          <UserSelector
+            v-model:value="formState.leader"
+            :initial-display-data="leaderDisplayInfo"
+            placeholder="请选择负责人"
+            @change="onLeaderChange"
+          />
         </a-form-item>
         <a-form-item label="联系电话" name="phone">
           <a-input v-model:value="formState.phone" placeholder="请输入联系电话" />
@@ -106,9 +111,11 @@ import {
 } from '@ant-design/icons-vue';
 import { useUserStore } from '@/stores/user';
 import {
-  getDeptTree, createDept, updateDept, deleteDept, updateDeptStructure,
+  getDeptTree, createDept, updateDept, deleteDept, updateDeptStructure, getDept,
   type Dept, DeptType, type UpdateDeptStructureParams
 } from '@/api/dept';
+import UserSelector from '@/components/UserSelector.vue';
+import { getUserList } from '@/api/user';
 import { App, Rect, Text, Group, Line, Ellipse, PointerEvent, DragEvent } from 'leafer-ui';
 import '@leafer-in/find'; // 导入查找插件
 import '@leafer-in/export'; // 导入导出插件
@@ -203,6 +210,10 @@ const findNodeById = (nodes: Dept[], id: number): Dept | null => {
   return null;
 };
 
+const isDeptInCurrentTree = (id: number) => {
+  return !!findNodeById(deptList.value, id);
+};
+
 const fitViewAndClose = () => {
   fitView();
   closeContextMenu();
@@ -273,6 +284,68 @@ const exportAsImageAndClose = async () => {
   }
 };
 
+const leaderDisplayInfo = ref<any[]>([]);
+const leaderDisplayMap = ref<Record<string, string>>({});
+const rootDeptCache = new Map<number, { id: number; name: string }>();
+
+const getRootDeptInfo = async (deptId: number) => {
+  if (rootDeptCache.has(deptId)) {
+    return rootDeptCache.get(deptId)!;
+  }
+  try {
+    let current = await getDept(deptId);
+    if (!current) return null;
+    while (current.parentId) {
+      const parent = await getDept(current.parentId);
+      if (!parent) break;
+      current = parent;
+    }
+    const info = { id: current.id, name: current.name };
+    rootDeptCache.set(deptId, info);
+    return info;
+  } catch {
+    return null;
+  }
+};
+
+const buildLeaderDisplayMap = async () => {
+  const leaders = new Set<string>();
+  const collect = (nodes: Dept[]) => {
+    for (const n of nodes) {
+      if (n.leader) leaders.add(n.leader);
+      if (n.children) collect(n.children);
+    }
+  };
+  collect(deptList.value);
+
+  const map: Record<string, string> = {};
+  const currentOrgId = userStore.currentOrg?.id;
+
+  for (const username of leaders) {
+    try {
+      const users = await getUserList({ keyword: username });
+      const user = (users || []).find(u => u.username === username);
+      if (user) {
+        const displayName = user.nickname || user.username;
+        let text = displayName;
+        if (user.dept?.id && currentOrgId) {
+          const rootInfo = await getRootDeptInfo(user.dept.id);
+          if (rootInfo && rootInfo.id !== currentOrgId) {
+            text = `${displayName} (${rootInfo.name})`;
+          }
+        }
+        map[username] = text;
+      } else {
+        map[username] = username;
+      }
+    } catch {
+      map[username] = username;
+    }
+  }
+
+  leaderDisplayMap.value = map;
+};
+
 // Layout Constants
 const NODE_WIDTH = 180;
 const NODE_HEIGHT = 90;
@@ -291,6 +364,7 @@ const fetchDeptTree = async () => {
     // 如果ID为0（演示），API可能会返回默认数据或空，视后端实现而定
     const res = await getDeptTree(orgId);
     deptList.value = res || [];
+    await buildLeaderDisplayMap();
     renderChart();
   } catch (error) {
     console.error(error);
@@ -547,7 +621,8 @@ const drawNodeRecursive = (node: LayoutNode) => {
   });
 
   // Layout calculations
-  const hasLeader = !!node.leader;
+  const displayLeader = node.leader ? (leaderDisplayMap.value[node.leader] || node.leader) : '';
+  const hasLeader = !!displayLeader;
   const headerHeight = 6;
   const leaderAreaHeight = 24; // Height reserved for leader text
   const nameAreaHeight = hasLeader ? (NODE_HEIGHT - headerHeight - leaderAreaHeight) : (NODE_HEIGHT - headerHeight);
@@ -570,7 +645,7 @@ const drawNodeRecursive = (node: LayoutNode) => {
 
   // Text: Leader
   const leaderText = new Text({
-    text: hasLeader ? `负责人: ${node.leader}` : '',
+    text: hasLeader ? `负责人: ${displayLeader}` : '',
     x: 10,
     y: NODE_HEIGHT - leaderAreaHeight,
     textAlign: 'center',
@@ -1051,6 +1126,7 @@ const handleAdd = (record?: Dept) => {
   formState.name = '';
   formState.code = '';
   formState.leader = '';
+  leaderDisplayInfo.value = [];
   formState.phone = '';
   formState.email = '';
   formState.sortOrder = 0;
@@ -1066,6 +1142,44 @@ const handleEdit = (record: Dept) => {
   formState.code = record.code;
   formState.type = record.type;
   formState.leader = record.leader;
+  leaderDisplayInfo.value = [];
+  if (record.leader) {
+    getUserList({ keyword: record.leader }).then(async users => {
+      const user = (users || []).find(u => u.username === record.leader);
+      if (user) {
+        let organization = '';
+        if (user.dept?.id) {
+          const rootInfo = await getRootDeptInfo(user.dept.id);
+          if (rootInfo && userStore.currentOrg) {
+            if (rootInfo.id !== userStore.currentOrg.id) {
+              organization = rootInfo.name;
+            } else {
+              organization = userStore.currentOrg.name;
+            }
+          } else {
+            organization = user.dept.name || '';
+          }
+        }
+        leaderDisplayInfo.value = [{
+          username: user.username,
+          name: user.nickname || user.username,
+          organization
+        }];
+      } else {
+        leaderDisplayInfo.value = [{
+          username: record.leader,
+          name: record.leader,
+          organization: ''
+        }];
+      }
+    }).catch(() => {
+      leaderDisplayInfo.value = [{
+        username: record.leader,
+        name: record.leader,
+        organization: ''
+      }];
+    });
+  }
   formState.phone = record.phone;
   formState.email = record.email;
   formState.sortOrder = record.sortOrder;
@@ -1127,6 +1241,51 @@ const handleModalOk = async () => {
   } finally {
     confirmLoading.value = false;
   }
+};
+
+const onLeaderChange = async (user: any) => {
+  if (!user) {
+    leaderDisplayInfo.value = [];
+    return;
+  }
+  let organization = '';
+  let deptName = user.organization || '';
+  
+  try {
+    const users = await getUserList({ keyword: user.username });
+    const full = (users || []).find(u => u.username === user.username);
+    
+    if (full?.dept?.id) {
+      deptName = full.dept.name || deptName;
+      const inCurrent = isDeptInCurrentTree(full.dept.id);
+      
+      if (inCurrent) {
+        organization = userStore.currentOrg?.name || '';
+      } else {
+        const rootInfo = await getRootDeptInfo(full.dept.id);
+        organization = rootInfo?.name || deptName;
+      }
+    } else {
+      // If we can't find dept info, assume what we have. 
+      // If it matches current org name, UserSelector will hide it.
+      // If we are here, it means we don't know the dept ID to check tree.
+      // We'll rely on user.organization passed from UserSelector.
+      organization = deptName;
+      
+      // Try to intelligently guess if it's current org to hide suffix
+      if (organization === userStore.currentOrg?.name) {
+         // It matches current org name, so it will be hidden anyway
+      }
+    }
+  } catch {
+    organization = deptName;
+  }
+
+  leaderDisplayInfo.value = [{
+    username: user.username,
+    name: user.name,
+    organization
+  }];
 };
 </script>
 

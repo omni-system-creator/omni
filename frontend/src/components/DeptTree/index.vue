@@ -60,6 +60,18 @@ const props = defineProps({
   rootId: {
     type: Number,
     default: undefined
+  },
+  showGlobalNode: {
+    type: Boolean,
+    default: false
+  },
+  globalNodeId: {
+    type: Number,
+    default: -1
+  },
+  globalNodeLabel: {
+    type: String,
+    default: '全局角色'
   }
 });
 
@@ -91,7 +103,7 @@ const loadData = async () => {
     const res = await getDeptTree(props.rootId);
     console.log('DeptTree: API response', res);
     let data = res || [];
-    
+
     // Client-side filter fallback if rootId is provided
     if (props.rootId) {
       const findNode = (nodes: Dept[]): Dept | null => {
@@ -111,12 +123,23 @@ const loadData = async () => {
       }
     }
 
+    const originalData = data;
+
+    if (props.showGlobalNode) {
+      const globalNode: any = {
+        id: props.globalNodeId,
+        name: props.globalNodeLabel,
+        children: []
+      };
+      data = [globalNode as Dept, ...data];
+    }
+
     treeData.value = data;
     // 默认展开一级
     if (treeData.value.length > 0) {
       expandedKeys.value = treeData.value.map(item => item.id);
     }
-    emit('loaded', treeData.value);
+    emit('loaded', originalData);
   } catch (error) {
     console.error(error);
   } finally {

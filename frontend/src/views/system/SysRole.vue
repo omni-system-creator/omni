@@ -9,7 +9,13 @@
               <ApartmentOutlined /> 组织结构
             </span>
           </template>
-          <DeptTree v-model:selectedKeys="selectedDeptKeys" :root-id="currentOrgId" @loaded="onDeptLoaded" @select="onSelectDept" />
+          <DeptTree
+            v-model:selectedKeys="selectedDeptKeys"
+            :root-id="currentOrgId"
+            :show-global-node="isAdmin"
+            @loaded="onDeptLoaded"
+            @select="onSelectDept"
+          />
         </a-card>
       </template>
 
@@ -48,12 +54,29 @@
               </template>
 
               <template v-else-if="column.key === 'action'">
-                <a-space divider type="vertical">
-                  <a @click="handleEdit(record as RoleDto)">编辑</a>
-                  <a @click="handlePermission(record as RoleDto)">分配权限</a>
+                <a-space>
+                  <a-tooltip title="编辑">
+                    <a-button type="text" size="small" @click="handleEdit(record as RoleDto)">
+                      <template #icon><EditOutlined /></template>
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="分配权限">
+                    <a-button type="text" size="small" @click="handlePermission(record as RoleDto)">
+                      <template #icon><SafetyCertificateOutlined /></template>
+                    </a-button>
+                  </a-tooltip>
+                  <a-tooltip title="成员管理">
+                    <a-button type="text" size="small" @click="handleMembers(record as RoleDto)">
+                      <template #icon><TeamOutlined /></template>
+                    </a-button>
+                  </a-tooltip>
                   <a-popconfirm title="确定要删除该角色吗？此操作不可恢复" ok-text="删除" cancel-text="取消" ok-type="danger"
                     @confirm="handleDelete(record as RoleDto)" v-if="!record.isSystem">
-                    <a class="text-danger">删除</a>
+                    <a-tooltip title="删除">
+                      <a-button type="text" danger size="small">
+                        <template #icon><DeleteOutlined /></template>
+                      </a-button>
+                    </a-tooltip>
                   </a-popconfirm>
                 </a-space>
               </template>
@@ -98,6 +121,16 @@
         </div>
       </a-spin>
     </a-modal>
+
+    <!-- 成员管理选择器 -->
+    <UserSelector
+      ref="userSelectorRef"
+      v-model:value="selectedUsernames"
+      :initial-display-data="initialMemberUsers"
+      :show-trigger="false"
+      :multiple="true"
+      @change="onUserSelectionChange"
+    />
   </div>
 </template>
 
@@ -106,17 +139,21 @@ import { ref, reactive, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { TreeProps } from 'ant-design-vue/es/tree';
-import { PlusOutlined, ApartmentOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, ApartmentOutlined, EditOutlined, SafetyCertificateOutlined, DeleteOutlined, TeamOutlined } from '@ant-design/icons-vue';
 import {
   getRoleList, createRole, updateRole, deleteRole,
   getAllPermissions, getRolePermissionIds, assignRolePermissions,
+  getRoleUsers, assignRoleUsers,
   type RoleDto, type PermissionTreeDto
 } from '@/api/role';
 import { type Dept } from '@/api/dept';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
+import UserSelector from '@/components/UserSelector.vue';
 import dayjs from 'dayjs';
 import { useUserStore } from '@/stores/user';
+
+const GLOBAL_NODE_ID = -1;
 
 const loading = ref(false);
 const roles = ref<RoleDto[]>([]);
@@ -181,12 +218,18 @@ const getRootDeptName = (deptId?: number) => {
   return root ? root.name : '-';
 };
 
-const loadData = async (deptIdParam?: number) => {
+const loadData = async (deptIdParam?: number, globalOnlyOverride?: boolean) => {
   loading.value = true;
   try {
-    const deptId = deptIdParam !== undefined ? deptIdParam : (selectedDeptKeys.value.length > 0 ? selectedDeptKeys.value[0] : undefined);
-    const rolesRes = await getRoleList(deptId);
-    roles.value = rolesRes;
+    const currentSelected = selectedDeptKeys.value.length > 0 ? selectedDeptKeys.value[0] : undefined;
+    const isGlobal = globalOnlyOverride !== undefined
+      ? globalOnlyOverride
+      : currentSelected === GLOBAL_NODE_ID || deptIdParam === GLOBAL_NODE_ID;
+    const effectiveDeptId = isGlobal
+      ? undefined
+      : (deptIdParam !== undefined ? deptIdParam : currentSelected);
+    const rolesRes = await getRoleList(effectiveDeptId);
+    roles.value = isGlobal ? rolesRes.filter(r => !r.deptId) : rolesRes;
   } catch (error) {
     console.error(error);
   } finally {
@@ -236,11 +279,21 @@ const onSelectDept = (keys: number[]) => {
          }, 0);
       }
   }
+  if (keys.length > 0) {
+    const id = keys[0];
+    if (id === GLOBAL_NODE_ID) {
+      selectedDeptKeys.value = [GLOBAL_NODE_ID];
+      loadData(undefined, true);
+      return;
+    }
+  }
 };
 
 watch(selectedDeptKeys, (val) => {
     if (val && val.length > 0) {
-        loadData(val[0]);
+        const id = val[0];
+        if (id === GLOBAL_NODE_ID) return;
+        loadData(id);
     }
 });
 
@@ -278,7 +331,8 @@ const handleAdd = () => {
   formState.description = '';
   // 如果左侧选中了部门，则自动填充
   if (selectedDeptKeys.value.length > 0) {
-    formState.deptId = selectedDeptKeys.value[0];
+    const id = selectedDeptKeys.value[0];
+    formState.deptId = id === GLOBAL_NODE_ID ? undefined : id;
   } else {
     formState.deptId = undefined;
   }
@@ -406,7 +460,45 @@ const handlePermOk = async () => {
   }
 };
 
+// 成员管理
+const userSelectorRef = ref();
+const selectedUsernames = ref<string[]>([]);
+const initialMemberUsers = ref<any[]>([]);
 
+const handleMembers = async (record: RoleDto) => {
+  currentRoleId.value = record.id;
+  try {
+    const res = await getRoleUsers(record.id);
+    if (res && Array.isArray(res)) {
+      initialMemberUsers.value = res.map(u => ({
+        id: u.id,
+        username: u.username,
+        name: u.nickname || u.username,
+        organization: u.dept?.name || '',
+        deptId: u.dept?.id
+      }));
+      selectedUsernames.value = res.map(u => u.username);
+    }
+    userSelectorRef.value.open();
+  } catch (error) {
+    console.error(error);
+    message.error('获取角色成员失败');
+  }
+};
+
+const onUserSelectionChange = async (users: any[]) => {
+  if (!currentRoleId.value) return;
+  const hide = message.loading('正在保存成员...', 0);
+  try {
+    const userIds = users.map(u => u.id);
+    await assignRoleUsers(currentRoleId.value, userIds);
+    message.success('成员分配成功');
+  } catch (error) {
+    console.error(error);
+  } finally {
+    hide();
+  }
+};
 </script>
 
 <style scoped lang="scss">

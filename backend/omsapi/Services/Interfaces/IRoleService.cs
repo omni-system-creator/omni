@@ -13,5 +13,9 @@ namespace omsapi.Services.Interfaces
         Task<(bool Success, string Message, List<PermissionTreeDto>? Data)> GetAllPermissionsAsync();
         Task<(bool Success, string Message, List<long>? Data)> GetRolePermissionIdsAsync(long roleId);
         Task<(bool Success, string Message)> AssignPermissionsAsync(long roleId, List<long> permissionIds);
+
+        Task<(bool Success, string Message, List<long>? Data)> GetRoleUserIdsAsync(long roleId);
+        Task<(bool Success, string Message, List<UserListDto>? Data)> GetRoleUsersAsync(long roleId);
+        Task<(bool Success, string Message)> AssignRoleUsersAsync(long roleId, List<long> userIds);
     }
 }

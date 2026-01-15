@@ -81,6 +81,7 @@ namespace omsapi.Models.Dtos.Sales
     public class SalesRegistrationDto
     {
         public string Id { get; set; } = string.Empty;
+        public long? OrgId { get; set; }
         public string ProjectName { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string Contact { get; set; } = string.Empty;

@@ -9,6 +9,9 @@
           <DeptTree
             v-model:selectedKeys="selectedDeptKeys"
             :root-id="currentOrgId"
+            :show-global-node="userStore.isAdmin"
+            :global-node-id="GLOBAL_DEPT_ID"
+            global-node-label="全局用户"
             @loaded="onDeptLoaded"
             @select="handleSelect"
           />
@@ -131,7 +134,13 @@
         <a-row :gutter="16" v-if="!currentId">
           <a-col :span="12">
             <a-form-item label="初始密码" name="password">
-              <a-input-password v-model:value="formState.password" placeholder="请输入密码" />
+              <a-input-password v-model:value="formState.password" placeholder="请输入密码">
+                <template #addonAfter>
+                  <a-tooltip title="生成随机密码">
+                    <ThunderboltOutlined @click="handleGenerateInitPassword" style="cursor: pointer" />
+                  </a-tooltip>
+                </template>
+              </a-input-password>
             </a-form-item>
           </a-col>
         </a-row>
@@ -141,7 +150,7 @@
             <a-form-item label="所属部门" name="deptId">
               <a-tree-select
                 v-model:value="formState.deptId"
-                :tree-data="(deptTreeData as TreeSelectProps['treeData'])"
+                :tree-data="(deptTreeOptions as TreeSelectProps['treeData'])"
                 :field-names="{ label: 'name', value: 'id', children: 'children' }"
                 placeholder="请选择部门"
                 allow-clear
@@ -258,10 +267,19 @@ const searchText = ref('');
 const roleOptions = ref<RoleDto[]>([]);
 const postOptions = ref<Post[]>([]);
 const deptTreeData = ref<Dept[]>([]);
+const deptTreeOptions = computed(() => {
+  if (userStore.isAdmin) {
+    const globalNode: any = { id: GLOBAL_DEPT_ID, name: '全局用户', children: [] };
+    return [globalNode, ...deptTreeData.value];
+  }
+  return deptTreeData.value;
+});
 const selectedDeptKeys = ref<number[]>([]);
 
 const userStore = useUserStore();
 const currentOrgId = computed(() => userStore.currentOrg?.id);
+
+const GLOBAL_DEPT_ID = -1;
 
 // 监听组织切换，清空选中部门
 watch(currentOrgId, (newVal) => {
@@ -301,7 +319,9 @@ const filteredUsers = computed(() => {
   // 1. Dept Filter
   if (selectedDeptKeys.value.length > 0) {
       const deptId = selectedDeptKeys.value[0];
-      if (typeof deptId === 'number') {
+      if (deptId === GLOBAL_DEPT_ID) {
+          result = result.filter(u => !u.dept && (!u.posts || u.posts.length === 0));
+      } else if (typeof deptId === 'number') {
         // Need to find all sub-dept IDs if we want recursive filter?
         // For simplicity, just filter exact match or check if backend returns dept hierarchy path
         // Here we do simple exact match first, or recursive if we had helper
@@ -485,10 +505,12 @@ const handleModalOk = async () => {
     await formRef.value.validate();
     confirmLoading.value = true;
     
+    const normalizedDeptId = formState.deptId === GLOBAL_DEPT_ID ? undefined : formState.deptId;
+
     if (currentId.value) {
       // Update
       const postRelations = formState.postRelations
-        .filter(p => p.deptId && p.postId)
+        .filter(p => p.deptId && p.postId && p.deptId !== GLOBAL_DEPT_ID)
         .map(p => ({ deptId: p.deptId as number, postId: p.postId as number }));
 
       await updateUser(currentId.value, {
@@ -497,14 +519,14 @@ const handleModalOk = async () => {
         phone: formState.phone,
         isActive: formState.isActive,
         roleIds: formState.roleIds,
-        deptId: formState.deptId,
+        deptId: normalizedDeptId,
         postRelations: postRelations
       });
       message.success('更新成功');
     } else {
       // Create
       const postRelations = formState.postRelations
-        .filter(p => p.deptId && p.postId)
+        .filter(p => p.deptId && p.postId && p.deptId !== GLOBAL_DEPT_ID)
         .map(p => ({ deptId: p.deptId as number, postId: p.postId as number }));
 
       await createUser({
@@ -512,7 +534,7 @@ const handleModalOk = async () => {
         password: formState.password,
         nickname: formState.nickname,
         roleIds: formState.roleIds,
-        deptId: formState.deptId,
+        deptId: normalizedDeptId,
         postRelations: postRelations
       });
       message.success('创建成功');
@@ -568,6 +590,11 @@ const resetPwdRules: Record<string, Rule[]> = {
   confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }]
 };
 
+const handleGenerateInitPassword = () => {
+  const pwd = generatePassword(8);
+  formState.password = pwd;
+};
+
 const handleGeneratePassword = () => {
   const pwd = generatePassword();
   resetPwdState.newPassword = pwd;
@@ -602,7 +629,11 @@ const onDeptLoaded = (data: Dept[]) => {
   if (selectedDeptKeys.value.length > 0) {
      const id = selectedDeptKeys.value[0];
      if (id !== undefined) {
-        isValidSelection = !!findNodeById(data, id);
+        if (id === GLOBAL_DEPT_ID) {
+            isValidSelection = true;
+        } else {
+            isValidSelection = !!findNodeById(data, id);
+        }
      }
   }
 

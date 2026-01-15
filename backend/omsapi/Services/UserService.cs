@@ -15,12 +15,34 @@ namespace omsapi.Services
         private readonly OmsContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<UserService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UserService(OmsContext context, IWebHostEnvironment environment, ILogger<UserService> logger)
+        public UserService(OmsContext context, IWebHostEnvironment environment, ILogger<UserService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _environment = environment;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private long? GetCurrentUserId()
+        {
+            var userIdStr = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
+            if (long.TryParse(userIdStr, out var userId))
+            {
+                return userId;
+            }
+            return null;
+        }
+
+        private async Task<long?> GetDeptRootIdAsync(long deptId)
+        {
+            var current = await _context.Depts.FindAsync(deptId);
+            while (current != null && current.ParentId != null && current.ParentId != 0)
+            {
+                current = await _context.Depts.FindAsync(current.ParentId);
+            }
+            return current?.Id;
         }
 
         public async Task<(bool Success, string Message, string? AvatarUrl)> UploadAvatarAsync(long userId, IFormFile file)
@@ -343,7 +365,57 @@ namespace omsapi.Services
             return result;
         }
 
-        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync(long userId, long? deptId = null, string? keyword = null)
+        private async Task<HashSet<long>> GetManagedDeptIdsAsync(long userId)
+        {
+            var managed = new HashSet<long>();
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return managed;
+
+            if (!string.IsNullOrWhiteSpace(user.Username))
+            {
+                var leaderDeptIds = await _context.Depts
+                    .Where(d => d.Leader == user.Username)
+                    .Select(d => d.Id)
+                    .ToListAsync();
+
+                foreach (var deptId in leaderDeptIds)
+                {
+                    var descendants = await GetDescendantDeptIdsAsync(deptId);
+                    foreach (var id in descendants)
+                    {
+                        managed.Add(id);
+                    }
+                }
+            }
+
+            if (managed.Count == 0 && user.DeptId.HasValue)
+            {
+                var rootId = await GetUserRootDeptIdAsync(userId);
+                if (rootId.HasValue)
+                {
+                    var descendants = await GetDescendantDeptIdsAsync(rootId.Value);
+                    foreach (var id in descendants)
+                    {
+                        managed.Add(id);
+                    }
+                }
+            }
+
+            return managed;
+        }
+
+        private async Task<bool> ContainsSuperAdminRoleAsync(IEnumerable<long> roleIds)
+        {
+            var list = roleIds?.ToList() ?? new List<long>();
+            if (list.Count == 0) return false;
+
+            return await _context.Roles
+                .Where(r => list.Contains(r.Id))
+                .AnyAsync(r => r.Code == "SuperAdmin");
+        }
+
+        public async Task<(bool Success, string Message, List<UserListDto>? Data)> GetAllUsersAsync(long userId, long? deptId = null, string? keyword = null, bool? noDept = null)
         {
             var isAdmin = await IsAdminAsync(userId);
 
@@ -362,6 +434,11 @@ namespace omsapi.Services
                 query = query.Where(u => u.DeptId == deptId.Value || u.UserPosts.Any(up => up.DeptId == deptId.Value));
             }
 
+            if (noDept == true)
+            {
+                query = query.Where(u => u.DeptId == null && !u.UserPosts.Any());
+            }
+
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(u => u.Username.Contains(keyword) || (u.Nickname != null && u.Nickname.Contains(keyword)));
@@ -369,12 +446,11 @@ namespace omsapi.Services
 
             if (!isAdmin)
             {
-                var rootId = await GetUserRootDeptIdAsync(userId);
-                if (rootId == null)
+                var allowedDeptIds = await GetManagedDeptIdsAsync(userId);
+                if (allowedDeptIds.Count == 0)
                 {
                     return (true, "获取成功", new List<UserListDto>());
                 }
-                var allowedDeptIds = await GetDescendantDeptIdsAsync(rootId.Value);
                 query = query.Where(u => u.DeptId.HasValue && allowedDeptIds.Contains(u.DeptId.Value));
             }
 
@@ -470,9 +546,69 @@ namespace omsapi.Services
 
         public async Task<(bool Success, string Message)> CreateUserAsync(CreateUserDto dto)
         {
+            var currentUserId = GetCurrentUserId();
+            var targetIsSuperAdmin = dto.RoleIds != null && dto.RoleIds.Any()
+                ? await ContainsSuperAdminRoleAsync(dto.RoleIds)
+                : false;
+
+            if (targetIsSuperAdmin)
+            {
+                if (!currentUserId.HasValue || !await IsAdminAsync(currentUserId.Value))
+                {
+                    return (false, "只有超级管理员可以创建超级管理员用户");
+                }
+
+                if (dto.DeptId.HasValue)
+                {
+                    return (false, "超级管理员不能分配到任何部门");
+                }
+
+                if (dto.PostRelations != null && dto.PostRelations.Any())
+                {
+                    return (false, "超级管理员不能关联任何岗位或部门");
+                }
+            }
+
+            if (currentUserId.HasValue && !await IsAdminAsync(currentUserId.Value))
+            {
+                var allowedDepts = await GetManagedDeptIdsAsync(currentUserId.Value);
+                if (allowedDepts.Count == 0)
+                {
+                    return (false, "当前用户没有任何可管理的部门");
+                }
+
+                if (!dto.DeptId.HasValue)
+                {
+                    return (false, "必须指定用户部门");
+                }
+
+                if (!allowedDepts.Contains(dto.DeptId.Value))
+                {
+                    return (false, "无法在非管理范围内的部门创建用户");
+                }
+
+                if (dto.RoleIds != null && dto.RoleIds.Any())
+                {
+                    var invalidRoleCount = await _context.Roles
+                        .Where(r => dto.RoleIds.Contains(r.Id))
+                        .CountAsync(r => r.IsSystem || !r.DeptId.HasValue || !allowedDepts.Contains(r.DeptId.Value));
+
+                    if (invalidRoleCount > 0)
+                    {
+                        return (false, "包含无法分配的角色（只能分配本组织下的非系统角色）");
+                    }
+                }
+            }
+
             if (await _context.Users.AnyAsync(u => u.Username == dto.Username))
             {
                 return (false, "用户名已存在");
+            }
+
+            long? userOrgId = null;
+            if (dto.DeptId.HasValue)
+            {
+                userOrgId = await GetDeptRootIdAsync(dto.DeptId.Value);
             }
 
             var user = new omsapi.Models.Entities.SystemUser
@@ -481,6 +617,7 @@ namespace omsapi.Services
                 Password = ComputeSha256Hash(dto.Password),
                 Nickname = dto.Nickname,
                 DeptId = dto.DeptId,
+                CurrentOrgId = userOrgId,
                 CreatedAt = DateTime.Now,
                 IsActive = true
             };
@@ -540,16 +677,82 @@ namespace omsapi.Services
                 return (false, "用户不存在");
             }
 
-            if (user.Username == "admin" && dto.IsActive == false)
+            // Scope Check
+            var currentUserId = GetCurrentUserId();
+
+            // 1. Self-Disable Check (Global)
+            if (currentUserId.HasValue && user.Id == currentUserId.Value && dto.IsActive == false)
             {
-                return (false, "不能禁用超级管理员");
+                return (false, "不能禁用自己");
+            }
+
+            var targetRoleIds = dto.RoleIds != null
+                ? dto.RoleIds
+                : await _context.UserRoles
+                    .Where(ur => ur.UserId == id)
+                    .Select(ur => ur.RoleId)
+                    .ToListAsync();
+            var targetIsSuperAdmin = await ContainsSuperAdminRoleAsync(targetRoleIds);
+
+            if (targetIsSuperAdmin)
+            {
+                if (dto.DeptId.HasValue)
+                {
+                    return (false, "超级管理员不能分配到任何部门");
+                }
+
+                if (dto.PostRelations != null && dto.PostRelations.Any())
+                {
+                    return (false, "超级管理员不能关联任何岗位或部门");
+                }
+            }
+
+            if (currentUserId.HasValue && !await IsAdminAsync(currentUserId.Value))
+            {
+                // Prevent modifying Super Admin
+                if (await IsAdminAsync(user.Id))
+                {
+                    return (false, "无权修改超级管理员");
+                }
+
+                var allowedDepts = await GetManagedDeptIdsAsync(currentUserId.Value);
+                if (allowedDepts.Count == 0)
+                {
+                    return (false, "当前用户没有任何可管理的部门");
+                }
+
+                if (!user.DeptId.HasValue || !allowedDepts.Contains(user.DeptId.Value))
+                {
+                    return (false, "无权修改非管理范围内的用户");
+                }
+
+                if (dto.DeptId.HasValue && !allowedDepts.Contains(dto.DeptId.Value))
+                {
+                    return (false, "无法将用户分配到非管理范围内的部门");
+                }
+
+                if (dto.RoleIds != null && dto.RoleIds.Any())
+                {
+                    var invalidRoleCount = await _context.Roles
+                        .Where(r => dto.RoleIds.Contains(r.Id))
+                        .CountAsync(r => r.IsSystem || !r.DeptId.HasValue || !allowedDepts.Contains(r.DeptId.Value));
+
+                    if (invalidRoleCount > 0)
+                    {
+                        return (false, "包含无法分配的角色（只能分配本组织下的非系统角色）");
+                    }
+                }
             }
 
             if (dto.Nickname != null) user.Nickname = dto.Nickname;
             if (dto.Email != null) user.Email = dto.Email;
             if (dto.Phone != null) user.Phone = dto.Phone;
             if (dto.IsActive.HasValue) user.IsActive = dto.IsActive.Value;
-            if (dto.DeptId.HasValue) user.DeptId = dto.DeptId.Value;
+            if (dto.DeptId.HasValue)
+            {
+                user.DeptId = dto.DeptId.Value;
+                user.CurrentOrgId = await GetDeptRootIdAsync(dto.DeptId.Value);
+            }
 
             var strategy = _context.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(async () =>
@@ -613,9 +816,34 @@ namespace omsapi.Services
                 return (false, "用户不存在");
             }
 
+            var currentUserId = GetCurrentUserId();
+            if (currentUserId.HasValue && currentUserId.Value == id)
+            {
+                return (false, "不能删除自己");
+            }
+
             if (user.Username == "admin")
             {
                 return (false, "不能删除超级管理员");
+            }
+
+            if (currentUserId.HasValue && !await IsAdminAsync(currentUserId.Value))
+            {
+                 if (await IsAdminAsync(user.Id))
+                 {
+                     return (false, "无权删除超级管理员");
+                 }
+
+                 var allowedDepts = await GetManagedDeptIdsAsync(currentUserId.Value);
+                 if (allowedDepts.Count == 0)
+                 {
+                     return (false, "当前用户没有任何可管理的部门");
+                 }
+
+                 if (!user.DeptId.HasValue || !allowedDepts.Contains(user.DeptId.Value))
+                 {
+                     return (false, "无权删除非管理范围内的用户");
+                 }
             }
 
             // 软删除或硬删除，这里演示硬删除，实际项目建议软删除 (IsDeleted)
