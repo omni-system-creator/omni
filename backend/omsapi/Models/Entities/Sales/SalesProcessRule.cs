@@ -16,7 +16,10 @@ namespace omsapi.Models.Entities.Sales
         public string Title { get; set; } = string.Empty;
 
         [Column("content")]
-        public string Content { get; set; } = string.Empty; // TEXT
+        public string Content { get; set; } = string.Empty;
+
+        [Column("org_id")]
+        public long OrgId { get; set; }
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;

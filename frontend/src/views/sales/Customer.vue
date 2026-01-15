@@ -23,9 +23,9 @@
       </div>
     </div>
 
-    <a-table 
-      :columns="columns" 
-      :data-source="customerList" 
+    <a-table
+      :columns="columns"
+      :data-source="customerList"
       :pagination="pagination"
       :loading="loading"
       @change="handleTableChange"
@@ -39,6 +39,9 @@
           <a-tag :color="getStatusColor(record.status)">
             {{ getStatusText(record.status) }}
           </a-tag>
+        </template>
+        <template v-else-if="column.key === 'owner'">
+          {{ getOwnerDisplay(record.owner) }}
         </template>
         <template v-else-if="column.key === 'action'">
           <a-space>
@@ -90,7 +93,12 @@
           </a-select>
         </a-form-item>
         <a-form-item label="负责人">
-          <a-input v-model:value="formData.owner" />
+          <UserSelector
+            v-model:value="formData.owner"
+            :initial-display-data="selectedOwnerInfo"
+            placeholder="请选择负责人"
+            @change="onOwnerChange"
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -105,6 +113,11 @@ import { getCustomers, deleteCustomer, createCustomer, updateCustomer, generateC
 import { getDictDataByCode } from '@/api/dict';
 import type { DictDataDto } from '@/api/dict';
 import { useDraggableModal } from '@/hooks/useDraggableModal';
+import UserSelector from '@/components/UserSelector.vue';
+import { getUserList, type UserListDto } from '@/api/user';
+import { useUserStore } from '@/stores/user';
+
+const userStore = useUserStore();
 
 const searchText = ref('');
 const filterStatus = ref('all');
@@ -203,27 +216,54 @@ const formData = reactive<CreateCustomerDto>({
 });
 let currentId = '';
 
+const selectedOwnerInfo = ref<
+  {
+    username: string;
+    name: string;
+    organization: string;
+    deptId?: number;
+  }[]
+>([]);
+
+const onOwnerChange = (user: {
+  username: string;
+  name: string;
+  organization: string;
+  deptId?: number;
+} | null) => {
+  if (user) {
+    selectedOwnerInfo.value = [user];
+    formData.owner = user.username;
+  } else {
+    selectedOwnerInfo.value = [];
+    formData.owner = '';
+  }
+};
+
 const handleAdd = () => {
   modalTitle.value = '新增客户';
   currentId = '';
-  
-  // Find default status from dict
-  const defaultStatus = statusDictOptions.value.find(item => item.isDefault)?.value || 
-                        (statusDictOptions.value.length > 0 ? statusDictOptions.value[0]?.value : 'active');
 
-  // Find default level from dict
-  const defaultLevel = levelDictOptions.value.find(item => item.isDefault)?.value || 
-                        (levelDictOptions.value.length > 0 ? levelDictOptions.value[0]?.value : 'B');
+  const defaultStatus =
+    statusDictOptions.value.find(item => (item as any).isDefault)?.value ||
+    (statusDictOptions.value.length > 0 ? statusDictOptions.value[0]?.value : 'active');
 
-  Object.assign(formData, { 
-    name: '', 
-    industry: '', 
-    contact: '', 
-    phone: '', 
-    level: defaultLevel, 
-    status: defaultStatus, 
-    owner: '' 
+  const defaultLevel =
+    levelDictOptions.value.find(item => (item as any).isDefault)?.value ||
+    (levelDictOptions.value.length > 0 ? levelDictOptions.value[0]?.value : 'B');
+
+  Object.assign(formData, {
+    name: '',
+    industry: '',
+    contact: '',
+    phone: '',
+    level: defaultLevel,
+    status: defaultStatus,
+    owner: ''
   });
+
+  selectedOwnerInfo.value = [];
+
   modalVisible.value = true;
 };
 
@@ -248,6 +288,7 @@ const handleAiGenerate = async () => {
 const handleEdit = (record: CustomerDto) => {
   modalTitle.value = '编辑客户';
   currentId = record.id;
+
   Object.assign(formData, {
     name: record.name,
     industry: record.industry,
@@ -257,6 +298,37 @@ const handleEdit = (record: CustomerDto) => {
     status: record.status,
     owner: record.owner
   });
+
+  selectedOwnerInfo.value = [];
+
+  if (record.owner) {
+    getUserList({ keyword: record.owner })
+      .then((users: UserListDto[]) => {
+        const user = users.find(u => u.username === record.owner);
+        if (user) {
+          selectedOwnerInfo.value = [
+            {
+              username: user.username,
+              name: user.nickname || user.username,
+              organization: user.dept?.name || '',
+              deptId: user.dept?.id
+            }
+          ];
+        } else {
+          selectedOwnerInfo.value = [
+            {
+              username: record.owner,
+              name: record.owner,
+              organization: ''
+            }
+          ];
+        }
+      })
+      .catch(() => {
+        selectedOwnerInfo.value = [];
+      });
+  }
+
   modalVisible.value = true;
 };
 
@@ -309,6 +381,36 @@ const loadLevelDict = async () => {
   } catch (error) {
     console.error('加载客户等级字典失败:', error);
   }
+};
+
+const ownerDisplayCache = ref<Record<string, string>>({});
+
+const getOwnerDisplay = (owner: string) => {
+  if (!owner) return '';
+  const cached = ownerDisplayCache.value[owner];
+  if (cached) return cached;
+
+  getUserList({ keyword: owner })
+    .then((users: UserListDto[]) => {
+      const user = users.find(u => u.username === owner);
+      if (!user) {
+        ownerDisplayCache.value[owner] = owner;
+        return;
+      }
+      const name = user.nickname || user.username;
+      let display = name;
+      const currentOrgName = userStore.currentOrg?.name;
+
+      if (user.dept?.name && currentOrgName && user.dept.name !== currentOrgName) {
+        display = `${name} (${user.dept.name})`;
+      }
+      ownerDisplayCache.value[owner] = display;
+    })
+    .catch(() => {
+      ownerDisplayCache.value[owner] = owner;
+    });
+
+  return owner;
 };
 </script>
 

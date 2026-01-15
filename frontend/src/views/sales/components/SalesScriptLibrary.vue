@@ -298,6 +298,16 @@ onMounted(() => {
   fetchModels();
 });
 
+// 监听组织切换，重新加载数据
+watch(
+  () => userStore.currentOrg?.id,
+  (newOrgId) => {
+    if (newOrgId) {
+      loadData();
+    }
+  }
+);
+
 // 监听 scripts 变化，自动选中第一个
 watch(
   () => scripts.value,

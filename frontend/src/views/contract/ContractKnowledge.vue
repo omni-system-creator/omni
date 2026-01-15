@@ -1,118 +1,122 @@
 <template>
   <div class="knowledge-container">
-    <!-- 左侧目录树 -->
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <span class="title">合同知识库</span>
-        <a-button type="link" size="small" @click="showCategoryModal('add', null)">
-          <template #icon><PlusOutlined /></template>
-        </a-button>
-      </div>
-      
-      <div class="tree-container">
-        <a-input-search
-          v-model:value="searchValue"
-          placeholder="搜索文件夹"
-          style="margin-bottom: 8px"
-        />
-        <a-tree
-          v-if="treeData && treeData.length > 0"
-          :tree-data="treeData as any"
-          :field-names="{ children: 'children', title: 'name', key: 'id' }"
-          :default-expanded-keys="expandedKeys"
-          :selected-keys="selectedKeys"
-          @select="onSelect"
-          block-node
-          show-icon
-        >
-          <template #icon="{ expanded }">
-             <FolderOpenOutlined v-if="expanded" />
-             <FolderOutlined v-else />
-          </template>
-          <template #title="{ dataRef }">
-            <div class="tree-node">
-              <span class="node-title">{{ dataRef.name }}</span>
-              <span class="node-actions" @click.stop>
-                <EditOutlined class="action-icon" @click="showCategoryModal('edit', dataRef)" />
-                <DeleteOutlined class="action-icon" @click="handleDeleteCategory(dataRef.id)" />
-                <PlusOutlined class="action-icon" @click="showCategoryModal('add', dataRef.id)" />
-              </span>
+    <SplitLayout>
+      <template #left>
+        <div class="sidebar">
+          <div class="sidebar-header">
+            <span class="title">合同知识库</span>
+            <a-button type="link" size="small" @click="showCategoryModal('add', null)">
+              <template #icon><PlusOutlined /></template>
+            </a-button>
+          </div>
+          
+          <div class="tree-container">
+            <a-input-search
+              v-model:value="searchValue"
+              placeholder="搜索文件夹"
+              style="margin-bottom: 8px"
+            />
+            <a-tree
+              v-if="treeData && treeData.length > 0"
+              :tree-data="treeData as any"
+              :field-names="{ children: 'children', title: 'name', key: 'id' }"
+              :default-expanded-keys="expandedKeys"
+              :selected-keys="selectedKeys"
+              @select="onSelect"
+              block-node
+              show-icon
+            >
+              <template #icon="{ expanded }">
+                <FolderOpenOutlined v-if="expanded" />
+                <FolderOutlined v-else />
+              </template>
+              <template #title="{ dataRef }">
+                <div class="tree-node">
+                  <span class="node-title">{{ dataRef.name }}</span>
+                  <span class="node-actions" @click.stop>
+                    <EditOutlined class="action-icon" @click="showCategoryModal('edit', dataRef)" />
+                    <DeleteOutlined class="action-icon" @click="handleDeleteCategory(dataRef.id)" />
+                    <PlusOutlined class="action-icon" @click="showCategoryModal('add', dataRef.id)" />
+                  </span>
+                </div>
+              </template>
+            </a-tree>
+          </div>
+        </div>
+      </template>
+
+      <template #right>
+        <div class="main-content">
+          <div class="content-header">
+            <div class="breadcrumb-area">
+              <a-breadcrumb>
+                <a-breadcrumb-item>合同知识库</a-breadcrumb-item>
+                <a-breadcrumb-item v-for="(item, index) in breadcrumbList" :key="index">
+                  {{ item }}
+                </a-breadcrumb-item>
+              </a-breadcrumb>
             </div>
-          </template>
-        </a-tree>
-      </div>
-    </div>
+            <div class="action-area">
+              <a-input-search
+                v-model:value="fileSearchValue"
+                placeholder="搜索文档"
+                style="width: 250px; margin-right: 16px"
+                @search="onFileSearch"
+              />
+              <a-button type="primary" @click="showUploadModal">
+                <template #icon><UploadOutlined /></template>
+                上传文档
+              </a-button>
+            </div>
+          </div>
 
-    <!-- 右侧内容区 -->
-    <div class="main-content">
-      <div class="content-header">
-        <div class="breadcrumb-area">
-          <a-breadcrumb>
-            <a-breadcrumb-item>合同知识库</a-breadcrumb-item>
-            <a-breadcrumb-item v-for="(item, index) in breadcrumbList" :key="index">
-              {{ item }}
-            </a-breadcrumb-item>
-          </a-breadcrumb>
+          <div class="file-list-container">
+            <a-table
+              :columns="columns"
+              :data-source="fileList"
+              :pagination="pagination"
+              row-key="id"
+            >
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'name'">
+                  <div class="file-name-cell">
+                    <FilePdfOutlined v-if="record.type === 'pdf'" style="color: #ff4d4f; margin-right: 8px" />
+                    <FileWordOutlined v-else-if="record.type === 'doc' || record.type === 'docx'" style="color: #1890ff; margin-right: 8px" />
+                    <FileExcelOutlined v-else-if="record.type === 'xls' || record.type === 'xlsx'" style="color: #52c41a; margin-right: 8px" />
+                    <FileTextOutlined v-else style="color: #faad14; margin-right: 8px" />
+                    <span>{{ record.name }}</span>
+                  </div>
+                </template>
+                <template v-else-if="column.key === 'action'">
+                  <a-space>
+                    <a-tooltip title="预览">
+                      <a-button type="text" size="small" @click="viewFile(record)">
+                        <template #icon><EyeOutlined /></template>
+                      </a-button>
+                    </a-tooltip>
+                    <a-tooltip title="下载">
+                      <a-button type="text" size="small" @click="downloadFile(record)">
+                        <template #icon><DownloadOutlined /></template>
+                      </a-button>
+                    </a-tooltip>
+                    <a-tooltip title="重命名">
+                      <a-button type="text" size="small" @click="showRenameModal(record)">
+                        <template #icon><EditOutlined /></template>
+                      </a-button>
+                    </a-tooltip>
+                    <a-tooltip title="删除">
+                      <a-button type="text" danger size="small" @click="deleteFile(record)">
+                        <template #icon><DeleteOutlined /></template>
+                      </a-button>
+                    </a-tooltip>
+                  </a-space>
+                </template>
+              </template>
+            </a-table>
+          </div>
         </div>
-        <div class="action-area">
-          <a-input-search
-            v-model:value="fileSearchValue"
-            placeholder="搜索文档"
-            style="width: 250px; margin-right: 16px"
-            @search="onFileSearch"
-          />
-          <a-button type="primary" @click="showUploadModal">
-            <template #icon><UploadOutlined /></template>
-            上传文档
-          </a-button>
-        </div>
-      </div>
-
-      <div class="file-list-container">
-        <a-table
-          :columns="columns"
-          :data-source="fileList"
-          :pagination="pagination"
-          row-key="id"
-        >
-          <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'name'">
-              <div class="file-name-cell">
-                <FilePdfOutlined v-if="record.type === 'pdf'" style="color: #ff4d4f; margin-right: 8px" />
-                <FileWordOutlined v-else-if="record.type === 'doc' || record.type === 'docx'" style="color: #1890ff; margin-right: 8px" />
-                <FileExcelOutlined v-else-if="record.type === 'xls' || record.type === 'xlsx'" style="color: #52c41a; margin-right: 8px" />
-                <FileTextOutlined v-else style="color: #faad14; margin-right: 8px" />
-                <span>{{ record.name }}</span>
-              </div>
-            </template>
-            <template v-else-if="column.key === 'action'">
-              <a-space>
-                <a-tooltip title="预览">
-                  <a-button type="text" size="small" @click="viewFile(record)">
-                    <template #icon><EyeOutlined /></template>
-                  </a-button>
-                </a-tooltip>
-                <a-tooltip title="下载">
-                  <a-button type="text" size="small" @click="downloadFile(record)">
-                    <template #icon><DownloadOutlined /></template>
-                  </a-button>
-                </a-tooltip>
-                <a-tooltip title="重命名">
-                  <a-button type="text" size="small" @click="showRenameModal(record)">
-                    <template #icon><EditOutlined /></template>
-                  </a-button>
-                </a-tooltip>
-                <a-tooltip title="删除">
-                  <a-button type="text" danger size="small" @click="deleteFile(record)">
-                    <template #icon><DeleteOutlined /></template>
-                  </a-button>
-                </a-tooltip>
-              </a-space>
-            </template>
-          </template>
-        </a-table>
-      </div>
-    </div>
+      </template>
+    </SplitLayout>
 
     <!-- 上传模态框 -->
     <a-modal
@@ -218,6 +222,7 @@ import type {
   ContractKnowledgeCategoryDto, 
   ContractKnowledgeFileDto
 } from '@/api/contract';
+import SplitLayout from '@/components/SplitLayout/index.vue';
 
 // Rename File Modal
 const renameModalVisible = ref(false);
@@ -673,25 +678,22 @@ const handleUpload = async () => {
 
 <style scoped>
 .knowledge-container {
-  display: flex;
+  padding: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   height: 100%;
-  width: 100%;
-  background-color: #f0f2f5;
-  gap: 16px;
-  overflow: hidden; /* 防止整体滚动 */
-  padding: 16px;
-  box-sizing: border-box;
 }
 
 .sidebar {
-  width: 280px;
   background: #fff;
-  border-radius: 4px;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   padding: 16px;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  height: 100%;
 }
 
 .sidebar-header {
@@ -770,12 +772,13 @@ const handleUpload = async () => {
 .main-content {
   flex: 1;
   background: #fff;
-  border-radius: 4px;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
   padding: 24px;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
   overflow: hidden;
+  height: 100%;
 }
 
 .content-header {

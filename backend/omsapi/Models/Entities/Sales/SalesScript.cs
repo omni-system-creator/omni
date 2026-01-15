@@ -26,6 +26,9 @@ namespace omsapi.Models.Entities.Sales
         [MaxLength(500)]
         public string Description { get; set; } = string.Empty;
 
+        [Column("org_id")]
+        public long OrgId { get; set; }
+
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }

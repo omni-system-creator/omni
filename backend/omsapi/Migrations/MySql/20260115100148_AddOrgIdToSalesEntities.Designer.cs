@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using omsapi.Data;
 
 #nullable disable
 
-namespace omsapi.Migrations
+namespace omsapi.Migrations.MySql
 {
     [DbContext(typeof(OmsContext))]
-    partial class OmsContextModelSnapshot : ModelSnapshot
+    [Migration("20260115100148_AddOrgIdToSalesEntities")]
+    partial class AddOrgIdToSalesEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2289,10 +2292,6 @@ namespace omsapi.Migrations
                         .HasColumnType("varchar(200)")
                         .HasColumnName("name");
 
-                    b.Property<long>("OrgId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("org_id");
-
                     b.Property<string>("Owner")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -2496,7 +2495,8 @@ namespace omsapi.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<long>("OrgId")
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("org_id");
 
                     b.Property<string>("Owner")
                         .IsRequired()

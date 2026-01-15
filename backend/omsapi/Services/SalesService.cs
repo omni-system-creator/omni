@@ -41,7 +41,19 @@ namespace omsapi.Services
 
         public async Task<PagedResult<SalesCustomerDto>> GetCustomersAsync(CustomerSearchParams searchParams)
         {
-            var query = _context.SalesCustomers.AsQueryable();
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue)
+            {
+                return new PagedResult<SalesCustomerDto>
+                {
+                    Items = new List<SalesCustomerDto>(),
+                    Total = 0,
+                    Page = searchParams.Page,
+                    PageSize = searchParams.PageSize
+                };
+            }
+
+            var query = _context.SalesCustomers.Where(c => c.OrgId == orgId.Value);
 
             if (!string.IsNullOrEmpty(searchParams.SearchText))
             {
@@ -77,7 +89,11 @@ namespace omsapi.Services
 
         public async Task<SalesCustomerDto?> GetCustomerAsync(string id)
         {
-            var c = await _context.SalesCustomers.FindAsync(id);
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue) return null;
+
+            var c = await _context.SalesCustomers
+                .FirstOrDefaultAsync(x => x.Id == id && x.OrgId == orgId.Value);
             if (c == null) return null;
 
             return new SalesCustomerDto
@@ -97,8 +113,15 @@ namespace omsapi.Services
 
         public async Task<SalesCustomerDto?> CreateCustomerAsync(CreateCustomerDto dto)
         {
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue)
+            {
+                throw new Exception("当前用户未选择组织，无法创建客户");
+            }
+
             var entity = new SalesCustomer
             {
+                OrgId = orgId.Value,
                 Name = dto.Name,
                 Industry = dto.Industry,
                 Contact = dto.Contact,
@@ -117,7 +140,11 @@ namespace omsapi.Services
 
         public async Task<SalesCustomerDto?> UpdateCustomerAsync(string id, UpdateCustomerDto dto)
         {
-            var entity = await _context.SalesCustomers.FindAsync(id);
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue) return null;
+
+            var entity = await _context.SalesCustomers
+                .FirstOrDefaultAsync(x => x.Id == id && x.OrgId == orgId.Value);
             if (entity == null) return null;
 
             entity.Name = dto.Name;
@@ -135,7 +162,11 @@ namespace omsapi.Services
 
         public async Task<bool> DeleteCustomerAsync(string id)
         {
-            var c = await _context.SalesCustomers.FindAsync(id);
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue) return false;
+
+            var c = await _context.SalesCustomers
+                .FirstOrDefaultAsync(x => x.Id == id && x.OrgId == orgId.Value);
             if (c == null) return false;
 
             _context.SalesCustomers.Remove(c);
@@ -347,8 +378,11 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
 
         public async Task<List<SalesScriptDto>> GetSalesScriptsAsync()
         {
-            // Mock data for initial implementation if DB is empty, or fetch from DB
-            if (!await _context.SalesScripts.AnyAsync())
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue) return new List<SalesScriptDto>();
+
+            // Mock data for initial implementation if DB is empty for this org
+            if (!await _context.SalesScripts.AnyAsync(s => s.OrgId == orgId.Value))
             {
                 return new List<SalesScriptDto>
                 {
@@ -387,18 +421,26 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
                 };
             }
 
-            return await _context.SalesScripts.Select(s => new SalesScriptDto
-            {
-                Id = s.Id,
-                Title = s.Title,
-                Content = s.Content,
-                Category = s.Category,
-                Description = s.Description
-            }).ToListAsync();
+            return await _context.SalesScripts
+                .Where(s => s.OrgId == orgId.Value)
+                .Select(s => new SalesScriptDto
+                {
+                    Id = s.Id,
+                    Title = s.Title,
+                    Content = s.Content,
+                    Category = s.Category,
+                    Description = s.Description
+                }).ToListAsync();
         }
 
         public async Task<SalesScriptDto> CreateSalesScriptAsync(CreateSalesScriptDto dto)
         {
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue)
+            {
+                throw new Exception("当前用户未选择组织，无法创建话术");
+            }
+
             var script = new SalesScript
             {
                 Id = Guid.NewGuid().ToString("N"),
@@ -406,6 +448,7 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
                 Content = dto.Content,
                 Category = dto.Category ?? "General",
                 Description = dto.Description ?? "",
+                OrgId = orgId.Value,
                 CreatedAt = DateTime.Now
             };
 
@@ -694,8 +737,11 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
 
         public async Task<List<ProcessRuleDto>> GetProcessRulesAsync()
         {
+            var orgId = await GetCurrentOrgIdAsync();
+            if (!orgId.HasValue) return new List<ProcessRuleDto>();
+
              // Mock data or DB
-             if (!await _context.SalesProcessRules.AnyAsync())
+             if (!await _context.SalesProcessRules.AnyAsync(r => r.OrgId == orgId.Value))
             {
                 return new List<ProcessRuleDto>
                 {
@@ -704,7 +750,9 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
                 };
             }
 
-            return await _context.SalesProcessRules.Select(r => new ProcessRuleDto
+            return await _context.SalesProcessRules
+                .Where(r => r.OrgId == orgId.Value)
+                .Select(r => new ProcessRuleDto
             {
                 Id = r.Id,
                 Title = r.Title,
@@ -1104,7 +1152,7 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
             var entity = await _context.SalesRegistrations.FindAsync(id);
             if (entity == null) return null;
 
-            if (entity.OrgId.HasValue && entity.OrgId != orgId.Value)
+            if (entity.OrgId != orgId.Value)
             {
                 return null;
             }
@@ -1134,7 +1182,7 @@ Date: 预计成交日期（YYYY-MM-DD格式，未来3个月内）
             var entity = await _context.SalesRegistrations.FindAsync(id);
             if (entity == null) return false;
 
-            if (entity.OrgId.HasValue && entity.OrgId != orgId.Value)
+            if (entity.OrgId != orgId.Value)
             {
                 return false;
             }

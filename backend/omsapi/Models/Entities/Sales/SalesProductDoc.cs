@@ -33,5 +33,8 @@ namespace omsapi.Models.Entities.Sales
 
         [Column("upload_date")]
         public DateTime UploadDate { get; set; } = DateTime.Now;
+
+        [Column("org_id")]
+        public long OrgId { get; set; }
     }
 }

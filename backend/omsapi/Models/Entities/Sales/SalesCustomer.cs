@@ -10,6 +10,9 @@ namespace omsapi.Models.Entities.Sales
         [Column("id")]
         public string Id { get; set; } = Guid.NewGuid().ToString("N");
 
+        [Column("org_id")]
+        public long OrgId { get; set; }
+
         [Column("name")]
         [Required]
         [MaxLength(200)]
