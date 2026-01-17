@@ -64,7 +64,7 @@
                       <DynamicIcon icon="ant-design:vertical-left-outlined" /> 关闭右边
                     </a-menu-item>
                     <a-menu-item key="closeOthers" v-if="hasOtherClosable(element)" @click="closeOthersTags(element)">
-                      <DynamicIcon icon="ant-design:close-square-outlined" /> 关闭其他
+                      <DynamicIcon icon="ant-design:close-circle-outlined" /> 关闭其他
                     </a-menu-item>
                     <a-menu-item key="closeAll" v-if="hasAnyClosable()" @click="closeAllTags(element)">
                       <DynamicIcon icon="ant-design:minus-square-outlined" /> 全部关闭
