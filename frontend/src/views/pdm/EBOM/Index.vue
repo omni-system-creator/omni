@@ -381,7 +381,6 @@ import {
 import { getDictDataByCode, type DictDataDto } from '@/api/dict';
 import { useDraggableModal } from '@/hooks/useDraggableModal';
 
-const router = useRouter();
 const selectedKeys = ref<Key[]>([]);
 const expandedKeys = ref<Key[]>([]);
 const treeData = ref<EbomItemDto[]>([]);
