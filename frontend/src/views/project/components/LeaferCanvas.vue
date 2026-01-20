@@ -2344,25 +2344,37 @@ const drawChart = () => {
           ? (Math.atan2(endY - lastCP.y, endX - lastCP.x) * 180) / Math.PI
           : 0;
       } else {
-        if (endSide === "left") {
-          // Entering from left (pointing right) -> 0
-          angle = 0;
-        } else if (endSide === "right") {
-          // Entering from right (pointing left) -> 180
-          angle = 180;
-        } else if (endSide === "top") {
-          // Entering from top (pointing down) -> 90
-          angle = 90;
-        } else if (endSide === "bottom") {
-          // Entering from bottom (pointing up) -> -90 (or 270)
-          angle = -90;
+        // Orthogonal / Polyline - Calculate angle from last segment
+        const depObj = typeof dep === "object" ? dep : null;
+        const currentPoints = getPolylinePoints(
+          startX,
+          startY,
+          endX,
+          endY,
+          startSide,
+          endSide,
+          depObj?.controlPoints
+        );
+        
+        const fullPoints = [
+            { x: startX, y: startY },
+            ...currentPoints,
+            { x: endX, y: endY }
+        ];
+
+        if (fullPoints.length >= 2) {
+             const lastPt = fullPoints[fullPoints.length - 2];
+             const endPt = fullPoints[fullPoints.length - 1];
+             if (lastPt && endPt) {
+                 angle = (Math.atan2(endPt.y - lastPt.y, endPt.x - lastPt.x) * 180) / Math.PI;
+             }
         } else {
-          // Fallback logic if side not detected (e.g. legacy)
-          if (Math.abs(endX - startX) < 20) {
-            angle = 0;
-          } else {
-            angle = 0;
-          }
+             // Fallback
+             if (endSide === "left") angle = 0;
+             else if (endSide === "right") angle = 180;
+             else if (endSide === "top") angle = 90;
+             else if (endSide === "bottom") angle = -90;
+             else angle = 0;
         }
       }
 

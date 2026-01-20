@@ -55,15 +55,21 @@
         </template>
         <template v-if="column.key === 'action'">
           <a-space>
-            <a-button type="link" size="small" @click="handlePreview(record)">预览</a-button>
-            <a-button type="link" size="small" @click="handleEdit(record)">编辑</a-button>
+            <a-button type="link" size="small" @click="handlePreview(record)" title="预览">
+              <EyeOutlined />
+            </a-button>
+            <a-button type="link" size="small" @click="handleEdit(record)" title="编辑">
+              <EditOutlined />
+            </a-button>
             <a-popconfirm
               title="确定要删除这个模板吗？"
               ok-text="确定"
               cancel-text="取消"
               @confirm="handleDelete(record.id)"
             >
-              <a-button type="link" size="small" danger>删除</a-button>
+              <a-button type="link" size="small" danger title="删除">
+                <DeleteOutlined />
+              </a-button>
             </a-popconfirm>
           </a-space>
         </template>
@@ -171,7 +177,9 @@ import {
   PlusOutlined, 
   InboxOutlined, 
   FileTextOutlined,
-  // SearchOutlined
+  EyeOutlined,
+  EditOutlined,
+  DeleteOutlined
 } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { UploadChangeParam, UploadProps } from 'ant-design-vue';
@@ -463,6 +471,7 @@ const columns: ColumnType[] = [
     title: '序号',
     key: 'index',
     width: 80,
+    align: 'center',
   },
   {
     title: '模板名称',
@@ -497,6 +506,7 @@ const columns: ColumnType[] = [
     title: '操作',
     key: 'action',
     width: 200,
+    align: 'center',
   },
 ];
 

@@ -103,7 +103,13 @@
               <a-descriptions-item label="关联文档">
                 <div v-if="currentNode.relatedDocuments && currentNode.relatedDocuments.length">
                   <div v-for="doc in currentNode.relatedDocuments" :key="doc.id">
-                    <a :href="doc.path" target="_blank">{{ doc.name }}</a>
+                    <div v-if="doc.name && /\.(dwg|dxf)$/i.test(doc.name)">
+                        <a :href="`/cad?url=${encodeURIComponent(doc.path)}&fileName=${encodeURIComponent(doc.name)}`" target="_blank">{{ doc.name }}</a>
+                        <a :href="doc.path" target="_blank" title="下载" style="margin-left: 8px; color: #999;">
+                            <DownloadOutlined />
+                        </a>
+                    </div>
+                    <a v-else :href="doc.path" target="_blank">{{ doc.name }}</a>
                   </div>
                 </div>
                 <span v-else>-</span>
@@ -354,6 +360,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive, h } from 'vue';
+import { useRouter } from 'vue-router';
 import { message, Modal } from 'ant-design-vue';
 import { PlusOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, UploadOutlined, MoreOutlined } from '@ant-design/icons-vue';
 import type { TreeProps, UploadChangeParam, UploadFile } from 'ant-design-vue';
@@ -374,6 +381,7 @@ import {
 import { getDictDataByCode, type DictDataDto } from '@/api/dict';
 import { useDraggableModal } from '@/hooks/useDraggableModal';
 
+const router = useRouter();
 const selectedKeys = ref<Key[]>([]);
 const expandedKeys = ref<Key[]>([]);
 const treeData = ref<EbomItemDto[]>([]);
@@ -797,7 +805,6 @@ const handleUpdateQty = async () => {
         console.error(e);
     }
 };
-
 const handleRemoveChild = async (record: EbomItemDto) => {
     if (!currentNode.value.key) return;
     try {

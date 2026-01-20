@@ -12,14 +12,35 @@
             <template v-if="column.key === 'type'">
               <a-tag color="blue">{{ configTypeMap[record.type] || '未知' }}</a-tag>
             </template>
-            <template v-if="column.key === 'value'">
-              <a-image v-if="record.type === ConfigType.Image" :src="record.value" :width="50" />
-              <a v-else-if="record.type === ConfigType.File" :href="record.value" target="_blank">下载文件</a>
-              <span v-else-if="record.type === ConfigType.Boolean">{{ record.value === 'true' ? '是' : '否' }}</span>
-              <span v-else>{{ record.value }}</span>
+            <template v-if="column.key === 'global'">
+              <template v-if="record.globalValue">
+                <a-image v-if="record.type === ConfigType.Image" :src="record.globalValue" :width="50" />
+                <a v-else-if="record.type === ConfigType.File" :href="record.globalValue" target="_blank">下载文件</a>
+                <span v-else-if="record.type === ConfigType.Boolean">{{ record.globalValue === 'true' ? '是' : '否' }}</span>
+                <span v-else>{{ record.globalValue }}</span>
+              </template>
+              <span v-else>-</span>
+            </template>
+            <template v-if="column.key === 'org'">
+              <template v-if="record.orgValue">
+                <a-image v-if="record.type === ConfigType.Image" :src="record.orgValue" :width="50" />
+                <a v-else-if="record.type === ConfigType.File" :href="record.orgValue" target="_blank">下载文件</a>
+                <span v-else-if="record.type === ConfigType.Boolean">{{ record.orgValue === 'true' ? '是' : '否' }}</span>
+                <span v-else>{{ record.orgValue }}</span>
+              </template>
+              <span v-else>-</span>
             </template>
             <template v-if="column.key === 'action'">
-              <a @click="handleEdit(record as SystemConfigDto)">编辑</a>
+              <a
+                v-if="canEditConfig(record as SystemConfigDto)"
+                @click="handleEdit(record as SystemConfigDto)"
+                title="编辑"
+              >
+                <EditOutlined />
+              </a>
+              <span v-else style="color: #999;" title="仅查看">
+                <EyeOutlined />
+              </span>
             </template>
           </template>
         </a-table>
@@ -53,92 +74,214 @@
       </template>
       <a-form layout="vertical" :model="formState" v-if="currentConfig">
         <a-form-item label="配置键名">
-          <a-input :value="currentConfig.key" disabled />
+          <a-input :value="currentConfig.key" readonly class="input-readonly" />
         </a-form-item>
         <a-form-item label="配置说明">
-          <a-input v-model:value="formState.description" />
+          <a-input v-model:value="formState.description" :readonly="!userStore.isAdmin" :class="{ 'input-readonly': !userStore.isAdmin }" />
         </a-form-item>
-        <a-form-item label="配置值" required>
-          <!-- Boolean -->
-          <a-switch 
-            v-if="currentConfig.type === ConfigType.Boolean"
-            v-model:checked="formState.value"
-            checked-value="true"
-            un-checked-value="false"
-            :disabled="isOrgContext && !currentConfig.orgId && !currentConfig.isOverridable"
-          />
-
-          <!-- Number -->
-          <a-input-number
-            v-else-if="currentConfig.type === ConfigType.Number"
-            v-model:value="formState.value"
-            style="width: 100%"
-            :disabled="isOrgContext && !currentConfig.orgId && !currentConfig.isOverridable"
-          />
-
-          <!-- Text (Long) -->
-          <a-textarea
-             v-else-if="currentConfig.type === ConfigType.Text"
-             v-model:value="formState.value"
-             :rows="4"
-             :disabled="isOrgContext && !currentConfig.orgId && !currentConfig.isOverridable"
-          />
-
-          <!-- Image -->
-          <div v-else-if="currentConfig.type === ConfigType.Image">
-             <a-upload
-                v-model:file-list="fileList"
+        <a-form-item label="全局配置值">
+          <template v-if="globalConfig">
+            <a-switch 
+              v-if="globalConfig.type === ConfigType.Boolean"
+              v-model:checked="formState.globalValue"
+              checked-value="true"
+              un-checked-value="false"
+              :disabled="!canEditConfig(globalConfig as SystemConfigDto)"
+            />
+            <a-input-number
+              v-else-if="globalConfig.type === ConfigType.Number"
+              v-model:value="formState.globalValue"
+              style="width: 100%"
+              :readonly="!canEditConfig(globalConfig as SystemConfigDto)"
+              :class="{ 'input-readonly': !canEditConfig(globalConfig as SystemConfigDto) }"
+            />
+            <a-textarea
+              v-else-if="globalConfig.type === ConfigType.Text"
+              v-model:value="formState.globalValue"
+              :rows="4"
+              :readonly="!canEditConfig(globalConfig as SystemConfigDto)"
+              :class="{ 'input-readonly': !canEditConfig(globalConfig as SystemConfigDto) }"
+            />
+            <div v-else-if="globalConfig.type === ConfigType.Image">
+              <a-upload
+                v-model:file-list="globalFileList"
                 name="file"
                 list-type="picture-card"
                 class="avatar-uploader"
                 :show-upload-list="false"
                 action="/api/systemconfig/upload"
                 :headers="uploadHeaders"
-                @change="handleUploadChange"
-                :disabled="isOrgContext && !currentConfig.orgId && !currentConfig.isOverridable"
+                @change="handleGlobalUploadChange"
+                :disabled="!canEditConfig(globalConfig as SystemConfigDto)"
               >
-                <img v-if="formState.value" :src="formState.value" alt="avatar" style="width: 100%" />
+                <img v-if="formState.globalValue" :src="formState.globalValue" alt="avatar" style="width: 100%" />
                 <div v-else>
                   <loading-outlined v-if="uploadLoading" />
                   <plus-outlined v-else />
                   <div class="ant-upload-text">Upload</div>
                 </div>
               </a-upload>
-          </div>
-
-          <!-- File -->
-          <div v-else-if="currentConfig.type === ConfigType.File">
-             <a-upload
-                v-model:file-list="fileList"
+            </div>
+            <div v-else-if="globalConfig.type === ConfigType.File">
+              <a-upload
+                v-model:file-list="globalFileList"
                 name="file"
                 action="/api/systemconfig/upload"
                 :headers="uploadHeaders"
-                @change="handleUploadChange"
+                @change="handleGlobalUploadChange"
                 :maxCount="1"
-                :disabled="isOrgContext && !currentConfig.orgId && !currentConfig.isOverridable"
+                :disabled="!canEditConfig(globalConfig as SystemConfigDto)"
               >
                 <a-button>
                   <upload-outlined />
                   Click to Upload
                 </a-button>
               </a-upload>
-              <div v-if="formState.value" style="margin-top: 8px">当前文件: {{ formState.value }}</div>
-          </div>
-
-          <!-- String (Default) -->
-          <a-input
-            v-else
-            v-model:value="formState.value"
-            :placeholder="'请输入' + (currentConfig.description || currentConfig.key)"
-            :disabled="isOrgContext && !currentConfig.orgId && !currentConfig.isOverridable"
-          />
-
-          <div
-            v-if="isOrgContext && !currentConfig.orgId && !currentConfig.isOverridable"
-            style="color: #ff4d4f; font-size: 12px; margin-top: 4px;"
-          >
-            该配置项为全局强制配置，无法修改
-          </div>
+              <div v-if="formState.globalValue" style="margin-top: 8px">当前文件: {{ formState.globalValue }}</div>
+            </div>
+            <a-input
+              v-else
+              v-model:value="formState.globalValue"
+              :placeholder="'请输入' + (globalConfig.description || globalConfig.key)"
+              :readonly="!canEditConfig(globalConfig as SystemConfigDto)"
+              :class="{ 'input-readonly': !canEditConfig(globalConfig as SystemConfigDto) }"
+            />
+          </template>
+          <span v-else>-</span>
+        </a-form-item>
+        <a-form-item v-if="isOrgContext && currentConfig?.isOverridable" :label="`组织配置值 (${userStore.currentOrg?.name})`">
+          <template v-if="orgConfig">
+            <a-switch 
+              v-if="orgConfig.type === ConfigType.Boolean"
+              v-model:checked="formState.orgValue"
+              checked-value="true"
+              un-checked-value="false"
+              :disabled="!canEditConfig(orgConfig as SystemConfigDto)"
+            />
+            <a-input-number
+              v-else-if="orgConfig.type === ConfigType.Number"
+              v-model:value="formState.orgValue"
+              style="width: 100%"
+              :readonly="!canEditConfig(orgConfig as SystemConfigDto)"
+              :class="{ 'input-readonly': !canEditConfig(orgConfig as SystemConfigDto) }"
+            />
+            <a-textarea
+              v-else-if="orgConfig.type === ConfigType.Text"
+              v-model:value="formState.orgValue"
+              :rows="4"
+              :readonly="!canEditConfig(orgConfig as SystemConfigDto)"
+              :class="{ 'input-readonly': !canEditConfig(orgConfig as SystemConfigDto) }"
+            />
+            <div v-else-if="orgConfig.type === ConfigType.Image">
+              <a-upload
+                v-model:file-list="orgFileList"
+                name="file"
+                list-type="picture-card"
+                class="avatar-uploader"
+                :show-upload-list="false"
+                action="/api/systemconfig/upload"
+                :headers="uploadHeaders"
+                @change="handleOrgUploadChange"
+                :disabled="!canEditConfig(orgConfig as SystemConfigDto)"
+              >
+                <img v-if="formState.orgValue" :src="formState.orgValue" alt="avatar" style="width: 100%" />
+                <div v-else>
+                  <loading-outlined v-if="uploadLoading" />
+                  <plus-outlined v-else />
+                  <div class="ant-upload-text">Upload</div>
+                </div>
+              </a-upload>
+            </div>
+            <div v-else-if="orgConfig.type === ConfigType.File">
+              <a-upload
+                v-model:file-list="orgFileList"
+                name="file"
+                action="/api/systemconfig/upload"
+                :headers="uploadHeaders"
+                @change="handleOrgUploadChange"
+                :maxCount="1"
+                :disabled="!canEditConfig(orgConfig as SystemConfigDto)"
+              >
+                <a-button>
+                  <upload-outlined />
+                  Click to Upload
+                </a-button>
+              </a-upload>
+              <div v-if="formState.orgValue" style="margin-top: 8px">当前文件: {{ formState.orgValue }}</div>
+            </div>
+            <a-input
+              v-else
+              v-model:value="formState.orgValue"
+              :placeholder="'请输入' + (orgConfig.description || orgConfig.key)"
+              :readonly="!canEditConfig(orgConfig as SystemConfigDto)"
+              :class="{ 'input-readonly': !canEditConfig(orgConfig as SystemConfigDto) }"
+            />
+            <div
+              v-if="!userStore.isAdmin && !orgConfig.isOverridable"
+              style="color: #ff4d4f; font-size: 12px; margin-top: 4px;"
+            >
+              该配置项不允许组织覆盖，仅使用全局配置
+            </div>
+          </template>
+          <template v-else-if="userStore.isAdmin && globalConfig">
+            <a-switch 
+              v-if="globalConfig.type === ConfigType.Boolean"
+              v-model:checked="formState.orgValue"
+              checked-value="true"
+              un-checked-value="false"
+            />
+            <a-input-number
+              v-else-if="globalConfig.type === ConfigType.Number"
+              v-model:value="formState.orgValue"
+              style="width: 100%"
+            />
+            <a-textarea
+              v-else-if="globalConfig.type === ConfigType.Text"
+              v-model:value="formState.orgValue"
+              :rows="4"
+            />
+            <div v-else-if="globalConfig.type === ConfigType.Image">
+              <a-upload
+                v-model:file-list="orgFileList"
+                name="file"
+                list-type="picture-card"
+                class="avatar-uploader"
+                :show-upload-list="false"
+                action="/api/systemconfig/upload"
+                :headers="uploadHeaders"
+                @change="handleOrgUploadChange"
+              >
+                <img v-if="formState.orgValue" :src="formState.orgValue" alt="avatar" style="width: 100%" />
+                <div v-else>
+                  <loading-outlined v-if="uploadLoading" />
+                  <plus-outlined v-else />
+                  <div class="ant-upload-text">Upload</div>
+                </div>
+              </a-upload>
+            </div>
+            <div v-else-if="globalConfig.type === ConfigType.File">
+              <a-upload
+                v-model:file-list="orgFileList"
+                name="file"
+                action="/api/systemconfig/upload"
+                :headers="uploadHeaders"
+                @change="handleOrgUploadChange"
+                :maxCount="1"
+              >
+                <a-button>
+                  <upload-outlined />
+                  Click to Upload
+                </a-button>
+              </a-upload>
+              <div v-if="formState.orgValue" style="margin-top: 8px">当前文件: {{ formState.orgValue }}</div>
+            </div>
+            <a-input
+              v-else
+              v-model:value="formState.orgValue"
+              :placeholder="'请输入' + (globalConfig.description || globalConfig.key)"
+            />
+          </template>
+          <span v-else>-</span>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -152,7 +295,7 @@ import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 import { getAllConfigs, updateConfig, deleteConfig, type SystemConfigDto, ConfigType } from '@/api/systemConfig';
 import { Modal } from 'ant-design-vue';
-import { UploadOutlined, PlusOutlined, LoadingOutlined } from '@ant-design/icons-vue';
+import { UploadOutlined, PlusOutlined, LoadingOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons-vue';
 import type { UploadChangeParam } from 'ant-design-vue';
 
 const userStore = useUserStore();
@@ -180,18 +323,58 @@ const saving = ref(false);
 const resetting = ref(false);
 const uploadLoading = ref(false);
 const currentConfig = ref<SystemConfigDto | null>(null);
-const fileList = ref<any[]>([]);
+const globalFileList = ref<any[]>([]);
+const orgFileList = ref<any[]>([]);
 const formState = reactive({
-  value: '',
+  globalValue: '',
+  orgValue: '',
   description: ''
+});
+
+const canEditConfig = (config: SystemConfigDto | null) => {
+  if (!config) return false;
+  if (userStore.isAdmin) return true;
+  if (!isOrgContext.value) return false;
+  if (!config.orgId) return false;
+  if (!config.isOverridable) return false;
+  return true;
+};
+
+const globalConfig = computed<SystemConfigDto | null>(() => {
+  if (!currentConfig.value) return null;
+  const cfg = currentConfig.value;
+  return {
+    ...cfg,
+    id: cfg.globalId,
+    orgId: undefined,
+    value: cfg.globalValue ?? '',
+  } as SystemConfigDto;
+});
+
+const orgConfig = computed<SystemConfigDto | null>(() => {
+  if (!currentConfig.value || !userStore.currentOrg) return null;
+  const cfg = currentConfig.value;
+  if (!cfg.orgConfigId) return null;
+  return {
+    ...cfg,
+    id: cfg.orgConfigId,
+    orgId: userStore.currentOrg.id,
+    value: cfg.orgValue ?? cfg.value,
+  } as SystemConfigDto;
 });
 
 const columns: ColumnType[] = [
   {
+    title: '序号',
+    key: 'index',
+    width: 60,
+    align: 'center',
+    customRender: ({ index }) => index + 1,
+  },
+  {
     title: '配置项说明',
     dataIndex: 'description',
     key: 'description',
-    width: '25%',
   },
   {
     title: '配置键名 (Key)',
@@ -202,24 +385,26 @@ const columns: ColumnType[] = [
   {
     title: '类型',
     key: 'type',
-    width: '10%',
+    width: 90,
+    align: 'center',
   },
   {
-    title: '配置值',
-    dataIndex: 'value',
-    key: 'value',
-    width: '35%',
+    title: '全局',
+    dataIndex: 'globalValue',
+    key: 'global',
+    width: '20%',
   },
   {
-    title: '来源',
-    key: 'source',
-    width: '10%',
-    customRender: ({ record }: any) => record.orgId ? '组织' : '全局'
+    title: '组织',
+    dataIndex: 'orgValue',
+    key: 'org',
+    width: '20%',
   },
   {
     title: '操作',
     key: 'action',
-    width: '15%',
+    width: 90,
+    align: 'center',
   },
 ];
 
@@ -253,24 +438,38 @@ const loadConfigs = async () => {
 
 const handleEdit = (record: SystemConfigDto) => {
   currentConfig.value = record;
-  formState.value = record.value;
   formState.description = record.description || '';
-  
-  if ((record.type === ConfigType.Image || record.type === ConfigType.File) && record.value) {
-    fileList.value = [{
-      uid: '-1',
-      name: record.value.split('/').pop() || 'file',
-      status: 'done',
-      url: record.value
-    }];
-  } else {
-    fileList.value = [];
+
+  formState.globalValue = record.globalValue ?? '';
+  formState.orgValue = record.orgValue ?? (record.globalValue ?? '');
+
+  globalFileList.value = [];
+  orgFileList.value = [];
+
+  if (record.type === ConfigType.Image || record.type === ConfigType.File) {
+    if (record.globalValue) {
+      globalFileList.value = [{
+        uid: '-1',
+        name: record.globalValue.split('/').pop() || 'file',
+        status: 'done',
+        url: record.globalValue
+      }];
+    }
+
+    if (record.orgValue) {
+      orgFileList.value = [{
+        uid: '-1',
+        name: record.orgValue.split('/').pop() || 'file',
+        status: 'done',
+        url: record.orgValue
+      }];
+    }
   }
 
   modalVisible.value = true;
 };
 
-const handleUploadChange = (info: UploadChangeParam) => {
+const handleGlobalUploadChange = (info: UploadChangeParam) => {
   if (info.file.status === 'uploading') {
     uploadLoading.value = true;
     return;
@@ -279,14 +478,33 @@ const handleUploadChange = (info: UploadChangeParam) => {
     uploadLoading.value = false;
     const url = info.file.response?.data?.url;
     if (url) {
-      formState.value = url;
+      formState.globalValue = url;
       message.success(`${info.file.name} 上传成功`);
     }
   } else if (info.file.status === 'error') {
     uploadLoading.value = false;
     message.error(`${info.file.name} 上传失败`);
   }
-  fileList.value = info.fileList;
+  globalFileList.value = info.fileList;
+};
+
+const handleOrgUploadChange = (info: UploadChangeParam) => {
+  if (info.file.status === 'uploading') {
+    uploadLoading.value = true;
+    return;
+  }
+  if (info.file.status === 'done') {
+    uploadLoading.value = false;
+    const url = info.file.response?.data?.url;
+    if (url) {
+      formState.orgValue = url;
+      message.success(`${info.file.name} 上传成功`);
+    }
+  } else if (info.file.status === 'error') {
+    uploadLoading.value = false;
+    message.error(`${info.file.name} 上传失败`);
+  }
+  orgFileList.value = info.fileList;
 };
 
 const handleReset = () => {
@@ -317,10 +535,32 @@ const handleModalOk = async () => {
   
   saving.value = true;
   try {
-    await updateConfig(currentConfig.value.id, {
-      value: formState.value,
-      description: formState.description
-    });
+    const tasks: Promise<any>[] = [];
+
+    if (globalConfig.value && canEditConfig(globalConfig.value)) {
+      tasks.push(updateConfig(globalConfig.value.id, {
+        value: formState.globalValue,
+        description: formState.description
+      }));
+    }
+
+    if (orgConfig.value && canEditConfig(orgConfig.value)) {
+      tasks.push(updateConfig(orgConfig.value.id, {
+        value: formState.orgValue,
+        description: formState.description
+      }));
+    } else if (!orgConfig.value && currentConfig.value && userStore.isAdmin && isOrgContext.value) {
+      // 超级管理员在当前组织下编辑“组织配置值”但还不存在组织覆盖时，
+      // 使用后端的全局配置 Id（currentConfig.globalId）创建组织级配置。
+      tasks.push(updateConfig(currentConfig.value.globalId, {
+        value: formState.orgValue,
+        description: formState.description
+      }));
+    }
+
+    if (tasks.length) {
+      await Promise.all(tasks);
+    }
     
     message.success('更新成功');
     modalVisible.value = false;
@@ -344,5 +584,16 @@ watch(() => userStore.currentOrg?.id, () => {
 <style scoped>
 .sys-config-container {
   padding: 10px;
+}
+.input-readonly {
+  background-color: #f5f5f5;
+  color: rgba(0, 0, 0, 0.85);
+  cursor: not-allowed;
+}
+:deep(.input-readonly .ant-input-number-input),
+:deep(.input-readonly .ant-input) {
+  cursor: not-allowed;
+  background-color: #f5f5f5;
+  color: rgba(0, 0, 0, 0.85);
 }
 </style>

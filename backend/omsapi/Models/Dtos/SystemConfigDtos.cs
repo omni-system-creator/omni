@@ -16,6 +16,13 @@ namespace omsapi.Models.Dtos
         public bool IsOverridable { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+        // 额外信息：用于前端同时展示/编辑全局值和组织值
+        public long GlobalId { get; set; }
+        public string? GlobalValue { get; set; }
+        public string? GlobalDescription { get; set; }
+        public long? OrgConfigId { get; set; }
+        public string? OrgValue { get; set; }
     }
 
     public class UpdateSystemConfigDto
@@ -25,5 +32,10 @@ namespace omsapi.Models.Dtos
 
         [MaxLength(200)]
         public string? Description { get; set; }
+
+        /// <summary>
+        /// Only for SuperAdmin: If true, updates the Global Config instead of creating/updating an override.
+        /// </summary>
+        public bool UpdateGlobal { get; set; } = false;
     }
 }

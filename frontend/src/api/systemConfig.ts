@@ -24,6 +24,12 @@ export interface SystemConfigDto {
   isOverridable: boolean;
   createdAt: string;
   updatedAt: string;
+
+  // 额外信息：同时包含全局与组织配置的详细数据
+  globalId: number;
+  globalValue?: string;
+  orgConfigId?: number;
+  orgValue?: string;
 }
 
 export interface UpdateSystemConfigDto {

@@ -67,6 +67,7 @@ namespace omsapi.Services
 
                 result.Add(new SystemConfigDto
                 {
+                    // 保持兼容：Id/Value 仍然代表“当前上下文下生效的值”
                     Id = effective.Id,
                     Category = global.Category,
                     Key = global.Key,
@@ -77,7 +78,13 @@ namespace omsapi.Services
                     OrgId = effective.OrgId,
                     IsOverridable = global.IsOverridable,
                     CreatedAt = effective.CreatedAt,
-                    UpdatedAt = effective.UpdatedAt
+                    UpdatedAt = effective.UpdatedAt,
+
+                    // 新增：同时返回全局与组织配置的详细信息
+                    GlobalId = global.Id,
+                    GlobalValue = global.Value,
+                    OrgConfigId = orgConfig?.Id,
+                    OrgValue = orgConfig?.Value
                 });
             }
 
@@ -111,7 +118,13 @@ namespace omsapi.Services
                 OrgId = effective.OrgId,
                 IsOverridable = globalConfig.IsOverridable,
                 CreatedAt = effective.CreatedAt,
-                UpdatedAt = effective.UpdatedAt
+                UpdatedAt = effective.UpdatedAt,
+
+                GlobalId = globalConfig.Id,
+                GlobalValue = globalConfig.Value,
+                GlobalDescription = globalConfig.Description,
+                OrgConfigId = orgConfig?.Id,
+                OrgValue = orgConfig?.Value
             };
 
             return (true, "获取成功", dto);
@@ -128,7 +141,26 @@ namespace omsapi.Services
             if (config.OrgId == null)
             {
                 // It is a global config
+                bool shouldUpdateGlobal = false;
+
                 if (orgId.HasValue)
+                {
+                    if (dto.UpdateGlobal)
+                    {
+                        if (!IsSuperAdmin()) return (false, "只有超级管理员可以修改全局配置");
+                        shouldUpdateGlobal = true;
+                    }
+                    else
+                    {
+                        shouldUpdateGlobal = false; // Create override
+                    }
+                }
+                else
+                {
+                    shouldUpdateGlobal = true; // No org context, must be global update
+                }
+
+                if (!shouldUpdateGlobal)
                 {
                     // User belongs to an Org, so they are trying to override
                     if (!config.IsOverridable && !IsSuperAdmin())
@@ -154,7 +186,7 @@ namespace omsapi.Services
                 }
                 else
                 {
-                    // User does NOT belong to an Org (System Admin in Global Context)
+                    // User does NOT belong to an Org (System Admin in Global Context) OR Explicit Global Update
                     if (config.Value != dto.Value)
                     {
                         DeleteConfigFile(config);
