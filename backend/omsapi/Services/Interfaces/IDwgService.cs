@@ -17,6 +17,9 @@ namespace omsapi.Services.Interfaces
         /// Convert DWG file to PDF stream for web preview (via LibreCAD CLI)
         /// </summary>
         /// <param name="filePath">Physical path to the DWG file</param>
+        /// <param name="paperSize">Paper size for PDF generation</param>
+        /// <param name="orientation">Orientation for PDF generation</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Stream containing PDF content</returns>
         Task<Stream> ConvertToPdfAsync(string filePath, string paperSize = "A3", string orientation = "portrait", CancellationToken cancellationToken = default);
 
@@ -24,6 +27,7 @@ namespace omsapi.Services.Interfaces
         /// Convert DWG file to SVG stream for web preview (via LibreCAD CLI, if available)
         /// </summary>
         /// <param name="filePath">Physical path to the DWG file</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Stream containing SVG content</returns>
         Task<Stream> ConvertToSvgAsync(string filePath, CancellationToken cancellationToken = default);
     }
