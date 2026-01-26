@@ -357,7 +357,7 @@ const columns: ColumnType<ContractDto>[] = [
     title: '负责人',
     dataIndex: 'manager',
     key: 'manager',
-    width: 150
+    width: 180
   },
   {
     title: '总价类型',
