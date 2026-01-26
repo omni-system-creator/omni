@@ -1,6 +1,8 @@
 <template>
   <div class="sys-org-container" @click="closeContextMenu">
-    <div class="canvas-container" ref="canvasContainer" @contextmenu.prevent="handleContextMenu"></div>
+    <a-spin :spinning="loading" tip="正在加载组织架构..." :wrapperClassName="'full-height-spin'">
+      <div class="canvas-container" ref="canvasContainer" @contextmenu.prevent="handleContextMenu"></div>
+    </a-spin>
 
     <!-- 右键菜单 -->
     <div v-if="contextMenuVisible" class="custom-context-menu"
@@ -369,7 +371,10 @@ const fetchDeptTree = async () => {
   } catch (error) {
     console.error(error);
   } finally {
-    loading.value = false;
+    // 延迟关闭 Loading，确保画布渲染完成且视觉过渡平滑
+    setTimeout(() => {
+      loading.value = false;
+    }, 300);
   }
 };
 
@@ -1304,6 +1309,16 @@ const onLeaderChange = async (user: any) => {
   /* Adjust based on layout */
   display: flex;
   flex-direction: column;
+}
+
+:deep(.full-height-spin) {
+  height: 100%;
+  width: 100%;
+}
+
+:deep(.full-height-spin .ant-spin-container) {
+  height: 100%;
+  width: 100%;
 }
 
 .canvas-container {

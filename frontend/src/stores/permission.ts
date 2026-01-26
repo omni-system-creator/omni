@@ -9,9 +9,11 @@ const modules = import.meta.glob('../views/**/*.vue');
 export const usePermissionStore = defineStore('permission', () => {
   const routes = ref<RouteRecordRaw[]>([]);
   const permissions = ref<string[]>([]);
+  const loading = ref(false);
 
   // 将后端返回的菜单树转换为 Vue Router 路由配置
   const generateRoutes = async () => {
+    loading.value = true;
     try {
       const res: any = await getRoutes();
       const backendRoutes = filterAsyncRoutes(res);
@@ -20,6 +22,8 @@ export const usePermissionStore = defineStore('permission', () => {
     } catch (error) {
       console.error('获取路由失败:', error);
       return [];
+    } finally {
+      loading.value = false;
     }
   };
 
@@ -44,6 +48,7 @@ export const usePermissionStore = defineStore('permission', () => {
   return {
     routes,
     permissions,
+    loading,
     generateRoutes,
     loadPermissions,
     hasPermission,

@@ -1,6 +1,6 @@
 <template>
   <a-layout style="min-height: 100vh">
-    <SideMenu v-if="!tabsStore.isWebFull" v-model:collapsed="collapsed" :menu-data="menuData" />
+    <SideMenu v-if="!tabsStore.isWebFull" v-model:collapsed="collapsed" :menu-data="menuData" :loading="permissionStore.loading" />
     
     <a-layout :style="{ marginLeft: tabsStore.isWebFull ? '0' : (collapsed ? '80px' : '240px'), transition: 'all 0.2s', height: '100vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }">
       <a-layout-header class="header" v-if="!tabsStore.isWebFull">

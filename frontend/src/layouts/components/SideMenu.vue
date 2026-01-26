@@ -12,38 +12,40 @@
       <h1 v-if="!collapsed" class="logo-text">{{ systemStore.systemName }}</h1>
     </div>
     <div class="menu-container">
-      <a-menu
-        v-model:selectedKeys="selectedKeys"
-        theme="dark"
-        mode="inline"
-        :open-keys="openKeys"
-        @openChange="onOpenChange as any"
-      >
-        <template v-for="item in menuData" :key="item.key">
-          <!-- If item has children, render SubMenu -->
-          <a-sub-menu v-if="item.children && item.children.length > 0" :key="item.key + '_sub'" popupClassName="sider-popup-menu">
-            <template #title>
-              <span>
-                <DynamicIcon :icon="item.icon" v-if="item.icon" />
-                <span>{{ item.title }}</span>
-              </span>
-            </template>
-            <!-- 仅在弹出菜单中显示的标题 -->
-            <a-menu-item :key="item.key + '_title'" disabled class="popup-menu-title">
-              {{ item.title }}
-            </a-menu-item>
-            <a-menu-item v-for="child in item.children" :key="child.key" @click="handleMenuClick(child)">
-              {{ child.title }}
-            </a-menu-item>
-          </a-sub-menu>
+      <a-spin :spinning="loading" tip="正在加载菜单..." wrapperClassName="menu-spin">
+        <a-menu
+          v-model:selectedKeys="selectedKeys"
+          theme="dark"
+          mode="inline"
+          :open-keys="openKeys"
+          @openChange="onOpenChange as any"
+        >
+          <template v-for="item in menuData" :key="item.key">
+            <!-- If item has children, render SubMenu -->
+            <a-sub-menu v-if="item.children && item.children.length > 0" :key="item.key + '_sub'" popupClassName="sider-popup-menu">
+              <template #title>
+                <span>
+                  <DynamicIcon :icon="item.icon" v-if="item.icon" />
+                  <span>{{ item.title }}</span>
+                </span>
+              </template>
+              <!-- 仅在弹出菜单中显示的标题 -->
+              <a-menu-item :key="item.key + '_title'" disabled class="popup-menu-title">
+                {{ item.title }}
+              </a-menu-item>
+              <a-menu-item v-for="child in item.children" :key="child.key" @click="handleMenuClick(child)">
+                {{ child.title }}
+              </a-menu-item>
+            </a-sub-menu>
 
-          <!-- If item has no children, render MenuItem -->
-          <a-menu-item v-else :key="item.key" @click="handleMenuClick(item)">
-            <DynamicIcon :icon="item.icon" v-if="item.icon" />
-            <span>{{ item.title }}</span>
-          </a-menu-item>
-        </template>
-      </a-menu>
+            <!-- If item has no children, render MenuItem -->
+            <a-menu-item v-else :key="item.key" @click="handleMenuClick(item)">
+              <DynamicIcon :icon="item.icon" v-if="item.icon" />
+              <span>{{ item.title }}</span>
+            </a-menu-item>
+          </template>
+        </a-menu>
+      </a-spin>
     </div>
     <!-- 自定义折叠触发器 -->
     <div class="sider-trigger" @click="emit('update:collapsed', !collapsed)">
@@ -66,6 +68,7 @@ import type { MenuItem } from '@/types/menu';
 const props = defineProps<{
   collapsed: boolean;
   menuData: MenuItem[];
+  loading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -267,6 +270,44 @@ watch(
   height: calc(100vh - 64px - 48px);
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+:deep(.menu-spin) {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.menu-spin .ant-spin-container) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.menu-spin .ant-spin) {
+  position: absolute;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  background-color: #001529 !important; /* Sidebar background color */
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+}
+
+:deep(.menu-spin .ant-spin-text) {
+  color: rgba(255, 255, 255, 0.85) !important;
+  text-shadow: none !important;
+  margin-top: 10px;
+}
+
+:deep(.menu-spin .ant-spin-dot-item) {
+  background-color: rgba(255, 255, 255, 0.65);
 }
 
 .sider-trigger {
