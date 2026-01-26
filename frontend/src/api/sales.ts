@@ -5,6 +5,7 @@ import request from '@/utils/request';
 export interface CustomerDto {
   id: string;
   name: string;
+  creditCode?: string;
   industry: string;
   contact: string;
   phone: string;
@@ -17,6 +18,7 @@ export interface CustomerDto {
 
 export interface CreateCustomerDto {
   name: string;
+  creditCode?: string;
   industry?: string;
   contact?: string;
   phone?: string;

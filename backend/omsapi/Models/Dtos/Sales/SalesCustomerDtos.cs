@@ -4,6 +4,7 @@ namespace omsapi.Models.Dtos.Sales
     {
         public string Id { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public string CreditCode { get; set; } = string.Empty;
         public string Industry { get; set; } = string.Empty;
         public string Contact { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
@@ -17,6 +18,7 @@ namespace omsapi.Models.Dtos.Sales
     public class CreateCustomerDto
     {
         public string Name { get; set; } = string.Empty;
+        public string CreditCode { get; set; } = string.Empty;
         public string Industry { get; set; } = string.Empty;
         public string Contact { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;

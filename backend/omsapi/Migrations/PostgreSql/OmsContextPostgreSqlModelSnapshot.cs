@@ -700,9 +700,25 @@ namespace omsapi.Migrations.PostgreSql
                         .HasColumnType("decimal(18, 2)")
                         .HasColumnName("amount");
 
+                    b.Property<string>("AttachmentFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("attachment_file_name");
+
+                    b.Property<string>("AttachmentFilePath")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("attachment_file_path");
+
                     b.Property<long>("ContractId")
                         .HasColumnType("bigint")
                         .HasColumnName("contract_id");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("direction");
 
                     b.Property<DateTime>("InvoiceDate")
                         .HasColumnType("timestamp with time zone")
@@ -865,6 +881,12 @@ namespace omsapi.Migrations.PostgreSql
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("latest_transaction_date");
 
+                    b.Property<string>("LifecycleStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("lifecycle_status");
+
                     b.Property<string>("Manager")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
@@ -884,6 +906,12 @@ namespace omsapi.Migrations.PostgreSql
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("payment_method");
+
+                    b.Property<string>("PricingType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("pricing_type");
 
                     b.Property<int>("Progress")
                         .HasColumnType("integer")
@@ -1005,11 +1033,51 @@ namespace omsapi.Migrations.PostgreSql
                         .HasColumnType("text")
                         .HasColumnName("remark");
 
+                    b.Property<string>("Type")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("type");
+
+                    b.Property<string>("VoucherFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("voucher_file_name");
+
+                    b.Property<string>("VoucherFilePath")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("voucher_file_path");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ContractId");
 
                     b.ToTable("contract_payment_record");
+                });
+
+            modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractRelation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("ContractId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("contract_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("RelatedContractId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("related_contract_id");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("contract_relation");
                 });
 
             modelBuilder.Entity("omsapi.Models.Entities.Contract.ContractStat", b =>
@@ -1894,6 +1962,42 @@ namespace omsapi.Migrations.PostgreSql
                     b.ToTable("project_info");
                 });
 
+            modelBuilder.Entity("omsapi.Models.Entities.Project.ProjectMember", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("joined_at");
+
+                    b.Property<string>("ProjectCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("project_code");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("role");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("username");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("project_members");
+                });
+
             modelBuilder.Entity("omsapi.Models.Entities.Project.ProjectPhase", b =>
                 {
                     b.Property<string>("Id")
@@ -2156,6 +2260,12 @@ namespace omsapi.Migrations.PostgreSql
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("CreditCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("credit_code");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text")
@@ -2184,6 +2294,10 @@ namespace omsapi.Migrations.PostgreSql
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
+
+                    b.Property<long>("OrgId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("org_id");
 
                     b.Property<string>("Owner")
                         .IsRequired()
@@ -2300,6 +2414,10 @@ namespace omsapi.Migrations.PostgreSql
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<long>("OrgId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("org_id");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -2316,6 +2434,10 @@ namespace omsapi.Migrations.PostgreSql
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
+
+                    b.Property<long>("OrgId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("org_id");
 
                     b.Property<string>("ParentId")
                         .HasMaxLength(50)
@@ -2379,6 +2501,9 @@ namespace omsapi.Migrations.PostgreSql
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<long>("OrgId")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Owner")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -2434,6 +2559,10 @@ namespace omsapi.Migrations.PostgreSql
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("description");
+
+                    b.Property<long>("OrgId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("org_id");
 
                     b.Property<string>("Title")
                         .IsRequired()

@@ -2260,6 +2260,12 @@ namespace omsapi.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("CreditCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("credit_code");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("longtext")

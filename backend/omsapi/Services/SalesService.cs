@@ -73,6 +73,7 @@ namespace omsapi.Services
                 {
                     Id = c.Id,
                     Name = c.Name,
+                    CreditCode = c.CreditCode,
                     Industry = c.Industry,
                     Contact = c.Contact,
                     Phone = c.Phone,
@@ -100,6 +101,7 @@ namespace omsapi.Services
             {
                 Id = c.Id,
                 Name = c.Name,
+                CreditCode = c.CreditCode,
                 Industry = c.Industry,
                 Contact = c.Contact,
                 Phone = c.Phone,
@@ -123,6 +125,7 @@ namespace omsapi.Services
             {
                 OrgId = orgId.Value,
                 Name = dto.Name,
+                CreditCode = dto.CreditCode,
                 Industry = dto.Industry,
                 Contact = dto.Contact,
                 Phone = dto.Phone,
@@ -217,6 +220,7 @@ Owner: 负责人姓名
                 return new CreateCustomerDto
                 {
                     Name = "示例科技股份有限公司",
+                    CreditCode = "91110000123456789X",
                     Industry = "互联网",
                     Contact = "张经理",
                     Phone = "13800138000",

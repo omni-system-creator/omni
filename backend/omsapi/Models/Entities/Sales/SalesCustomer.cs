@@ -18,6 +18,10 @@ namespace omsapi.Models.Entities.Sales
         [MaxLength(200)]
         public string Name { get; set; } = string.Empty;
 
+        [Column("credit_code")]
+        [MaxLength(50)]
+        public string CreditCode { get; set; } = string.Empty;
+
         [Column("industry")]
         [MaxLength(100)]
         public string Industry { get; set; } = string.Empty;

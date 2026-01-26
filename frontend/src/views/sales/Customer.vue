@@ -69,6 +69,9 @@
         <a-form-item label="客户名称" required>
           <a-input v-model:value="formData.name" />
         </a-form-item>
+        <a-form-item label="统一社会信用代码">
+          <a-input v-model:value="formData.creditCode" />
+        </a-form-item>
         <a-form-item label="行业">
           <a-input v-model:value="formData.industry" />
         </a-form-item>
@@ -138,6 +141,7 @@ const pagination = reactive({
 const columns: ColumnType[] = [
   { title: '序号', key: 'index', width: 80, align: 'center' },
   { title: '客户名称', dataIndex: 'name', key: 'name' },
+  { title: '统一社会信用代码', dataIndex: 'creditCode', key: 'creditCode' },
   { title: '行业', dataIndex: 'industry', key: 'industry' },
   { title: '联系人', dataIndex: 'contact', key: 'contact' },
   { title: '电话', dataIndex: 'phone', key: 'phone' },
@@ -254,6 +258,7 @@ const handleAdd = () => {
 
   Object.assign(formData, {
     name: '',
+    creditCode: '',
     industry: '',
     contact: '',
     phone: '',
@@ -291,6 +296,7 @@ const handleEdit = (record: CustomerDto) => {
 
   Object.assign(formData, {
     name: record.name,
+    creditCode: record.creditCode,
     industry: record.industry,
     contact: record.contact,
     phone: record.phone,
