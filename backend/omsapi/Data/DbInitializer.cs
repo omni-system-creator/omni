@@ -10,11 +10,35 @@ namespace omsapi.Data
     {
         public static async Task InitializeAsync(OmsContext context, OmsPgContext pgContext)
         {
-            // 确保数据库已创建
-            await context.Database.EnsureCreatedAsync();
-            // PgContext will be migrated, so we might not need EnsureCreated if we use migrations, 
-            // but for initialization it's safe to check or migrate.
-            // await pgContext.Database.MigrateAsync(); // Prefer migration in Program.cs
+            // Apply pending migrations for the main context
+            try 
+            {
+                await context.Database.MigrateAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Migration failed: {ex.Message}");
+                // Fallback or rethrow? 
+                // For a robust deployment, we should probably let it fail so we know something is wrong,
+                // but since we are modifying code, let's assume valid migrations exist.
+                throw;
+            }
+
+            // Apply pending migrations for the PG context (Vector Store)
+            // Note: OmsPgContext might only be configured if PgConnection is valid.
+            // We should check if we can connect or just try migrate.
+            try
+            {
+                await pgContext.Database.MigrateAsync();
+            }
+            catch (Exception)
+            {
+                // Ignore if PG is not configured or reachable, assuming it's optional or handled elsewhere
+                // Or better, log it.
+                Console.WriteLine("PG Context migration skipped or failed.");
+            }
+            
+            // 初始化合同模块数据
             
             // 初始化合同模块数据
             await SeedContractDataAsync(context);

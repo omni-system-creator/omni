@@ -145,6 +145,23 @@ app.MapHub<omsapi.Hubs.DebugHub>("/hubs/debug");
 app.MapHub<omsapi.Hubs.ProjectHub>("/hubs/project");
 app.MapHub<omsapi.Hubs.UserHub>("/hubs/user");
 
+// Initialize Database
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<OmsContext>();
+        var pgContext = services.GetRequiredService<OmsPgContext>();
+        await DbInitializer.InitializeAsync(context, pgContext);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
+
 Console.WriteLine("后端服务启动成功！");
 
 app.Run();
