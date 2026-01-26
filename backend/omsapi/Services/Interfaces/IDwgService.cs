@@ -13,6 +13,11 @@ namespace omsapi.Services.Interfaces
         /// <returns>MemoryStream containing the DXF content</returns>
         Stream ConvertToDxf(string filePath);
 
+        /// <summary>
+        /// Convert DWG file to PDF stream for web preview (via LibreCAD CLI)
+        /// </summary>
+        /// <param name="filePath">Physical path to the DWG file</param>
+        /// <returns>Stream containing PDF content</returns>
         Task<Stream> ConvertToPdfAsync(string filePath, string paperSize = "A3", string orientation = "portrait", CancellationToken cancellationToken = default);
 
         /// <summary>

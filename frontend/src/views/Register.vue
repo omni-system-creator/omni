@@ -256,7 +256,7 @@
     </div>
 
     <div class="page-footer">
-      <p>1.0.0 © 2025 os.jinlan.info All Rights Reserved.</p>
+      <p>1.0.0 © 2025 jinlan.info All Rights Reserved.</p>
     </div>
   </div>
 </template>
