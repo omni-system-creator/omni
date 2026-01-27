@@ -1,7 +1,7 @@
 using omsapi.Data;
 using omsapi.Models.Entities;
 using omsapi.Services.Interfaces;
-
+using Microsoft.EntityFrameworkCore;
 using omsapi.Infrastructure.Attributes;
 
 namespace omsapi.Services
@@ -18,8 +18,20 @@ namespace omsapi.Services
 
         public async Task LogAsync(SystemAuditLog log)
         {
-            _context.AuditLogs.Add(log);
-            await _context.SaveChangesAsync();
+            // Use a separate strategy for audit logs to avoid conflict with main transaction
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () => 
+            {
+                try 
+                {
+                   _context.AuditLogs.Add(log);
+                   await _context.SaveChangesAsync();
+                }
+                catch
+                {
+                   // Ignore audit log errors to not hide the original error
+                }
+            });
         }
     }
 }

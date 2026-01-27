@@ -22,15 +22,13 @@ namespace omsapi.Filters
             var request = context.HttpContext.Request;
             var method = request.Method;
 
-            // 只记录修改数据的操作 (POST, PUT, DELETE, PATCH)
-            // GET 请求通常不记录，除非特别敏感
+            // Only log modification operations (POST, PUT, DELETE, PATCH)
             if (method == "GET" || method == "OPTIONS" || method == "HEAD")
             {
                 await next();
                 return;
             }
 
-            // 如果是登录接口，已经在 AuthService 中单独记录了，这里跳过避免重复
             if (request.Path.Value?.ToLower().Contains("/api/auth/login") == true)
             {
                 await next();
@@ -39,8 +37,20 @@ namespace omsapi.Filters
 
             var startTime = DateTime.UtcNow;
 
-            // 执行 Action
-            var executedContext = await next();
+            // Execute Action
+            ActionExecutedContext executedContext;
+            try 
+            {
+                executedContext = await next();
+            }
+            catch (Exception)
+            {
+                // Should not happen as next() catches exceptions usually?
+                // But if it bubbles up:
+                 // Create a fake executed context or handle logging here?
+                 // Usually next() returns context with Exception set.
+                 throw; 
+            }
 
             var duration = (long)(DateTime.UtcNow - startTime).TotalMilliseconds;
             var user = context.HttpContext.User;
@@ -59,7 +69,6 @@ namespace omsapi.Filters
             }
 
             var actionName = context.ActionDescriptor.DisplayName ?? "Unknown Action";
-            // 截断 Action 字段，防止超过数据库长度
             if (actionName.Length > 200)
             {
                 actionName = actionName.Substring(0, 197) + "...";
@@ -80,14 +89,20 @@ namespace omsapi.Filters
                 CreatedAt = DateTime.UtcNow
             };
 
-            // 记录参数 (可选，注意敏感信息脱敏)
-            // 这里简单记录 QueryString，Body 读取比较复杂需要 EnableBuffering
             if (request.QueryString.HasValue)
             {
                 log.Parameters = request.QueryString.Value;
             }
 
-            await _auditLogService.LogAsync(log);
+            // Use a try-catch block to ensure logging doesn't affect the response
+            try
+            {
+                await _auditLogService.LogAsync(log);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to write audit log");
+            }
         }
     }
 }
