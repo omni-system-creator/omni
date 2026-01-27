@@ -56,6 +56,9 @@ namespace omsapi.Controllers
             var strategy = _context.Database.CreateExecutionStrategy();
             return await strategy.ExecuteAsync(async () =>
             {
+                // Clear ChangeTracker to prevent state corruption on retry
+                _context.ChangeTracker.Clear();
+
                 using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
@@ -87,6 +90,7 @@ namespace omsapi.Controllers
                     await _context.SaveChangesAsync();
 
                     // 2. Create Admin User
+                    // Note: dept.Id is generated after SaveChangesAsync
                     var user = new SystemUser
                     {
                         Username = registration.AdminUsername,
@@ -95,6 +99,7 @@ namespace omsapi.Controllers
                         Phone = registration.ContactPhone,
                         Email = registration.ContactEmail,
                         DeptId = dept.Id,
+                        CurrentOrgId = dept.Id, // Set current org to the new company
                         IsActive = true,
                         CreatedAt = DateTime.Now,
                         Status = "active"
@@ -105,6 +110,8 @@ namespace omsapi.Controllers
                     // 3. Update Registration Status
                     registration.Status = "approved";
                     registration.UpdatedAt = DateTime.Now;
+                    // registration is already tracked (re-fetched after Clear)
+                    
                     await _context.SaveChangesAsync();
 
                     await transaction.CommitAsync();
