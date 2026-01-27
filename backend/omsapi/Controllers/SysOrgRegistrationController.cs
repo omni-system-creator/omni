@@ -53,66 +53,70 @@ namespace omsapi.Controllers
         [HttpPost("approve/{id}")]
         public async Task<IActionResult> Approve(long id)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
             {
-                var registration = await _context.OrgRegistrations.FindAsync(id);
-                if (registration == null)
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    return NotFound("申请不存在");
+                    var registration = await _context.OrgRegistrations.FindAsync(id);
+                    if (registration == null)
+                    {
+                        return NotFound("申请不存在");
+                    }
+
+                    if (registration.Status != "pending")
+                    {
+                        return BadRequest("该申请已被处理");
+                    }
+
+                    // 1. Create Organization (Dept)
+                    var dept = new SystemDept
+                    {
+                        Name = registration.OrgName,
+                        Code = registration.OrgAbbr, // Use abbreviation as code if available
+                        Type = DeptType.Company,
+                        Leader = registration.ContactName,
+                        Phone = registration.ContactPhone,
+                        Email = registration.ContactEmail,
+                        ParentId = null, // Top level company
+                        IsActive = true,
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.Depts.Add(dept);
+                    await _context.SaveChangesAsync();
+
+                    // 2. Create Admin User
+                    var user = new SystemUser
+                    {
+                        Username = registration.AdminUsername,
+                        Password = registration.AdminPassword, // Already hashed
+                        Nickname = registration.ContactName,
+                        Phone = registration.ContactPhone,
+                        Email = registration.ContactEmail,
+                        DeptId = dept.Id,
+                        IsActive = true,
+                        CreatedAt = DateTime.Now,
+                        Status = "active"
+                    };
+                    _context.Users.Add(user);
+                    await _context.SaveChangesAsync();
+
+                    // 3. Update Registration Status
+                    registration.Status = "approved";
+                    registration.UpdatedAt = DateTime.Now;
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+
+                    return Ok("审核通过");
                 }
-
-                if (registration.Status != "pending")
+                catch (Exception ex)
                 {
-                    return BadRequest("该申请已被处理");
+                    await transaction.RollbackAsync();
+                    return StatusCode(500, $"审核失败: {ex.Message}");
                 }
-
-                // 1. Create Organization (Dept)
-                var dept = new SystemDept
-                {
-                    Name = registration.OrgName,
-                    Code = registration.OrgAbbr, // Use abbreviation as code if available
-                    Type = DeptType.Company,
-                    Leader = registration.ContactName,
-                    Phone = registration.ContactPhone,
-                    Email = registration.ContactEmail,
-                    ParentId = null, // Top level company
-                    IsActive = true,
-                    CreatedAt = DateTime.Now
-                };
-                _context.Depts.Add(dept);
-                await _context.SaveChangesAsync();
-
-                // 2. Create Admin User
-                var user = new SystemUser
-                {
-                    Username = registration.AdminUsername,
-                    Password = registration.AdminPassword, // Already hashed
-                    Nickname = registration.ContactName,
-                    Phone = registration.ContactPhone,
-                    Email = registration.ContactEmail,
-                    DeptId = dept.Id,
-                    IsActive = true,
-                    CreatedAt = DateTime.Now,
-                    Status = "active"
-                };
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-
-                // 3. Update Registration Status
-                registration.Status = "approved";
-                registration.UpdatedAt = DateTime.Now;
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-
-                return Ok("审核通过");
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                return StatusCode(500, $"审核失败: {ex.Message}");
-            }
+            });
         }
 
         [HttpPost("reject/{id}")]
