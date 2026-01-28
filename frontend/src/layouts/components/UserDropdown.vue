@@ -7,8 +7,8 @@
       </a-avatar>
       <div class="user-info">
         <span class="username-text">{{ userStore.nickname || userStore.username }}</span>
-        <a-tooltip v-if="userStore.currentOrg" :title="userStore.currentOrg.name" placement="bottom">
-            <span class="org-name">{{ userStore.currentOrg.name }}</span>
+        <a-tooltip v-if="userStore.currentOrg" :title="userStore.currentOrg.name" placement="left">
+            <span class="org-name">{{ userStore.currentOrg.orgAbbr || userStore.currentOrg.name }}</span>
         </a-tooltip>
       </div>
     </span>
@@ -23,7 +23,7 @@
             </template>
             <a-menu-item v-for="org in userStore.organizations.slice(0, 10)" :key="'org-'+org.id" @click="handleSwitchOrg(org)">
                 <span style="display: flex; justify-content: space-between; align-items: center; min-width: 150px;">
-                    <span>{{ org.name }}</span>
+                    <span>{{ org.orgAbbr || org.name }}</span>
                     <CheckOutlined v-if="userStore.currentOrg?.id === org.id" style="color: #52c41a" />
                 </span>
             </a-menu-item>
@@ -183,6 +183,7 @@ const handleOrgModalOk = async () => {
     const orgDto = {
         id: selectedOrg.id,
         name: selectedOrg.name,
+        orgAbbr: selectedOrg.orgAbbr,
         isCurrent: false
     };
     await handleSwitchOrg(orgDto);

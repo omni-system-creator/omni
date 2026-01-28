@@ -305,6 +305,8 @@ namespace omsapi.Services
 
                     if (dto.Name != null)
                         dept.Name = dto.Name;
+                    if (dto.OrgAbbr != null)
+                        dept.OrgAbbr = dto.OrgAbbr;
                     if (dto.Type.HasValue)
                         dept.Type = dto.Type.Value;
                     if (dto.Leader != null)

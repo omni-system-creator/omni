@@ -12,6 +12,7 @@ export interface Dept {
   id: number;
   parentId: number | null;
   name: string;
+  orgAbbr?: string;
   code?: string;
   type: DeptType;
   leader?: string;
@@ -30,6 +31,7 @@ export type DeptDto = Dept;
 export interface CreateDeptParams {
   parentId?: number | null;
   name: string;
+  orgAbbr?: string;
   code?: string;
   type: DeptType;
   leader?: string;
@@ -44,6 +46,7 @@ export interface CreateDeptParams {
 export interface UpdateDeptParams {
   parentId?: number | null;
   name?: string;
+  orgAbbr?: string;
   code?: string;
   type?: DeptType;
   leader?: string;

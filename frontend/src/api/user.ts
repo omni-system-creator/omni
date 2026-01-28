@@ -88,6 +88,7 @@ export interface UserOrgDto {
   id: number;
   name: string;
   type: string;
+  orgAbbr?: string;
   isCurrent: boolean;
 }
 

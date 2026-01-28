@@ -91,6 +91,10 @@ export const useUserStore = defineStore('user', () => {
            if (!exists && currentOrg.value.id !== 0) { // If not found and not Demo(0)
                if (res.length > 0 && res[0]) switchOrg(res[0]);
                else currentOrg.value = null;
+           } else if (exists) {
+               // Update currentOrg info (e.g. orgAbbr) without full switch
+               currentOrg.value = exists;
+               localStorage.setItem('oms.currentOrg', JSON.stringify(exists));
            }
         }
       }

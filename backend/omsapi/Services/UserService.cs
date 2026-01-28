@@ -169,6 +169,7 @@ namespace omsapi.Services
                 {
                     Id = demoOrg.Id,
                     Name = demoOrg.Name, // Should be "演示组织"
+                    OrgAbbr = demoOrg.OrgAbbr,
                     Type = "Demo",
                     IsCurrent = user.CurrentOrgId == demoOrg.Id
                 });
@@ -217,10 +218,11 @@ namespace omsapi.Services
                         {
                             Id = root.Id,
                             Name = root.Name,
+                            OrgAbbr = root.OrgAbbr,
                             Type = root.Type.ToString(),
                             IsCurrent = currentRootId == root.Id
                         });
-                     }
+                    }
                 }
                 
                 return result;
@@ -258,6 +260,7 @@ namespace omsapi.Services
                         {
                             Id = root.Id,
                             Name = root.Name,
+                            OrgAbbr = root.OrgAbbr,
                             Type = root.Type.ToString(),
                             IsCurrent = user.CurrentOrgId == root.Id
                         });
@@ -275,6 +278,7 @@ namespace omsapi.Services
                      {
                          Id = currentOrg.Id,
                          Name = currentOrg.Name,
+                         OrgAbbr = currentOrg.OrgAbbr,
                          Type = currentOrg.Type.ToString(),
                          IsCurrent = true
                      });

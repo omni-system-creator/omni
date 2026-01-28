@@ -66,6 +66,9 @@
         <a-form-item label="名称" name="name">
           <a-input v-model:value="formState.name" placeholder="请输入名称" />
         </a-form-item>
+        <a-form-item label="组织简称" name="orgAbbr">
+          <a-input v-model:value="formState.orgAbbr" placeholder="请输入组织简称（用于图形化显示）" />
+        </a-form-item>
         <a-form-item label="类型" name="type">
           <a-select v-model:value="formState.type">
             <a-select-option :value="DeptType.Group">集团</a-select-option>
@@ -634,7 +637,7 @@ const drawNodeRecursive = (node: LayoutNode) => {
 
   // Text: Name
   const nameText = new Text({
-    text: node.name,
+    text: node.orgAbbr || node.name,
     x: 10,
     y: headerHeight,
     textAlign: 'center',
@@ -1079,6 +1082,7 @@ const currentId = ref<number | null>(null);
 const formState = reactive<any>({
   parentId: undefined,
   name: '',
+  orgAbbr: '',
   code: '',
   type: DeptType.Department,
   leader: '',
@@ -1129,6 +1133,7 @@ const handleAdd = (record?: Dept) => {
   currentId.value = null;
   formState.parentId = record ? record.id : undefined; // 0 or undefined for root? If record is undefined, parentId is undefined (root)
   formState.name = '';
+  formState.orgAbbr = '';
   formState.code = '';
   formState.leader = '';
   leaderDisplayInfo.value = [];
@@ -1144,6 +1149,7 @@ const handleEdit = (record: Dept) => {
   currentId.value = record.id;
   formState.parentId = record.parentId;
   formState.name = record.name;
+  formState.orgAbbr = record.orgAbbr || '';
   formState.code = record.code;
   formState.type = record.type;
   formState.leader = record.leader;
@@ -1296,16 +1302,7 @@ const onLeaderChange = async (user: any) => {
 
 <style scoped>
 .sys-org-container {
-  position: relative;
-}
-.canvas-container {
-  width: 100%;
-  height: calc(100vh - 64px);
-}
-</style>
-<style scoped>
-.sys-org-container {
-  height: calc(100vh - 84px);
+  flex: 1;
   /* Adjust based on layout */
   display: flex;
   flex-direction: column;
@@ -1322,6 +1319,7 @@ const onLeaderChange = async (user: any) => {
 }
 
 .canvas-container {
+  height: 100%;
   flex: 1;
   background-color: #f0f2f5;
   border-radius: 8px;
