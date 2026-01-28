@@ -29,6 +29,15 @@
         </template>
         <template v-else-if="column.key === 'actions'">
           <a-space>
+            <a-tooltip title="预览" v-if="record.filePath">
+              <a-button
+                type="text"
+                size="small"
+                @click="handlePreview(record as any)"
+              >
+                <template #icon><EyeOutlined /></template>
+              </a-button>
+            </a-tooltip>
             <a-tooltip title="下载" v-if="record.filePath">
               <a-button
                 type="text"
@@ -56,11 +65,12 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { FileTextOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { FileTextOutlined, DownloadOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import type { ColumnType } from 'ant-design-vue/es/table/interface'
 import type { ContractAttachmentDto } from '@/api/contract'
 import { uploadContractAttachment, deleteContractAttachment } from '@/api/contract'
+import { getKkViewUrl } from '@/utils/kkview'
 
 const props = defineProps<{
   contractId: number
@@ -138,6 +148,19 @@ const handleDelete = async (item: ContractAttachmentDto) => {
     emit('changed')
   } catch (e) {
     message.error('删除失败')
+  }
+}
+
+const handlePreview = (item: ContractAttachmentDto) => {
+  if (!item.filePath || !item.fileName) {
+    message.warning('无法预览：文件路径或文件名缺失')
+    return
+  }
+  const url = getKkViewUrl(item.filePath, item.fileName)
+  if (url) {
+    window.open(url, '_blank')
+  } else {
+    message.warning('无法获取预览地址')
   }
 }
 </script>

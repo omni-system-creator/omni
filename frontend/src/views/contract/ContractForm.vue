@@ -107,23 +107,6 @@
       <a-textarea v-model:value="formState.description" :rows="4" placeholder="请输入合同详细条款或备注信息" />
     </a-form-item>
 
-    <a-form-item label="附件上传" name="files">
-      <a-upload-dragger
-        v-model:fileList="formState.fileList"
-        name="file"
-        action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-        @change="handleUploadChange"
-      >
-        <p class="ant-upload-drag-icon">
-          <inbox-outlined />
-        </p>
-        <p class="ant-upload-text">点击或拖拽文件到此区域上传</p>
-        <p class="ant-upload-hint">
-          支持单个或批量上传。严禁上传公司内部绝密数据或其他违禁文件。
-        </p>
-      </a-upload-dragger>
-    </a-form-item>
-
     <CustomerSelector
       v-model:visible="customerSelectorVisible"
       @select="handleCustomerSelect"
@@ -133,9 +116,6 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
-import { InboxOutlined } from '@ant-design/icons-vue';
-import type { UploadChangeParam } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import { getDictDataByCode, type DictDataDto } from '@/api/dict';
@@ -214,7 +194,6 @@ const formState = reactive({
   paymentMethod: undefined as string | undefined,
   period: [] as any,
   description: '',
-  fileList: [] as any[],
 });
 
 watch(() => props.initialType, (newVal) => {
@@ -230,18 +209,6 @@ const rules = {
   pricingType: [{ required: true, message: '请选择总价类型', trigger: 'change' }],
   signDate: [{ required: true, message: '请选择签订日期', trigger: 'change' }],
   amount: [{ required: true, message: '请输入合同金额', trigger: 'blur' }],
-};
-
-const handleUploadChange = (info: UploadChangeParam) => {
-  const status = info.file.status;
-  if (status !== 'uploading') {
-    console.log(info.file, info.fileList);
-  }
-  if (status === 'done') {
-    message.success(`${info.file.name} file uploaded successfully.`);
-  } else if (status === 'error') {
-    message.error(`${info.file.name} file upload failed.`);
-  }
 };
 
 const openCustomerSelector = () => {
@@ -316,17 +283,6 @@ const setFormState = async (data: any) => {
     formState.period = [dayjs(data.startDate), dayjs(data.endDate)];
   } else {
     formState.period = [];
-  }
-  
-  if (data.files) {
-    try {
-      const files = JSON.parse(data.files);
-      formState.fileList = Array.isArray(files) ? files : [];
-    } catch (e) {
-      formState.fileList = [];
-    }
-  } else {
-    formState.fileList = [];
   }
 };
 
