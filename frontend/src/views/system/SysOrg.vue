@@ -866,6 +866,10 @@ const drawNodeRecursive = (node: LayoutNode) => {
     // e.origin 是原始 DOM 事件 (MouseEvent)
     const originEvent = e.origin;
 
+    if (originEvent && originEvent.preventDefault) {
+      originEvent.preventDefault();
+    }
+
     contextMenuType.value = 'node';
     currentId.value = node.id;
     // Check if node has custom position
@@ -983,6 +987,10 @@ const initLeafer = () => {
   app.on(PointerEvent.MENU, (e: any) => {
     // 如果是节点触发的，已经在节点事件中 e.stop() 了，所以这里只处理背景
     const originEvent = e.origin;
+
+    if (originEvent && originEvent.preventDefault) {
+      originEvent.preventDefault();
+    }
 
     contextMenuType.value = 'canvas';
     contextMenuVisible.value = true;
