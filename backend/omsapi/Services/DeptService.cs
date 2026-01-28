@@ -372,28 +372,104 @@ namespace omsapi.Services
 
         public async Task<bool> DeleteDeptAsync(long id)
         {
-            var dept = await _context
-                .Depts.Include(d => d.Children)
-                .Include(d => d.Users)
-                .FirstOrDefaultAsync(d => d.Id == id);
-
-            if (dept == null)
-                return false;
-
-            if (dept.Children.Any())
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
             {
-                throw new InvalidOperationException(
-                    "Cannot delete department with sub-departments."
-                );
-            }
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // 1. Get all dept IDs in the subtree (BFS)
+                    var allDepts = await _context.Depts.ToListAsync();
+                    var targetDepts = new List<SystemDept>();
+                    var queue = new Queue<long>();
+                    queue.Enqueue(id);
 
-            if (dept.Users.Any())
-            {
-                throw new InvalidOperationException("Cannot delete department with users.");
-            }
+                    while (queue.Count > 0)
+                    {
+                        var currentId = queue.Dequeue();
+                        var currentDept = allDepts.FirstOrDefault(d => d.Id == currentId);
+                        if (currentDept != null)
+                        {
+                            targetDepts.Add(currentDept);
+                            var children = allDepts.Where(d => d.ParentId == currentId).Select(d => d.Id);
+                            foreach (var childId in children)
+                            {
+                                queue.Enqueue(childId);
+                            }
+                        }
+                    }
 
-            _context.Depts.Remove(dept);
-            await _context.SaveChangesAsync();
+                    if (targetDepts.Count == 0) return;
+
+                    var deptIds = targetDepts.Select(d => d.Id).ToList();
+
+                    // 2. Identify related entities
+                    var users = await _context.Users.Where(u => u.DeptId.HasValue && deptIds.Contains(u.DeptId.Value)).ToListAsync();
+                    var userIds = users.Select(u => u.Id).ToList();
+
+                    var roles = await _context.Roles.Where(r => r.DeptId.HasValue && deptIds.Contains(r.DeptId.Value)).ToListAsync();
+                    var roleIds = roles.Select(r => r.Id).ToList();
+
+                    var posts = await _context.Posts.Where(p => p.DeptId.HasValue && deptIds.Contains(p.DeptId.Value)).ToListAsync();
+                    var postIds = posts.Select(p => p.Id).ToList();
+
+                    // 3. Delete Mappings & Associations
+                    // UserRoles
+                    if (userIds.Count > 0 || roleIds.Count > 0)
+                    {
+                        var userRoles = await _context.UserRoles
+                            .Where(ur => userIds.Contains(ur.UserId) || roleIds.Contains(ur.RoleId))
+                            .ToListAsync();
+                        if (userRoles.Count > 0) _context.UserRoles.RemoveRange(userRoles);
+                    }
+
+                    // UserPosts
+                    if (userIds.Count > 0 || postIds.Count > 0 || deptIds.Count > 0)
+                    {
+                        var userPosts = await _context.UserPosts
+                            .Where(up => userIds.Contains(up.UserId) || postIds.Contains(up.PostId) || deptIds.Contains(up.DeptId))
+                            .ToListAsync();
+                        if (userPosts.Count > 0) _context.UserPosts.RemoveRange(userPosts);
+                    }
+
+                    // RolePermissions
+                    if (roleIds.Count > 0)
+                    {
+                        var rolePermissions = await _context.RolePermissions
+                            .Where(rp => roleIds.Contains(rp.RoleId))
+                            .ToListAsync();
+                        if (rolePermissions.Count > 0) _context.RolePermissions.RemoveRange(rolePermissions);
+                    }
+
+                    // ProjectMembers (Clean up users from projects)
+                    if (users.Count > 0)
+                    {
+                         var usernames = users.Select(u => u.Username).ToList();
+                         var projectMembers = await _context.ProjectMembers
+                            .Where(pm => usernames.Contains(pm.Username))
+                            .ToListAsync();
+                        if (projectMembers.Count > 0) _context.ProjectMembers.RemoveRange(projectMembers);
+                    }
+
+                    // 4. Delete Core Entities
+                    if (users.Count > 0) _context.Users.RemoveRange(users);
+                    if (roles.Count > 0) _context.Roles.RemoveRange(roles);
+                    if (posts.Count > 0) _context.Posts.RemoveRange(posts);
+
+                    // 5. Delete Depts (Reverse order: Bottom-up)
+                    targetDepts.Reverse();
+                    _context.Depts.RemoveRange(targetDepts);
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            });
+
             return true;
         }
 
