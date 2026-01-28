@@ -447,16 +447,94 @@ namespace omsapi.Services
                         if (roleInheritances.Count > 0) _context.RoleInheritances.RemoveRange(roleInheritances);
                     }
 
-                    // SystemFiles (Delete dept files or unset dept)
-                    // We should probably delete files that belong to the department if it's a hard delete.
-                    // Or set DeptId to null?
-                    // User requested "联动删完" (Cascade delete completely), so we delete files.
-                    if (deptIds.Count > 0)
+                    // SystemFiles & SystemFileShares (Cascade delete files and shares)
+                    // 1. Identify initial set of files (by Dept or Owner)
+                    var filesToDelete = new List<SystemFile>();
+                    if (userIds.Count > 0 || deptIds.Count > 0)
                     {
-                        var deptFiles = await _context.Files
-                            .Where(f => f.DeptId.HasValue && deptIds.Contains(f.DeptId.Value))
+                         var query = _context.Files.AsQueryable();
+                         if (userIds.Count > 0 && deptIds.Count > 0)
+                         {
+                             query = query.Where(f => userIds.Contains(f.OwnerId) || (f.DeptId.HasValue && deptIds.Contains(f.DeptId.Value)));
+                         }
+                         else if (userIds.Count > 0)
+                         {
+                             query = query.Where(f => userIds.Contains(f.OwnerId));
+                         }
+                         else if (deptIds.Count > 0)
+                         {
+                             query = query.Where(f => f.DeptId.HasValue && deptIds.Contains(f.DeptId.Value));
+                         }
+                         filesToDelete = await query.ToListAsync();
+                    }
+
+                    // 2. Expand to include ALL descendants (Files inside these folders)
+                    if (filesToDelete.Count > 0)
+                    {
+                        var knownIds = new HashSet<long>(filesToDelete.Select(f => f.Id));
+                        var recentIds = knownIds.ToList();
+                        
+                        while (true)
+                        {
+                            var children = await _context.Files
+                                .Where(f => f.ParentId.HasValue && recentIds.Contains(f.ParentId.Value))
+                                .ToListAsync();
+                            
+                            var newChildren = children.Where(c => !knownIds.Contains(c.Id)).ToList();
+                            if (newChildren.Count == 0) break;
+                            
+                            filesToDelete.AddRange(newChildren);
+                            foreach (var c in newChildren) knownIds.Add(c.Id);
+                            recentIds = newChildren.Select(c => c.Id).ToList();
+                        }
+
+                        var allFileIds = filesToDelete.Select(f => f.Id).ToList();
+
+                        // 3. Delete FileShares
+                        var shares = await _context.FileShares
+                            .Where(fs => allFileIds.Contains(fs.FileId) || 
+                                         userIds.Contains(fs.SharedByUserId) || 
+                                         (fs.SharedToUserId.HasValue && userIds.Contains(fs.SharedToUserId.Value)))
                             .ToListAsync();
-                        if (deptFiles.Count > 0) _context.Files.RemoveRange(deptFiles);
+                        if (shares.Count > 0) _context.FileShares.RemoveRange(shares);
+
+                        // 4. Delete Files (Topological Sort: Leaves First)
+                        // To avoid FK constraint (ParentId), we must delete children before parents.
+                        // Repeatedly find leaves and remove them.
+                        var remainingFiles = filesToDelete.ToList();
+                        var deleteOrder = new List<SystemFile>();
+
+                        while (remainingFiles.Count > 0)
+                        {
+                            var parentIds = remainingFiles
+                                .Where(f => f.ParentId.HasValue)
+                                .Select(f => f.ParentId!.Value)
+                                .ToHashSet();
+                            
+                            // Leaves are files that are NOT parents of any other file in the remaining set
+                            var leaves = remainingFiles.Where(f => !parentIds.Contains(f.Id)).ToList();
+                            
+                            if (leaves.Count == 0)
+                            {
+                                // Cycle detected or root dependency issue? Safe fallback: add rest.
+                                deleteOrder.AddRange(remainingFiles);
+                                break;
+                            }
+                            
+                            deleteOrder.AddRange(leaves);
+                            foreach (var leaf in leaves) remainingFiles.Remove(leaf);
+                        }
+                        
+                        _context.Files.RemoveRange(deleteOrder);
+                    }
+                    
+                    // SystemAuditLog (Unlink users to avoid FK constraint)
+                    if (userIds.Count > 0)
+                    {
+                        var logs = await _context.AuditLogs
+                            .Where(l => l.UserId.HasValue && userIds.Contains(l.UserId.Value))
+                            .ToListAsync();
+                        foreach (var log in logs) log.UserId = null;
                     }
 
                     // ProjectMembers (Clean up users from projects)
