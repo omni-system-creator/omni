@@ -447,6 +447,18 @@ namespace omsapi.Services
                         if (roleInheritances.Count > 0) _context.RoleInheritances.RemoveRange(roleInheritances);
                     }
 
+                    // SystemFiles (Delete dept files or unset dept)
+                    // We should probably delete files that belong to the department if it's a hard delete.
+                    // Or set DeptId to null?
+                    // User requested "联动删完" (Cascade delete completely), so we delete files.
+                    if (deptIds.Count > 0)
+                    {
+                        var deptFiles = await _context.Files
+                            .Where(f => f.DeptId.HasValue && deptIds.Contains(f.DeptId.Value))
+                            .ToListAsync();
+                        if (deptFiles.Count > 0) _context.Files.RemoveRange(deptFiles);
+                    }
+
                     // ProjectMembers (Clean up users from projects)
                     if (users.Count > 0)
                     {
