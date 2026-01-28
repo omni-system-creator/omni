@@ -11,6 +11,9 @@ namespace omsapi.Models.Dtos
         [MaxLength(50)]
         public string Name { get; set; } = string.Empty;
 
+        [MaxLength(20)]
+        public string? OrgAbbr { get; set; }
+
         [MaxLength(50)]
         public string? Code { get; set; }
 
@@ -85,6 +88,7 @@ namespace omsapi.Models.Dtos
         public long Id { get; set; }
         public long? ParentId { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string? OrgAbbr { get; set; }
         public string? Code { get; set; }
         public string? FullCode { get; set; }
         public DeptType Type { get; set; }

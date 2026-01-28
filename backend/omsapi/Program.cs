@@ -9,6 +9,8 @@ using omsapi.Infrastructure.Extensions;
 using Serilog;
 using Pgvector.EntityFrameworkCore;
 
+using omsapi.Services.Interfaces;
+
 Console.OutputEncoding = Encoding.UTF8;
 // 禁用默认的 Claim 类型映射，防止 "sub" 被映射为 ClaimTypes.NameIdentifier 等
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -151,6 +153,10 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
+        // Run SQL file migrations
+        var migrationService = services.GetRequiredService<ISqlMigrationService>();
+        await migrationService.ApplyMigrationsAsync();
+
         var context = services.GetRequiredService<OmsContext>();
         var pgContext = services.GetRequiredService<OmsPgContext>();
         await DbInitializer.InitializeAsync(context, pgContext);

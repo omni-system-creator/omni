@@ -17,6 +17,9 @@ namespace omsapi.Models.Entities
         [MaxLength(50)]
         public string Name { get; set; } = string.Empty;
 
+        [MaxLength(20)]
+        public string OrgAbbr { get; set; } = string.Empty;
+
         [MaxLength(50)]
         public string? Code { get; set; } 
 

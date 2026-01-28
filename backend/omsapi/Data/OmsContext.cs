@@ -40,6 +40,7 @@ namespace omsapi.Data
         public DbSet<omsapi.Models.Entities.System.SysOrgRegistration> OrgRegistrations { get; set; }
         public DbSet<SystemAnonce> Anonces { get; set; }
         public DbSet<AiGeneratedContent> AiGeneratedContents { get; set; }
+        public DbSet<SysDbMigration> DbMigrations { get; set; }
         
         // Archive Entities
         public DbSet<ArchFond> ArchFonds { get; set; }

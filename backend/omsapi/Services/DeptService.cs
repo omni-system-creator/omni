@@ -456,6 +456,7 @@ namespace omsapi.Services
                 Id = dept.Id,
                 ParentId = dept.ParentId == 0 ? null : dept.ParentId,
                 Name = dept.Name,
+                OrgAbbr = dept.OrgAbbr,
                 Code = GetCodeSuffix(dept.Code ?? string.Empty),
                 FullCode = dept.Code,
                 Type = dept.Type,
