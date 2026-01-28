@@ -4,6 +4,8 @@ using omsapi.Infrastructure.Attributes;
 using omsapi.Models.Common;
 using omsapi.Models.Dtos;
 using omsapi.Models.Entities;
+using omsapi.Models.Entities.System;
+using omsapi.Models.Entities.Chat;
 using omsapi.Services.Interfaces;
 
 namespace omsapi.Services
@@ -498,34 +500,16 @@ namespace omsapi.Services
                             .ToListAsync();
                         if (shares.Count > 0) _context.FileShares.RemoveRange(shares);
 
-                        // 4. Delete Files (Topological Sort: Leaves First)
-                        // To avoid FK constraint (ParentId), we must delete children before parents.
-                        // Repeatedly find leaves and remove them.
-                        var remainingFiles = filesToDelete.ToList();
-                        var deleteOrder = new List<SystemFile>();
-
-                        while (remainingFiles.Count > 0)
+                        // 4. Break Parent-Child Links (Set ParentId = null) to avoid FK constraints during deletion
+                        // This is safer than topological sort for large sets or potential cycles
+                        foreach (var file in filesToDelete)
                         {
-                            var parentIds = remainingFiles
-                                .Where(f => f.ParentId.HasValue)
-                                .Select(f => f.ParentId!.Value)
-                                .ToHashSet();
-                            
-                            // Leaves are files that are NOT parents of any other file in the remaining set
-                            var leaves = remainingFiles.Where(f => !parentIds.Contains(f.Id)).ToList();
-                            
-                            if (leaves.Count == 0)
-                            {
-                                // Cycle detected or root dependency issue? Safe fallback: add rest.
-                                deleteOrder.AddRange(remainingFiles);
-                                break;
-                            }
-                            
-                            deleteOrder.AddRange(leaves);
-                            foreach (var leaf in leaves) remainingFiles.Remove(leaf);
+                            file.ParentId = null;
                         }
-                        
-                        _context.Files.RemoveRange(deleteOrder);
+                        await _context.SaveChangesAsync(); // Commit the link breaking first
+
+                        // 5. Delete Files
+                        _context.Files.RemoveRange(filesToDelete);
                     }
                     
                     // SystemAuditLog (Unlink users to avoid FK constraint)
@@ -535,6 +519,43 @@ namespace omsapi.Services
                             .Where(l => l.UserId.HasValue && userIds.Contains(l.UserId.Value))
                             .ToListAsync();
                         foreach (var log in logs) log.UserId = null;
+
+                        // SystemAnonce (Unlink users)
+                        var anonces = await _context.Anonces
+                            .Where(a => (a.CreatedBy.HasValue && userIds.Contains(a.CreatedBy.Value)) || 
+                                        (a.UpdatedBy.HasValue && userIds.Contains(a.UpdatedBy.Value)))
+                            .ToListAsync();
+                        foreach (var a in anonces)
+                        {
+                            if (a.CreatedBy.HasValue && userIds.Contains(a.CreatedBy.Value)) a.CreatedBy = null;
+                            if (a.UpdatedBy.HasValue && userIds.Contains(a.UpdatedBy.Value)) a.UpdatedBy = null;
+                        }
+
+                        // ChatConversation (Unlink users)
+                        var chats = await _context.ChatConversations
+                            .Where(c => (c.User1Id.HasValue && userIds.Contains(c.User1Id.Value)) || 
+                                        (c.User2Id.HasValue && userIds.Contains(c.User2Id.Value)))
+                            .ToListAsync();
+                        foreach (var c in chats)
+                        {
+                            if (c.User1Id.HasValue && userIds.Contains(c.User1Id.Value)) c.User1Id = null;
+                            if (c.User2Id.HasValue && userIds.Contains(c.User2Id.Value)) c.User2Id = null;
+                        }
+                        
+                        // ChatMessage (Unlink users)
+                        var messages = await _context.ChatMessages
+                            .Where(m => m.SenderUserId.HasValue && userIds.Contains(m.SenderUserId.Value))
+                            .ToListAsync();
+                        foreach (var m in messages) m.SenderUserId = null;
+                    }
+
+                    // SystemConfig (Delete Org-specific configs)
+                    if (deptIds.Count > 0)
+                    {
+                        var configs = await _context.SystemConfigs
+                            .Where(c => c.OrgId.HasValue && deptIds.Contains(c.OrgId.Value))
+                            .ToListAsync();
+                        if (configs.Count > 0) _context.SystemConfigs.RemoveRange(configs);
                     }
 
                     // ProjectMembers (Clean up users from projects)
