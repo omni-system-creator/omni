@@ -80,16 +80,57 @@ namespace omsapi.Services
 
         private async Task EnsureMigrationTableExistsAsync()
         {
+            // Determine DB provider
+            var provider = _context.Database.ProviderName;
             var exists = false;
-            try
+
+            try 
             {
-                // Try to query the table to see if it exists
-                await _context.DbMigrations.AnyAsync();
-                exists = true;
+                if (provider != null && provider.Contains("SqlServer"))
+                {
+                     // SQL Server check
+                     var count = await _context.Database.ExecuteSqlRawAsync(
+                         "SELECT 1 FROM sysobjects WHERE name='sys_db_migration' AND xtype='U'");
+                     // ExecuteSqlRawAsync returns rows affected, but for SELECT it might be -1. 
+                     // Better use SqlQuery or just try create if not exists directly (which we do below).
+                     // Actually, the simplest way to avoid ERROR logs is NOT to query the table directly via EF set.
+                     // We can just execute the CREATE IF NOT EXISTS script directly.
+                     // For SQL Server:
+                     // IF NOT EXISTS (...) CREATE ...
+                     // This runs without error even if table exists.
+                }
+                // For others (MySQL/PG), CREATE TABLE IF NOT EXISTS is also safe.
+                
+                // So we can skip the check and just run the create script!
+                // But we want to avoid "Creating table..." log if it already exists?
+                // Let's use a raw SQL check that targets metadata tables.
+                
+                if (provider != null && provider.Contains("SqlServer"))
+                {
+                    // For MSSQL, use a raw query to check existence
+                    var result = await _context.Database.SqlQueryRaw<int>(
+                        "SELECT COUNT(*) as Value FROM sysobjects WHERE name='sys_db_migration' AND xtype='U'")
+                        .ToListAsync();
+                    exists = result.FirstOrDefault() > 0;
+                }
+                else if (provider != null && provider.Contains("PostgreSQL"))
+                {
+                    var result = await _context.Database.SqlQueryRaw<int>(
+                        "SELECT COUNT(*) as Value FROM information_schema.tables WHERE table_name = 'sys_db_migration'")
+                        .ToListAsync();
+                    exists = result.FirstOrDefault() > 0;
+                }
+                else // MySQL
+                {
+                    var result = await _context.Database.SqlQueryRaw<int>(
+                        "SELECT COUNT(*) as Value FROM information_schema.tables WHERE table_name = 'sys_db_migration' AND table_schema = DATABASE()")
+                        .ToListAsync();
+                    exists = result.FirstOrDefault() > 0;
+                }
             }
             catch
             {
-                // Table likely doesn't exist
+                // If metadata query fails, fallback to assumption that it doesn't exist
                 exists = false;
             }
 
@@ -97,8 +138,6 @@ namespace omsapi.Services
             {
                 _logger.LogInformation("Creating sys_db_migration table...");
                 
-                // Determine DB provider to generate correct SQL
-                var provider = _context.Database.ProviderName;
                 string createSql;
 
                 if (provider != null && provider.Contains("SqlServer"))
