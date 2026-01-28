@@ -17,10 +17,10 @@
         @select="onSelect"
         @rightClick="onRightClick"
       >     <template #title="{ title, type }">
-          <span v-if="type === 'connection'"><FolderOutlined /> {{ title }}</span>
-          <span v-else-if="type === 'database'"><HddOutlined /> {{ title }}</span>
-          <span v-else-if="type === 'table'"><TableOutlined /> {{ title }}</span>
-          <span v-else>{{ title }}</span>
+          <span class="tree-node-title" v-if="type === 'connection'"><FolderOutlined /> {{ title }}</span>
+          <span class="tree-node-title" v-else-if="type === 'database'"><HddOutlined /> {{ title }}</span>
+          <span class="tree-node-title" v-else-if="type === 'table'"><TableOutlined /> {{ title }}</span>
+          <span class="tree-node-title" v-else>{{ title }}</span>
         </template>
       </a-tree>
 
@@ -251,7 +251,7 @@ defineExpose({
 
 <style scoped>
 .left-panel {
-  width: 260px;
+  width: 100%;
   border-right: 1px solid #f0f0f0;
   display: flex;
   flex-direction: column;
@@ -290,5 +290,18 @@ defineExpose({
 
 :deep(.ant-tree-treenode) {
   width: 100%;
+}
+
+.tree-node-title {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-node-title .anticon {
+  margin-right: 4px;
+  flex-shrink: 0;
 }
 </style>

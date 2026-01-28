@@ -61,7 +61,8 @@ const emit = defineEmits([
   'addColumn', 
   'editColumn', 
   'insertRow', 
-  'editRow'
+  'editRow',
+  'columnsLoaded'
 ]);
 
 // Watch triggers
@@ -135,6 +136,7 @@ const loadColumns = async () => {
           ...col,
           comment: col.comment || col.Comment || ''
       }));
+      emit('columnsLoaded', columnData.value);
     }
   } catch (error) {
     message.error('加载列信息失败');

@@ -41,6 +41,7 @@
           @editColumn="(record) => $emit('handleOpenEditColumn', record, pane)"
           @insertRow="$emit('handleInsertRow', pane)"
           @editRow="(record) => $emit('handleEditRow', record, pane)"
+          @columnsLoaded="(cols) => handleColumnsLoaded(cols, pane)"
         />
 
       </a-tab-pane>
@@ -73,6 +74,7 @@ interface Pane {
   closable?: boolean;
   data: any; // Node data
   contentData?: any[]; // For lists (DBs, Tables)
+  columnData?: any[]; // For table columns
   loading?: boolean;
   columnsTrigger?: number;
   dataTrigger?: number;
@@ -246,6 +248,10 @@ const refreshTableData = (paneData: any) => {
   }
 };
 
+const handleColumnsLoaded = (cols: any[], pane: any) => {
+  pane.columnData = cols;
+};
+
 const getActivePane = () => {
   return panes.value.find(p => p.key === activeKey.value);
 };
@@ -262,6 +268,7 @@ defineExpose({
 <style scoped>
 .right-panel {
   flex: 1;
+  height: 100%;
   overflow: hidden;
   background: #fff;
   display: flex;

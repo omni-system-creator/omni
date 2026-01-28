@@ -1,24 +1,29 @@
 <template>
   <div class="page-container">
-    <DataSourceSidebar
-      ref="sidebarRef"
-      @select="onSidebarSelect"
-      @addConnection="onAddConnection"
-      @createDb="onCreateDb"
-      @createTable="onCreateTable"
-      @editConnection="onEditConnection"
-      @nodeRefreshed="onNodeRefreshed"
-    />
-    
-    <DataSourceTabs
-      ref="tabsRef"
-      @createDb="onCreateDb"
-      @createTable="onCreateTable"
-      @handleOpenAddColumn="onOpenAddColumn"
-      @handleOpenEditColumn="onOpenEditColumn"
-      @handleInsertRow="onInsertRow"
-      @handleEditRow="onEditRow"
-    />
+    <SplitLayout position="left" :initialWidth="260" :minWidth="200" :maxWidth="500">
+      <template #sidebar>
+        <DataSourceSidebar
+          ref="sidebarRef"
+          @select="onSidebarSelect"
+          @addConnection="onAddConnection"
+          @createDb="onCreateDb"
+          @createTable="onCreateTable"
+          @editConnection="onEditConnection"
+          @nodeRefreshed="onNodeRefreshed"
+        />
+      </template>
+      <template #main>
+        <DataSourceTabs
+          ref="tabsRef"
+          @createDb="onCreateDb"
+          @createTable="onCreateTable"
+          @handleOpenAddColumn="onOpenAddColumn"
+          @handleOpenEditColumn="onOpenEditColumn"
+          @handleInsertRow="onInsertRow"
+          @handleEditRow="onEditRow"
+        />
+      </template>
+    </SplitLayout>
 
     <DataSourceModals
       ref="modalsRef"
@@ -33,6 +38,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import SplitLayout from '@/components/SplitLayout/index.vue';
 import DataSourceSidebar from './components/DataSourceSidebar.vue';
 import DataSourceTabs from './components/DataSourceTabs.vue';
 import DataSourceModals from './components/DataSourceModals.vue';
