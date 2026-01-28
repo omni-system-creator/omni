@@ -439,6 +439,12 @@ namespace omsapi.Services
                             .Where(rp => roleIds.Contains(rp.RoleId))
                             .ToListAsync();
                         if (rolePermissions.Count > 0) _context.RolePermissions.RemoveRange(rolePermissions);
+
+                        // RoleInheritances (Delete role hierarchy relations)
+                        var roleInheritances = await _context.RoleInheritances
+                            .Where(ri => roleIds.Contains(ri.ParentRoleId) || roleIds.Contains(ri.ChildRoleId))
+                            .ToListAsync();
+                        if (roleInheritances.Count > 0) _context.RoleInheritances.RemoveRange(roleInheritances);
                     }
 
                     // ProjectMembers (Clean up users from projects)
