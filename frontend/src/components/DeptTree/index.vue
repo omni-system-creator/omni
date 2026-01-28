@@ -15,7 +15,7 @@
           @select="onSelect"
           block-node
         >
-          <template #title="{ name, type }">
+          <template #title="{ name, type, orgAbbr }">
             <span v-if="type === DeptType.Group">
               <BankOutlined style="color: #faad14; margin-right: 4px" />
             </span>
@@ -25,8 +25,18 @@
             <span v-else>
               <ClusterOutlined style="color: #8c8c8c; margin-right: 4px" />
             </span>
-            <span v-if="name.indexOf(searchValue) > -1">{{ name.substr(0, name.indexOf(searchValue)) }}<span style="color: #f50">{{ searchValue }}</span>{{ name.substr(name.indexOf(searchValue) + searchValue.length) }}</span>
-            <span v-else>{{ name }}</span>
+            <span v-if="orgAbbr">
+              <span v-if="searchValue && orgAbbr.indexOf(searchValue) > -1">
+                {{ orgAbbr.substr(0, orgAbbr.indexOf(searchValue)) }}<span style="color: #f50">{{ searchValue }}</span>{{ orgAbbr.substr(orgAbbr.indexOf(searchValue) + searchValue.length) }}
+              </span>
+              <span v-else>{{ orgAbbr }}</span>
+            </span>
+            <span v-else>
+              <span v-if="searchValue && name.indexOf(searchValue) > -1">
+                {{ name.substr(0, name.indexOf(searchValue)) }}<span style="color: #f50">{{ searchValue }}</span>{{ name.substr(name.indexOf(searchValue) + searchValue.length) }}
+              </span>
+              <span v-else>{{ name }}</span>
+            </span>
           </template>
         </a-tree>
         <a-empty v-else description="暂无部门数据" />
