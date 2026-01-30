@@ -104,6 +104,7 @@ export const useUserStore = defineStore('user', () => {
   }
 
   async function switchOrg(org: UserOrgDto) {
+    console.log('[UserStore] Switching to org:', org.id, org.name);
     try {
       await switchUserOrg(org.id);
       currentOrg.value = org;

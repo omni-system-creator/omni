@@ -66,12 +66,12 @@
         
         <div class="site-layout-content">
           <div v-if="isHome">
-            <router-view :key="tabsStore.getTabIdentity(route.fullPath)" />
+            <router-view :key="`${tabsStore.getTabIdentity(route.fullPath)}_${userStore.currentOrg?.id}`" />
           </div>
           <router-view v-else v-slot="{ Component }">
             <transition :name="transitionName" mode="out-in">
               <keep-alive :include="tabsStore.cachedViews">
-                <component :is="Component" :key="tabsStore.getTabIdentity(route.fullPath)" />
+                <component :is="Component" :key="`${tabsStore.getTabIdentity(route.fullPath)}_${userStore.currentOrg?.id}`" />
               </keep-alive>
             </transition>
           </router-view>
