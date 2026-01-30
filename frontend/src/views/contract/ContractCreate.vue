@@ -53,16 +53,25 @@ const handleSubmit = () => {
           currency: formState.currency,
           paymentMethod: formState.paymentMethod,
           description: formState.description,
-          files: JSON.stringify(formState.fileList.map((f: any) => ({
-            uid: f.uid,
-            name: f.name,
-            size: f.size,
-            type: f.type,
-            lastModified: f.lastModified
-          }))), // Serialize file metadata
         };
 
-        await createContract(dto);
+        // Use FormData for unified submission
+        const formData = new FormData();
+        Object.keys(dto).forEach(key => {
+          const val = (dto as any)[key];
+          if (val !== undefined && val !== null) {
+             formData.append(key, String(val));
+          }
+        });
+
+        // Append new files
+        if (formState.newUploadFiles && formState.newUploadFiles.length > 0) {
+          formState.newUploadFiles.forEach((file: File) => {
+            formData.append('files', file);
+          });
+        }
+
+        await createContract(formData);
         message.success('合同创建成功，已提交审批！');
         router.push('/contract/track');
       } catch (error) {

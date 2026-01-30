@@ -11,6 +11,7 @@ namespace omsapi.Models.Dtos.Contract
         public string ContractName { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
         public string PartnerName { get; set; } = string.Empty;
+        public long? PartnerId { get; set; }
         public DateTime? SignDate { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
@@ -31,6 +32,33 @@ namespace omsapi.Models.Dtos.Contract
         public string? OrgName { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+    }
+
+    public class ContractQueryDto
+    {
+        public string? Keyword { get; set; }
+        public string? Type { get; set; }
+        public string? ExpiryStatus { get; set; }
+        
+        public string? ContractNo { get; set; }
+        public string? PartnerName { get; set; }
+        public string? Manager { get; set; }
+        public string? PricingType { get; set; }
+        public string? LifecycleStatus { get; set; }
+        public string? PerformanceStatus { get; set; }
+        public string? PaymentMethod { get; set; }
+
+        public decimal? TotalAmountMin { get; set; }
+        public decimal? TotalAmountMax { get; set; }
+
+        public DateTime? SignDateStart { get; set; }
+        public DateTime? SignDateEnd { get; set; }
+        
+        public DateTime? StartDateStart { get; set; }
+        public DateTime? StartDateEnd { get; set; }
+
+        public DateTime? EndDateStart { get; set; }
+        public DateTime? EndDateEnd { get; set; }
     }
 
     public class ContractDetailDto : ContractDto
@@ -201,6 +229,41 @@ namespace omsapi.Models.Dtos.Contract
         public string Level { get; set; } = string.Empty;
     }
 
+    public class ExportContractsDto
+    {
+        public string? Type { get; set; }
+        public string? Keyword { get; set; }
+        public string? ExpiryStatus { get; set; }
+
+        public string? ContractNo { get; set; }
+        public string? PartnerName { get; set; }
+        public string? Manager { get; set; }
+        public string? PricingType { get; set; }
+        public string? LifecycleStatus { get; set; }
+        public string? PerformanceStatus { get; set; }
+        public string? PaymentMethod { get; set; }
+
+        public decimal? TotalAmountMin { get; set; }
+        public decimal? TotalAmountMax { get; set; }
+
+        public DateTime? SignDateStart { get; set; }
+        public DateTime? SignDateEnd { get; set; }
+        
+        public DateTime? StartDateStart { get; set; }
+        public DateTime? StartDateEnd { get; set; }
+
+        public DateTime? EndDateStart { get; set; }
+        public DateTime? EndDateEnd { get; set; }
+
+        public List<ExportColumnDto> Columns { get; set; } = new();
+    }
+
+    public class ExportColumnDto
+    {
+        public string Title { get; set; } = string.Empty;
+        public string DataIndex { get; set; } = string.Empty;
+    }
+
     public class CreateContractDto
     {
         [MaxLength(50)]
@@ -217,6 +280,8 @@ namespace omsapi.Models.Dtos.Contract
         [MaxLength(100)]
         public string PartnerName { get; set; } = string.Empty;
 
+        public long? PartnerId { get; set; }
+
         public DateTime? SignDate { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
@@ -231,7 +296,6 @@ namespace omsapi.Models.Dtos.Contract
         public string LifecycleStatus { get; set; } = "draft";
         public string PricingType { get; set; } = "fixed";
         public string? Description { get; set; }
-        public string? Files { get; set; }
     }
 
     public class UpdateContractDto : CreateContractDto

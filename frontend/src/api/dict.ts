@@ -61,6 +61,8 @@ export interface DictDataDto {
   sort: number;
   isDefault: boolean;
   status: string; // normal, disabled
+  cssClass?: string;
+  listClass?: string;
   remark?: string;
   createdAt: string;
   updatedAt: string;

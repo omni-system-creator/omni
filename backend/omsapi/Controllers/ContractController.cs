@@ -27,13 +27,20 @@ namespace omsapi.Controllers
         /// 获取合同列表
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<IEnumerable<ContractDto>>>> GetContracts(
-            [FromQuery] string? type,
-            [FromQuery] string? keyword,
-            [FromQuery] string? expiryStatus)
+        public async Task<ActionResult<ApiResponse<IEnumerable<ContractDto>>>> GetContracts([FromQuery] ContractQueryDto query)
         {
-            var result = await _contractService.GetContractsAsync(type, keyword, expiryStatus);
+            var result = await _contractService.GetContractsAsync(query);
             return Ok(ApiResponse<IEnumerable<ContractDto>>.Success(result));
+        }
+
+        /// <summary>
+        /// 导出合同列表
+        /// </summary>
+        [HttpPost("export")]
+        public async Task<IActionResult> ExportContracts([FromBody] ExportContractsDto dto)
+        {
+            var (content, fileName) = await _contractService.ExportContractsAsync(dto);
+            return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
 
         /// <summary>
@@ -81,9 +88,9 @@ namespace omsapi.Controllers
         /// 创建合同
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<ApiResponse<ContractDto>>> CreateContract([FromBody] CreateContractDto dto)
+        public async Task<ActionResult<ApiResponse<ContractDto>>> CreateContract([FromForm] CreateContractDto dto, [FromForm] List<IFormFile>? files)
         {
-            var result = await _contractService.CreateContractAsync(dto);
+            var result = await _contractService.CreateContractAsync(dto, files);
             return Ok(ApiResponse<ContractDto>.Success(result));
         }
 
@@ -260,6 +267,28 @@ namespace omsapi.Controllers
         {
             var result = await _contractService.DeleteContractAttachmentAsync(id);
             if (!result) return NotFound(ApiResponse<object>.Error("Attachment not found"));
+            return Ok(ApiResponse<object>.Success(null));
+        }
+
+        /// <summary>
+        /// 上传合同文件（通用）
+        /// </summary>
+        [HttpPost("upload")]
+        public async Task<ActionResult<ApiResponse<string>>> UploadContractFile(IFormFile file)
+        {
+            var result = await _contractService.UploadContractFileAsync(file);
+            if (string.IsNullOrEmpty(result)) return BadRequest(ApiResponse<object>.Error("File is invalid"));
+            return Ok(ApiResponse<string>.Success(result));
+        }
+
+        /// <summary>
+        /// 删除合同文件（通用）
+        /// </summary>
+        [HttpPost("upload/delete")]
+        public async Task<ActionResult<ApiResponse<object>>> DeleteContractFile([FromQuery] string filePath)
+        {
+            var result = await _contractService.DeleteContractFileAsync(filePath);
+            if (!result) return NotFound(ApiResponse<object>.Error("File not found or delete failed"));
             return Ok(ApiResponse<object>.Success(null));
         }
 

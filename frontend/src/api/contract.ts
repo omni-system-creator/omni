@@ -8,6 +8,7 @@ export interface ContractDto {
   contractName: string;
   type: string;
   partnerName: string;
+  partnerId?: number;
   signDate?: string;
   startDate?: string;
   endDate?: string;
@@ -24,7 +25,6 @@ export interface ContractDto {
   pricingType?: string;
   description?: string;
   latestTransactionDate?: string;
-  files?: string;
   orgName?: string;
   createdAt: string;
   updatedAt?: string;
@@ -35,6 +35,7 @@ export interface CreateContractDto {
   contractName: string;
   type: string;
   partnerName: string;
+  partnerId?: number;
   signDate?: string;
   startDate?: string;
   endDate?: string;
@@ -46,7 +47,6 @@ export interface CreateContractDto {
   lifecycleStatus?: string;
   pricingType?: string;
   description?: string;
-  files?: string;
 }
 
 export interface UpdateContractDto extends Partial<CreateContractDto> {
@@ -178,6 +178,7 @@ export interface ContractDetailDto {
   contractName: string;
   status: string;
   customerName: string;
+  partnerId?: number;
   signDate: string;
   totalAmount: number;
   receivedAmount: number;
@@ -195,6 +196,32 @@ export interface ContractDetailDto {
     email: string;
   }[];
   attachments: ContractAttachmentDto[];
+}
+
+export interface ContractQueryDto {
+  keyword?: string;
+  type?: string;
+  expiryStatus?: string;
+  
+  contractNo?: string;
+  partnerName?: string;
+  manager?: string;
+  pricingType?: string;
+  lifecycleStatus?: string;
+  performanceStatus?: string;
+  paymentMethod?: string;
+
+  totalAmountMin?: number;
+  totalAmountMax?: number;
+
+  signDateStart?: string;
+  signDateEnd?: string;
+  
+  startDateStart?: string;
+  startDateEnd?: string;
+
+  endDateStart?: string;
+  endDateEnd?: string;
 }
 
 export interface ContractPaymentPlanDto {
@@ -231,11 +258,26 @@ export interface SetRelatedContractsDto {
   relatedContractIds: number[];
 }
 
+export interface ExportColumnDto {
+  title: string;
+  dataIndex: string;
+}
+
+export interface ExportContractsDto extends ContractQueryDto {
+  columns: ExportColumnDto[];
+}
+
 // --- API Functions ---
 
 // Contracts
-export const getContracts = (type?: string, keyword?: string, expiryStatus?: string) => {
-  return request.get<any, ContractDto[]>('/contract', { params: { type, keyword, expiryStatus } });
+export const getContracts = (params?: ContractQueryDto) => {
+  return request.get<any, ContractDto[]>('/contract', { params });
+};
+
+export const exportContracts = (data: ExportContractsDto) => {
+  return request.post('/contract/export', data, {
+    responseType: 'blob'
+  });
 };
 
 export const getContractCustomers = (keyword?: string) => {
@@ -260,8 +302,10 @@ export const uploadContractAttachment = (contractId: number, file: File) => {
   });
 };
 
-export const createContract = (data: CreateContractDto) => {
-  return request.post<any, ContractDto>('/contract', data);
+export const createContract = (data: FormData) => {
+  return request.post<any, ContractDto>('/contract', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
 };
 
 export const updateContract = (id: number, data: UpdateContractDto) => {
@@ -278,6 +322,19 @@ export const setRelatedContracts = (id: number, data: SetRelatedContractsDto) =>
 
 export const deleteContractAttachment = (id: number) => {
   return request.delete(`/contract/attachments/${id}`);
+};
+
+// Generic file operations
+export const uploadContractFile = (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request.post<any, string>('/contract/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
+
+export const deleteContractFile = (filePath: string) => {
+  return request.post('/contract/upload/delete', null, { params: { filePath } });
 };
 
 // Payments

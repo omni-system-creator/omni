@@ -63,6 +63,7 @@
     <a-table
       v-bind="$attrs"
       :columns="displayColumns"
+      :scroll="tableScroll"
     >
       <!-- Forward all slots -->
       <template v-for="(_, name) in $slots" #[name]="slotData">
@@ -73,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, useAttrs } from 'vue';
 import { SettingOutlined, HolderOutlined } from '@ant-design/icons-vue';
 import draggable from 'vuedraggable';
 import { useUserConfigStore } from '@/stores/userConfig';
@@ -88,6 +89,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   toolbarPadding: '8px',
 });
+
+const attrs = useAttrs();
 const userConfigStore = useUserConfigStore();
 
 const settingsVisible = ref(false);
@@ -146,13 +149,37 @@ const displayColumns = computed(() => {
       
       return {
         ...originalCol,
-        width: c.width,
+        // Only use config width if it's set, otherwise fallback to original width
+        width: c.width || originalCol.width,
         // Ensure key/dataIndex is preserved
         key: c.key,
         dataIndex: c.dataIndex
       };
     })
     .filter(Boolean) as TableColumnType[];
+});
+
+// Compute table scroll props to ensure horizontal scrolling works with fixed layout
+const tableScroll = computed(() => {
+  const originalScroll = (attrs.scroll as { x?: string | number | boolean, y?: string | number }) || {};
+  
+  // Calculate total width of visible columns
+  const totalWidth = displayColumns.value.reduce((sum, col) => {
+    const width = Number(col.width);
+    return sum + (isNaN(width) ? 100 : width); // Fallback to 100 if no width
+  }, 0);
+
+  // If x is 'max-content' or undefined, override it with total width to force fixed layout behavior
+  // This is crucial for ellipsis to work correctly in Ant Design Vue
+  let scrollX = originalScroll.x;
+  if (!scrollX || scrollX === 'max-content' || scrollX === true) {
+    scrollX = totalWidth;
+  }
+
+  return {
+    ...originalScroll,
+    x: scrollX
+  };
 });
 
 // Save config to store
@@ -189,21 +216,6 @@ watch(() => props.columns, () => {
     // For simplicity, we might just re-init if columns change significantly
     // But usually columns prop is stable.
     // Let's just re-sync titles and add new columns if any.
-    const savedMap = new Map(configList.value.map(c => [c.key, c]));
-    const newCols = props.columns.map(col => {
-        const key = (col.key || col.dataIndex) as string;
-        const existing = savedMap.get(key);
-        if (existing) {
-            return { ...existing, title: col.title }; // Update title
-        }
-        return {
-            key: key,
-            title: col.title as string,
-            dataIndex: col.dataIndex,
-            visible: true,
-            width: col.width || undefined
-        };
-    });
     
     // Merge: existing config order + new columns appended
     // Actually we need to respect the list order in configList
@@ -214,6 +226,10 @@ watch(() => props.columns, () => {
         const fresh = props.columns.find(c => (c.key || c.dataIndex) === item.key);
         if (fresh) {
             newConfigList[index].title = fresh.title;
+            // 如果配置中没有宽度（undefined），但新 props 有宽度，则应用新宽度
+            if (item.width === undefined && fresh.width !== undefined) {
+              newConfigList[index].width = fresh.width;
+            }
         }
     });
     // Add new ones

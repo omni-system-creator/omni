@@ -55,7 +55,10 @@ service.interceptors.response.use(
     
     // 如果是二进制数据，直接返回
     if (response.config.responseType === 'blob' || response.config.responseType === 'arraybuffer') {
-        return response.data;
+        return {
+          data: response.data,
+          headers: response.headers
+        };
     }
 
     // 判断是否为标准 ApiResponse 结构 (含有 code 和 data 字段)

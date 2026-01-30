@@ -25,6 +25,10 @@
             <template v-if="column.key === 'index'">
               {{ index + 1 }}
             </template>
+            <template v-else-if="column.key === 'label'">
+              <a-tag v-if="record.listClass" :color="record.listClass">{{ record.label }}</a-tag>
+              <span v-else>{{ record.label }}</span>
+            </template>
             <template v-else-if="column.key === 'isDefault'">
               <a-tag v-if="record.isDefault" color="green">是</a-tag>
               <span v-else>否</span>
@@ -83,13 +87,34 @@
                 </a-form-item>
             </a-col>
         </a-row>
-       
+
         <a-row :gutter="16">
+            <a-col :span="12">
+                 <a-form-item label="列表样式 (CSS Class/Color)">
+                   <a-select v-model:value="formState.listClass" allowClear placeholder="请选择或输入">
+                      <a-select-option value="default">默认 (default)</a-select-option>
+                      <a-select-option value="primary">主要 (primary)</a-select-option>
+                      <a-select-option value="success">成功 (success)</a-select-option>
+                      <a-select-option value="warning">警告 (warning)</a-select-option>
+                      <a-select-option value="error">错误 (error)</a-select-option>
+                      <a-select-option value="processing">处理中 (processing)</a-select-option>
+                      <a-select-option value="blue">蓝色 (blue)</a-select-option>
+                      <a-select-option value="cyan">青色 (cyan)</a-select-option>
+                      <a-select-option value="green">绿色 (green)</a-select-option>
+                      <a-select-option value="purple">紫色 (purple)</a-select-option>
+                      <a-select-option value="orange">橙色 (orange)</a-select-option>
+                      <a-select-option value="red">红色 (red)</a-select-option>
+                   </a-select>
+                </a-form-item>
+            </a-col>
             <a-col :span="12">
                 <a-form-item label="排序">
                 <a-input-number v-model:value="formState.sort" :min="0" style="width: 100%" />
                 </a-form-item>
             </a-col>
+        </a-row>
+       
+        <a-row :gutter="16">
             <a-col :span="12">
                 <a-form-item label="状态">
                 <a-radio-group v-model:value="formState.status">
@@ -143,6 +168,7 @@ const formState = ref({
   sort: 0,
   isDefault: false,
   status: 'normal',
+  listClass: '',
   remark: ''
 });
 
@@ -150,6 +176,7 @@ const columns: ColumnType[] = [
   { title: '#', key: 'index', width: 50, align: 'center' as const },
   { title: '标签', dataIndex: 'label', key: 'label' },
   { title: '键值', dataIndex: 'value', key: 'value' },
+  { title: '样式', dataIndex: 'listClass', key: 'listClass', width: 100 },
   { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true },
   { title: '排序', dataIndex: 'sort', key: 'sort', width: 80 },
   { title: '默认', key: 'isDefault', width: 80 },
@@ -187,6 +214,7 @@ const handleAdd = () => {
     sort: 0,
     isDefault: false,
     status: 'normal',
+    listClass: '',
     remark: ''
   };
   modalTitle.value = '新增数据';
@@ -194,7 +222,7 @@ const handleAdd = () => {
 };
 
 const handleEdit = (record: DictDataDto) => {
-  formState.value = { ...record, remark: record.remark || '' };
+  formState.value = { ...record, listClass: record.listClass || '', remark: record.remark || '' };
   modalTitle.value = '编辑数据';
   modalVisible.value = true;
 };

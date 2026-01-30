@@ -29,6 +29,9 @@ namespace omsapi.Models.Entities.Contract
         [Column("partner_name")]
         public string PartnerName { get; set; } = string.Empty; // Customer or Supplier Name
 
+        [Column("partner_id")]
+        public long? PartnerId { get; set; }
+
         [Column("sign_date")]
         public DateTime? SignDate { get; set; }
 

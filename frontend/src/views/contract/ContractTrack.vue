@@ -2,7 +2,7 @@
   <div class="page-container">
     <a-card :bordered="false" class="table-card">
       
-      <div class="content-wrapper">
+      <div class="content-wrapper" ref="contentWrapperRef" :style="{ '--table-scroll-y': `${tableScrollY}px` }">
         <smart-table
           table-key="contract-track-list"
           :columns="columns"
@@ -10,7 +10,7 @@
           :pagination="false"
           :loading="loading"
           row-key="id"
-          :scroll="{ x: 'max-content', y: 500 }"
+          :scroll="{ x: 'max-content', y: tableScrollY }"
         >
           <template #toolbar>
             <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 16px;">
@@ -20,7 +20,104 @@
                   <template #icon><plus-outlined /></template>
                   新建合同
                 </a-button>
-                <a-button>
+                <a-popover v-model:open="searchVisible" trigger="click" placement="bottomRight">
+                  <template #content>
+                    <div style="width: 700px; padding: 8px;">
+                      <a-form layout="vertical">
+                        <a-row :gutter="16">
+                          <a-col :span="12">
+                            <a-form-item label="关键词">
+                              <a-input v-model:value="searchParams.keyword" placeholder="合同名称/编号/对方单位" allow-clear />
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="合同编号">
+                              <a-input v-model:value="searchParams.contractNo" placeholder="请输入合同编号" allow-clear />
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="对方单位">
+                              <a-input v-model:value="searchParams.partnerName" placeholder="请输入对方单位" allow-clear />
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="经办人">
+                              <a-input v-model:value="searchParams.manager" placeholder="请输入经办人" allow-clear />
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="合同类型">
+                              <a-select v-model:value="searchParams.type" placeholder="请选择" allow-clear>
+                                <a-select-option v-for="item in directionOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                              </a-select>
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="计价方式">
+                              <a-select v-model:value="searchParams.pricingType" placeholder="请选择" allow-clear>
+                                <a-select-option v-for="item in pricingTypeOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                              </a-select>
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="合同状态">
+                              <a-select v-model:value="searchParams.lifecycleStatus" placeholder="请选择" allow-clear>
+                                <a-select-option v-for="item in lifecycleStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                              </a-select>
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="履约状态">
+                              <a-select v-model:value="searchParams.performanceStatus" placeholder="请选择" allow-clear>
+                                <a-select-option v-for="item in performanceStatusOptions" :key="item.value" :value="item.value">{{ item.label }}</a-select-option>
+                              </a-select>
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="付款方式">
+                                <a-input v-model:value="searchParams.paymentMethod" placeholder="请输入付款方式" allow-clear />
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="合同总金额">
+                              <div style="display: flex; align-items: center">
+                                <a-input-number v-model:value="searchParams.totalAmountMin" placeholder="最小" style="width: 100%" :min="0" />
+                                <span style="padding: 0 4px">-</span>
+                                <a-input-number v-model:value="searchParams.totalAmountMax" placeholder="最大" style="width: 100%" :min="0" />
+                              </div>
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="签订日期">
+                              <a-range-picker v-model:value="signDateRange" style="width: 100%" />
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="开始日期">
+                              <a-range-picker v-model:value="startDateRange" style="width: 100%" />
+                            </a-form-item>
+                          </a-col>
+                          <a-col :span="12">
+                            <a-form-item label="结束日期">
+                              <a-range-picker v-model:value="endDateRange" style="width: 100%" />
+                            </a-form-item>
+                          </a-col>
+                        </a-row>
+                      </a-form>
+                      <div style="text-align: right; margin-top: 16px; border-top: 1px solid #f0f0f0; padding-top: 16px;">
+                        <a-space>
+                          <a-button @click="resetSearch">重置</a-button>
+                          <a-button type="primary" @click="handleSearch">查询</a-button>
+                        </a-space>
+                      </div>
+                    </div>
+                  </template>
+                  <a-button :type="searchVisible ? 'primary' : 'default'" :ghost="searchVisible">
+                    <template #icon><filter-outlined /></template>
+                    筛选
+                  </a-button>
+                </a-popover>
+                <a-button :loading="exportLoading" @click="handleExport">
                   <template #icon><export-outlined /></template>
                   导出报表
                 </a-button>
@@ -30,6 +127,20 @@
           <template #bodyCell="{ column, record, index }">
             <template v-if="column.key === 'index'">
               {{ ((pagination.current || 1) - 1) * (pagination.pageSize || 10) + index + 1 }}
+            </template>
+            <template v-else-if="column.key === 'contractName'">
+              <a-tooltip :title="record.contractName" placement="topLeft">
+                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  {{ record.contractName }}
+                </div>
+              </a-tooltip>
+            </template>
+            <template v-else-if="column.key === 'partnerName'">
+              <a-tooltip :title="record.partnerName" placement="topLeft">
+                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  {{ record.partnerName }}
+                </div>
+              </a-tooltip>
             </template>
             <template v-else-if="column.key === 'totalAmount'">
               {{ formatAmount(record.totalAmount) }}
@@ -54,11 +165,15 @@
                 {{ getPerformanceStatusText(record.status) }}
               </a-tag>
             </template>
-            <template v-else-if="column.key === 'endDate'">
-              {{ record.endDate ? record.endDate.split('T')[0] : '-' }}
+            <template v-else-if="column.key === 'validityPeriod'">
+              {{ formatValidityPeriod(record) }}
             </template>
             <template v-else-if="column.key === 'manager'">
-              {{ getManagerDisplay(record.manager) || '-' }}
+              <a-tooltip :title="getManagerDisplay(record.manager)" placement="topLeft">
+                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  {{ getManagerDisplay(record.manager) || '-' }}
+                </div>
+              </a-tooltip>
             </template>
             <template v-else-if="column.key === 'signDate'">
               {{ record.signDate ? record.signDate.split('T')[0] : '-' }}
@@ -102,12 +217,13 @@
     <a-drawer
       :title="currentId ? '编辑合同' : '新建合同'"
       :width="720"
-      :visible="drawerVisible"
+      :open="drawerVisible"
       :body-style="{ paddingBottom: '80px' }"
       @close="onClose"
     >
       <contract-form
         ref="contractFormRef"
+        :is-edit="!!currentId"
       />
       <template #footer>
         <a-space style="float: right">
@@ -127,21 +243,99 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted, computed, nextTick } from 'vue';
-import { ExportOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons-vue';
+import { ref, reactive, onMounted, computed, nextTick, watch, onUnmounted } from 'vue';
+import { ExportOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FilterOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import ContractForm from './ContractForm.vue';
 import ContractDetail from './components/ContractDetail.vue';
 import SmartTable from '@/components/SmartTable/index.vue';
-import { createContract, updateContract, deleteContract, getContracts, getContractById } from '@/api/contract';
+import { createContract, updateContract, deleteContract, getContracts, getContractById, exportContracts } from '@/api/contract';
+import { getDictDataByCode, type DictDataDto } from '@/api/dict';
 import { getUserList, type UserListDto } from '@/api/user';
 import { getDeptTree, type Dept } from '@/api/dept';
 import { useUserStore } from '@/stores/user';
-import type { CreateContractDto, ContractDto, ContractDetailDto } from '@/api/contract';
+import type { CreateContractDto, ContractDto, ContractDetailDto, ContractQueryDto } from '@/api/contract';
 import type { TablePaginationConfig, ColumnType } from 'ant-design-vue/es/table/interface';
 
+const contentWrapperRef = ref<HTMLDivElement>();
+const tableScrollY = ref(500);
+
+const updateTableHeight = () => {
+  if (contentWrapperRef.value) {
+    const height = contentWrapperRef.value.clientHeight;
+    // 减去 SmartTable toolbar (32px + 16px padding) 和 表头高度 (~55px)
+    tableScrollY.value = height - 103;
+  }
+};
+
+const resizeObserver = new ResizeObserver(() => {
+  updateTableHeight();
+});
+
+onMounted(() => {
+  if (contentWrapperRef.value) {
+    resizeObserver.observe(contentWrapperRef.value);
+    updateTableHeight();
+  }
+  loadDicts();
+  fetchContracts();
+});
+
+onUnmounted(() => {
+  resizeObserver.disconnect();
+});
+
 const expiryFilter = ref('all');
+const searchVisible = ref(false);
+const searchParams = reactive<ContractQueryDto>({});
+const signDateRange = ref<[dayjs.Dayjs, dayjs.Dayjs]>();
+const startDateRange = ref<[dayjs.Dayjs, dayjs.Dayjs]>();
+
+const endDateRange = ref<[dayjs.Dayjs, dayjs.Dayjs]>();
+watch(signDateRange, (val) => {
+  if (val) {
+    searchParams.signDateStart = val[0].format('YYYY-MM-DD');
+    searchParams.signDateEnd = val[1].format('YYYY-MM-DD');
+  } else {
+    searchParams.signDateStart = undefined;
+    searchParams.signDateEnd = undefined;
+  }
+});
+
+watch(startDateRange, (val) => {
+  if (val) {
+    searchParams.startDateStart = val[0].format('YYYY-MM-DD');
+    searchParams.startDateEnd = val[1].format('YYYY-MM-DD');
+  } else {
+    searchParams.startDateStart = undefined;
+    searchParams.startDateEnd = undefined;
+  }
+});
+
+watch(endDateRange, (val) => {
+  if (val) {
+    searchParams.endDateStart = val[0].format('YYYY-MM-DD');
+    searchParams.endDateEnd = val[1].format('YYYY-MM-DD');
+  } else {
+    searchParams.endDateStart = undefined;
+    searchParams.endDateEnd = undefined;
+  }
+});
+
+const handleSearch = () => {
+  searchVisible.value = false;
+  fetchContracts();
+};
+
+const resetSearch = () => {
+  Object.keys(searchParams).forEach(key => delete (searchParams as any)[key]);
+  signDateRange.value = undefined;
+  startDateRange.value = undefined;
+  endDateRange.value = undefined;
+  fetchContracts();
+};
+
 const expiryOptions = [
   { label: '全部', value: 'all' },
   { label: '未到期', value: 'notExpired' },
@@ -164,80 +358,93 @@ const pagination = reactive<TablePaginationConfig>({
   showTotal: total => `共 ${total} 条`
 });
 
+const directionOptions = ref<DictDataDto[]>([]);
+const pricingTypeOptions = ref<DictDataDto[]>([]);
+const lifecycleStatusOptions = ref<DictDataDto[]>([]);
+const performanceStatusOptions = ref<DictDataDto[]>([]);
+
+const loadDicts = async () => {
+  try {
+    const [direction, pricing, lifecycle, performance] = await Promise.all([
+      getDictDataByCode('contract_direction'),
+      getDictDataByCode('contract_pricing_type'),
+      getDictDataByCode('contract_status'),
+      getDictDataByCode('contract_performance_status')
+    ]);
+    directionOptions.value = direction || [];
+    pricingTypeOptions.value = pricing || [];
+    lifecycleStatusOptions.value = lifecycle || [];
+    performanceStatusOptions.value = performance || [];
+  } catch (e) {
+    console.error('Load dicts error:', e);
+  }
+};
+
 const formatAmount = (amount: number) => {
   return amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const getDirectionText = (type: string) => {
-  if (type === 'sales') return '收款合同';
-  if (type === 'purchase') return '付款合同';
-  return '其他';
+  const opt = directionOptions.value.find(x => x.value === type);
+  if (opt) return opt.label;
+  return '未知';
 };
 
 const getDirectionColor = (type: string) => {
-  if (type === 'sales') return 'blue';
-  if (type === 'purchase') return 'orange';
+  const opt = directionOptions.value.find(x => x.value === type);
+  if (opt && opt.listClass) return opt.listClass;
+  
   return 'default';
 };
 
 const getPricingTypeText = (record: ContractDto) => {
-  if (record.pricingType === 'fixed') return '固定总价合同';
-  if (record.pricingType === 'non_fixed') return '无固定总价合同';
-  return '固定总价合同'; // Default
+  const opt = pricingTypeOptions.value.find(x => x.value === record.pricingType);
+  if (opt) return opt.label;
+  
+  return '未知';
 };
 
 const getPricingTypeColor = (record: ContractDto) => {
-  if (record.pricingType === 'fixed') return 'cyan';
-  if (record.pricingType === 'non_fixed') return 'purple';
+  const opt = pricingTypeOptions.value.find(x => x.value === record.pricingType);
+  if (opt && opt.listClass) return opt.listClass;
+
   return 'cyan';
 };
 
 const getSignStatusText = (record: ContractDto) => {
-  if (record.lifecycleStatus === 'draft') return '草稿';
-  if (record.lifecycleStatus === 'approving') return '审批中';
-  if (record.lifecycleStatus === 'signed') return '已签订';
-  if (record.lifecycleStatus === 'canceled') return '已作废';
+  const opt = lifecycleStatusOptions.value.find(x => x.value === record.lifecycleStatus);
+  if (opt) return opt.label;
+
   
   // Fallback for compatibility
   if (!record.signDate) return '草稿';
-  return '已签订';
+  return record.lifecycleStatus || '未知';
 };
 
 const getSignStatusColor = (record: ContractDto) => {
-  if (record.lifecycleStatus === 'draft') return 'default';
-  if (record.lifecycleStatus === 'approving') return 'processing';
-  if (record.lifecycleStatus === 'signed') return 'success';
-  if (record.lifecycleStatus === 'canceled') return 'error';
-  
-  // Fallback for compatibility
-  if (!record.signDate) return 'default';
-  return 'success';
+  const opt = lifecycleStatusOptions.value.find(x => x.value === record.lifecycleStatus);
+  if (opt && opt.listClass) return opt.listClass;
+  return 'default';
 };
 
 const getPerformanceStatusText = (status: string) => {
-  switch (status) {
-    case 'executing':
-      return '履约中';
-    case 'completed':
-      return '已履约';
-    case 'abnormal':
-      return '异常';
-    default:
-      return '未知';
-  }
+  const opt = performanceStatusOptions.value.find(x => x.value === status);
+  if (opt) return opt.label;
+
+  return '未知';
 };
 
 const getPerformanceStatusColor = (status: string) => {
-  switch (status) {
-    case 'executing':
-      return 'processing';
-    case 'completed':
-      return 'success';
-    case 'abnormal':
-      return 'error';
-    default:
-      return 'default';
-  }
+  const opt = performanceStatusOptions.value.find(x => x.value === status);
+  if (opt && opt.listClass) return opt.listClass;
+  return 'default';
+};
+
+const formatValidityPeriod = (record: ContractDto) => {
+  if (!record.startDate && !record.endDate) return '无';
+  const start = record.startDate ? record.startDate.split('T')[0] : '-';
+  const end = record.endDate ? record.endDate.split('T')[0] : '-';
+  return `${start} 至 ${end}`;
 };
 
 const getDeptFullPath = (depts: Dept[], id: number): string | null => {
@@ -267,7 +474,7 @@ const fetchContracts = async () => {
   loading.value = true;
   try {
     const expiryStatus = expiryFilter.value === 'all' ? undefined : expiryFilter.value;
-    const res = await getContracts(undefined, undefined, expiryStatus);
+    const res = await getContracts({ ...searchParams, expiryStatus });
     contracts.value = res || [];
     const managers = Array.from(new Set((contracts.value || []).map(c => c.manager).filter(Boolean))) as string[];
     managerDisplayMap.value = {};
@@ -334,64 +541,80 @@ const columns: ColumnType<ContractDto>[] = [
   {
     title: '合同名称',
     dataIndex: 'contractName',
-    key: 'contractName'
+    key: 'contractName',
+    ellipsis: true
+  },
+  {
+    title: '客户/供应商',
+    dataIndex: 'partnerName',
+    key: 'partnerName',
+    width: 200,
+    ellipsis: true
   },
   {
     title: '合同总金额',
     dataIndex: 'totalAmount',
     key: 'totalAmount',
     align: 'right',
-    width: 150
+    width: 150,
+    ellipsis: true
   },
   {
     title: '合同类型',
     key: 'direction',
     width: 150,
-    align: 'center'
+    align: 'center',
+    ellipsis: true
   },
   {
     title: '合同编号',
     dataIndex: 'contractNo',
     key: 'contractNo',
-    width: 180
+    width: 180,
+    ellipsis: true
   },
   {
     title: '负责人',
     dataIndex: 'manager',
     key: 'manager',
-    width: 180
+    width: 180,
+    ellipsis: true
   },
   {
     title: '总价类型',
     key: 'pricingType',
     width: 180,
-    align: 'center'
+    align: 'center',
+    ellipsis: true
   },
   {
     title: '签订日期',
     dataIndex: 'signDate',
     key: 'signDate',
     width: 150,
-    align: 'center'
+    align: 'center',
+    ellipsis: true
   },
   {
     title: '状态',
     key: 'signStatus',
     width: 120,
-    align: 'center'
+    align: 'center',
+    ellipsis: true
   },
   {
     title: '履约状态',
     key: 'performanceStatus',
     width: 120,
-    align: 'center'
+    align: 'center',
+    ellipsis: true
   },
   {
-    title: '到期日期',
-    dataIndex: 'endDate',
-    key: 'endDate',
-    width: 150,
-    align: 'center'
+    title: '有效期限',
+    key: 'validityPeriod',
+    width: 200,
+    align: 'center',
+    ellipsis: true
   },
   {
     title: '操作',
@@ -403,6 +626,7 @@ const columns: ColumnType<ContractDto>[] = [
 ];
 
 onMounted(() => {
+  loadDicts();
   fetchContracts();
 });
 
@@ -446,6 +670,50 @@ const handleDetailRefresh = async () => {
   }
 };
 
+const exportLoading = ref(false);
+const handleExport = async () => {
+  exportLoading.value = true;
+  try {
+    const exportColumns = columns
+      .filter(c => c.key !== 'index' && c.key !== 'action')
+      .map(c => ({
+        title: c.title as string,
+        dataIndex: (c.dataIndex || c.key) as string
+      }));
+    
+    const expiryStatus = expiryFilter.value === 'all' ? undefined : expiryFilter.value;
+    const res = await exportContracts({
+      ...searchParams,
+      expiryStatus,
+      columns: exportColumns
+    });
+    
+    // Extract filename from headers
+    let filename = `Contracts_${dayjs().format('YYYYMMDDHHmmss')}.xlsx`;
+    const contentDisposition = (res as any).headers['content-disposition'];
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename\*=UTF-8''(.+)/) || contentDisposition.match(/filename="?([^";]+)"?/);
+      if (filenameMatch && filenameMatch[1]) {
+        filename = decodeURIComponent(filenameMatch[1]);
+      }
+    }
+
+    const url = window.URL.createObjectURL(new Blob([(res as any).data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error(e);
+    message.error('导出失败');
+  } finally {
+    exportLoading.value = false;
+  }
+};
+
 const handleCreate = () => {
   currentId.value = undefined;
   drawerVisible.value = true;
@@ -456,14 +724,22 @@ const handleCreate = () => {
   });
 };
 
-const handleEdit = (record: any) => {
+const handleEdit = async (record: any) => {
   currentId.value = record.id;
   drawerVisible.value = true;
-  nextTick(() => {
-    if (contractFormRef.value) {
-      contractFormRef.value.setFormState(record);
+  try {
+    const detail = await getContractById(record.id);
+    if (detail) {
+      nextTick(() => {
+        if (contractFormRef.value) {
+          contractFormRef.value.setFormState(detail);
+        }
+      });
     }
-  });
+  } catch (error) {
+    console.error(error);
+    message.error('获取合同详情失败');
+  }
 };
 
 const handleDelete = async (id: number) => {
@@ -492,7 +768,9 @@ const onSubmit = () => {
         contractName: formState.contractName,
         type: formState.type,
         pricingType: formState.pricingType,
+        lifecycleStatus: formState.lifecycleStatus,
         partnerName: formState.customer,
+        partnerId: formState.partnerId,
         signDate: formState.signDate ? dayjs(formState.signDate).format('YYYY-MM-DD') : undefined,
         startDate: formState.period && formState.period[0] ? dayjs(formState.period[0]).format('YYYY-MM-DD') : undefined,
         endDate: formState.period && formState.period[1] ? dayjs(formState.period[1]).format('YYYY-MM-DD') : undefined,
@@ -501,14 +779,29 @@ const onSubmit = () => {
         currency: formState.currency,
         paymentMethod: formState.paymentMethod,
         description: formState.description,
-        files: JSON.stringify(formState.fileList),
       };
 
       if (currentId.value) {
         await updateContract(currentId.value, dto);
         message.success('更新成功');
       } else {
-        await createContract(dto);
+        // Use FormData for unified submission (simultaneous file upload)
+        const formData = new FormData();
+        Object.keys(dto).forEach(key => {
+          const val = (dto as any)[key];
+          if (val !== undefined && val !== null) {
+             formData.append(key, String(val));
+          }
+        });
+
+        // Append new files
+        if ((formState as any).newUploadFiles && (formState as any).newUploadFiles.length > 0) {
+          (formState as any).newUploadFiles.forEach((file: File) => {
+            formData.append('files', file);
+          });
+        }
+
+        await createContract(formData);
         message.success('创建成功');
       }
       
@@ -573,33 +866,8 @@ const onSubmit = () => {
   flex-direction: column;
 }
 
-.content-wrapper :deep(.ant-table-wrapper),
-.content-wrapper :deep(.ant-spin-nested-loading),
-.content-wrapper :deep(.ant-spin-container),
-.content-wrapper :deep(.ant-table-container) {
-  height: 100%;
-}
-
-.content-wrapper :deep(.ant-table) {
-  height: 100%;
-}
-
-.content-wrapper :deep(.ant-table-container) {
-  display: flex;
-  flex-direction: column;
-}
-
 .content-wrapper :deep(.ant-table-body) {
-  flex: 1;
-  max-height: none !important;
-  overflow-y: auto !important;
-  scrollbar-gutter: stable;
-}
-
-.content-wrapper :deep(.ant-table-header) {
-  flex-shrink: 0;
-  overflow: hidden !important;
-  scrollbar-gutter: stable;
+  min-height: var(--table-scroll-y);
 }
 
 .content-wrapper :deep(.ant-tag) {

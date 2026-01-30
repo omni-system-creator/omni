@@ -209,7 +209,7 @@ const openSelector = async () => {
 const fetchSelectableContracts = async () => {
   selectLoading.value = true
   try {
-    const res = await getContracts(undefined, keyword.value || undefined, undefined)
+    const res = await getContracts({ keyword: keyword.value || undefined })
     const list = res || []
     selectableContracts.value = list.filter(c => c.id !== props.contractId)
   } catch (e) {

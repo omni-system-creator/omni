@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { userConfigApi, type UserConfigDto } from '@/api/userConfig';
+import { userConfigApi } from '@/api/userConfig';
 import { message } from 'ant-design-vue';
 
 export const useUserConfigStore = defineStore('userConfig', () => {
@@ -31,7 +31,7 @@ export const useUserConfigStore = defineStore('userConfig', () => {
 
   // 获取单个配置
   const getConfig = <T>(key: string, defaultValue?: T): T => {
-    return (configs.value[key] as T) ?? defaultValue;
+    return (configs.value[key] as T) ?? (defaultValue as T);
   };
 
   // 设置配置

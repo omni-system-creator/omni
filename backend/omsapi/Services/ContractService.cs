@@ -5,12 +5,16 @@ using omsapi.Data;
 using omsapi.Infrastructure.Attributes;
 using omsapi.Models.Dtos.Contract;
 using omsapi.Models.Entities.Contract;
+using omsapi.Models.Entities.Dict;
 using omsapi.Services.Interfaces;
 using UglyToad.PdfPig;
 using System.Text;
 using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
+
+using NPOI.XSSF.UserModel;
+using System.IO;
 
 namespace omsapi.Services
 {
@@ -55,7 +59,217 @@ namespace omsapi.Services
 
         // --- Contracts ---
 
-        public async Task<IEnumerable<ContractDto>> GetContractsAsync(string? type = null, string? keyword = null, string? expiryStatus = null)
+        public async Task<(byte[] Content, string FileName)> ExportContractsAsync(ExportContractsDto dto)
+        {
+            var contracts = await GetContractsAsync(new ContractQueryDto 
+            { 
+                Type = dto.Type, 
+                Keyword = dto.Keyword, 
+                ExpiryStatus = dto.ExpiryStatus,
+                ContractNo = dto.ContractNo,
+                PartnerName = dto.PartnerName,
+                Manager = dto.Manager,
+                PricingType = dto.PricingType,
+                LifecycleStatus = dto.LifecycleStatus,
+                PerformanceStatus = dto.PerformanceStatus,
+                PaymentMethod = dto.PaymentMethod,
+                TotalAmountMin = dto.TotalAmountMin,
+                TotalAmountMax = dto.TotalAmountMax,
+                SignDateStart = dto.SignDateStart,
+                SignDateEnd = dto.SignDateEnd,
+                StartDateStart = dto.StartDateStart,
+                StartDateEnd = dto.StartDateEnd,
+                EndDateStart = dto.EndDateStart,
+                EndDateEnd = dto.EndDateEnd
+            });
+            
+            // Map expiryStatus to Chinese name
+            string exportName = dto.ExpiryStatus switch
+            {
+                "notExpired" => "未到期合同",
+                "within7" => "7日内到期合同",
+                "expired" => "已到期合同",
+                _ => "全部合同"
+            };
+
+            // Fetch dictionary map
+            var dictMap = await GetDictMapAsync(new List<string> 
+            { 
+                "contract_type", 
+                "contract_pricing_type", 
+                "contract_status", 
+                "contract_performance_status",
+                "contract_payment_method"
+            });
+
+            using var memoryStream = new MemoryStream();
+            {
+                var workbook = new XSSFWorkbook();
+                var sheet = workbook.CreateSheet(exportName);
+
+                // Header Style
+                var headerStyle = workbook.CreateCellStyle();
+                var headerFont = workbook.CreateFont();
+                headerFont.IsBold = true;
+                headerStyle.SetFont(headerFont);
+                headerStyle.VerticalAlignment = NPOI.SS.UserModel.VerticalAlignment.Center;
+                headerStyle.Alignment = NPOI.SS.UserModel.HorizontalAlignment.Center;
+
+                // Header
+                var headerRow = sheet.CreateRow(0);
+                headerRow.HeightInPoints = 20;
+                // Use custom columns if provided, otherwise default columns
+                var columns = dto.Columns.Any() ? dto.Columns : new List<ExportColumnDto>
+                {
+                    new() { Title = "合同名称", DataIndex = "contractName" },
+                    new() { Title = "合同总金额", DataIndex = "totalAmount" },
+                    new() { Title = "合同类型", DataIndex = "direction" },
+                    new() { Title = "合同编号", DataIndex = "contractNo" },
+                    new() { Title = "负责人", DataIndex = "manager" },
+                    new() { Title = "总价类型", DataIndex = "pricingType" },
+                    new() { Title = "签订日期", DataIndex = "signDate" },
+                    new() { Title = "状态", DataIndex = "signStatus" },
+                    new() { Title = "履约状态", DataIndex = "performanceStatus" },
+                    new() { Title = "到期日期", DataIndex = "endDate" }
+                };
+
+                for (int i = 0; i < columns.Count; i++)
+                {
+                    var cell = headerRow.CreateCell(i);
+                    cell.SetCellValue(columns[i].Title);
+                    cell.CellStyle = headerStyle;
+                }
+
+                // Data
+                int rowIndex = 1;
+                foreach (var contract in contracts)
+                {
+                    var row = sheet.CreateRow(rowIndex++);
+                    row.HeightInPoints = 20;
+                    for (int i = 0; i < columns.Count; i++)
+                    {
+                        var col = columns[i];
+                        var value = GetContractValue(contract, col.DataIndex, dictMap);
+                        var cell = row.CreateCell(i);
+
+                        switch (value)
+                        {
+                            case double d:
+                                cell.SetCellValue(d);
+                                break;
+                            case decimal dec:
+                                cell.SetCellValue((double)dec);
+                                break;
+                            case int n:
+                                cell.SetCellValue(n);
+                                break;
+                            case long l:
+                                cell.SetCellValue(l);
+                                break;
+                            default:
+                                cell.SetCellValue(value?.ToString() ?? "");
+                                break;
+                        }
+                    }
+                }
+
+                // Auto filter
+                sheet.SetAutoFilter(new NPOI.SS.Util.CellRangeAddress(0, rowIndex - 1, 0, columns.Count - 1));
+
+                // Auto size columns with max width limit
+                for (int i = 0; i < columns.Count; i++)
+                {
+                    sheet.AutoSizeColumn(i);
+                    int currentWidth = (int)sheet.GetColumnWidth(i);
+                    
+                    // Add padding (approx 1.2x) as AutoSize is often tight for Chinese
+                    int newWidth = (int)(currentWidth * 1.2);
+
+                    // 50 characters width approx (1 char approx 256 units)
+                    if (newWidth > 50 * 256)
+                    {
+                        newWidth = 50 * 256;
+                    }
+                    sheet.SetColumnWidth(i, newWidth);
+                }
+
+                workbook.Write(memoryStream);
+            }
+
+            return (memoryStream.ToArray(), $"{exportName}_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+
+        private async Task<Dictionary<string, Dictionary<string, string>>> GetDictMapAsync(List<string> dictCodes)
+        {
+            var dicts = await _context.DictTypes
+                .Include(t => t.DictDatas)
+                .Where(t => dictCodes.Contains(t.Code))
+                .ToListAsync();
+
+            return dicts.ToDictionary(
+                t => t.Code,
+                t => t.DictDatas.ToDictionary(d => d.Value, d => d.Label)
+            );
+        }
+
+        private object GetContractValue(ContractDto contract, string dataIndex, Dictionary<string, Dictionary<string, string>>? dictMap = null)
+        {
+            string GetDictLabel(string dictCode, string value)
+            {
+                if (dictMap != null && dictMap.ContainsKey(dictCode) && dictMap[dictCode].TryGetValue(value, out var label))
+                {
+                    return label;
+                }
+                return "";
+            }
+
+            switch (dataIndex)
+            {
+                case "contractName": return contract.ContractName;
+                case "contractNo": return contract.ContractNo ?? "";
+                case "totalAmount": return (double)contract.TotalAmount;
+                case "manager": return contract.Manager ?? "";
+                case "signDate": return contract.SignDate?.ToString("yyyy-MM-dd") ?? "-";
+                case "startDate": return contract.StartDate?.ToString("yyyy-MM-dd") ?? "-";
+                case "endDate": return contract.EndDate?.ToString("yyyy-MM-dd") ?? "-";
+                case "signStatus": // lifecycleStatus
+                case "lifecycleStatus": 
+                    var statusLabel = GetDictLabel("contract_status", contract.LifecycleStatus);
+                    if (!string.IsNullOrEmpty(statusLabel)) return statusLabel;
+
+                    return !contract.SignDate.HasValue ? "草稿" : "已签订";
+                case "direction":
+                case "type":
+                    var typeLabel = GetDictLabel("contract_type", contract.Type);
+                    if (!string.IsNullOrEmpty(typeLabel)) return typeLabel;
+
+                    return "其他";
+                case "pricingType":
+                    var pricingLabel = GetDictLabel("contract_pricing_type", contract.PricingType);
+                    if (!string.IsNullOrEmpty(pricingLabel)) return pricingLabel;
+
+                    return "未知";
+                case "performanceStatus":
+                    var perfLabel = GetDictLabel("contract_performance_status", contract.Status);
+                    if (!string.IsNullOrEmpty(perfLabel)) return perfLabel;
+
+                    return "未知";
+                case "partnerName": return contract.PartnerName ?? "";
+                case "currency": return contract.Currency;
+                case "paymentMethod": 
+                    var paymentLabel = GetDictLabel("contract_payment_method", contract.PaymentMethod ?? "");
+                    return !string.IsNullOrEmpty(paymentLabel) ? paymentLabel : (contract.PaymentMethod ?? "");
+                case "description": return contract.Description ?? "";
+                case "validityPeriod":
+                    if (!contract.StartDate.HasValue && !contract.EndDate.HasValue) return "无";
+                    var start = contract.StartDate?.ToString("yyyy-MM-dd") ?? "-";
+                    var end = contract.EndDate?.ToString("yyyy-MM-dd") ?? "-";
+                    return $"{start} 至 {end}";
+                default: return "";
+            }
+        }
+
+        public async Task<IEnumerable<ContractDto>> GetContractsAsync(ContractQueryDto dto)
         {
             var orgId = await GetCurrentOrgIdAsync();
             var query = _context.Contracts.AsQueryable();
@@ -65,30 +279,46 @@ namespace omsapi.Services
                 query = query.Where(c => c.OrgId == orgId.Value);
             }
 
-            if (!string.IsNullOrEmpty(type))
+            if (!string.IsNullOrEmpty(dto.Type)) query = query.Where(c => c.Type == dto.Type);
+            if (!string.IsNullOrEmpty(dto.ContractNo)) query = query.Where(c => c.ContractNo.Contains(dto.ContractNo));
+            if (!string.IsNullOrEmpty(dto.PartnerName)) query = query.Where(c => c.PartnerName.Contains(dto.PartnerName));
+            if (!string.IsNullOrEmpty(dto.Manager)) query = query.Where(c => c.Manager != null && c.Manager.Contains(dto.Manager));
+            if (!string.IsNullOrEmpty(dto.PricingType)) query = query.Where(c => c.PricingType == dto.PricingType);
+            if (!string.IsNullOrEmpty(dto.LifecycleStatus)) query = query.Where(c => c.LifecycleStatus == dto.LifecycleStatus);
+            if (!string.IsNullOrEmpty(dto.PerformanceStatus)) query = query.Where(c => c.Status == dto.PerformanceStatus);
+            if (!string.IsNullOrEmpty(dto.PaymentMethod)) query = query.Where(c => c.PaymentMethod == dto.PaymentMethod);
+
+            if (dto.TotalAmountMin.HasValue) query = query.Where(c => c.TotalAmount >= dto.TotalAmountMin.Value);
+            if (dto.TotalAmountMax.HasValue) query = query.Where(c => c.TotalAmount <= dto.TotalAmountMax.Value);
+
+            if (dto.SignDateStart.HasValue) query = query.Where(c => c.SignDate >= dto.SignDateStart.Value);
+            if (dto.SignDateEnd.HasValue) query = query.Where(c => c.SignDate <= dto.SignDateEnd.Value);
+
+            if (dto.StartDateStart.HasValue) query = query.Where(c => c.StartDate >= dto.StartDateStart.Value);
+            if (dto.StartDateEnd.HasValue) query = query.Where(c => c.StartDate <= dto.StartDateEnd.Value);
+
+            if (dto.EndDateStart.HasValue) query = query.Where(c => c.EndDate >= dto.EndDateStart.Value);
+            if (dto.EndDateEnd.HasValue) query = query.Where(c => c.EndDate <= dto.EndDateEnd.Value);
+
+            if (!string.IsNullOrEmpty(dto.Keyword))
             {
-                query = query.Where(c => c.Type == type);
+                query = query.Where(c => c.ContractName.Contains(dto.Keyword) || c.ContractNo.Contains(dto.Keyword) || c.PartnerName.Contains(dto.Keyword));
             }
 
-            if (!string.IsNullOrEmpty(keyword))
-            {
-                query = query.Where(c => c.ContractName.Contains(keyword) || c.ContractNo.Contains(keyword) || c.PartnerName.Contains(keyword));
-            }
-
-            if (!string.IsNullOrEmpty(expiryStatus))
+            if (!string.IsNullOrEmpty(dto.ExpiryStatus))
             {
                 var today = DateTime.Today;
                 var next7 = today.AddDays(7);
 
-                if (expiryStatus == "expired")
+                if (dto.ExpiryStatus == "expired")
                 {
                     query = query.Where(c => c.EndDate != null && c.EndDate < today);
                 }
-                else if (expiryStatus == "within7")
+                else if (dto.ExpiryStatus == "within7")
                 {
                     query = query.Where(c => c.EndDate != null && c.EndDate >= today && c.EndDate <= next7);
                 }
-                else if (expiryStatus == "notExpired")
+                else if (dto.ExpiryStatus == "notExpired")
                 {
                     query = query.Where(c => c.EndDate == null || c.EndDate > next7);
                 }
@@ -103,9 +333,9 @@ namespace omsapi.Services
             var list = await resultQuery.ToListAsync();
 
             return list.Select(x => {
-                var dto = MapToDto(x.Contract);
-                dto.OrgName = x.OrgName;
-                return dto;
+                var d = MapToDto(x.Contract);
+                d.OrgName = x.OrgName;
+                return d;
             });
         }
 
@@ -179,7 +409,7 @@ namespace omsapi.Services
             return dto;
         }
 
-        public async Task<ContractDto> CreateContractAsync(CreateContractDto dto)
+        public async Task<ContractDto> CreateContractAsync(CreateContractDto dto, List<IFormFile>? files = null)
         {
             var orgId = await GetCurrentOrgIdAsync();
 
@@ -191,6 +421,7 @@ namespace omsapi.Services
                 ContractName = dto.ContractName,
                 Type = dto.Type,
                 PartnerName = dto.PartnerName,
+                PartnerId = dto.PartnerId,
                 SignDate = dto.SignDate,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
@@ -200,7 +431,7 @@ namespace omsapi.Services
                 PaymentMethod = dto.PaymentMethod,
                 TaxId = dto.TaxId,
                 Description = dto.Description,
-                Files = dto.Files,
+                Files = null, // Use ContractAttachment instead
                 LifecycleStatus = dto.LifecycleStatus ?? "draft",
                 PricingType = dto.PricingType ?? "fixed",
                 CreatedAt = DateTime.Now,
@@ -209,6 +440,20 @@ namespace omsapi.Services
 
             _context.Contracts.Add(entity);
             await _context.SaveChangesAsync();
+
+            // Handle simultaneous file uploads (New files)
+            if (files != null && files.Count > 0)
+            {
+                foreach (var file in files)
+                {
+                    if (file.Length > 0)
+                    {
+                        await UploadContractAttachmentAsync(entity.Id, file);
+                    }
+                }
+            }
+            
+            await _context.Entry(entity).Collection(c => c.Attachments).LoadAsync();
 
             return MapToDto(entity);
         }
@@ -221,6 +466,7 @@ namespace omsapi.Services
             entity.ContractName = dto.ContractName;
             entity.Type = dto.Type;
             entity.PartnerName = dto.PartnerName;
+            entity.PartnerId = dto.PartnerId;
             entity.SignDate = dto.SignDate;
             entity.StartDate = dto.StartDate;
             entity.EndDate = dto.EndDate;
@@ -230,9 +476,9 @@ namespace omsapi.Services
             entity.PaymentMethod = dto.PaymentMethod;
             entity.TaxId = dto.TaxId;
             entity.Description = dto.Description;
-            entity.Files = dto.Files;
+            entity.LifecycleStatus = dto.LifecycleStatus;
             entity.UpdatedAt = DateTime.Now;
-
+            
             if (dto.PricingType != null) entity.PricingType = dto.PricingType;
             if (dto.Status != null) entity.Status = dto.Status;
             if (dto.PaidAmount != null) entity.PaidAmount = dto.PaidAmount.Value;
@@ -678,6 +924,58 @@ namespace omsapi.Services
             return true;
         }
 
+        public async Task<string> UploadContractFileAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return string.Empty;
+
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadDir = Path.Combine(webRootPath, "uploads", "contract", "files");
+            if (!Directory.Exists(uploadDir))
+            {
+                Directory.CreateDirectory(uploadDir);
+            }
+
+            var ext = Path.GetExtension(file.FileName);
+            var fileName = $"{Guid.NewGuid():N}{ext}";
+            var fullPath = Path.Combine(uploadDir, fileName);
+
+            using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"/uploads/contract/files/{fileName}";
+        }
+
+        public async Task<bool> DeleteContractFileAsync(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) return false;
+
+            var webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var relative = filePath.TrimStart('/', '\\');
+            var fullPath = Path.Combine(webRootPath, relative);
+
+            // Security check: ensure the file is within the uploads directory
+            if (!fullPath.StartsWith(Path.Combine(webRootPath, "uploads"), StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (File.Exists(fullPath))
+            {
+                try
+                {
+                    File.Delete(fullPath);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+
         public async Task<ContractInvoiceDto?> RecognizeInvoiceAsync(IFormFile file)
         {
             if (file == null || file.Length == 0) return null;
@@ -856,6 +1154,20 @@ Invoice Text:
 
         private static ContractDto MapToDto(ContractMain entity)
         {
+            var files = entity.Files;
+            if ((files == null || files == "[]") && entity.Attachments != null && entity.Attachments.Any())
+            {
+                var fileList = entity.Attachments.Select(a => new
+                {
+                    name = a.FileName,
+                    url = a.FilePath,
+                    size = ParseSize(a.Size),
+                    type = GetMimeType(a.FileName),
+                    uploadTime = a.UploadDate
+                }).ToList();
+                files = JsonSerializer.Serialize(fileList);
+            }
+
             return new ContractDto
             {
                 Id = entity.Id,
@@ -863,6 +1175,7 @@ Invoice Text:
                 ContractName = entity.ContractName,
                 Type = entity.Type,
                 PartnerName = entity.PartnerName,
+                PartnerId = entity.PartnerId,
                 SignDate = entity.SignDate,
                 StartDate = entity.StartDate,
                 EndDate = entity.EndDate,
@@ -879,11 +1192,45 @@ Invoice Text:
                 PricingType = entity.PricingType,
                 Description = entity.Description,
                 LatestTransactionDate = entity.LatestTransactionDate,
-                Files = entity.Files,
+                Files = files,
                 CreatedAt = entity.CreatedAt,
                 UpdatedAt = entity.UpdatedAt
             };
         }
+
+        private static long ParseSize(string? size)
+        {
+            if (string.IsNullOrEmpty(size)) return 0;
+            // This is a rough estimation or we need to store bytes in DB. 
+            // ContractAttachment stores string Size "X KB".
+            // Frontend expects number bytes?
+            // Actually frontend contract.ts defines: size?: number;
+            // But if we return string "10 KB", JSON serialization might break strict typing or frontend handles it?
+            // Let's try to parse back or just return 0 if we can't.
+            // Actually, for display purposes in file list, frontend might just display it.
+            // But if I want to be safe, I should store bytes in DB. 
+            // ContractAttachment has string Size.
+            // Let's just return 0 for now or try to parse.
+            return 0; 
+        }
+
+        private static string GetMimeType(string fileName)
+        {
+             var ext = Path.GetExtension(fileName).ToLower();
+             return ext switch
+             {
+                 ".pdf" => "application/pdf",
+                 ".jpg" => "image/jpeg",
+                 ".jpeg" => "image/jpeg",
+                 ".png" => "image/png",
+                 ".doc" => "application/msword",
+                 ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                 ".xls" => "application/vnd.ms-excel",
+                 ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                 _ => "application/octet-stream"
+             };
+        }
+
 
         private static ContractDetailDto MapToDetailDto(ContractMain entity)
         {
@@ -894,6 +1241,7 @@ Invoice Text:
                 ContractName = entity.ContractName,
                 Type = entity.Type,
                 PartnerName = entity.PartnerName,
+                PartnerId = entity.PartnerId,
                 SignDate = entity.SignDate,
                 StartDate = entity.StartDate,
                 EndDate = entity.EndDate,

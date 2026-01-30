@@ -6,10 +6,11 @@ namespace omsapi.Services.Interfaces
     public interface IContractService
     {
         // Contracts
-        Task<IEnumerable<ContractDto>> GetContractsAsync(string? type = null, string? keyword = null, string? expiryStatus = null);
+        Task<IEnumerable<ContractDto>> GetContractsAsync(ContractQueryDto query);
+        Task<(byte[] Content, string FileName)> ExportContractsAsync(ExportContractsDto dto);
         Task<IEnumerable<ContractCustomerSelectDto>> GetCustomersAsync(string? keyword = null);
         Task<ContractDetailDto?> GetContractByIdAsync(long id);
-        Task<ContractDto> CreateContractAsync(CreateContractDto dto);
+        Task<ContractDto> CreateContractAsync(CreateContractDto dto, List<IFormFile>? files = null);
         Task<ContractDto?> UpdateContractAsync(long id, UpdateContractDto dto);
         Task<bool> DeleteContractAsync(long id);
 
@@ -60,6 +61,8 @@ namespace omsapi.Services.Interfaces
         // Attachments
         Task<ContractAttachmentDto?> UploadContractAttachmentAsync(long contractId, IFormFile file);
         Task<bool> DeleteContractAttachmentAsync(long id);
+        Task<string> UploadContractFileAsync(IFormFile file);
+        Task<bool> DeleteContractFileAsync(string filePath);
 
         // Invoice Recognition
         Task<ContractInvoiceDto?> RecognizeInvoiceAsync(IFormFile file);
