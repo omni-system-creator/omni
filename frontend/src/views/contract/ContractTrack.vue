@@ -1,24 +1,10 @@
 <template>
   <div class="page-container">
     <a-card :bordered="false" class="table-card">
-      <template #title>
-        <a-segmented v-model:value="expiryFilter" :options="expiryOptions" @change="handleExpiryChange" />
-      </template>
-      <template #extra>
-        <a-space>
-          <a-button type="primary" @click="handleCreate">
-            <template #icon><plus-outlined /></template>
-            新建合同
-          </a-button>
-          <a-button>
-            <template #icon><export-outlined /></template>
-            导出报表
-          </a-button>
-        </a-space>
-      </template>
       
       <div class="content-wrapper">
-        <a-table
+        <smart-table
+          table-key="contract-track-list"
           :columns="columns"
           :data-source="paginatedContracts"
           :pagination="false"
@@ -26,6 +12,21 @@
           row-key="id"
           :scroll="{ x: 'max-content', y: 500 }"
         >
+          <template #toolbar>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 16px;">
+              <a-segmented v-model:value="expiryFilter" :options="expiryOptions" @change="handleExpiryChange" />
+              <a-space>
+                <a-button type="primary" @click="handleCreate">
+                  <template #icon><plus-outlined /></template>
+                  新建合同
+                </a-button>
+                <a-button>
+                  <template #icon><export-outlined /></template>
+                  导出报表
+                </a-button>
+              </a-space>
+            </div>
+          </template>
           <template #bodyCell="{ column, record, index }">
             <template v-if="column.key === 'index'">
               {{ ((pagination.current || 1) - 1) * (pagination.pageSize || 10) + index + 1 }}
@@ -84,7 +85,7 @@
               </a-space>
             </template>
           </template>
-        </a-table>
+        </smart-table>
       </div>
       <div class="pagination-footer">
         <a-pagination
@@ -132,6 +133,7 @@ import { message } from 'ant-design-vue';
 import dayjs from 'dayjs';
 import ContractForm from './ContractForm.vue';
 import ContractDetail from './components/ContractDetail.vue';
+import SmartTable from '@/components/SmartTable/index.vue';
 import { createContract, updateContract, deleteContract, getContracts, getContractById } from '@/api/contract';
 import { getUserList, type UserListDto } from '@/api/user';
 import { getDeptTree, type Dept } from '@/api/dept';
@@ -598,5 +600,9 @@ const onSubmit = () => {
   flex-shrink: 0;
   overflow: hidden !important;
   scrollbar-gutter: stable;
+}
+
+.content-wrapper :deep(.ant-tag) {
+  margin-right: 0;
 }
 </style>

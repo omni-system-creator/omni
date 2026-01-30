@@ -264,6 +264,12 @@ namespace omsapi.Data
                 entity.HasIndex(c => new { c.Key, c.OrgId }).IsUnique();
             });
 
+            // 配置 SystemUserConfig
+            modelBuilder.Entity<SystemUserConfig>(entity =>
+            {
+                entity.HasIndex(c => new { c.UserId, c.OrgId, c.Key }).IsUnique();
+            });
+
             // 配置 Permission 实体
             modelBuilder.Entity<SystemPermission>(entity =>
             {

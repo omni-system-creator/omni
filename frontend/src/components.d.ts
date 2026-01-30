@@ -109,6 +109,7 @@ declare module 'vue' {
     RecentActivities: typeof import('./components/widgets/RecentActivities.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SmartTable: typeof import('./components/SmartTable/index.vue')['default']
     SplitLayout: typeof import('./components/SplitLayout/index.vue')['default']
     StatsCard: typeof import('./components/widgets/StatsCard.vue')['default']
     SystemStatus: typeof import('./components/widgets/SystemStatus.vue')['default']
