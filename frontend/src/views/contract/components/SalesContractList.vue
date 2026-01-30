@@ -96,10 +96,15 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { SearchOutlined, FilterFilled, MoreOutlined } from '@ant-design/icons-vue';
 import ContractDetail from './ContractDetail.vue';
 import { getContracts, type ContractDto, type ContractDetailDto } from '@/api/contract';
+import type { ColumnType } from 'ant-design-vue/es/table';
+import { useUserStore } from '@/stores/user';
+
+// Stores
+const userStore = useUserStore();
 
 // Types
 interface SalesContract {
@@ -107,6 +112,7 @@ interface SalesContract {
   contractNo: string;
   contractName: string;
   customerName: string;
+  orgName?: string;
   signDate: string;
   totalAmount: string;
   receivedAmount: string;
@@ -294,6 +300,7 @@ const fetchContracts = async () => {
         contractNo: item.contractNo,
         contractName: item.contractName,
         customerName: item.partnerName,
+        orgName: item.orgName,
         signDate: item.signDate ? new Date(item.signDate).toISOString().split('T')[0] : '',
         totalAmount: item.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         receivedAmount: item.paidAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
@@ -308,6 +315,10 @@ const fetchContracts = async () => {
 };
 
 onMounted(() => {
+  fetchContracts();
+});
+
+watch(() => userStore.currentOrg?.id, () => {
   fetchContracts();
 });
 

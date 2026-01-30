@@ -1,0 +1,1 @@
+ALTER TABLE contract_main ADD org_id BIGINT NULL;

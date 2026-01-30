@@ -93,6 +93,9 @@ namespace omsapi.Models.Entities.Contract
         [Column("updated_at")]
         public DateTime? UpdatedAt { get; set; }
 
+        [Column("org_id")]
+        public long? OrgId { get; set; }
+
         public virtual ICollection<ContractPaymentPlan> PaymentPlans { get; set; } = new List<ContractPaymentPlan>();
         public virtual ICollection<ContractPaymentRecord> PaymentRecords { get; set; } = new List<ContractPaymentRecord>();
         public virtual ICollection<ContractInvoice> Invoices { get; set; } = new List<ContractInvoice>();

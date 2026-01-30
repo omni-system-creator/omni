@@ -6,6 +6,9 @@ using omsapi.Infrastructure.Attributes;
 using omsapi.Models.Dtos.Contract;
 using omsapi.Models.Entities.Contract;
 using omsapi.Services.Interfaces;
+using UglyToad.PdfPig;
+using System.Text;
+using System.Text.Json;
 
 namespace omsapi.Services
 {
@@ -14,18 +17,49 @@ namespace omsapi.Services
     {
         private readonly OmsContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly IAiService _aiService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public ContractService(OmsContext context, IWebHostEnvironment environment)
+        public ContractService(OmsContext context, IWebHostEnvironment environment, IAiService aiService, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _environment = environment;
+            _aiService = aiService;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private long? GetCurrentUserId()
+        {
+            var userIdStr = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
+            if (long.TryParse(userIdStr, out var userId))
+            {
+                return userId;
+            }
+            return null;
+        }
+
+        private async Task<long?> GetCurrentOrgIdAsync()
+        {
+            var userId = GetCurrentUserId();
+            if (userId.HasValue)
+            {
+                var user = await _context.Users.FindAsync(userId.Value);
+                return user?.CurrentOrgId;
+            }
+            return null;
         }
 
         // --- Contracts ---
 
         public async Task<IEnumerable<ContractDto>> GetContractsAsync(string? type = null, string? keyword = null, string? expiryStatus = null)
         {
+            var orgId = await GetCurrentOrgIdAsync();
             var query = _context.Contracts.AsQueryable();
+
+            if (orgId.HasValue)
+            {
+                query = query.Where(c => c.OrgId == orgId.Value);
+            }
 
             if (!string.IsNullOrEmpty(type))
             {
@@ -56,9 +90,19 @@ namespace omsapi.Services
                 }
             }
 
-            var entities = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
+            var resultQuery = from c in query
+                              join d in _context.Depts on c.OrgId equals d.Id into depts
+                              from dept in depts.DefaultIfEmpty()
+                              orderby c.CreatedAt descending
+                              select new { Contract = c, OrgName = dept.Name };
 
-            return entities.Select(MapToDto);
+            var list = await resultQuery.ToListAsync();
+
+            return list.Select(x => {
+                var dto = MapToDto(x.Contract);
+                dto.OrgName = x.OrgName;
+                return dto;
+            });
         }
 
         public async Task<IEnumerable<ContractCustomerSelectDto>> GetCustomersAsync(string? keyword = null)
@@ -133,6 +177,8 @@ namespace omsapi.Services
 
         public async Task<ContractDto> CreateContractAsync(CreateContractDto dto)
         {
+            var orgId = await GetCurrentOrgIdAsync();
+
             var entity = new ContractMain
             {
                 ContractNo = !string.IsNullOrWhiteSpace(dto.ContractNo) 
@@ -153,7 +199,8 @@ namespace omsapi.Services
                 Files = dto.Files,
                 LifecycleStatus = dto.LifecycleStatus ?? "draft",
                 PricingType = dto.PricingType ?? "fixed",
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                OrgId = orgId
             };
 
             _context.Contracts.Add(entity);
@@ -625,6 +672,86 @@ namespace omsapi.Services
             _context.ContractAttachments.Remove(entity);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<ContractInvoiceDto?> RecognizeInvoiceAsync(IFormFile file)
+        {
+            if (file == null || file.Length == 0) return null;
+
+            var ext = Path.GetExtension(file.FileName).ToLower();
+            string text = "";
+
+            if (ext == ".pdf")
+            {
+                try
+                {
+                    using var stream = file.OpenReadStream();
+                    using var document = PdfDocument.Open(stream);
+                    var sb = new StringBuilder();
+                    foreach (var page in document.GetPages())
+                    {
+                        sb.AppendLine(page.Text);
+                    }
+                    text = sb.ToString();
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(text)) return null;
+
+            var prompt = $@"
+You are an invoice recognition assistant. Please extract the following information from the invoice text below and return it in JSON format.
+Fields:
+- InvoiceNo (string)
+- InvoiceDate (string, format yyyy-MM-dd)
+- Amount (number)
+- Type (string, guess from context, e.g. '普票', '专票', '电子发票')
+
+Return ONLY valid JSON.
+
+Invoice Text:
+{text}
+";
+
+            var systemPrompt = "You are a helpful assistant that extracts structured data from invoice text. Return only JSON.";
+            var response = await _aiService.GetChatCompletionAsync(prompt, systemPrompt);
+
+            try 
+            {
+                var cleanJson = response.Replace("```json", "").Replace("```", "").Trim();
+                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var data = JsonSerializer.Deserialize<InvoiceRecognitionResult>(cleanJson, options);
+                
+                if (data == null) return null;
+
+                return new ContractInvoiceDto
+                {
+                    InvoiceNo = data.InvoiceNo ?? "",
+                    InvoiceDate = DateTime.TryParse(data.InvoiceDate, out var date) ? date : DateTime.Today,
+                    Amount = data.Amount,
+                    Type = data.Type,
+                    Direction = "input"
+                };
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private class InvoiceRecognitionResult
+        {
+            public string? InvoiceNo { get; set; }
+            public string? InvoiceDate { get; set; }
+            public decimal Amount { get; set; }
+            public string? Type { get; set; }
         }
 
         private static ContractDto MapToDto(ContractMain entity)

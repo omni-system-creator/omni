@@ -28,6 +28,7 @@ namespace omsapi.Models.Dtos.Contract
         public string? Description { get; set; }
         public DateTime? LatestTransactionDate { get; set; }
         public string? Files { get; set; } // JSON string
+        public string? OrgName { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

@@ -52,6 +52,16 @@
       destroy-on-close
     >
       <a-form :model="formState" layout="vertical">
+        <a-form-item label="附件">
+          <a-upload
+            :file-list="attachmentFileList"
+            :before-upload="handleAttachmentBeforeUpload"
+            @remove="handleAttachmentRemove"
+            :max-count="1"
+          >
+            <a-button>选择文件</a-button>
+          </a-upload>
+        </a-form-item>
         <a-form-item label="收/开" required>
           <a-select v-model:value="formState.direction">
             <a-select-option value="input">收票</a-select-option>
@@ -78,16 +88,6 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item label="附件">
-          <a-upload
-            :file-list="attachmentFileList"
-            :before-upload="handleAttachmentBeforeUpload"
-            @remove="handleAttachmentRemove"
-            :max-count="1"
-          >
-            <a-button>选择文件</a-button>
-          </a-upload>
-        </a-form-item>
       </a-form>
     </a-modal>
   </a-card>
@@ -106,6 +106,7 @@ import {
   updateInvoice,
   deleteInvoice,
   uploadInvoiceAttachment,
+  recognizeInvoice,
   type CreateContractInvoiceDto
 } from '@/api/contract'
 
@@ -243,8 +244,37 @@ const handleCancel = () => {
   modalVisible.value = false
 }
 
-const handleAttachmentBeforeUpload = (file: any) => {
+const handleAttachmentBeforeUpload = async (file: any) => {
   attachmentFileList.value = [file]
+  
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+  
+  if (isPdf) {
+    const hide = message.loading('正在识别发票内容...', 0)
+    try {
+      const res = await recognizeInvoice(file)
+      hide()
+      
+      if (res) {
+        message.success('识别成功')
+        if (res.invoiceNo) formState.value.invoiceNo = res.invoiceNo
+        if (res.amount) formState.value.amount = res.amount
+        if (res.invoiceDate) formState.value.invoiceDate = dayjs(res.invoiceDate)
+        
+        if (res.type) {
+          const matched = invoiceTypeOptions.value.find(o => o.label.includes(res.type!) || o.value === res.type)
+          if (matched) {
+            formState.value.type = matched.value
+          }
+        }
+      }
+    } catch (e) {
+      hide()
+      message.warning('发票识别失败，请手动填写')
+      console.error(e)
+    }
+  }
+  
   return false
 }
 

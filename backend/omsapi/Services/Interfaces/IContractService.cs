@@ -60,5 +60,8 @@ namespace omsapi.Services.Interfaces
         // Attachments
         Task<ContractAttachmentDto?> UploadContractAttachmentAsync(long contractId, IFormFile file);
         Task<bool> DeleteContractAttachmentAsync(long id);
+
+        // Invoice Recognition
+        Task<ContractInvoiceDto?> RecognizeInvoiceAsync(IFormFile file);
     }
 }

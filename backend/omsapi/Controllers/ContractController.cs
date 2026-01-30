@@ -220,6 +220,17 @@ namespace omsapi.Controllers
         }
 
         /// <summary>
+        /// 识别发票
+        /// </summary>
+        [HttpPost("invoices/recognize")]
+        public async Task<ActionResult<ApiResponse<ContractInvoiceDto>>> RecognizeInvoice(IFormFile file)
+        {
+            var result = await _contractService.RecognizeInvoiceAsync(file);
+            if (result == null) return BadRequest(ApiResponse<object>.Error("Failed to recognize invoice"));
+            return Ok(ApiResponse<ContractInvoiceDto>.Success(result));
+        }
+
+        /// <summary>
         /// 上传发票附件
         /// </summary>
         [HttpPost("invoices/{id}/attachment")]

@@ -25,6 +25,7 @@ export interface ContractDto {
   description?: string;
   latestTransactionDate?: string;
   files?: string;
+  orgName?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -356,6 +357,16 @@ export const updateInvoice = (id: number, data: UpdateContractInvoiceDto) => {
 
 export const deleteInvoice = (id: number) => {
   return request.delete(`/contract/invoices/${id}`);
+};
+
+export const recognizeInvoice = (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request.post<any, ContractInvoiceDto>('/contract/invoices/recognize', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
 };
 
 export const uploadInvoiceAttachment = (id: number, file: File) => {
