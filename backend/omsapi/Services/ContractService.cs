@@ -10,6 +10,8 @@ using UglyToad.PdfPig;
 using System.Text;
 using System.Text.Json;
 
+using Microsoft.Extensions.Logging;
+
 namespace omsapi.Services
 {
     [AutoInject(ServiceLifetime.Scoped)]
@@ -19,13 +21,15 @@ namespace omsapi.Services
         private readonly IWebHostEnvironment _environment;
         private readonly IAiService _aiService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<ContractService> _logger;
 
-        public ContractService(OmsContext context, IWebHostEnvironment environment, IAiService aiService, IHttpContextAccessor httpContextAccessor)
+        public ContractService(OmsContext context, IWebHostEnvironment environment, IAiService aiService, IHttpContextAccessor httpContextAccessor, ILogger<ContractService> logger)
         {
             _context = context;
             _environment = environment;
             _aiService = aiService;
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
 
         private long? GetCurrentUserId()
@@ -679,8 +683,46 @@ namespace omsapi.Services
             if (file == null || file.Length == 0) return null;
 
             var ext = Path.GetExtension(file.FileName).ToLower();
-            string text = "";
 
+            // Get Current Organization Name for Direction Detection
+            string currentOrgName = "";
+            var currentOrgId = await GetCurrentOrgIdAsync();
+            if (currentOrgId.HasValue)
+            {
+                var org = await _context.Depts.FindAsync(currentOrgId.Value);
+                if (org != null) currentOrgName = org.Name;
+            }
+
+            // Handle Images (jpg, png)
+            if (ext == ".jpg" || ext == ".jpeg" || ext == ".png")
+            {
+                try
+                {
+                    using var stream = new MemoryStream();
+                    await file.CopyToAsync(stream);
+                    var imageBytes = stream.ToArray();
+                    
+                    var prompt = "Please analyze this invoice image and extract the following fields into a JSON object:\n" +
+                                 "- InvoiceNo (string)\n" +
+                                 "- InvoiceDate (string, format yyyy-MM-dd)\n" +
+                                 "- Amount (number)\n" +
+                                 "- Type (string, should be the full Chinese invoice title, e.g. '增值税专用电子发票', '增值税普通发票', '增值税电子普通发票', '增值税专用发票')\n" +
+                                 "- PurchaserName (string)\n" +
+                                 "- SellerName (string)\n" +
+                                 "Return ONLY valid JSON.";
+                                 
+                    var jsonResponse = await _aiService.GetImageAnalysisAsync(imageBytes, prompt);
+                    return ParseInvoiceJson(jsonResponse, currentOrgName);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to recognize image invoice");
+                    return null;
+                }
+            }
+
+            // Handle PDF
+            string text = "";
             if (ext == ".pdf")
             {
                 try
@@ -694,8 +736,9 @@ namespace omsapi.Services
                     }
                     text = sb.ToString();
                 }
-                catch
+                catch (Exception ex)
                 {
+                    _logger.LogError(ex, "Failed to extract text from PDF");
                     return null;
                 }
             }
@@ -706,13 +749,15 @@ namespace omsapi.Services
 
             if (string.IsNullOrWhiteSpace(text)) return null;
 
-            var prompt = $@"
+            var chatPrompt = $@"
 You are an invoice recognition assistant. Please extract the following information from the invoice text below and return it in JSON format.
 Fields:
 - InvoiceNo (string)
 - InvoiceDate (string, format yyyy-MM-dd)
 - Amount (number)
-- Type (string, guess from context, e.g. '普票', '专票', '电子发票')
+- Type (string, should be the full Chinese invoice title, e.g. '增值税专用电子发票', '增值税普通发票', '增值税电子普通发票', '增值税专用发票')
+- PurchaserName (string)
+- SellerName (string)
 
 Return ONLY valid JSON.
 
@@ -721,29 +766,82 @@ Invoice Text:
 ";
 
             var systemPrompt = "You are a helpful assistant that extracts structured data from invoice text. Return only JSON.";
-            var response = await _aiService.GetChatCompletionAsync(prompt, systemPrompt);
+            // Explicitly use named arguments to avoid overload ambiguity
+            var response = await _aiService.GetChatCompletionAsync(message: chatPrompt, systemPrompt: systemPrompt);
+
+            return ParseInvoiceJson(response, currentOrgName);
+        }
+
+        private ContractInvoiceDto? ParseInvoiceJson(string jsonResponse, string currentOrgName)
+        {
+            if (string.IsNullOrWhiteSpace(jsonResponse)) return null;
 
             try 
             {
-                var cleanJson = response.Replace("```json", "").Replace("```", "").Trim();
+                var cleanJson = jsonResponse.Replace("```json", "").Replace("```", "").Trim();
+                // Extract JSON part if there is extra text
+                var startIndex = cleanJson.IndexOf('{');
+                var endIndex = cleanJson.LastIndexOf('}');
+                if (startIndex >= 0 && endIndex > startIndex)
+                {
+                    cleanJson = cleanJson.Substring(startIndex, endIndex - startIndex + 1);
+                }
+
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var data = JsonSerializer.Deserialize<InvoiceRecognitionResult>(cleanJson, options);
                 
                 if (data == null) return null;
+
+                // Determine Direction
+                // Default to input (reimbursement/purchase)
+                string direction = "input";
+                if (!string.IsNullOrEmpty(currentOrgName))
+                {
+                    if (!string.IsNullOrEmpty(data.SellerName) && data.SellerName.Contains(currentOrgName))
+                    {
+                        direction = "output";
+                    }
+                    // If PurchaserName contains currentOrgName, it is input (default)
+                }
 
                 return new ContractInvoiceDto
                 {
                     InvoiceNo = data.InvoiceNo ?? "",
                     InvoiceDate = DateTime.TryParse(data.InvoiceDate, out var date) ? date : DateTime.Today,
                     Amount = data.Amount,
-                    Type = data.Type,
-                    Direction = "input"
+                    Type = MapInvoiceType(data.Type),
+                    Direction = direction
                 };
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to parse AI response: {Response}", jsonResponse);
                 return null;
             }
+        }
+
+        private string MapInvoiceType(string? type)
+        {
+            if (string.IsNullOrWhiteSpace(type)) return "vat_normal";
+            
+            // Normalize
+            var t = type.Trim();
+            
+            // vat_spec_e: 增值税专用电子发票
+            if (t.Contains("专用") && (t.Contains("电子") || t.Contains("数字化"))) return "vat_spec_e";
+            
+            // vat_normal_e: 增值税普通电子发票 / 电子发票
+            if (t.Contains("普通") && (t.Contains("电子") || t.Contains("数字化"))) return "vat_normal_e";
+            if (t.Contains("电子") && !t.Contains("专用")) return "vat_normal_e"; // Fallback for simple "电子发票"
+            
+            // vat_spec: 增值税专用发票
+            if (t.Contains("专用")) return "vat_spec";
+            
+            // vat_normal: 增值税普通发票
+            if (t.Contains("普通")) return "vat_normal";
+            
+            // Default fallback
+            return "vat_normal";
         }
 
         private class InvoiceRecognitionResult
@@ -752,6 +850,8 @@ Invoice Text:
             public string? InvoiceDate { get; set; }
             public decimal Amount { get; set; }
             public string? Type { get; set; }
+            public string? PurchaserName { get; set; }
+            public string? SellerName { get; set; }
         }
 
         private static ContractDto MapToDto(ContractMain entity)
