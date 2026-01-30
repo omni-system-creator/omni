@@ -620,7 +620,7 @@ const columns: ColumnType<ContractDto>[] = [
     title: '操作',
     key: 'action',
     fixed: 'right',
-    width: 100,
+    width: 120,
     align: 'center'
   }
 ];

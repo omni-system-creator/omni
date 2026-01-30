@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, useAttrs } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, useAttrs } from 'vue';
 import { SettingOutlined, HolderOutlined } from '@ant-design/icons-vue';
 import draggable from 'vuedraggable';
 import { useUserConfigStore } from '@/stores/userConfig';
@@ -92,6 +92,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 const attrs = useAttrs();
 const userConfigStore = useUserConfigStore();
+const smartTableRef = ref<HTMLDivElement>();
+const containerWidth = ref(0);
+let resizeObserver: ResizeObserver | null = null;
 
 const settingsVisible = ref(false);
 const configList = ref<any[]>([]);
@@ -161,19 +164,25 @@ const displayColumns = computed(() => {
 
 // Compute table scroll props to ensure horizontal scrolling works with fixed layout
 const tableScroll = computed(() => {
-  const originalScroll = (attrs.scroll as { x?: string | number | boolean, y?: string | number }) || {};
+  const originalScroll = (attrs.scroll as { x?: string | number | true, y?: string | number }) || {};
   
-  // Calculate total width of visible columns
-  const totalWidth = displayColumns.value.reduce((sum, col) => {
-    const width = Number(col.width);
-    return sum + (isNaN(width) ? 100 : width); // Fallback to 100 if no width
-  }, 0);
-
-  // If x is 'max-content' or undefined, override it with total width to force fixed layout behavior
-  // This is crucial for ellipsis to work correctly in Ant Design Vue
+  const data = (attrs['data-source'] || attrs.dataSource || []) as any[];
   let scrollX = originalScroll.x;
-  if (!scrollX || scrollX === 'max-content' || scrollX === true) {
-    scrollX = totalWidth;
+  
+  if (data.length > 0) {
+    // Calculate total width of visible columns
+    const totalWidth = displayColumns.value.reduce((sum, col) => {
+      const width = Number(col.width);
+      return sum + (isNaN(width) ? 80 : width); 
+    }, 0);
+
+    if (containerWidth.value > 0 && totalWidth <= containerWidth.value) {
+      scrollX = '100%';
+    } else {
+      scrollX = totalWidth;
+    }
+  } else {
+    scrollX = undefined;
   }
 
   return {
@@ -250,8 +259,23 @@ watch(() => props.columns, () => {
 }, { deep: true });
 
 onMounted(async () => {
+  if (smartTableRef.value) {
+    resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        containerWidth.value = entry.contentRect.width;
+      }
+    });
+    resizeObserver.observe(smartTableRef.value);
+  }
   await userConfigStore.loadConfigs(`table.${props.tableKey}`);
   initConfig();
+});
+
+onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+  }
 });
 </script>
 
@@ -321,5 +345,15 @@ onMounted(async () => {
 .width-input {
   margin-left: auto;
   width: 80px;
+}
+/* Ensure empty state placeholder takes full height and centers content */
+:deep(.ant-table-placeholder) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+:deep(.ant-table-placeholder .ant-empty-normal) {
+  margin: 0; /* Remove default margin to center perfectly */
 }
 </style>
