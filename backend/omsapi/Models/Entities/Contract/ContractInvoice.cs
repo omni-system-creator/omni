@@ -48,5 +48,8 @@ namespace omsapi.Models.Entities.Contract
         [MaxLength(255)]
         [Column("attachment_file_name")]
         public string? AttachmentFileName { get; set; }
+
+        [Column("content")]
+        public string? Content { get; set; }
     }
 }

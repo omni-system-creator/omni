@@ -157,6 +157,7 @@ namespace omsapi.Models.Dtos.Contract
         public string Status { get; set; } = "issued";
         public string? AttachmentFilePath { get; set; }
         public string? AttachmentFileName { get; set; }
+        public string? Content { get; set; }
     }
 
     public class ContractContactDto
@@ -213,6 +214,8 @@ namespace omsapi.Models.Dtos.Contract
 
         [MaxLength(20)]
         public string Status { get; set; } = "issued";
+
+        public string? Content { get; set; }
     }
 
     public class UpdateContractInvoiceDto : CreateContractInvoiceDto

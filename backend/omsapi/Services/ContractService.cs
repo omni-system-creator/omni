@@ -715,7 +715,8 @@ namespace omsapi.Services
                 Amount = dto.Amount,
                 Direction = dto.Direction,
                 Type = dto.Type,
-                Status = dto.Status
+                Status = dto.Status,
+                Content = dto.Content
             };
 
             _context.ContractInvoices.Add(invoice);
@@ -731,7 +732,8 @@ namespace omsapi.Services
                 Type = invoice.Type,
                 Status = invoice.Status,
                 AttachmentFilePath = invoice.AttachmentFilePath,
-                AttachmentFileName = invoice.AttachmentFileName
+                AttachmentFileName = invoice.AttachmentFileName,
+                Content = invoice.Content
             };
         }
 
@@ -746,6 +748,7 @@ namespace omsapi.Services
             invoice.Direction = dto.Direction;
             invoice.Type = dto.Type;
             invoice.Status = dto.Status;
+            invoice.Content = dto.Content;
 
             await _context.SaveChangesAsync();
 
@@ -759,7 +762,8 @@ namespace omsapi.Services
                 Type = invoice.Type,
                 Status = invoice.Status,
                 AttachmentFilePath = invoice.AttachmentFilePath,
-                AttachmentFileName = invoice.AttachmentFileName
+                AttachmentFileName = invoice.AttachmentFileName,
+                Content = invoice.Content
             };
         }
 
@@ -846,7 +850,8 @@ namespace omsapi.Services
                 Type = invoice.Type,
                 Status = invoice.Status,
                 AttachmentFilePath = invoice.AttachmentFilePath,
-                AttachmentFileName = invoice.AttachmentFileName
+                AttachmentFileName = invoice.AttachmentFileName,
+                Content = invoice.Content
             };
         }
 
@@ -1000,21 +1005,21 @@ namespace omsapi.Services
                     await file.CopyToAsync(stream);
                     var imageBytes = stream.ToArray();
                     
-                    var prompt = "Please analyze this invoice image and extract the following fields into a JSON object:\n" +
-                                 "- InvoiceNo (string)\n" +
-                                 "- InvoiceDate (string, format yyyy-MM-dd)\n" +
-                                 "- Amount (number)\n" +
-                                 "- Type (string, should be the full Chinese invoice title, e.g. '增值税专用电子发票', '增值税普通发票', '增值税电子普通发票', '增值税专用发票')\n" +
-                                 "- PurchaserName (string)\n" +
-                                 "- SellerName (string)\n" +
-                                 "Return ONLY valid JSON.";
+                    var prompt = "请分析这张发票图片，并将以下字段提取为 JSON 对象：\n" +
+                                 "- InvoiceNo (字符串，发票号码)\n" +
+                                 "- InvoiceDate (字符串，格式 yyyy-MM-dd)\n" +
+                                 "- Amount (数字，金额)\n" +
+                                 "- Type (字符串，应为完整的中文发票标题，例如 '增值税专用电子发票', '增值税普通发票', '增值税电子普通发票', '增值税专用发票')\n" +
+                                 "- PurchaserName (字符串，购买方名称)\n" +
+                                 "- SellerName (字符串，销售方名称)\n" +
+                                 "仅返回有效的 JSON。";
                                  
                     var jsonResponse = await _aiService.GetImageAnalysisAsync(imageBytes, prompt);
                     return ParseInvoiceJson(jsonResponse, currentOrgName);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to recognize image invoice");
+                    _logger.LogError(ex, "识别图片发票失败");
                     return null;
                 }
             }
@@ -1036,7 +1041,7 @@ namespace omsapi.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to extract text from PDF");
+                    _logger.LogError(ex, "从 PDF 提取文本失败");
                     return null;
                 }
             }
@@ -1048,22 +1053,22 @@ namespace omsapi.Services
             if (string.IsNullOrWhiteSpace(text)) return null;
 
             var chatPrompt = $@"
-You are an invoice recognition assistant. Please extract the following information from the invoice text below and return it in JSON format.
-Fields:
-- InvoiceNo (string)
-- InvoiceDate (string, format yyyy-MM-dd)
-- Amount (number)
-- Type (string, should be the full Chinese invoice title, e.g. '增值税专用电子发票', '增值税普通发票', '增值税电子普通发票', '增值税专用发票')
-- PurchaserName (string)
-- SellerName (string)
+你是一个发票识别助手。请从下方的发票文本中提取以下信息并以 JSON 格式返回。
+字段：
+- InvoiceNo (字符串，发票号码)
+- InvoiceDate (字符串，格式 yyyy-MM-dd)
+- Amount (数字，金额)
+- Type (字符串，应为完整的中文发票标题，例如 '增值税专用电子发票', '增值税普通发票', '增值税电子普通发票', '增值税专用发票')
+- PurchaserName (字符串，购买方名称)
+- SellerName (字符串，销售方名称)
 
-Return ONLY valid JSON.
+仅返回有效的 JSON。
 
-Invoice Text:
+发票文本：
 {text}
 ";
 
-            var systemPrompt = "You are a helpful assistant that extracts structured data from invoice text. Return only JSON.";
+            var systemPrompt = "你是一个帮助从发票文本中提取结构化数据的助手。仅返回 JSON。";
             // Explicitly use named arguments to avoid overload ambiguity
             var response = await _aiService.GetChatCompletionAsync(message: chatPrompt, systemPrompt: systemPrompt);
 
@@ -1108,12 +1113,13 @@ Invoice Text:
                     InvoiceDate = DateTime.TryParse(data.InvoiceDate, out var date) ? date : DateTime.Today,
                     Amount = data.Amount,
                     Type = MapInvoiceType(data.Type),
-                    Direction = direction
+                    Direction = direction,
+                    Content = cleanJson
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to parse AI response: {Response}", jsonResponse);
+                _logger.LogError(ex, "解析 AI 响应失败: {Response}", jsonResponse);
                 return null;
             }
         }
@@ -1290,7 +1296,8 @@ Invoice Text:
                     Type = i.Type,
                     Status = i.Status,
                     AttachmentFilePath = i.AttachmentFilePath,
-                    AttachmentFileName = i.AttachmentFileName
+                    AttachmentFileName = i.AttachmentFileName,
+                    Content = i.Content
                 }).ToList(),
                 Contacts = entity.Contacts.Select(c => new ContractContactDto
                 {
