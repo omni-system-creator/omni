@@ -621,7 +621,8 @@ const columns: ColumnType<ContractDto>[] = [
     key: 'action',
     fixed: 'right',
     width: 120,
-    align: 'center'
+    align: 'center',
+    ellipsis: true
   }
 ];
 

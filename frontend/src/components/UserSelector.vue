@@ -647,7 +647,7 @@ const displayValue = computed(() => {
         const names = vals.map(v => {
             const u = props.initialDisplayData?.find(d => d.username === v);
             if (!u) return v;
-            return (u.organization === currentOrgName) ? u.name : `${u.name} (${u.organization})`;
+            return (!u.organization || u.organization === currentOrgName) ? u.name : `${u.name} (${u.organization})`;
         });
         return names.join(', ');
     } else {
@@ -655,7 +655,7 @@ const displayValue = computed(() => {
         if (!val) return '';
         const u = props.initialDisplayData?.find(d => d.username === val);
         if (!u) return val;
-        return (u.organization === currentOrgName) ? u.name : `${u.name} (${u.organization})`;
+        return (!u.organization || u.organization === currentOrgName) ? u.name : `${u.name} (${u.organization})`;
     }
 });
 

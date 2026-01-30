@@ -14,17 +14,17 @@
           </div>
         </a-form-item>
       </a-col>
-      <a-col :span="12">
+      <a-col :span="14">
         <a-form-item label="合同名称" name="contractName">
           <a-input v-model:value="formState.contractName" placeholder="请输入合同名称" />
         </a-form-item>
       </a-col>
-      <a-col :span="12">
+      <a-col :span="10">
         <a-form-item label="合同编号" name="contractNo">
           <a-input v-model:value="formState.contractNo" placeholder="请输入合同编号，可空" />
         </a-form-item>
       </a-col>
-      <a-col :span="6">
+      <a-col :span="7">
         <a-form-item label="合同类型" name="type">
           <a-select v-model:value="formState.type" placeholder="请选择合同类型">
             <a-select-option v-for="item in contractTypeOptions" :key="item.value" :value="item.value">
@@ -33,7 +33,7 @@
           </a-select>
         </a-form-item>
       </a-col>
-      <a-col :span="6">
+      <a-col :span="7">
         <a-form-item label="总价类型" name="pricingType">
           <a-select v-model:value="formState.pricingType" placeholder="请选择总价类型">
             <a-select-option v-for="item in pricingTypeOptions" :key="item.value" :value="item.value">
@@ -42,7 +42,7 @@
           </a-select>
         </a-form-item>
       </a-col>
-      <a-col :span="12">
+      <a-col :span="10">
         <a-form-item label="负责人" name="manager">
           <UserSelector
             v-model:value="formState.manager"
@@ -52,7 +52,7 @@
           />
         </a-form-item>
       </a-col>
-      <a-col :span="6">
+      <a-col :span="7">
         <a-form-item label="合同状态" name="lifecycleStatus">
           <a-select v-model:value="formState.lifecycleStatus" placeholder="请选择合同状态">
             <a-select-option v-for="item in lifecycleStatusOptions" :key="item.value" :value="item.value">
@@ -61,12 +61,12 @@
           </a-select>
         </a-form-item>
       </a-col>
-      <a-col :span="6">
+      <a-col :span="7">
         <a-form-item label="签订日期" name="signDate">
           <a-date-picker v-model:value="formState.signDate" style="width: 100%" />
         </a-form-item>
       </a-col>
-      <a-col :span="12">
+      <a-col :span="10">
         <a-form-item label="有效期限" name="period">
           <a-range-picker v-model:value="formState.period" style="width: 100%" />
         </a-form-item>
@@ -76,7 +76,7 @@
     <!-- Section 2: Financial Info -->
     <a-divider orientation="left">财务条款</a-divider>
     <a-row :gutter="24">
-      <a-col :span="6">
+      <a-col :span="7">
         <a-form-item label="付款方式" name="paymentMethod">
           <a-select v-model:value="formState.paymentMethod">
             <a-select-option v-for="item in paymentMethodOptions" :key="item.value" :value="item.value">
@@ -85,7 +85,7 @@
           </a-select>
         </a-form-item>
       </a-col>
-      <a-col :span="6">
+      <a-col :span="7">
         <a-form-item label="币种" name="currency">
           <a-select v-model:value="formState.currency">
             <a-select-option v-for="item in currencyOptions" :key="item.value" :value="item.value">
@@ -94,7 +94,7 @@
           </a-select>
         </a-form-item>
       </a-col>
-      <a-col :span="12">
+      <a-col :span="10">
         <a-form-item label="合同总金额" name="amount">
           <a-input-number
             v-model:value="formState.amount"
