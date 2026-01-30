@@ -1,5 +1,5 @@
 <template>
-  <div class="smart-table">
+  <div class="smart-table" ref="smartTableRef" :style="cssVars">
     <!-- Toolbar with Settings -->
     <div class="smart-table-toolbar" :style="{ padding: props.toolbarPadding }">
       <div class="toolbar-content">
@@ -99,6 +99,36 @@ let resizeObserver: ResizeObserver | null = null;
 const settingsVisible = ref(false);
 const configList = ref<any[]>([]);
 
+// Compute CSS variables for styling
+const cssVars = computed(() => {
+  const vars: Record<string, string> = {};
+  const data = (attrs['data-source'] || attrs.dataSource || []) as any[];
+  
+  // Calculate total width of visible columns to decide on width strategy
+  const totalWidth = displayColumns.value.reduce((sum, col) => {
+    const width = Number(col.width);
+    return sum + (isNaN(width) ? 80 : width); 
+  }, 0);
+  
+  // Apply empty height if data is empty and scroll.y is provided
+  // Subtract 2px to avoid triggering scrollbars due to border/sub-pixel differences
+  if (data.length === 0 && tableScroll.value.y) {
+     vars['--empty-height'] = typeof tableScroll.value.y === 'number' 
+        ? `calc(${tableScroll.value.y}px - 2px)` 
+        : `${tableScroll.value.y}`;
+  }
+  
+  // Inject container width for sticky positioning
+  // If container width is not yet measured (0), default to 100% to ensure full width
+  if (containerWidth.value === 0 || totalWidth <= containerWidth.value) {
+     vars['--container-width'] = '100%';
+  } else {
+     vars['--container-width'] = `${containerWidth.value}px`;
+  }
+
+  return vars;
+});
+
 // Initialize config list from props.columns
 const initConfig = () => {
   // Load saved config
@@ -166,23 +196,19 @@ const displayColumns = computed(() => {
 const tableScroll = computed(() => {
   const originalScroll = (attrs.scroll as { x?: string | number | true, y?: string | number }) || {};
   
-  const data = (attrs['data-source'] || attrs.dataSource || []) as any[];
-  let scrollX = originalScroll.x;
-  
-  if (data.length > 0) {
-    // Calculate total width of visible columns
-    const totalWidth = displayColumns.value.reduce((sum, col) => {
-      const width = Number(col.width);
-      return sum + (isNaN(width) ? 80 : width); 
-    }, 0);
+  // Calculate total width of visible columns
+  const totalWidth = displayColumns.value.reduce((sum, col) => {
+    const width = Number(col.width);
+    return sum + (isNaN(width) ? 80 : width); 
+  }, 0);
 
-    if (containerWidth.value > 0 && totalWidth <= containerWidth.value) {
-      scrollX = '100%';
-    } else {
-      scrollX = totalWidth;
-    }
+  let scrollX = originalScroll.x;
+
+  // If container width is not yet measured (0) or columns fit, use 100%
+  if (containerWidth.value === 0 || totalWidth <= containerWidth.value) {
+    scrollX = '100%';
   } else {
-    scrollX = undefined;
+    scrollX = totalWidth;
   }
 
   return {
@@ -348,12 +374,40 @@ onUnmounted(() => {
 }
 /* Ensure empty state placeholder takes full height and centers content */
 :deep(.ant-table-placeholder) {
-  height: 100%;
-  display: flex;
+  /* Use grid layout to force the row to behave as a single container, ignoring columns */
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  
+  /* Sticky positioning to keep it in view during scrolling */
+  position: sticky !important;
+  left: 0 !important;
+  
+  /* Force width to match container (viewport) width */
+  width: var(--container-width) !important;
+  
+  background: transparent !important;
+  border: none !important;
+  z-index: 10;
+}
+
+:deep(.ant-table-placeholder .ant-table-cell) {
+  /* Cell fills the grid area */
+  display: flex !important;
+  width: 100% !important;
+  height: var(--empty-height, 100%) !important;
+  
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }
+
 :deep(.ant-table-placeholder .ant-empty-normal) {
-  margin: 0; /* Remove default margin to center perfectly */
+  margin: 0 !important;
 }
 </style>
