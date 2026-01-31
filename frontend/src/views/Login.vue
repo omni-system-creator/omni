@@ -10,10 +10,10 @@
       <div class="login-card">
         <div class="card-header">
           <div class="logo-wrapper">
-            <img src="@/assets/logo.svg" alt="Logo" class="logo" />
+            <img :src="systemStore.systemLogo" alt="Logo" class="logo" />
           </div>
-          <h1 class="title">金兰®综合信息管理系统</h1>
-          <p class="subtitle">JinLan OmniSystem</p>
+          <h1 class="title">{{ systemStore.systemName }}</h1>
+          <p class="subtitle">{{ systemStore.getConfig('SystemSubtitle') || 'JinLan OmniSystem' }}</p>
         </div>
 
         <a-form
@@ -75,7 +75,7 @@
     </div>
 
     <div class="page-footer">
-      <p>1.0.0 © 2025 jinlan.info All Rights Reserved.</p>
+      <p>{{ systemStore.getConfig('Copyright') || '1.0.0 © 2025 jinlan.info All Rights Reserved.' }}</p>
     </div>
 
     <!-- 忘记密码弹窗 -->
@@ -101,20 +101,23 @@ import { useRouter, useRoute } from 'vue-router';
 import { UserOutlined, LockOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
+import { useSystemStore } from '@/stores/system';
 import { login } from '@/api/auth';
 
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
+const systemStore = useSystemStore();
 const loading = ref(false);
 
 const formState = reactive({
-  username: 'demo',
-  password: '123456',
-  remember: true,
+  username: '',
+  password: '',
+  remember: false,
 });
 
-onMounted(() => {
+onMounted(async () => {
+  await systemStore.fetchConfigs();
   const remember = localStorage.getItem('login_remember');
   if (remember === 'true') {
     const username = localStorage.getItem('login_username');
@@ -127,6 +130,22 @@ onMounted(() => {
         formState.password = '';
       }
       formState.remember = true;
+    }
+  }
+
+  // 如果没有填入用户名，尝试使用系统配置的默认用户名
+  if (!formState.username) {
+    const defaultUsername = systemStore.getConfig('DefaultUsername');
+    if (defaultUsername) {
+      formState.username = defaultUsername;
+    }
+  }
+
+  // 如果没有填入密码，尝试使用系统配置的默认密码
+  if (!formState.password) {
+    const defaultPassword = systemStore.getConfig('DefaultPassword');
+    if (defaultPassword) {
+      formState.password = defaultPassword;
     }
   }
 });

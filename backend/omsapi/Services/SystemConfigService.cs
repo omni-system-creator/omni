@@ -168,6 +168,23 @@ namespace omsapi.Services
                         return (false, "该配置项不允许修改");
                     }
 
+                    // Check if override already exists
+                    var existingOverride = await _context.SystemConfigs
+                        .FirstOrDefaultAsync(c => c.Key == config.Key && c.OrgId == orgId);
+
+                    if (existingOverride != null)
+                    {
+                        if (existingOverride.Value != dto.Value)
+                        {
+                            DeleteConfigFile(existingOverride);
+                        }
+                        existingOverride.Value = dto.Value;
+                        if (dto.Description != null) existingOverride.Description = dto.Description;
+                        existingOverride.UpdatedAt = DateTime.Now;
+                        await _context.SaveChangesAsync();
+                        return (true, "设置已更新（组织特定）");
+                    }
+
                     // Create override
                     var newConfig = new SystemConfig
                     {

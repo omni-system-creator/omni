@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { getAllConfigs, type SystemConfigDto } from '@/api/systemConfig';
+import { getAllConfigs, getPublicConfigs, type SystemConfigDto } from '@/api/systemConfig';
 import defaultLogo from '@/assets/logo.svg';
 
 export const useSystemStore = defineStore('system', () => {
@@ -11,7 +11,15 @@ export const useSystemStore = defineStore('system', () => {
     if (loading.value) return;
     loading.value = true;
     try {
-      configs.value = await getAllConfigs();
+      // Check if user is logged in
+      const authData = localStorage.getItem('oms.auth');
+      const hasToken = authData && JSON.parse(authData).token;
+      
+      if (hasToken) {
+        configs.value = await getAllConfigs();
+      } else {
+        configs.value = await getPublicConfigs();
+      }
     } catch (error) {
       console.error('Failed to fetch system configs:', error);
     } finally {

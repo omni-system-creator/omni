@@ -14,7 +14,11 @@
             </template>
             <template v-if="column.key === 'global'">
               <template v-if="record.globalValue">
-                <a-image v-if="record.type === ConfigType.Image" :src="record.globalValue" :width="50" />
+                <a-image v-if="record.type === ConfigType.Image" :src="record.globalValue" :width="50">
+                  <template #previewMask>
+                    <EyeOutlined />
+                  </template>
+                </a-image>
                 <a v-else-if="record.type === ConfigType.File" :href="record.globalValue" target="_blank">下载文件</a>
                 <span v-else-if="record.type === ConfigType.Boolean">{{ record.globalValue === 'true' ? '是' : '否' }}</span>
                 <span v-else>{{ record.globalValue }}</span>
@@ -23,7 +27,11 @@
             </template>
             <template v-if="column.key === 'org'">
               <template v-if="record.orgValue">
-                <a-image v-if="record.type === ConfigType.Image" :src="record.orgValue" :width="50" />
+                <a-image v-if="record.type === ConfigType.Image" :src="record.orgValue" :width="50">
+                  <template #previewMask>
+                    <EyeOutlined />
+                  </template>
+                </a-image>
                 <a v-else-if="record.type === ConfigType.File" :href="record.orgValue" target="_blank">下载文件</a>
                 <span v-else-if="record.type === ConfigType.Boolean">{{ record.orgValue === 'true' ? '是' : '否' }}</span>
                 <span v-else>{{ record.orgValue }}</span>
@@ -537,10 +545,12 @@ const handleModalOk = async () => {
   try {
     const tasks: Promise<any>[] = [];
 
-    if (globalConfig.value && canEditConfig(globalConfig.value)) {
+ if (globalConfig.value && canEditConfig(globalConfig.value)) {
+      // 如果全局值有变更，保存全局值
       tasks.push(updateConfig(globalConfig.value.id, {
         value: formState.globalValue,
-        description: formState.description
+        description: formState.description,
+        updateGlobal: true
       }));
     }
 
@@ -549,9 +559,7 @@ const handleModalOk = async () => {
         value: formState.orgValue,
         description: formState.description
       }));
-    } else if (!orgConfig.value && currentConfig.value && userStore.isAdmin && isOrgContext.value) {
-      // 超级管理员在当前组织下编辑“组织配置值”但还不存在组织覆盖时，
-      // 使用后端的全局配置 Id（currentConfig.globalId）创建组织级配置。
+    } else if (!orgConfig.value && currentConfig.value && userStore.isAdmin && isOrgContext.value && currentConfig.value.isOverridable) {
       tasks.push(updateConfig(currentConfig.value.globalId, {
         value: formState.orgValue,
         description: formState.description

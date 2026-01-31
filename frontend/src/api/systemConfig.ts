@@ -35,10 +35,15 @@ export interface SystemConfigDto {
 export interface UpdateSystemConfigDto {
   value: string;
   description?: string;
+  updateGlobal?: boolean;
 }
 
 export const getAllConfigs = () => {
   return request.get<any, SystemConfigDto[]>('/systemconfig');
+};
+
+export const getPublicConfigs = () => {
+  return request.get<any, SystemConfigDto[]>('/systemconfig/public');
 };
 
 export const updateConfig = (id: number, data: UpdateSystemConfigDto) => {

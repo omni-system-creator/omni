@@ -42,6 +42,19 @@ namespace omsapi.Controllers
             return ApiResponse<object>.Success(new { url });
         }
 
+        [HttpGet("public")]
+        [AllowAnonymous]
+        public async Task<ApiResponse<List<SystemConfigDto>>> GetPublic()
+        {
+            var publicKeys = new[] { "SystemName", "SystemLogo", "SystemSubtitle", "Copyright", "SystemFavicon", "DefaultUsername", "DefaultPassword" };
+            var (success, message, data) = await _service.GetAllConfigsAsync();
+            if (!success) return ApiResponse<List<SystemConfigDto>>.Error(message);
+            
+            // GetAllConfigsAsync for anonymous user returns global configs only, which is correct
+            var publicConfigs = data!.Where(x => publicKeys.Contains(x.Key)).ToList();
+            return ApiResponse<List<SystemConfigDto>>.Success(publicConfigs);
+        }
+
         [HttpGet]
         public async Task<ApiResponse<List<SystemConfigDto>>> GetAll()
         {
