@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="draggable-modal-mask" @click="handleMaskClick"></div>
-    <div v-if="visible" class="draggable-modal-overlay" :class="{ maximized: isMaximized }" :style="!isMaximized ? { top: modalState.y + 'px', left: modalState.x + 'px', width: modalState.width + 'px', height: modalState.height + 'px' } : {}">
+    <div v-if="visible" class="draggable-modal-mask" :style="{ zIndex: zIndex }" @click="handleMaskClick"></div>
+    <div v-if="visible" ref="overlayRef" class="draggable-modal-overlay" :class="{ maximized: isMaximized }" :style="{ zIndex: zIndex + 1, maxHeight: isMaximized ? '100vh' : maxHeight, ...(isMaximized ? {} : { top: modalState.y + 'px', left: modalState.x + 'px', width: (typeof modalState.width === 'number' ? modalState.width + 'px' : modalState.width), height: (typeof modalState.height === 'number' ? modalState.height + 'px' : modalState.height) }) }">
       <div class="draggable-modal-header" @mousedown="startDrag" @dblclick="toggleMaximize">
         <div class="modal-title">{{ title }}</div>
         <div class="modal-actions">
@@ -29,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted } from 'vue';
+import { ref, watch, onUnmounted, nextTick } from 'vue';
 import { ExpandOutlined, CompressOutlined, CloseOutlined } from '@ant-design/icons-vue';
 
 const props = defineProps({
@@ -80,17 +80,47 @@ const props = defineProps({
   footer: {
     type: Boolean,
     default: false
+  },
+  zIndex: {
+    type: Number,
+    default: 1000
+  },
+  maxHeight: {
+    type: String,
+    default: '90vh'
+  },
+  initialX: {
+    type: Number,
+    default: undefined
+  },
+  initialY: {
+    type: Number,
+    default: undefined
+  },
+  centered: {
+    type: Boolean,
+    default: false
   }
 });
 
 const emit = defineEmits(['update:visible', 'close', 'cancel', 'ok']);
 
 const isMaximized = ref(false);
-const modalState = ref({
+const overlayRef = ref<HTMLElement | null>(null);
+const modalState = ref<{
+  x: number;
+  y: number;
+  width: number | string;
+  height: number | string;
+}>({
   x: 100,
   y: 100,
   width: 800,
   height: 600
+});
+
+defineExpose({
+  modalState
 });
 
 watch(() => props.visible, (newVal) => {
@@ -99,7 +129,8 @@ watch(() => props.visible, (newVal) => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    const parseSize = (val: number | string, viewportSize: number, defaultVal: number) => {
+    const parseSize = (val: number | string, viewportSize: number, defaultVal: number): number | string => {
+      if (val === 'auto') return 'auto';
       if (typeof val === 'number') return val;
       if (typeof val === 'string') {
         if (val.endsWith('%')) {
@@ -120,9 +151,31 @@ watch(() => props.visible, (newVal) => {
     modalState.value.width = targetWidth;
     modalState.value.height = targetHeight;
     
-    // Ensure the modal is centered
-    modalState.value.x = Math.max(0, (viewportWidth - targetWidth) / 2);
-    modalState.value.y = Math.max(0, (viewportHeight - targetHeight) / 2);
+    // Ensure the modal is centered or uses initial position
+    if (props.initialX !== undefined) {
+      modalState.value.x = props.initialX;
+    } else {
+      const numericWidth = typeof targetWidth === 'number' ? targetWidth : 800;
+      modalState.value.x = Math.max(0, (viewportWidth - numericWidth) / 2);
+    }
+    
+    if (props.initialY !== undefined) {
+      modalState.value.y = props.initialY;
+    } else if (props.centered && targetHeight === 'auto') {
+      // Set temporary Y, will be updated after render
+      modalState.value.y = 100;
+      nextTick(() => {
+        if (overlayRef.value) {
+          const height = overlayRef.value.offsetHeight;
+          modalState.value.y = Math.max(0, (viewportHeight - height) / 2);
+        }
+      });
+    } else if (targetHeight === 'auto') {
+      modalState.value.y = 100;
+    } else {
+      const numericHeight = typeof targetHeight === 'number' ? targetHeight : 600;
+      modalState.value.y = Math.max(0, (viewportHeight - numericHeight) / 2);
+    }
   }
 }, { immediate: true });
 
@@ -185,11 +238,15 @@ const startResize = (e: MouseEvent) => {
   if (isMaximized.value) return;
   e.stopPropagation();
   isResizing.value = true;
+  
+  const currentWidth = typeof modalState.value.width === 'number' ? modalState.value.width : parseFloat(modalState.value.width as string) || 0;
+  const currentHeight = typeof modalState.value.height === 'number' ? modalState.value.height : parseFloat(modalState.value.height as string) || 0;
+
   resizeStart.value = {
     x: e.clientX,
     y: e.clientY,
-    width: modalState.value.width,
-    height: modalState.value.height
+    width: currentWidth,
+    height: currentHeight
   };
   document.addEventListener('mousemove', onResize);
   document.addEventListener('mouseup', stopResize);
@@ -297,7 +354,7 @@ onUnmounted(() => {
 }
 
 .draggable-modal-footer {
-  padding: 10px 16px;
+  padding: 10px;
   border-top: 1px solid #e8e8e8;
   text-align: right;
   background: #fff;

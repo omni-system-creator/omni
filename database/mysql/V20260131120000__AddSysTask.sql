@@ -1,0 +1,20 @@
+CREATE TABLE `sys_task` (
+  `Id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL COMMENT '任务标题',
+  `type` varchar(50) NOT NULL DEFAULT 'task' COMMENT '类型：task, approval, notice',
+  `priority` varchar(20) NOT NULL DEFAULT 'medium' COMMENT '优先级：high, medium, low',
+  `description` longtext COMMENT '任务描述',
+  `creator_id` bigint NOT NULL COMMENT '创建人ID',
+  `assignee_id` bigint NOT NULL COMMENT '执行人ID',
+  `create_time` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '创建时间',
+  `deadline` datetime(6) DEFAULT NULL COMMENT '截止时间',
+  `finish_time` datetime(6) DEFAULT NULL COMMENT '完成时间',
+  `status` varchar(50) NOT NULL DEFAULT 'pending' COMMENT '状态：pending, completed',
+  `org_id` bigint NOT NULL DEFAULT '0' COMMENT '组织ID',
+  PRIMARY KEY (`Id`),
+  KEY `IX_sys_task_creator_id` (`creator_id`),
+  KEY `IX_sys_task_assignee_id` (`assignee_id`),
+  KEY `IX_sys_task_org_id` (`org_id`),
+  CONSTRAINT `FK_sys_task_sys_user_creator_id` FOREIGN KEY (`creator_id`) REFERENCES `sys_user` (`Id`) ON DELETE CASCADE,
+  CONSTRAINT `FK_sys_task_sys_user_assignee_id` FOREIGN KEY (`assignee_id`) REFERENCES `sys_user` (`Id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='个人待办任务表';

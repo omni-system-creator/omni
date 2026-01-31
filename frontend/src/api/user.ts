@@ -21,6 +21,9 @@ export interface UserListDto {
   roles: string[];
   posts: UserPostDto[];
   dept?: { id: number; name: string };
+  superiorId?: number;
+  superiorName?: string;
+  superiorAvatar?: string;
 }
 
 export interface UserPostRelationDto {
@@ -35,6 +38,7 @@ export interface CreateUserDto {
   roleIds: number[];
   postRelations?: UserPostRelationDto[];
   deptId?: number;
+  superiorId?: number;
 }
 
 export interface UpdateUserDto {
@@ -45,6 +49,7 @@ export interface UpdateUserDto {
   roleIds?: number[];
   postRelations?: UserPostRelationDto[];
   deptId?: number;
+  superiorId?: number;
 }
 
 export interface UpdateProfileDto {

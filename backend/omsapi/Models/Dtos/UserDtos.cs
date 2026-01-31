@@ -53,6 +53,8 @@ namespace omsapi.Models.Dtos
         public long? DeptId { get; set; }
 
         public List<UserPostRelationDto> PostRelations { get; set; } = new();
+
+        public long? SuperiorId { get; set; }
     }
 
     public class UpdateUserDto
@@ -73,6 +75,8 @@ namespace omsapi.Models.Dtos
         public long? DeptId { get; set; }
 
         public List<UserPostRelationDto>? PostRelations { get; set; }
+
+        public long? SuperiorId { get; set; }
     }
 
     public class UserPostRelationDto
@@ -96,6 +100,9 @@ namespace omsapi.Models.Dtos
         public List<string> Roles { get; set; } = new();
         public List<UserPostDto> Posts { get; set; } = new();
         public DeptDto? Dept { get; set; }
+        public long? SuperiorId { get; set; }
+        public string? SuperiorName { get; set; }
+        public string? SuperiorAvatar { get; set; }
     }
 
     public class UserPostDto

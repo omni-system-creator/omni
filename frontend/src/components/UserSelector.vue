@@ -13,19 +13,21 @@
       </a-input>
     </div>
 
-    <a-modal
+    <draggable-modal
       v-model:visible="visible"
-      width="800px"
+      :title="title || '选择人员'"
+      :width="800"
+      height="auto"
+      :z-index="zIndex"
+      :initial-x="initialX"
+      :initial-y="initialY"
+      :footer="true"
+      :resizable="false"
+      :maximizable="false"
+      body-padding="0"
       @ok="handleOk"
       @cancel="handleCancel"
-      :body-style="{ padding: '0' }"
-      :wrap-class-name="wrapClassName"
     >
-      <template #title>
-        <div style="width: 100%; cursor: move" @mousedown="handleTitleMouseDown">
-          {{ title || '选择人员' }}
-        </div>
-      </template>
       <div class="selector-content">
         <div class="left-panel">
           <div class="panel-header">组织架构</div>
@@ -109,7 +111,7 @@
           </div>
         </div>
       </div>
-    </a-modal>
+    </draggable-modal>
   </div>
 </template>
 
@@ -127,7 +129,7 @@ import {
 import { getDeptTree, type Dept } from '@/api/dept';
 import { getUserList } from '@/api/user';
 import { useUserStore } from '@/stores/user';
-import { useDraggableModal } from '@/hooks/useDraggableModal';
+import DraggableModal from '@/components/DraggableModal.vue';
 
 const GLOBAL_DEPT_ID = -1;
 
@@ -142,20 +144,27 @@ interface UserInfo {
 const userStore = useUserStore();
 
 const props = withDefaults(defineProps<{
-  value?: string | string[];
+  value?: string | string[] | number | number[];
+  valueType?: 'username' | 'id';
   multiple?: boolean;
   placeholder?: string;
   title?: string;
   initialDisplayData?: UserInfo[]; // Pass existing user details to populate display
   showTrigger?: boolean;
+  zIndex?: number;
+  initialX?: number;
+  initialY?: number;
 }>(), {
-  showTrigger: true
+  valueType: 'id',
+  showTrigger: true,
+  zIndex: 1000,
+  initialX: undefined,
+  initialY: undefined
 });
 
 const emit = defineEmits(['update:value', 'change']);
 
 const visible = ref(false);
-const { wrapClassName, handleTitleMouseDown } = useDraggableModal(visible);
 
 const open = () => {
   openDialog();
@@ -189,6 +198,18 @@ const findDept = (depts: Dept[], id: number): Dept | null => {
     }
   }
   return null;
+};
+
+// Helper to get root org name
+const getRootOrgName = (depts: Dept[], deptId: number): string => {
+  if (!deptId) return '';
+  for (const root of depts) {
+    if (root.id === deptId) return root.name;
+    if (root.children && findDept(root.children, deptId)) {
+      return root.name;
+    }
+  }
+  return '';
 };
 
 // Helper to find path to dept
@@ -371,11 +392,11 @@ const onLoadData = async (treeNode: any) => {
   try {
       let users: any[] = [];
       let subDepts: Dept[] = [];
-      let deptPath = '';
+      let rootOrgName = '';
 
       if (deptId === GLOBAL_DEPT_ID) {
           users = await getUserList({ noDept: true });
-          deptPath = '全局用户';
+          rootOrgName = '全局用户';
       } else {
           users = await getUserList({ deptId });
       
@@ -384,12 +405,8 @@ const onLoadData = async (treeNode: any) => {
           const currentDept = findDept(cachedDeptTree.value, deptId);
           subDepts = currentDept?.children || [];
 
-          // Calculate full path for currentDept
-          deptPath = currentDept?.name || '';
-          if (currentDept) {
-              const fullPath = getDeptFullPath(cachedDeptTree.value, currentDept.id);
-              if (fullPath) deptPath = fullPath;
-          }
+          // Calculate root org for currentDept
+          rootOrgName = getRootOrgName(cachedDeptTree.value, deptId);
       }
 
       const deptNodes = subDepts.map(d => ({
@@ -415,7 +432,7 @@ const onLoadData = async (treeNode: any) => {
                   id: u.id,
                   username: u.username,
                   name: u.nickname || u.username,
-                  organization: deptPath,
+                  organization: rootOrgName,
                   deptId: deptId
               }
           };
@@ -484,7 +501,12 @@ const openDialog = async () => {
   if (props.initialDisplayData) {
       // Filter based on current value
       const values = Array.isArray(props.value) ? props.value : (props.value ? [props.value] : []);
-      tempSelectedUsers.value = props.initialDisplayData.filter(u => values.includes(u.username));
+      tempSelectedUsers.value = props.initialDisplayData.filter(u => {
+        if (props.valueType === 'id') {
+          return u.id !== undefined && values.includes(u.id);
+        }
+        return values.includes(u.username);
+      });
   }
   
   // Auto expand depts of selected users
@@ -526,12 +548,12 @@ watch(tempSelectedUsers, () => {
 }, { deep: true });
 
 const handleOk = () => {
-  const values = tempSelectedUsers.value.map(u => u.username);
+  const values = tempSelectedUsers.value.map(u => props.valueType === 'id' ? u.id : u.username);
   if (props.multiple) {
     emit('update:value', values);
     emit('change', tempSelectedUsers.value);
   } else {
-    emit('update:value', values[0] || '');
+    emit('update:value', values[0] || (props.valueType === 'id' ? undefined : ''));
     emit('change', tempSelectedUsers.value[0] || null);
   }
   visible.value = false;
@@ -555,8 +577,9 @@ const onCheck = (_checked: any, info: any) => {
         // We should access dataRef or the properties directly if they are exposed.
         // In AntDV 3/4, custom props are usually spread onto the node.
         
-        if (n.isUser && n.userData) {
-            users.push(n.userData);
+        const userData = n.userData || (n.dataRef && n.dataRef.userData);
+        if (n.isUser && userData) {
+            users.push(userData);
         }
         
         // Check children
@@ -608,7 +631,10 @@ const onCheck = (_checked: any, info: any) => {
 const onSelect = (_keys: any[], info: any) => {
     if (!props.multiple) {
         if (info.selected && info.node.isUser) {
-            tempSelectedUsers.value = [info.node.userData];
+            const userData = info.node.userData || (info.node.dataRef && info.node.dataRef.userData);
+            if (userData) {
+                tempSelectedUsers.value = [userData];
+            }
         } else {
             // Deselect?
             // If single select, maybe enforce one? Or allow clear.
@@ -645,16 +671,30 @@ const displayValue = computed(() => {
         
         // Find names
         const names = vals.map(v => {
-            const u = props.initialDisplayData?.find(d => d.username === v);
-            if (!u) return v;
+            let u;
+            if (props.valueType === 'id') {
+                // @ts-ignore
+                u = props.initialDisplayData?.find(d => d.id === v);
+            } else {
+                // @ts-ignore
+                u = props.initialDisplayData?.find(d => d.username === v);
+            }
+            if (!u) return String(v);
             return (!u.organization || u.organization === currentOrgName) ? u.name : `${u.name} (${u.organization})`;
         });
         return names.join(', ');
     } else {
-        const val = props.value as string;
+        const val = props.value;
         if (!val) return '';
-        const u = props.initialDisplayData?.find(d => d.username === val);
-        if (!u) return val;
+        let u;
+        if (props.valueType === 'id') {
+            // @ts-ignore
+            u = props.initialDisplayData?.find(d => d.id === val);
+        } else {
+            // @ts-ignore
+            u = props.initialDisplayData?.find(d => d.username === String(val));
+        }
+        if (!u) return String(val);
         return (!u.organization || u.organization === currentOrgName) ? u.name : `${u.name} (${u.organization})`;
     }
 });

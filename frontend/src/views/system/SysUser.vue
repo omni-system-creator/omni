@@ -78,6 +78,16 @@
                 </a-tag>
               </template>
 
+              <template v-else-if="column.key === 'superiorName'">
+                <div v-if="record.superiorName" style="display: flex; align-items: center; gap: 8px;">
+                  <a-avatar :src="record.superiorAvatar" size="small">
+                    <template #icon><UserOutlined /></template>
+                  </a-avatar>
+                  <span>{{ record.superiorName }}</span>
+                </div>
+                <span v-else>-</span>
+              </template>
+
               <template v-else-if="column.key === 'createdAt'">
                 {{ formatDate(record.createdAt) }}
               </template>
@@ -178,6 +188,19 @@
           </a-col>
         </a-row>
 
+        <a-row :gutter="16">
+          <a-col :span="12">
+            <a-form-item label="向谁汇报" name="superiorId">
+              <UserSelector
+                :value="formState.superiorId"
+                :initial-display-data="superiorDisplayData"
+                @change="handleSuperiorChange"
+                placeholder="请选择向谁汇报"
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
+
         <a-form-item label="角色" name="roleIds">
           <a-select
             v-model:value="formState.roleIds"
@@ -259,6 +282,7 @@ import { generatePassword } from '@/utils/password';
 import dayjs from 'dayjs';
 import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
+import UserSelector from '@/components/UserSelector.vue';
 import { useUserStore } from '@/stores/user';
 
 const loading = ref(false);
@@ -308,6 +332,7 @@ const columns: ColumnType[] = [
   { title: '部门', key: 'dept' },
   { title: '角色', key: 'roles' },
   { title: '岗位', key: 'posts' },
+  { title: '汇报', dataIndex: 'superiorName', key: 'superiorName' },
   { title: '状态', key: 'isActive', width: 80 },
   { title: '创建时间', key: 'createdAt', width: 160 },
   { title: '操作', key: 'action', width: 180, align: 'center' as const },
@@ -428,7 +453,9 @@ const formState = reactive({
   isActive: true,
   roleIds: [] as number[],
   deptId: undefined as number | undefined,
-  postRelations: [] as { deptId: number | undefined, postId: number | undefined }[]
+  postRelations: [] as { deptId: number | undefined, postId: number | undefined }[],
+  superiorId: undefined as number | undefined,
+  superiorName: '' as string
 });
 
 const rules: Record<string, Rule[]> = {
@@ -448,6 +475,8 @@ const handleAdd = () => {
   formState.roleIds = [];
   formState.deptId = undefined;
   formState.postRelations = [];
+  formState.superiorId = undefined;
+  formState.superiorName = '';
   // If a dept is selected in tree, default to it
   if (selectedDeptKeys.value.length > 0) {
       formState.deptId = selectedDeptKeys.value[0];
@@ -465,7 +494,8 @@ const handleEdit = (record: UserListDto) => {
   formState.phone = record.phone || '';
   formState.isActive = record.isActive;
   formState.deptId = record.dept?.id;
-  
+  formState.superiorId = record.superiorId;
+  formState.superiorName = record.superiorName || '';
   // 匹配角色名称到ID
   formState.roleIds = record.roles.map(roleName => {
     const role = roleOptions.value.find(r => r.name === roleName);
@@ -489,6 +519,29 @@ const getPostOptions = (deptId: number | undefined) => {
 const handlePostDeptChange = (index: number) => {
   if (formState.postRelations[index]) {
     formState.postRelations[index].postId = undefined;
+  }
+};
+
+const superiorDisplayData = computed(() => {
+  if (formState.superiorId && formState.superiorName) {
+    return [{
+      id: formState.superiorId,
+      username: '', 
+      name: formState.superiorName,
+      organization: '',
+      deptId: undefined
+    }];
+  }
+  return [];
+});
+
+const handleSuperiorChange = (user: any) => {
+  if (user) {
+    formState.superiorId = user.id;
+    formState.superiorName = user.name || user.nickname || user.username;
+  } else {
+    formState.superiorId = undefined;
+    formState.superiorName = '';
   }
 };
 
@@ -520,7 +573,8 @@ const handleModalOk = async () => {
         isActive: formState.isActive,
         roleIds: formState.roleIds,
         deptId: normalizedDeptId,
-        postRelations: postRelations
+        postRelations: postRelations,
+        superiorId: formState.superiorId
       });
       message.success('更新成功');
     } else {
@@ -535,7 +589,8 @@ const handleModalOk = async () => {
         nickname: formState.nickname,
         roleIds: formState.roleIds,
         deptId: normalizedDeptId,
-        postRelations: postRelations
+        postRelations: postRelations,
+        superiorId: formState.superiorId
       });
       message.success('创建成功');
     }

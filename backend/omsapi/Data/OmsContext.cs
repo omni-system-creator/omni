@@ -39,6 +39,10 @@ namespace omsapi.Data
         public DbSet<SystemFileShare> FileShares { get; set; }
         public DbSet<omsapi.Models.Entities.System.SysOrgRegistration> OrgRegistrations { get; set; }
         public DbSet<SystemAnonce> Anonces { get; set; }
+        public DbSet<SysTask> SysTasks { get; set; }
+        public DbSet<SysTaskProcess> SysTaskProcesses { get; set; }
+        public DbSet<SysTaskMember> SysTaskMembers { get; set; }
+        public DbSet<SysTaskAttachment> SysTaskAttachments { get; set; }
         public DbSet<AiGeneratedContent> AiGeneratedContents { get; set; }
         public DbSet<SysDbMigration> DbMigrations { get; set; }
         

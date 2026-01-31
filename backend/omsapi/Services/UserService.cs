@@ -426,6 +426,7 @@ namespace omsapi.Services
             IQueryable<omsapi.Models.Entities.SystemUser> query = _context.Users
                 .AsSplitQuery()
                 .Include(u => u.Dept)
+                .Include(u => u.Superior)
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                 .Include(u => u.UserPosts)
@@ -488,7 +489,10 @@ namespace omsapi.Services
                         SortOrder = u.Dept.SortOrder,
                         IsActive = u.Dept.IsActive,
                         CreatedAt = u.Dept.CreatedAt
-                    } : null
+                    } : null,
+                    SuperiorId = u.SuperiorId,
+                    SuperiorName = u.Superior != null ? (u.Superior.Nickname ?? u.Superior.Username) : null,
+                    SuperiorAvatar = u.Superior != null ? u.Superior.Avatar : null
                 })
                 .ToListAsync();
 
@@ -500,6 +504,7 @@ namespace omsapi.Services
             var user = await _context.Users
                 .AsSplitQuery()
                 .Include(u => u.Dept)
+                .Include(u => u.Superior)
                 .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
                 .Include(u => u.UserPosts)
@@ -542,7 +547,10 @@ namespace omsapi.Services
                     SortOrder = user.Dept.SortOrder,
                     IsActive = user.Dept.IsActive,
                     CreatedAt = user.Dept.CreatedAt
-                } : null
+                } : null,
+                SuperiorId = user.SuperiorId,
+                SuperiorName = user.Superior != null ? (user.Superior.Nickname ?? user.Superior.Username) : null,
+                SuperiorAvatar = user.Superior != null ? user.Superior.Avatar : null
             };
 
             return (true, "获取成功", dto);
@@ -756,6 +764,10 @@ namespace omsapi.Services
             {
                 user.DeptId = dto.DeptId.Value;
                 user.CurrentOrgId = await GetDeptRootIdAsync(dto.DeptId.Value);
+            }
+            if (dto.SuperiorId.HasValue)
+            {
+                user.SuperiorId = dto.SuperiorId.Value == 0 ? null : dto.SuperiorId.Value;
             }
 
             var strategy = _context.Database.CreateExecutionStrategy();

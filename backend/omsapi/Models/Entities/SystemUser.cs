@@ -46,6 +46,14 @@ namespace omsapi.Models.Entities
         [ForeignKey("DeptId")]
         public virtual SystemDept? Dept { get; set; }
 
+        public long? SuperiorId { get; set; }
+
+        [ForeignKey("SuperiorId")]
+        public virtual SystemUser? Superior { get; set; }
+        
+        [InverseProperty("Superior")]
+        public virtual ICollection<SystemUser> Subordinates { get; set; } = new List<SystemUser>();
+
         public virtual ICollection<SystemUserRole> UserRoles { get; set; } = new List<SystemUserRole>();
         public virtual ICollection<SystemUserPost> UserPosts { get; set; } = new List<SystemUserPost>();
     }
