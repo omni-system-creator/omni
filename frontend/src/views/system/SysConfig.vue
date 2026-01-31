@@ -449,7 +449,7 @@ const handleEdit = (record: SystemConfigDto) => {
   formState.description = record.description || '';
 
   formState.globalValue = record.globalValue ?? '';
-  formState.orgValue = record.orgValue ?? (record.globalValue ?? '');
+  formState.orgValue = record.orgValue ?? '';
 
   globalFileList.value = [];
   orgFileList.value = [];

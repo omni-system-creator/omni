@@ -172,6 +172,18 @@ namespace omsapi.Services
                     var existingOverride = await _context.SystemConfigs
                         .FirstOrDefaultAsync(c => c.Key == config.Key && c.OrgId == orgId);
 
+                    if (string.IsNullOrEmpty(dto.Value))
+                    {
+                        if (existingOverride != null)
+                        {
+                            DeleteConfigFile(existingOverride);
+                            _context.SystemConfigs.Remove(existingOverride);
+                            await _context.SaveChangesAsync();
+                            return (true, "已恢复默认配置");
+                        }
+                        return (true, "未作修改");
+                    }
+
                     if (existingOverride != null)
                     {
                         if (existingOverride.Value != dto.Value)
@@ -221,6 +233,14 @@ namespace omsapi.Services
                 if (orgId.HasValue && config.OrgId != orgId && !IsSuperAdmin())
                 {
                     return (false, "无权修改其他组织的配置");
+                }
+
+                if (string.IsNullOrEmpty(dto.Value))
+                {
+                    DeleteConfigFile(config);
+                    _context.SystemConfigs.Remove(config);
+                    await _context.SaveChangesAsync();
+                    return (true, "配置重置成功（已恢复默认值）");
                 }
                 
                 if (config.Value != dto.Value)
