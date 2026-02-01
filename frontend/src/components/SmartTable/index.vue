@@ -63,6 +63,7 @@
     <a-table
       v-bind="$attrs"
       :columns="displayColumns"
+      :data-source="props.dataSource"
       :scroll="tableScroll"
     >
       <!-- Forward all slots -->
@@ -84,10 +85,12 @@ interface Props {
   tableKey: string; // Unique key for storing configuration
   columns: TableColumnType[];
   toolbarPadding?: string;
+  dataSource?: any[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   toolbarPadding: '8px',
+  dataSource: () => [],
 });
 
 const attrs = useAttrs();
@@ -102,7 +105,7 @@ const configList = ref<any[]>([]);
 // Compute CSS variables for styling
 const cssVars = computed(() => {
   const vars: Record<string, string> = {};
-  const data = (attrs['data-source'] || attrs.dataSource || []) as any[];
+  const data = props.dataSource;
   
   // Calculate total width of visible columns to decide on width strategy
   const totalWidth = displayColumns.value.reduce((sum, col) => {
@@ -204,11 +207,17 @@ const tableScroll = computed(() => {
 
   let scrollX = originalScroll.x;
 
-  // If container width is not yet measured (0) or columns fit, use 100%
-  if (containerWidth.value === 0 || totalWidth <= containerWidth.value) {
-    scrollX = '100%';
-  } else {
+  if (containerWidth.value !== 0 && totalWidth > containerWidth.value) {
     scrollX = totalWidth;
+  } else {
+    // Fits container (or containerWidth is 0)
+    // If no data, disable scroll.x to use auto layout (fixes wide column issue in empty state)
+    // If has data, use '100%' to ensure full width fixed layout
+    if (props.dataSource.length === 0) {
+       scrollX = undefined;
+    } else {
+       scrollX = '100%';
+    }
   }
 
   return {
@@ -306,11 +315,71 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.smart-table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .smart-table-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
+
+/* Make table take remaining height */
+:deep(.ant-table-wrapper) {
+  flex: 1;
+  height: auto !important;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.ant-spin-nested-loading) {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.ant-spin-container) {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.ant-table) {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+:deep(.ant-table-container) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.ant-table-body),
+:deep(.ant-table-content) {
+  flex: 1;
+  overflow: auto !important;
+}
+
+/* Push pagination to bottom */
+:deep(.ant-pagination) {
+  margin-top: auto !important;
+  margin-bottom: 0 !important;
+  padding: 12px 0;
+  flex-shrink: 0;
+}
+
 .toolbar-content {
   flex: 1;
 }
@@ -358,56 +427,30 @@ onUnmounted(() => {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: bottom;
-}
-.drag-handle {
-  cursor: grab;
-  color: #999;
-  margin-right: 8px;
-}
-.drag-handle:active {
-  cursor: grabbing;
+  vertical-align: middle;
 }
 .width-input {
-  margin-left: auto;
   width: 80px;
+  flex-shrink: 0;
 }
+.drag-handle {
+  cursor: move;
+  color: #999;
+  margin-right: 8px;
+  padding: 4px;
+}
+.drag-handle:hover {
+  color: #1890ff;
+}
+
 /* Ensure empty state placeholder takes full height and centers content */
-:deep(.ant-table-placeholder) {
-  /* Use grid layout to force the row to behave as a single container, ignoring columns */
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  
-  /* Sticky positioning to keep it in view during scrolling */
-  position: sticky !important;
-  left: 0 !important;
-  
-  /* Force width to match container (viewport) width */
-  width: var(--container-width) !important;
-  
-  background: transparent !important;
-  border: none !important;
-  z-index: 10;
+.is-empty :deep(.ant-table-body > table) {
+  height: 100%;
 }
 
-:deep(.ant-table-placeholder .ant-table-cell) {
-  /* Cell fills the grid area */
-  display: flex !important;
-  width: 100% !important;
-  height: var(--empty-height, 100%) !important;
-  
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  
-  border: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  box-sizing: border-box !important;
+.is-empty :deep(.ant-table-placeholder .ant-table-cell) {
+  vertical-align: middle !important;
+  border-bottom: none !important;
 }
 
-:deep(.ant-table-placeholder .ant-empty-normal) {
-  margin: 0 !important;
-}
 </style>

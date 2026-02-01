@@ -70,6 +70,24 @@ const router = createRouter({
         }
       ]
     },
+    {
+      path: '/finance',
+      component: () => import('../layouts/MainLayout.vue'),
+      children: [
+        {
+          path: 'subject',
+          name: 'FinanceSubject',
+          component: () => import('../views/finance/subject/Index.vue'),
+          meta: { title: '财务科目' }
+        },
+        {
+          path: 'apar',
+          name: 'FinanceApAr',
+          component: () => import('../views/finance/apar/Index.vue'),
+          meta: { title: '应收应付' }
+        }
+      ]
+    },
     // 404 页面 (嵌入到 MainLayout 中)
     {
       path: '/error',

@@ -11,69 +11,96 @@
         class="tabs-view"
       >
         <template #renderTabBar>
-          <draggable
-            :list="visitedViews"
-            item-key="fullPath"
-            class="ant-tabs-nav-list"
-            :component-data="{ style: 'display: flex; height: 100%;' }"
-            :move="checkMove"
-            @start="onDragStart"
-            @end="onDragEnd"
-          >
-            <template #item="{ element, index }">
-              <a-dropdown :trigger="['contextmenu']">
-                <a-tooltip :title="element.tooltip" placement="top" :mouseEnterDelay="0.5" :destroyTooltipOnHide="true">
-                  <div
-                    class="ant-tabs-tab"
-                    :class="{ 'ant-tabs-tab-active': activeKey === element.fullPath }"
-                    @click="onChange(element.fullPath)"
-                  >
-                    <div class="ant-tabs-tab-btn">
-                      {{ element.title }}
-                      <span
-                        v-if="!isAffix(element)"
-                        class="ant-tabs-tab-remove"
-                        @click.stop="removeTab(element.fullPath)"
+          <div class="tabs-nav-wrap">
+            <div 
+              v-show="showLeftArrow" 
+              class="nav-arrow left-arrow" 
+              @mouseenter="startScroll('left')"
+              @mouseleave="stopScroll"
+            >
+              <DynamicIcon icon="ant-design:left-outlined" />
+            </div>
+            
+            <div 
+              class="tabs-scroll-wrapper" 
+              ref="scrollContainer"
+              @wheel.prevent="onTabScroll"
+              @scroll="checkScrollState"
+            >
+              <draggable
+                :list="visitedViews"
+                item-key="fullPath"
+                class="ant-tabs-nav-list"
+                :component-data="{ style: 'display: flex; height: 100%;' }"
+                :move="checkMove"
+                @start="onDragStart"
+                @end="onDragEnd"
+              >
+                <template #item="{ element, index }">
+                  <a-dropdown :trigger="['contextmenu']">
+                    <a-tooltip :title="element.tooltip" placement="top" :mouseEnterDelay="0.5" :destroyTooltipOnHide="true">
+                      <div
+                        class="ant-tabs-tab"
+                        :class="{ 'ant-tabs-tab-active': activeKey === element.fullPath }"
+                        @click="onChange(element.fullPath)"
                       >
-                        <DynamicIcon icon="ant-design:close-outlined" />
-                      </span>
-                    </div>
-                  </div>
-                </a-tooltip>
-                <template #overlay>
-                  <a-menu>
-                    <a-menu-item
-                      key="toggleEditMode"
-                      v-if="element.name === 'HomeView'"
-                      @click="toggleWorkbenchEditMode"
-                    >
-                      <DynamicIcon icon="ant-design:edit-outlined" /> {{ workbenchStore.isEditMode ? '退出编辑' : '进入编辑' }}
-                    </a-menu-item>
-                    <a-menu-divider v-if="element.name === 'HomeView'" />
-                    <a-menu-item
-                      key="refresh"
-                      v-if="activeKey === element.fullPath"
-                      @click="refreshSelectedTag(element)"
-                    >
-                      <DynamicIcon icon="ant-design:reload-outlined" /> 刷新当前
-                    </a-menu-item>
-                    <a-menu-item key="closeLeft" v-if="hasLeftClosable(index)" @click="closeLeftTags(element)">
-                      <DynamicIcon icon="ant-design:vertical-right-outlined" /> 关闭左边
-                    </a-menu-item>
-                    <a-menu-item key="closeRight" v-if="hasRightClosable(index)" @click="closeRightTags(element)">
-                      <DynamicIcon icon="ant-design:vertical-left-outlined" /> 关闭右边
-                    </a-menu-item>
-                    <a-menu-item key="closeOthers" v-if="hasOtherClosable(element)" @click="closeOthersTags(element)">
-                      <DynamicIcon icon="ant-design:close-circle-outlined" /> 关闭其他
-                    </a-menu-item>
-                    <a-menu-item key="closeAll" v-if="hasAnyClosable()" @click="closeAllTags(element)">
-                      <DynamicIcon icon="ant-design:minus-square-outlined" /> 全部关闭
-                    </a-menu-item>
-                  </a-menu>
+                        <div class="ant-tabs-tab-btn">
+                          {{ element.title }}
+                          <span
+                            v-if="!isAffix(element)"
+                            class="ant-tabs-tab-remove"
+                            @click.stop="removeTab(element.fullPath)"
+                          >
+                            <DynamicIcon icon="ant-design:close-outlined" />
+                          </span>
+                        </div>
+                      </div>
+                    </a-tooltip>
+                    <template #overlay>
+                      <a-menu>
+                        <a-menu-item
+                          key="toggleEditMode"
+                          v-if="element.name === 'HomeView'"
+                          @click="toggleWorkbenchEditMode"
+                        >
+                          <DynamicIcon icon="ant-design:edit-outlined" /> {{ workbenchStore.isEditMode ? '退出编辑' : '进入编辑' }}
+                        </a-menu-item>
+                        <a-menu-divider v-if="element.name === 'HomeView'" />
+                        <a-menu-item
+                          key="refresh"
+                          v-if="activeKey === element.fullPath"
+                          @click="refreshSelectedTag(element)"
+                        >
+                          <DynamicIcon icon="ant-design:reload-outlined" /> 刷新当前
+                        </a-menu-item>
+                        <a-menu-item key="closeLeft" v-if="hasLeftClosable(index)" @click="closeLeftTags(element)">
+                          <DynamicIcon icon="ant-design:vertical-right-outlined" /> 关闭左边
+                        </a-menu-item>
+                        <a-menu-item key="closeRight" v-if="hasRightClosable(index)" @click="closeRightTags(element)">
+                          <DynamicIcon icon="ant-design:vertical-left-outlined" /> 关闭右边
+                        </a-menu-item>
+                        <a-menu-item key="closeOthers" v-if="hasOtherClosable(element)" @click="closeOthersTags(element)">
+                          <DynamicIcon icon="ant-design:close-circle-outlined" /> 关闭其他
+                        </a-menu-item>
+                        <a-menu-item key="closeAll" v-if="hasAnyClosable()" @click="closeAllTags(element)">
+                          <DynamicIcon icon="ant-design:minus-square-outlined" /> 全部关闭
+                        </a-menu-item>
+                      </a-menu>
+                    </template>
+                  </a-dropdown>
                 </template>
-              </a-dropdown>
-            </template>
-          </draggable>
+              </draggable>
+            </div>
+
+            <div 
+              v-show="showRightArrow" 
+              class="nav-arrow right-arrow" 
+              @mouseenter="startScroll('right')"
+              @mouseleave="stopScroll"
+            >
+              <DynamicIcon icon="ant-design:right-outlined" />
+            </div>
+          </div>
         </template>
         <a-tab-pane
           v-for="tag in visitedViews"
@@ -90,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, nextTick } from 'vue';
+import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useTabsStore, type TabItem } from '../stores/tabs';
 import { useRoute, useRouter } from 'vue-router';
 import draggable from 'vuedraggable';
@@ -153,6 +180,13 @@ const visitedViews = computed({
   },
 });
 const activeKey = ref(route.fullPath);
+
+// Watch active key to scroll
+watch(activeKey, () => {
+  nextTick(() => {
+    scrollToActiveTab();
+  });
+});
 
 // Watch route change to add tab
 watch(
@@ -321,15 +355,152 @@ function checkMove(evt: any) {
   return true;
 }
 
+const scrollContainer = ref<HTMLElement | null>(null);
+const showLeftArrow = ref(false);
+const showRightArrow = ref(false);
+
+let rafId: number | null = null;
+let targetScrollLeft = 0;
+let scrollIntervalId: number | null = null;
+
+function onTabScroll(e: WheelEvent) {
+  if (!scrollContainer.value) return;
+
+  const currentScrollLeft = scrollContainer.value.scrollLeft;
+  const maxScrollLeft = scrollContainer.value.scrollWidth - scrollContainer.value.clientWidth;
+
+  // 如果没有正在进行的动画，初始化目标位置为当前位置
+  if (rafId === null) {
+    targetScrollLeft = currentScrollLeft;
+  }
+
+  // 累加滚动距离
+  targetScrollLeft += e.deltaY;
+
+  // 边界限制
+  if (targetScrollLeft < 0) targetScrollLeft = 0;
+  if (targetScrollLeft > maxScrollLeft) targetScrollLeft = maxScrollLeft;
+
+  // 如果没有动画在运行，启动动画循环
+  if (rafId === null) {
+    animateScroll();
+  }
+}
+
+function animateScroll() {
+  if (!scrollContainer.value) {
+    rafId = null;
+    return;
+  }
+
+  const currentScrollLeft = scrollContainer.value.scrollLeft;
+  const diff = targetScrollLeft - currentScrollLeft;
+
+  // 当距离足够近时，直接定位并停止动画
+  if (Math.abs(diff) < 1) {
+    scrollContainer.value.scrollLeft = targetScrollLeft;
+    rafId = null;
+    checkScrollState(); // 滚动结束时检查箭头状态
+    return;
+  }
+
+  // 惯性平滑处理 (Lerp)，因子 0.2 控制平滑度
+  scrollContainer.value.scrollLeft += diff * 0.2;
+  checkScrollState(); // 滚动过程中实时更新箭头状态
+  
+  rafId = requestAnimationFrame(animateScroll);
+}
+
+function startScroll(direction: 'left' | 'right') {
+  if (scrollIntervalId) return;
+  
+  const step = direction === 'left' ? -10 : 10;
+  
+  const scrollLoop = () => {
+    if (!scrollContainer.value) return;
+    
+    // 直接累加到目标位置，复用 animateScroll 的平滑逻辑
+    if (rafId === null) {
+      targetScrollLeft = scrollContainer.value.scrollLeft;
+    }
+    
+    targetScrollLeft += step;
+    
+    const maxScrollLeft = scrollContainer.value.scrollWidth - scrollContainer.value.clientWidth;
+    if (targetScrollLeft < 0) targetScrollLeft = 0;
+    if (targetScrollLeft > maxScrollLeft) targetScrollLeft = maxScrollLeft;
+    
+    if (rafId === null) {
+      animateScroll();
+    }
+    
+    scrollIntervalId = requestAnimationFrame(scrollLoop);
+  };
+  
+  scrollLoop();
+}
+
+function stopScroll() {
+  if (scrollIntervalId !== null) {
+    cancelAnimationFrame(scrollIntervalId);
+    scrollIntervalId = null;
+  }
+}
+
+function checkScrollState() {
+  if (!scrollContainer.value) return;
+  
+  const { scrollLeft, scrollWidth, clientWidth } = scrollContainer.value;
+  const tolerance = 2; // 增加容差，避免因小数或 subpixel 导致判定不准
+  
+  showLeftArrow.value = scrollLeft > tolerance;
+  showRightArrow.value = scrollWidth > clientWidth && scrollLeft < scrollWidth - clientWidth - tolerance;
+}
+
+onBeforeUnmount(() => {
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+  }
+  if (scrollIntervalId !== null) {
+    cancelAnimationFrame(scrollIntervalId);
+  }
+});
+
+function scrollToActiveTab() {
+  if (!scrollContainer.value) return;
+  const activeTab = scrollContainer.value.querySelector('.ant-tabs-tab-active') as HTMLElement;
+  if (!activeTab) return;
+  
+  activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  // scrollIntoView 是异步的，这里做个延时检查，或者依赖 scroll 事件
+  setTimeout(checkScrollState, 300);
+}
+
 onMounted(() => {
   initTags();
   addTags();
+  nextTick(() => {
+    scrollToActiveTab();
+    checkScrollState();
+    window.addEventListener('resize', checkScrollState);
+  });
 });
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkScrollState);
+});
+
+// 监听 tab 变化，重新检查滚动状态
+watch(
+  () => tabsStore.visitedViews.length,
+  () => {
+    nextTick(checkScrollState);
+  }
+);
 </script>
 
 <style scoped>
 .tabs-view-container {
-  padding: 6px 0 0;
   background: #f5f5f5;
   border-bottom: 1px solid #d9d9d9;
   overflow: hidden;
@@ -358,6 +529,7 @@ onMounted(() => {
   color: #666;
   transition: all 0.3s;
   margin-bottom: 1px; /* Adjust for border */
+  border-left: 1px solid #d9d9d9;
 }
 
 .fullscreen-btn:hover {
@@ -414,10 +586,72 @@ onMounted(() => {
 
 :deep(.ant-tabs-nav-list) {
   display: flex !important;
+  flex-wrap: nowrap;
+  width: max-content;
+  min-width: 100%;
+}
+
+:deep(.ant-tabs-nav-list > *) {
+  flex-shrink: 0;
+}
+
+.tabs-nav-wrap {
+  position: relative;
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+}
+
+.nav-arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  border-top: 1px solid #d9d9d9;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  color: #666;
+  transition: all 0.3s;
+}
+
+.nav-arrow:hover {
+  background: #f0f0f0;
+  color: #1890ff;
+}
+
+.left-arrow {
+  left: 0;
+  border-right: 1px solid #d9d9d9;
+}
+
+.right-arrow {
+  right: 0;
+  border-left: 1px solid #d9d9d9;
+}
+
+.tabs-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: none; /* Firefox */
+  display: flex;
+  scroll-behavior: auto; /* 使用自定义平滑滚动 */
+}
+
+.tabs-scroll-wrapper::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
 }
 
 /* 自定义 Tab 样式 */
 .ant-tabs-tab {
+  flex-shrink: 0; /* 防止宽度被压缩 */
+  white-space: nowrap; /* 防止文字换行 */
   position: relative;
   display: flex;
   align-items: center;

@@ -40,6 +40,17 @@ export const usePermissionStore = defineStore('permission', () => {
     return permissions.value.includes(permission);
   };
 
+  const hasMenu = (menuKey: string) => {
+    const checkRoutes = (routes: RouteRecordRaw[]): boolean => {
+      for (const route of routes) {
+        if (route.name === menuKey) return true;
+        if (route.children && checkRoutes(route.children)) return true;
+      }
+      return false;
+    };
+    return checkRoutes(routes.value);
+  };
+
   const resetPermission = () => {
     routes.value = [];
     permissions.value = [];
@@ -52,6 +63,7 @@ export const usePermissionStore = defineStore('permission', () => {
     generateRoutes,
     loadPermissions,
     hasPermission,
+    hasMenu,
     resetPermission
   };
 });
