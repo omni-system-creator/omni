@@ -10,10 +10,10 @@
       <div class="login-card">
         <div class="card-header">
           <div class="logo-wrapper">
-            <img :src="systemStore.systemLogo" alt="Logo" class="logo" />
+            <img :src="loginLogo" :alt="systemStore.systemName" class="logo" />
           </div>
-          <h1 class="title">{{ systemStore.systemName }}</h1>
-          <p class="subtitle">{{ systemStore.getConfig('SystemSubtitle') || 'JinLan OmniSystem' }}</p>
+          <h1 class="title" v-if="systemStore.getConfig('SystemName')">{{ systemStore.getConfig('SystemName') }}</h1>
+          <p class="subtitle" v-if="systemStore.getConfig('SystemSubtitle')">{{ systemStore.getConfig('SystemSubtitle') }}</p>
         </div>
 
         <a-form
@@ -74,8 +74,8 @@
       </div>
     </div>
 
-    <div class="page-footer">
-      <p>{{ systemStore.getConfig('Copyright') || '1.0.0 © 2025 jinlan.info All Rights Reserved.' }}</p>
+    <div class="page-footer" v-if="systemStore.getConfig('Copyright')">
+      <p>{{ systemStore.getConfig('Copyright') }}</p>
     </div>
 
     <!-- 忘记密码弹窗 -->
@@ -109,6 +109,17 @@ const route = useRoute();
 const userStore = useUserStore();
 const systemStore = useSystemStore();
 const loading = ref(false);
+
+const loginLogo = computed(() => {
+  const logo = systemStore.getConfig('LoginLogo');
+  if (logo && typeof logo === 'string' && logo.trim() !== '') {
+    if (!logo.startsWith('/') && !logo.startsWith('http') && !logo.startsWith('data:')) {
+      return `/${logo}`;
+    }
+    return logo;
+  }
+  return systemStore.systemLogo;
+});
 
 const formState = reactive({
   username: '',
@@ -341,8 +352,9 @@ const handleSendResetLink = () => {
 }
 
 .logo {
-  height: 64px;
+  max-height: 100px;
   width: auto;
+  max-width: 100%;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
 }
 
