@@ -84,6 +84,9 @@
         <a-form-item label="配置键名">
           <a-input :value="currentConfig.key" readonly class="input-readonly" />
         </a-form-item>
+        <a-form-item label="排序号">
+          <a-input-number v-model:value="formState.sortOrder" :readonly="!userStore.isAdmin" :class="{ 'input-readonly': !userStore.isAdmin }" style="width: 100%" />
+        </a-form-item>
         <a-form-item label="配置说明">
           <a-input v-model:value="formState.description" :readonly="!userStore.isAdmin" :class="{ 'input-readonly': !userStore.isAdmin }" />
         </a-form-item>
@@ -336,7 +339,8 @@ const orgFileList = ref<any[]>([]);
 const formState = reactive({
   globalValue: '',
   orgValue: '',
-  description: ''
+  description: '',
+  sortOrder: 0
 });
 
 const canEditConfig = (config: SystemConfigDto | null) => {
@@ -378,6 +382,13 @@ const columns: ColumnType[] = [
     width: 60,
     align: 'center',
     customRender: ({ index }) => index + 1,
+  },
+  {
+    title: '排序',
+    dataIndex: 'sortOrder',
+    key: 'sortOrder',
+    width: 80,
+    align: 'center',
   },
   {
     title: '配置项说明',
@@ -447,6 +458,7 @@ const loadConfigs = async () => {
 const handleEdit = (record: SystemConfigDto) => {
   currentConfig.value = record;
   formState.description = record.description || '';
+  formState.sortOrder = record.sortOrder || 0;
 
   formState.globalValue = record.globalValue ?? '';
   formState.orgValue = record.orgValue ?? '';
@@ -550,6 +562,7 @@ const handleModalOk = async () => {
       tasks.push(updateConfig(globalConfig.value.id, {
         value: formState.globalValue,
         description: formState.description,
+        sortOrder: formState.sortOrder,
         updateGlobal: true
       }));
     }

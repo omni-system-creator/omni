@@ -14,6 +14,7 @@ namespace omsapi.Models.Dtos
         public bool IsSystem { get; set; }
         public long? OrgId { get; set; }
         public bool IsOverridable { get; set; }
+        public int SortOrder { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
@@ -32,6 +33,8 @@ namespace omsapi.Models.Dtos
 
         [MaxLength(200)]
         public string? Description { get; set; }
+
+        public int? SortOrder { get; set; }
 
         /// <summary>
         /// Only for SuperAdmin: If true, updates the Global Config instead of creating/updating an override.

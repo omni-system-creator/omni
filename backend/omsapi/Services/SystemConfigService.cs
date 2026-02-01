@@ -77,6 +77,7 @@ namespace omsapi.Services
                     IsSystem = global.IsSystem,
                     OrgId = effective.OrgId,
                     IsOverridable = global.IsOverridable,
+                    SortOrder = global.SortOrder,
                     CreatedAt = effective.CreatedAt,
                     UpdatedAt = effective.UpdatedAt,
 
@@ -88,7 +89,7 @@ namespace omsapi.Services
                 });
             }
 
-            return (true, "获取成功", result.OrderBy(c => c.Category).ThenBy(c => c.Key).ToList());
+            return (true, "获取成功", result.OrderBy(c => c.SortOrder).ThenBy(c => c.Category).ThenBy(c => c.Key).ToList());
         }
 
         public async Task<(bool Success, string Message, SystemConfigDto? Data)> GetConfigByKeyAsync(string key)
@@ -117,6 +118,7 @@ namespace omsapi.Services
                 IsSystem = globalConfig.IsSystem,
                 OrgId = effective.OrgId,
                 IsOverridable = globalConfig.IsOverridable,
+                SortOrder = globalConfig.SortOrder,
                 CreatedAt = effective.CreatedAt,
                 UpdatedAt = effective.UpdatedAt,
 
@@ -222,6 +224,7 @@ namespace omsapi.Services
                     }
                     config.Value = dto.Value;
                     if (dto.Description != null) config.Description = dto.Description;
+                    if (dto.SortOrder.HasValue) config.SortOrder = dto.SortOrder.Value;
                     config.UpdatedAt = DateTime.Now;
                     await _context.SaveChangesAsync();
                     return (true, "全局设置已更新");

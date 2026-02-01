@@ -30,6 +30,7 @@ namespace omsapi.Models.Entities
 
         public long? OrgId { get; set; } // Null for global, otherwise specific to an organization
         public bool IsOverridable { get; set; } = true; // If true, organizations can override this value
+        public int SortOrder { get; set; } = 0; // Display order
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }

@@ -22,6 +22,7 @@ export interface SystemConfigDto {
   isSystem: boolean;
   orgId?: number;
   isOverridable: boolean;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 
@@ -35,6 +36,7 @@ export interface SystemConfigDto {
 export interface UpdateSystemConfigDto {
   value: string;
   description?: string;
+  sortOrder?: number;
   updateGlobal?: boolean;
 }
 
