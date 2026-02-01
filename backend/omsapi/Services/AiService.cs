@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using Microsoft.Extensions.Configuration;
 using omsapi.Infrastructure.Attributes;
 using omsapi.Services.Interfaces;
@@ -12,6 +13,8 @@ namespace omsapi.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private static List<string>? _cachedModels;
+        private static readonly SemaphoreSlim _modelLock = new(1, 1);
 
         public AiService(HttpClient httpClient, IConfiguration configuration)
         {
@@ -19,8 +22,80 @@ namespace omsapi.Services
             _configuration = configuration;
         }
 
+        private async Task<string> ValidateModelAsync(string model)
+        {
+            if (string.IsNullOrEmpty(model)) return "deepseek-ai/DeepSeek-V2.5";
+
+            if (_cachedModels == null)
+            {
+                await _modelLock.WaitAsync();
+                try
+                {
+                    if (_cachedModels == null)
+                    {
+                        _cachedModels = await GetAvailableModelsAsync();
+                    }
+                }
+                finally
+                {
+                    _modelLock.Release();
+                }
+            }
+
+            if (_cachedModels != null && _cachedModels.Count > 0 && !_cachedModels.Contains(model))
+            {
+                // Try to find a fallback
+                // 1. Exact match ignored case? (Ids are usually case sensitive but let's check)
+                var exact = _cachedModels.FirstOrDefault(m => m.Equals(model, StringComparison.OrdinalIgnoreCase));
+                if (exact != null) return exact;
+
+                // 2. Fallback for DeepSeek-V3 -> V2.5
+                if (model.Contains("DeepSeek-V3"))
+                {
+                    var v25 = _cachedModels.FirstOrDefault(m => m.Contains("DeepSeek-V2.5"));
+                    if (v25 != null) 
+                    {
+                        Console.WriteLine($"[AiService] Model {model} not found. Switching to {v25}");
+                        return v25;
+                    }
+                }
+
+                // 3. Any DeepSeek model
+                if (model.Contains("DeepSeek", StringComparison.OrdinalIgnoreCase))
+                {
+                    var ds = _cachedModels.FirstOrDefault(m => m.Contains("DeepSeek", StringComparison.OrdinalIgnoreCase));
+                    if (ds != null)
+                    {
+                        Console.WriteLine($"[AiService] Model {model} not found. Switching to {ds}");
+                        return ds;
+                    }
+                }
+                
+                // 4. Any Qwen model (good alternative)
+                var qwen = _cachedModels.FirstOrDefault(m => m.Contains("Qwen", StringComparison.OrdinalIgnoreCase));
+                if (qwen != null)
+                {
+                    Console.WriteLine($"[AiService] Model {model} not found. Switching to {qwen}");
+                    return qwen;
+                }
+
+                // 5. First available
+                var first = _cachedModels.First();
+                Console.WriteLine($"[AiService] Model {model} not found. Switching to {first}");
+                return first;
+            }
+
+            return model;
+        }
+
         public async Task<float[]> GetEmbeddingAsync(string text, string model = "BAAI/bge-m3")
         {
+            // Embeddings usually use specific models, validation might be tricky if we mix chat/embedding models in list.
+            // SiliconFlow /models returns all. 
+            // We can try to validate but embedding models are specific. 
+            // Let's skip auto-fallback for embeddings for now unless requested, or just do basic check.
+            // "BAAI/bge-m3" is in the list I saw.
+
             var apiKey = _configuration["SiliconFlow:ApiKey"];
             var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
 
@@ -75,8 +150,9 @@ namespace omsapi.Services
             return new float[0];
         }
 
-        public async Task<string> GetChatCompletionAsync(string prompt, string model = "deepseek-ai/DeepSeek-V3")
+        public async Task<string> GetChatCompletionAsync(string prompt, string model = "deepseek-ai/DeepSeek-V2.5")
         {
+            model = await ValidateModelAsync(model);
             var apiKey = _configuration["SiliconFlow:ApiKey"];
             var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
 
@@ -108,11 +184,7 @@ namespace omsapi.Services
                 {
                     var error = await response.Content.ReadAsStringAsync();
                     Console.WriteLine($"[AiService] Chat API Error: {response.StatusCode} - {error}");
-                    // Throw specific exception to propagate the error message up if needed, 
-                    // or return a failure string. Given the current usage, returning a string starting with error info might be better for debugging.
-                    // But to keep consistency with "Analysis failed..." fallback, maybe just log it.
-                    // Actually, let's return the error message so the user sees it in the log.
-                    return $"Analysis failed: {response.StatusCode} - {error}";
+                    throw new Exception($"Chat API Error: {response.StatusCode} - {error}");
                 }
 
                 var responseString = await response.Content.ReadAsStringAsync();
@@ -126,7 +198,7 @@ namespace omsapi.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[AiService] Error in chat completion: {ex.Message}");
-                // Fallback or rethrow
+                throw;
             }
 
             return "Analysis failed due to API error.";
@@ -335,8 +407,9 @@ namespace omsapi.Services
             return "";
         }
 
-        public async Task<string> GetChatCompletionAsync(string message, string systemPrompt, string model = "deepseek-ai/DeepSeek-V3", double temperature = 0.7)
+        public async Task<string> GetChatCompletionAsync(string message, string systemPrompt, string model = "deepseek-ai/DeepSeek-V2.5", double temperature = 0.7)
         {
+            model = await ValidateModelAsync(model);
             var apiKey = _configuration["SiliconFlow:ApiKey"];
             var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
 
@@ -369,7 +442,7 @@ namespace omsapi.Services
                 {
                     var error = await response.Content.ReadAsStringAsync();
                     Console.WriteLine($"[AiService] Chat API Error: {response.StatusCode} - {error}");
-                    return $"[System: Chat completion failed ({response.StatusCode})]";
+                    throw new Exception($"Chat API Error: {response.StatusCode} - {error}");
                 }
 
                 var responseString = await response.Content.ReadAsStringAsync();
@@ -384,14 +457,15 @@ namespace omsapi.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[AiService] Error in chat completion: {ex.Message}");
-                return $"[System: Chat completion error: {ex.Message}]";
+                throw;
             }
 
             return "";
         }
 
-        public async IAsyncEnumerable<string> GetChatCompletionStreamAsync(string message, string systemPrompt, string model = "deepseek-ai/DeepSeek-V3")
+        public async IAsyncEnumerable<string> GetChatCompletionStreamAsync(string message, string systemPrompt, string model = "deepseek-ai/DeepSeek-V2.5")
         {
+            model = await ValidateModelAsync(model);
             var apiKey = _configuration["SiliconFlow:ApiKey"];
             var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
 
@@ -571,9 +645,51 @@ namespace omsapi.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"[AiService] Error in OCR: {ex.Message}");
+                throw;
             }
 
             return (null, null, null, null);
+        }
+        public async Task<List<string>> GetAvailableModelsAsync()
+        {
+            var apiKey = _configuration["SiliconFlow:ApiKey"];
+            var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
+            var results = new List<string>();
+
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                return results;
+            }
+
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/models");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+            try
+            {
+                var response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(responseString);
+
+                if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in data.EnumerateArray())
+                    {
+                        if (item.TryGetProperty("id", out var idElement))
+                        {
+                            results.Add(idElement.GetString() ?? string.Empty);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AiService] Error listing models: {ex.Message}");
+                // We don't throw here, just return empty list or what we found
+            }
+
+            return results;
         }
     }
 }

@@ -1,198 +1,267 @@
 <template>
   <div class="finance-invoice-container">
-    <a-card :bordered="false">
-      <div class="table-page-search-wrapper">
-        <a-form layout="inline">
-          <a-form-item label="发票号码">
-            <a-input v-model:value="queryParam.invoiceNo" placeholder="请输入" />
-          </a-form-item>
-          <a-form-item label="发票类型">
-            <a-select v-model:value="queryParam.type" placeholder="请选择" style="width: 150px">
-              <a-select-option value="all">全部</a-select-option>
-              <a-select-option value="vat_special">增值税专用发票</a-select-option>
-              <a-select-option value="vat_normal">增值税普通发票</a-select-option>
-              <a-select-option value="electronic">电子发票</a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item label="开票日期">
-            <a-range-picker v-model:value="queryParam.dateRange" />
-          </a-form-item>
-          <a-form-item>
-            <a-space>
-              <a-button type="primary" @click="handleSearch">查询</a-button>
-              <a-button @click="handleReset">重置</a-button>
-            </a-space>
-          </a-form-item>
-        </a-form>
-      </div>
-
-      <div class="table-operator my-4">
-        <a-button type="primary" @click="showModal">
-          <template #icon><PlusOutlined /></template>
-          开具发票
-        </a-button>
-        <a-button>
-          <template #icon><DownloadOutlined /></template>
-          发票登记
-        </a-button>
-         <a-button>
-          <template #icon><ExportOutlined /></template>
-          导出报表
-        </a-button>
-      </div>
-
-      <a-table :columns="columns" :data-source="data" :pagination="pagination">
-        <template #bodyCell="{ column, record }">
-          <template v-if="column.key === 'amount'">
-            <span>¥{{ record.amount.toLocaleString() }}</span>
-          </template>
-           <template v-if="column.key === 'total'">
-            <strong>¥{{ record.total.toLocaleString() }}</strong>
-          </template>
-          <template v-if="column.key === 'status'">
-            <a-badge :status="getStatusBadge(record.status)" :text="record.status" />
-          </template>
-          <template v-if="column.key === 'action'">
-            <a>详情</a>
-            <a-divider type="vertical" />
-            <a v-if="record.status === '草稿'">编辑</a>
-            <a-divider type="vertical" v-if="record.status === '草稿'" />
-            <a-popconfirm title="确定作废该发票吗？" v-if="record.status === '已开票'">
-               <a class="danger-text">作废</a>
-            </a-popconfirm>
-          </template>
-        </template>
-      </a-table>
-    </a-card>
-
-    <a-modal
-      v-model:open="visible"
-      title="开具发票"
-      width="800px"
-      @ok="handleOk"
+    <SmartTable
+      tableKey="finance_invoice_list"
+      :columns="columns"
+      :data-source="data"
+      rowKey="id"
+      :loading="loading"
+      :pagination="pagination"
+      @change="handleTableChange"
+      :scroll="{ x: 'max-content' }"
+      style="height: 100%"
     >
-      <a-form :model="formState" layout="vertical" ref="formRef">
-        <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="购方名称" name="buyer" :rules="[{ required: true }]">
-              <a-input v-model:value="formState.buyer" placeholder="请输入购方名称" />
-            </a-form-item>
-          </a-col>
-           <a-col :span="12">
-            <a-form-item label="税号" name="taxId" :rules="[{ required: true }]">
-              <a-input v-model:value="formState.taxId" placeholder="请输入纳税人识别号" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-         <a-row :gutter="16">
-          <a-col :span="12">
-            <a-form-item label="发票类型" name="type" :rules="[{ required: true }]">
-               <a-select v-model:value="formState.type">
-                  <a-select-option value="vat_special">增值税专用发票</a-select-option>
-                  <a-select-option value="vat_normal">增值税普通发票</a-select-option>
-              </a-select>
-            </a-form-item>
-          </a-col>
-           <a-col :span="12">
-            <a-form-item label="金额(不含税)" name="amount" :rules="[{ required: true }]">
-              <a-input-number v-model:value="formState.amount" style="width: 100%" :min="0" />
-            </a-form-item>
-          </a-col>
-        </a-row>
-        <a-form-item label="备注" name="remark">
-          <a-textarea v-model:value="formState.remark" :rows="3" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+      <template #toolbar>
+        <div class="toolbar-wrapper">
+          <div class="toolbar-left">
+            <a-button type="primary" @click="handleCreate">
+              <template #icon><PlusOutlined /></template>
+              新增发票
+            </a-button>
+          </div>
+          <div class="toolbar-right">
+            <a-form layout="inline" class="flex-nowrap">
+              <a-form-item label="关键字">
+                <a-input v-model:value="queryParam.keyword" placeholder="号码/代码/公司名" allow-clear />
+              </a-form-item>
+              <a-form-item label="收/开票">
+                <a-select v-model:value="queryParam.direction" placeholder="全部" style="width: 100px" allow-clear>
+                  <a-select-option value="input">收票</a-select-option>
+                  <a-select-option value="output">开票</a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="类型">
+                <a-select v-model:value="queryParam.type" placeholder="全部" style="width: 140px" allow-clear>
+                  <a-select-option v-for="item in typeOptions" :key="item.value" :value="item.value">
+                    {{ item.label }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item label="状态">
+                <a-select v-model:value="queryParam.status" placeholder="全部" style="width: 100px" allow-clear>
+                  <a-select-option v-for="item in statusOptions" :key="item.value" :value="item.value">
+                    {{ item.label }}
+                  </a-select-option>
+                </a-select>
+              </a-form-item>
+              <a-form-item>
+                <a-space>
+                  <a-button type="primary" @click="fetchData">查询</a-button>
+                  <a-button @click="handleReset">重置</a-button>
+                </a-space>
+              </a-form-item>
+            </a-form>
+          </div>
+        </div>
+      </template>
+
+      <template #bodyCell="{ column, record, index }">
+        <template v-if="column.key === 'serial'">
+          {{ (pagination.current - 1) * pagination.pageSize + index + 1 }}
+        </template>
+        <template v-if="column.key === 'direction'">
+          <a-tag :color="record.direction === 'input' ? 'blue' : 'green'">
+            {{ record.direction === 'input' ? '收票' : '开票' }}
+          </a-tag>
+        </template>
+        <template v-if="column.key === 'type'">
+          <a-tag>{{ getTypeName(record.type) }}</a-tag>
+        </template>
+        <template v-if="column.key === 'amount'">
+          <span>{{ record.amount.toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}</span>
+        </template>
+        <template v-if="column.key === 'taxAmount'">
+          <span>{{ record.taxAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}</span>
+        </template>
+        <template v-if="column.key === 'totalAmount'">
+          <strong>{{ record.totalAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}</strong>
+        </template>
+        <template v-if="column.key === 'invoiceDate'">
+          <span>{{ record.invoiceDate ? record.invoiceDate.substring(0, 10) : '-' }}</span>
+        </template>
+        <template v-if="column.key === 'status'">
+          <a-tag :color="getStatusColor(record.status)">{{ getStatusText(record.status) }}</a-tag>
+        </template>
+        <template v-if="column.key === 'action'">
+          <a @click="handleEdit(record)">编辑</a>
+          <a-divider type="vertical" />
+          <a-popconfirm title="确定删除该发票吗？" @confirm="handleDelete(record.id)">
+            <a class="danger-text">删除</a>
+          </a-popconfirm>
+        </template>
+      </template>
+    </SmartTable>
+
+    <InvoiceForm ref="invoiceFormRef" @success="fetchData" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
-import { PlusOutlined, DownloadOutlined, ExportOutlined } from '@ant-design/icons-vue';
+import { ref, reactive, onMounted } from 'vue';
+import { PlusOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import type { PresetStatusColorType } from 'ant-design-vue/es/_util/colors';
+import type { TableColumnType } from 'ant-design-vue';
+import SmartTable from '@/components/SmartTable/index.vue';
+import InvoiceForm from './components/InvoiceForm.vue';
+import { getInvoices, deleteInvoice, type FinanceInvoice } from '@/api/finance';
+import { getDictDataByCode, type DictDataDto } from '@/api/dict';
+
+const invoiceFormRef = ref();
+const loading = ref(false);
+const data = ref<FinanceInvoice[]>([]);
+const statusOptions = ref<DictDataDto[]>([]);
+const typeOptions = ref<DictDataDto[]>([]);
 
 const queryParam = reactive({
-  invoiceNo: '',
+  keyword: '',
+  direction: undefined,
   type: undefined,
-  dateRange: [] as any
+  status: undefined
 });
 
-const visible = ref(false);
-const formRef = ref();
-const formState = reactive({
-  buyer: '',
-  taxId: '',
-  type: 'vat_special',
-  amount: 0,
-  remark: ''
+const pagination = reactive({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showSizeChanger: true,
+  showQuickJumper: true
 });
 
-const columns: ColumnType[] = [
-  { title: '发票号码', dataIndex: 'invoiceNo', key: 'invoiceNo' },
-  { title: '发票代码', dataIndex: 'invoiceCode', key: 'invoiceCode' },
-  { title: '购方名称', dataIndex: 'buyer', key: 'buyer', width: 200 },
-  { title: '类型', dataIndex: 'type', key: 'type' },
-  { title: '金额(不含税)', dataIndex: 'amount', key: 'amount', align: 'right' as const },
-  { title: '税额', dataIndex: 'tax', key: 'tax', align: 'right' as const },
-  { title: '价税合计', dataIndex: 'total', key: 'total', align: 'right' as const },
-  { title: '开票日期', dataIndex: 'date', key: 'date' },
-  { title: '状态', dataIndex: 'status', key: 'status' },
-  { title: '操作', key: 'action', width: 150 }
+const columns: TableColumnType[] = [
+  { title: '序号', key: 'serial', width: 60, fixed: 'left', align: 'center' },
+  { title: '发票号码', dataIndex: 'invoiceNo', key: 'invoiceNo', width: 120, fixed: 'left' },
+  { title: '发票代码', dataIndex: 'invoiceCode', key: 'invoiceCode', width: 180, ellipsis: true },
+  { title: '收/开票', dataIndex: 'direction', key: 'direction', width: 80 },
+  { title: '类型', dataIndex: 'type', key: 'type', width: 140 },
+  { title: '金额', dataIndex: 'amount', key: 'amount', align: 'right', width: 120 },
+  { title: '税额', dataIndex: 'taxAmount', key: 'taxAmount', align: 'right', width: 100 },
+  { title: '价税合计', dataIndex: 'totalAmount', key: 'totalAmount', align: 'right', width: 120 },
+  { title: '开票日期', dataIndex: 'invoiceDate', key: 'invoiceDate', width: 120 },
+  { title: '购买方', dataIndex: 'purchaserName', key: 'purchaserName', width: 200, ellipsis: true },
+  { title: '销售方', dataIndex: 'sellerName', key: 'sellerName', width: 200, ellipsis: true },
+  { title: '状态', dataIndex: 'status', key: 'status', width: 100 },
+  { title: '操作', key: 'action', width: 120, fixed: 'right' }
 ];
 
-const data = ref([
-  { id: 1, invoiceNo: '12345678', invoiceCode: '3100201130', buyer: '上海某某科技有限公司', type: '增值税专用发票', amount: 10000, tax: 600, total: 10600, date: '2024-12-20', status: '已开票' },
-  { id: 2, invoiceNo: '87654321', invoiceCode: '3100201130', buyer: '北京某某贸易公司', type: '增值税普通发票', amount: 5000, tax: 150, total: 5150, date: '2024-12-18', status: '草稿' },
-  { id: 3, invoiceNo: '11223344', invoiceCode: '3100201130', buyer: '广州个人客户', type: '电子发票', amount: 200, tax: 0, total: 200, date: '2024-12-15', status: '已红冲' },
-]);
-
-const pagination = {
-  total: 50,
-  current: 1,
-  pageSize: 10
-};
-
-const getStatusBadge = (status: string): PresetStatusColorType => {
-  switch (status) {
-    case '已开票': return 'success';
-    case '草稿': return 'default';
-    case '已红冲': return 'error';
-    default: return 'processing';
+const fetchData = async () => {
+  loading.value = true;
+  try {
+    // Note: Backend currently returns List<FinanceInvoiceDto> without pagination wrapper in response?
+    // Checking controller: 
+    // public async Task<ApiResponse<List<FinanceInvoiceDto>>> GetInvoices(...)
+    // It returns a list directly. So we simulate pagination frontend-side or accept all data.
+    // Ideally backend should support pagination. For now assuming list.
+    
+    const res = await getInvoices({
+      keyword: queryParam.keyword,
+      direction: queryParam.direction,
+      type: queryParam.type,
+      status: queryParam.status
+    });
+    
+    // Frontend pagination simulation if backend doesn't support it yet
+    // Or if backend returns all data (which seems to be the case based on controller code)
+    data.value = res;
+    pagination.total = res.length;
+    
+  } catch (error) {
+    console.error(error);
+    message.error('获取发票列表失败');
+  } finally {
+    loading.value = false;
   }
 };
 
-const handleSearch = () => {
-  message.loading('查询中...');
+const handleTableChange = (pag: any) => {
+  pagination.current = pag.current;
+  pagination.pageSize = pag.pageSize;
+  // If doing frontend pagination, we would slice data here. 
+  // But SmartTable might just display what's given. 
+  // Since we don't have server-side pagination yet, we can just rely on table to paginate or ignore.
+  // Actually SmartTable wrapper passes pagination to Ant Table.
+};
+
+const handleCreate = () => {
+  invoiceFormRef.value.open();
+};
+
+const handleEdit = (record: FinanceInvoice) => {
+  invoiceFormRef.value.open(record);
+};
+
+const handleDelete = async (id: number) => {
+  try {
+    await deleteInvoice(id);
+    message.success('删除成功');
+    fetchData();
+  } catch (error) {
+    message.error('删除失败');
+  }
 };
 
 const handleReset = () => {
-  queryParam.invoiceNo = '';
+  queryParam.keyword = '';
+  queryParam.direction = undefined;
   queryParam.type = undefined;
+  queryParam.status = undefined;
+  fetchData();
 };
 
-const showModal = () => {
-  visible.value = true;
+const getTypeName = (type: string) => {
+  if (!type) return '';
+  const found = typeOptions.value.find(item => item.value === type);
+  return found ? found.label : type;
 };
 
-const handleOk = () => {
-  formRef.value.validate().then(() => {
-    message.success('开票申请已提交');
-    visible.value = false;
-  }).catch(() => {});
+const getStatusColor = (status: string): string => {
+  if (!status) return 'default';
+  
+  // Try to find in dictionary first
+  const found = statusOptions.value.find(item => item.value === status || item.value.toLowerCase() === status.toLowerCase());
+  if (found && found.listClass) {
+    return found.listClass;
+  }
+
+  return 'default';
 };
+
+const getStatusText = (status: string) => {
+  if (!status) return '';
+  const found = statusOptions.value.find(item => item.value === status || item.value.toLowerCase() === status.toLowerCase());
+  return found ? found.label : status;
+};
+
+onMounted(async () => {
+  try {
+    statusOptions.value = await getDictDataByCode('finance_invoice_status');
+    typeOptions.value = await getDictDataByCode('finance_invoice_type');
+  } catch (error) {
+    console.error('Failed to load dicts', error);
+  }
+  fetchData();
+});
 </script>
 
 <style scoped>
 .finance-invoice-container {
-  padding: 16px;
   flex: 1;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
 }
-.my-4 {
-  margin-top: 16px;
-  margin-bottom: 16px;
+
+.toolbar-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
+
+.flex-nowrap {
+  flex-wrap: nowrap;
+}
+
 .danger-text {
   color: #ff4d4f;
 }

@@ -25,6 +25,12 @@ namespace omsapi.Data
         {
         }
 
+        // Finance Entities
+        public DbSet<FinanceApAr> FinanceApArs { get; set; }
+        public DbSet<FinanceSubject> FinanceSubjects { get; set; }
+        public DbSet<FinanceAttachment> FinanceAttachments { get; set; }
+        public DbSet<FinanceInvoice> FinanceInvoices { get; set; }
+
         public DbSet<SystemUser> Users { get; set; }
         public DbSet<SystemRole> Roles { get; set; }
         public DbSet<SystemPermission> Permissions { get; set; }
@@ -99,11 +105,6 @@ namespace omsapi.Data
         public DbSet<omsapi.Models.Entities.Sales.SalesCustomer> SalesCustomers { get; set; }
         public DbSet<omsapi.Models.Entities.Sales.SalesOpportunity> SalesOpportunities { get; set; }
         public DbSet<omsapi.Models.Entities.Sales.SalesScript> SalesScripts { get; set; }
-
-        // Finance Entities
-        public DbSet<FinanceSubject> FinanceSubjects { get; set; }
-        public DbSet<FinanceApAr> FinanceApArs { get; set; }
-        public DbSet<FinanceAttachment> FinanceAttachments { get; set; }
 
         public DbSet<omsapi.Models.Entities.Sales.SalesProductDoc> SalesProductDocs { get; set; }
         public DbSet<omsapi.Models.Entities.Sales.SalesProcessRule> SalesProcessRules { get; set; }

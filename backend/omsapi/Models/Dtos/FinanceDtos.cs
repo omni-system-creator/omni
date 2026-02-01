@@ -133,4 +133,81 @@ namespace omsapi.Models.Dtos
         public decimal OverdueReceivables { get; set; }
         public decimal OverduePayables { get; set; }
     }
+
+    public class FinanceInvoiceDto
+    {
+        public long Id { get; set; }
+        public string InvoiceNo { get; set; } = string.Empty;
+        public string? InvoiceCode { get; set; }
+        public string PurchaserName { get; set; } = string.Empty;
+        public string? PurchaserTaxId { get; set; }
+        public string SellerName { get; set; } = string.Empty;
+        public string? SellerTaxId { get; set; }
+        public string Direction { get; set; } = "input";
+        public string Type { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public decimal TaxAmount { get; set; }
+        public decimal TotalAmount { get; set; }
+        public DateTime InvoiceDate { get; set; }
+        public string Status { get; set; } = "draft";
+        public string? Remark { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string? CreatedBy { get; set; }
+        public long? ContractId { get; set; }
+        public long? ApArId { get; set; }
+        public List<FinanceAttachmentDto> Attachments { get; set; } = new();
+    }
+
+    public class CreateFinanceInvoiceDto
+    {
+        [Required]
+        [MaxLength(50)]
+        public string InvoiceNo { get; set; } = string.Empty;
+        [MaxLength(50)]
+        public string? InvoiceCode { get; set; }
+        [Required]
+        [MaxLength(200)]
+        public string PurchaserName { get; set; } = string.Empty;
+        [MaxLength(50)]
+        public string? PurchaserTaxId { get; set; }
+        [Required]
+        [MaxLength(200)]
+        public string SellerName { get; set; } = string.Empty;
+        [MaxLength(50)]
+        public string? SellerTaxId { get; set; }
+        [Required]
+        [MaxLength(20)]
+        public string Direction { get; set; } = "input";
+        [Required]
+        [MaxLength(50)]
+        public string Type { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public decimal TaxAmount { get; set; }
+        public decimal TotalAmount { get; set; }
+        [Required]
+        public DateTime InvoiceDate { get; set; }
+        public string? Remark { get; set; }
+        public long? ContractId { get; set; }
+        public long? ApArId { get; set; }
+    }
+
+    public class UpdateFinanceInvoiceDto
+    {
+        public string? InvoiceNo { get; set; }
+        public string? InvoiceCode { get; set; }
+        public string? PurchaserName { get; set; }
+        public string? PurchaserTaxId { get; set; }
+        public string? SellerName { get; set; }
+        public string? SellerTaxId { get; set; }
+        public string? Direction { get; set; }
+        public string? Type { get; set; }
+        public decimal? Amount { get; set; }
+        public decimal? TaxAmount { get; set; }
+        public decimal? TotalAmount { get; set; }
+        public DateTime? InvoiceDate { get; set; }
+        public string? Status { get; set; }
+        public string? Remark { get; set; }
+        public long? ContractId { get; set; }
+        public long? ApArId { get; set; }
+    }
 }

@@ -420,6 +420,7 @@ export const recognizeInvoice = (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
   return request.post<any, ContractInvoiceDto>('/contract/invoices/recognize', formData, {
+    timeout: 120000,
     headers: {
       'Content-Type': 'multipart/form-data'
     }
