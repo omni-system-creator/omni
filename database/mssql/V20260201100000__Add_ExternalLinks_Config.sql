@@ -1,0 +1,3 @@
+-- Add ExternalLinks system configuration
+INSERT INTO sys_config (Category, [Key], Type, Value, Description, IsSystem, IsOverridable, SortOrder, CreatedAt)
+VALUES ('Basic', 'ExternalLinks', 6, '[{"icon":"ri:github-fill","url":"https://github.com/omni-system-creator/omni","tooltip":"GitHub 仓库","sort":1},{"icon":"simple-icons:gitee","url":"https://gitee.com/kinglan_gitee/omni","tooltip":"Gitee 仓库","sort":2}]', '外部链接配置(JSON数组: icon, url, tooltip, sort)', 0, 1, 999, GETDATE());

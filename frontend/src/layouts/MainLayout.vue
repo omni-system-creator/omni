@@ -27,16 +27,13 @@
         </div>
         <div class="header-right">
           <a-space :size="4">
-            <a-tooltip title="GitHub 仓库">
-              <a-button type="text" shape="circle" @click="openLink('github')">
-                <template #icon><DynamicIcon icon="ri:github-fill" /></template>
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="Gitee 仓库">
-              <a-button type="text" shape="circle" @click="openLink('gitee')">
-                <template #icon><DynamicIcon icon="simple-icons:gitee" /></template>
-              </a-button>
-            </a-tooltip>
+            <template v-for="(link, index) in externalLinks" :key="index">
+              <a-tooltip :title="link.tooltip">
+                <a-button type="text" shape="circle" @click="openLink(link.url)">
+                  <template #icon><DynamicIcon :icon="link.icon" /></template>
+                </a-button>
+              </a-tooltip>
+            </template>
             <HelpButton />
             <FullscreenButton />
             <OnlineUsersButton />            
@@ -251,12 +248,29 @@ onMounted(async () => {
   }
 });
 
-const openLink = (site: 'github' | 'gitee') => {
-  const urls: Record<string, string> = {
-    github: 'https://github.com/omni-system-creator/omni',
-    gitee: 'https://gitee.com/kinglan_gitee/omni'
-  };
-  const url = urls[site];
+interface ExternalLink {
+  icon: string;
+  url: string;
+  tooltip: string;
+  sort: number;
+}
+
+const externalLinks = computed<ExternalLink[]>(() => {
+  const configStr = systemStore.getConfig('ExternalLinks');
+  if (!configStr) return [];
+  try {
+    const links = JSON.parse(configStr);
+    if (Array.isArray(links)) {
+      return links.sort((a: any, b: any) => (a.sort || 0) - (b.sort || 0));
+    }
+    return [];
+  } catch (error) {
+    console.warn('Failed to parse ExternalLinks config', error);
+    return [];
+  }
+});
+
+const openLink = (url: string) => {
   if (url) {
     window.open(url, '_blank');
   }
