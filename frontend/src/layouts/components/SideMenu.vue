@@ -8,16 +8,24 @@
     @update:collapsed="emit('update:collapsed', $event)"
   >
     <div class="logo-container">
-      <img :src="systemStore.systemLogo" :alt="systemStore.systemName" class="logo-img" />
-      <h1 v-if="!collapsed" class="logo-text">{{ systemStore.systemName }}</h1>
+      <div class="logo-wrapper">
+        <img :src="systemStore.systemLogo" :alt="systemStore.systemName" class="logo-img" />
+        <h1 v-if="!collapsed" class="logo-text">{{ systemStore.systemName }}</h1>
+      </div>
+      <div v-if="!collapsed" class="collapse-all-btn" @click.stop="collapseAllMenus">
+        <a-tooltip title="折叠所有菜单">
+          <DynamicIcon icon="ant-design:menu-outlined" style="font-size: 16px;" />
+        </a-tooltip>
+      </div>
     </div>
-    <div class="menu-container">
+    <div class="menu-container" :class="{ 'is-collapsed': collapsed, 'is-expanded': !collapsed }">
       <a-spin :spinning="loading" tip="正在加载菜单..." wrapperClassName="menu-spin">
         <a-menu
           v-model:selectedKeys="selectedKeys"
           theme="dark"
           mode="inline"
           :open-keys="openKeys"
+          :builtinPlacements="builtinPlacements"
           @openChange="onOpenChange as any"
         >
           <template v-for="item in menuData" :key="item.key">
@@ -79,6 +87,17 @@ const router = useRouter();
 const route = useRoute();
 const systemStore = useSystemStore();
 const userStore = useUserStore();
+
+// Menu Placements
+const autoAdjustOverflow = { adjustX: 1, adjustY: 1 };
+const builtinPlacements = {
+  topLeft: { points: ['bl', 'tl'], overflow: autoAdjustOverflow, offset: [0, -7] },
+  bottomLeft: { points: ['tl', 'bl'], overflow: autoAdjustOverflow, offset: [0, 7] },
+  leftTop: { points: ['tr', 'tl'], overflow: autoAdjustOverflow, offset: [-4, 0] },
+  rightTop: { points: ['tl', 'tr'], overflow: autoAdjustOverflow, offset: [4, 0] },
+  rightBottom: { points: ['bl', 'br'], overflow: autoAdjustOverflow, offset: [4, 0] },
+  leftBottom: { points: ['br', 'bl'], overflow: autoAdjustOverflow, offset: [-4, 0] },
+};
 
 // Local Storage Helpers
 const getSettings = () => {
@@ -191,6 +210,11 @@ const onOpenChange = (keys: string[]) => {
   saveSettings(getUserSettingKey('menuOpenKeys'), keys);
 };
 
+const collapseAllMenus = () => {
+  openKeys.value = [];
+  saveSettings(getUserSettingKey('menuOpenKeys'), []);
+};
+
 // Auto expand parent menus when selectedKey changes
 const findPathToKey = (targetKey: string, items: readonly MenuItem[], path: string[] = []): string[] | null => {
   for (const item of items) {
@@ -231,19 +255,30 @@ watch(
 
 <style scoped>
 .logo-container {
+  position: relative;
   height: 64px;
-  padding: 16px;
+  padding: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   background: #002140;
   overflow: hidden;
   transition: all 0.3s;
 }
 
+.logo-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  overflow: hidden;
+  min-width: 0; 
+}
+
 .logo-img {
   height: 24px;
   width: 24px;
+  flex-shrink: 0;
 }
 
 .logo-text {
@@ -254,6 +289,30 @@ watch(
   white-space: nowrap;
   opacity: 1;
   transition: opacity 0.3s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collapse-all-btn {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.logo-container:hover .collapse-all-btn {
+  opacity: 1;
+}
+
+.collapse-all-btn:hover {
+  color: #fff;
 }
 
 .sider-fixed {
@@ -283,6 +342,10 @@ watch(
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+:deep(.menu-spin .ant-spin-container .ant-menu) {
+  flex: 1;
 }
 
 :deep(.menu-spin .ant-spin) {
@@ -409,14 +472,74 @@ watch(
   box-shadow: -1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+:global(.sider-popup-menu.ant-menu-submenu-placement-rightBottom .ant-menu::before) {
+  top: auto;
+  bottom: 15px;
+}
+
+:global(.ant-menu-submenu) {
+  padding: 4px !important;
+}
+
+:global(.ant-menu-submenu-title) {
+  margin: 0 !important;
+  width: calc(100% - 0px) !important;
+}
+
+:global(.ant-menu-sub) {
+  margin: 4px -4px -4px -4px !important;
+}
+
+
+:global(.ant-layout-sider-collapsed) {
+  min-width: 60px !important;
+  width: 60px !important;
+}
+
+.menu-container.is-collapsed :deep(.ant-menu-submenu-title) {
+  text-align: center;
+  padding-inline: 0 !important;
+}
+.menu-container.is-expanded :deep(.ant-menu-submenu-title) { 
+  padding-inline: 18px !important;
+}
+.menu-container.is-expanded :deep(.ant-menu-item) {
+  padding-left: 18px !important;
+}
+.menu-container.is-expanded :deep(.ant-menu-sub .ant-menu-item) {
+  padding-left: 42px !important;
+}
+
+.menu-container.is-collapsed :deep(.ant-menu-inline-collapsed >.ant-menu-submenu>.ant-menu-submenu-title .anticon +span) {
+  display: none !important;
+}
+
+/* 折叠时：选中子菜单的样式 (背景加在 title 上，保留圆角) */
+.menu-container.is-collapsed :deep(.ant-menu-submenu-selected > .ant-menu-submenu-title) {
+  background-color: rgba(24, 144, 255, 0.2) !important;
+  color: #fff !important;
+  border-radius: 4px;
+}
+
+/* 未折叠时：选中子菜单的样式 (背景加在 submenu 容器上，去除圆角，实现整行高亮) */
+.menu-container:not(.is-collapsed) :deep(.ant-menu-submenu-selected) {
+  background-color: rgba(24, 144, 255, 0.2) !important;
+  border-radius: 0 !important;
+}
+
+
 /* Custom arrow direction for SubMenu */
 :deep(.ant-menu-submenu-title .ant-menu-submenu-arrow) {
-  transform: translateX(4px) translateY(-50%) rotate(-90deg) !important;
+  width: 0;
+  height: 0;
+  transform: translateX(4px) translateY(3px) rotate(-90deg) !important;
   transform-origin: center center;
 }
 
 :deep(.ant-menu-submenu-open > .ant-menu-submenu-title > .ant-menu-submenu-arrow) {
-  transform: translateY(-50%) rotate(-180deg) !important;
+  width: 0;
+  height: 0;
+  transform: translateX(6px) translateY(2px) rotate(-180deg) !important;
   transform-origin: center center;
 }
 </style>

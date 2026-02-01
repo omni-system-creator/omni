@@ -210,7 +210,7 @@ namespace omsapi.Services
                         }
                     }
                 }
-                catch (Exception ex)
+                catch
                 {
                     // Log error but continue
                     // _logger.LogError(ex, "删除文件失败"); 
