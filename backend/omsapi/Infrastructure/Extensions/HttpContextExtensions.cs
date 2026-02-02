@@ -14,13 +14,6 @@ namespace omsapi.Infrastructure.Extensions
         {
             if (context == null) return string.Empty;
 
-            // 打印所有Header
-            foreach (var header in context.Request.Headers)
-            {
-                System.Console.WriteLine($"Header: {header.Key} = {header.Value}");
-            }
-            
-
             string ip = string.Empty;
 
             // 1. 优先尝试 X-Real-IP (Nginx 常用)
