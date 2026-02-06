@@ -11,6 +11,7 @@
               line-height: ${status.mergedConfig.headerHeight}px;
               width: ${status.widths[i]}px;
               text-align: ${status.aligns[i]};
+              font-size: ${status.mergedConfig.fontSize}px;
             `"
             v-html="headerItem"
           />
@@ -29,7 +30,7 @@
           <td
             v-for="(ceil, ci) in row.ceils"
             :key="`${ceil}${ri}${ci}`"
-            :style="`width: ${status.widths[ci]}px; text-align: ${status.aligns[ci]};`"
+            :style="`width: ${status.widths[ci]}px; text-align: ${status.aligns[ci]}; font-size: ${status.mergedConfig.fontSize}px;`"
             v-html="ceil"
           />
         </tr>
@@ -64,6 +65,7 @@ const status = reactive({
     evenRowBGC: '#0A2732',
     waitTime: 2, // 轮播间隔时间（秒）
     headerHeight: 35,
+    fontSize: 14,
     columnWidth: [],
     align: [],
     index: false,

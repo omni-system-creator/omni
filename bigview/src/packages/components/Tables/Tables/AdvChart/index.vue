@@ -13,6 +13,7 @@
         height: ${status.mergedConfig.headerHeight}px;
         line-height: ${status.mergedConfig.headerHeight}px;
         width: ${status.widths[i]}px;
+        font-size: ${status.mergedConfig.fontSize}px;
       `"
         :align="status.aligns[i]"
         v-html="headerItem"
@@ -38,7 +39,7 @@
           class="ceil"
           v-for="(ceil, ci) in row.ceils"
           :key="`${ceil}${ri}${ci}`"
-          :style="`width: ${status.widths[ci]}px;`"
+          :style="`width: ${status.widths[ci]}px; font-size: ${status.mergedConfig.fontSize}px;`"
           :align="status.aligns[ci]"
           v-html="ceil"
         />
@@ -118,6 +119,12 @@ const status = reactive({
      * @default headerHeight = 35
      */
     headerHeight: 35,
+    /**
+     * @description Font size
+     * @type {Number}
+     * @default fontSize = 14
+     */
+    fontSize: 14,
     /**
      * @description Column width
      * @type {Array<Number>}

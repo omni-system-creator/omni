@@ -13,6 +13,7 @@ export const option = {
   rowNum: 5,
   waitTime: 2,
   headerHeight: 35,
+  fontSize: 14,
   carousel: 'single',
   headerBGC: '#00BAFF',
   oddRowBGC: '#003B51',

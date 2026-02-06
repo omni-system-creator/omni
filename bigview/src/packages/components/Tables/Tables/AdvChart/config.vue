@@ -28,6 +28,14 @@
       <SettingItem name="显示行号">
         <n-switch size="small" v-model:value="optionData.index" />
       </SettingItem>
+      <SettingItem name="字体大小">
+        <n-input-number
+          v-model:value="optionData.fontSize"
+          :min="1"
+          size="small"
+          placeholder="请输入字体大小"
+        ></n-input-number>
+      </SettingItem>
     </SettingItemBox>
 
     <SettingItemBox name="配置" :alone="true">
