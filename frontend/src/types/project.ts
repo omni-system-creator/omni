@@ -100,6 +100,7 @@ export interface ProjectListItem {
   name: string
   type: string
   manager: string
+  managerName?: string
   members?: ProjectMember[]
   status: string
   progress: number

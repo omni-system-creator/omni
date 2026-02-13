@@ -188,6 +188,7 @@ const handleCancel = () => {
       <a-form-item label="负责人" name="manager">
          <UserSelector
             v-model:value="formState.manager"
+            value-type="username"
             :initial-display-data="selectedManagerInfo"
             placeholder="请选择负责人"
             @change="onManagerChange"
@@ -196,6 +197,7 @@ const handleCancel = () => {
       <a-form-item label="项目成员" name="members">
         <UserSelector
             v-model:value="selectedMemberUsernames"
+            value-type="username"
             multiple
             :initial-display-data="selectedMembersInfo"
             placeholder="请选择项目成员"

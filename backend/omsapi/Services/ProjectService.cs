@@ -54,12 +54,19 @@ namespace omsapi.Services
                     (pm, u) => new { pm.ProjectCode, pm.Username, pm.Role, Name = u.Nickname ?? u.Username, DeptName = u.Dept != null ? u.Dept.Name : "" })
                 .ToListAsync();
 
+            // Get manager names
+            var managerUsernames = filteredProjects.Select(p => p.Manager).Where(m => !string.IsNullOrEmpty(m)).Distinct().ToList();
+            var managers = await _context.Users
+                .Where(u => managerUsernames.Contains(u.Username))
+                .ToDictionaryAsync(u => u.Username, u => u.Nickname ?? u.Username);
+
             return filteredProjects.Select(p => new ProjectListItemDto
             {
                 Code = p.Code,
                 Name = p.Name ?? "Untitled",
                 Type = p.Type ?? "General",
                 Manager = p.Manager ?? "Unknown",
+                ManagerName = (p.Manager != null && managers.ContainsKey(p.Manager)) ? managers[p.Manager] : (p.Manager ?? "Unknown"),
                 Status = "ongoing", // logic to be added
                 Progress = 0, // logic to be added
                 Members = allMembers.Where(m => m.ProjectCode == p.Code).Select(m => new ProjectMemberDto 

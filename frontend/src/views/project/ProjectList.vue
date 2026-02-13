@@ -103,7 +103,7 @@ const columns: ColumnType[] = [
   { title: '项目名称', dataIndex: 'name', key: 'name' },
   { title: '项目编号', dataIndex: 'code', key: 'code' },
   { title: '类型', dataIndex: 'type', key: 'type' },
-  { title: '负责人', dataIndex: 'manager', key: 'manager' },
+  { title: '负责人', dataIndex: 'managerName', key: 'managerName' },
   { title: '状态', dataIndex: 'status', key: 'status' },
   { title: '进度', dataIndex: 'progress', key: 'progress', width: 200 },
   { title: '计划结束时间', dataIndex: 'plannedEndDate', key: 'plannedEndDate' },
