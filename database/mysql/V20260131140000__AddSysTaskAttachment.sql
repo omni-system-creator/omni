@@ -13,4 +13,4 @@ CREATE TABLE `sys_task_attachment` (
   KEY `IX_sys_task_attachment_uploader_id` (`uploader_id`),
   CONSTRAINT `FK_sys_task_attachment_sys_task_task_id` FOREIGN KEY (`task_id`) REFERENCES `sys_task` (`id`) ON DELETE CASCADE,
   CONSTRAINT `FK_sys_task_attachment_sys_user_uploader_id` FOREIGN KEY (`uploader_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务附件';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='任务附件';

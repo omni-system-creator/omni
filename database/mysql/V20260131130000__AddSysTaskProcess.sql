@@ -11,4 +11,4 @@ CREATE TABLE `sys_task_process` (
   KEY `IX_sys_task_process_operator_id` (`operator_id`),
   CONSTRAINT `FK_sys_task_process_sys_task_task_id` FOREIGN KEY (`task_id`) REFERENCES `sys_task` (`id`) ON DELETE CASCADE,
   CONSTRAINT `FK_sys_task_process_sys_user_operator_id` FOREIGN KEY (`operator_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务处理记录';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='任务处理记录';

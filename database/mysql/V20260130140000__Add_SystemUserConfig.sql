@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS `sys_user_config` (
   KEY `IX_sys_user_config_OrgId` (`OrgId`),
   CONSTRAINT `FK_sys_user_config_sys_dept_OrgId` FOREIGN KEY (`OrgId`) REFERENCES `sys_dept` (`Id`) ON DELETE CASCADE,
   CONSTRAINT `FK_sys_user_config_sys_user_UserId` FOREIGN KEY (`UserId`) REFERENCES `sys_user` (`Id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户个性化配置表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户个性化配置表';

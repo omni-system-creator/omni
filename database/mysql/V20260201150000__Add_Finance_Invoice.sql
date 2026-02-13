@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `finance_invoice` (
   KEY `IX_finance_invoice_org_id` (`org_id`),
   KEY `IX_finance_invoice_contract_id` (`contract_id`),
   KEY `IX_finance_invoice_apar_id` (`apar_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='发票管理表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='发票管理表';
 
 -- Add Dictionary Types
 INSERT IGNORE INTO `sys_dict_type` (`name`, `code`, `remark`, `status`, `CreatedAt`) VALUES

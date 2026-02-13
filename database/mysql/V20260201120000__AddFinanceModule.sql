@@ -14,7 +14,7 @@ CREATE TABLE `finance_subject` (
   PRIMARY KEY (`Id`),
   KEY `IX_finance_subject_parent_id` (`parent_id`),
   KEY `IX_finance_subject_org_id` (`org_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='财务科目表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='财务科目表';
 
 -- Add FinanceApAr Table
 CREATE TABLE `finance_apar` (
@@ -38,7 +38,7 @@ CREATE TABLE `finance_apar` (
   KEY `IX_finance_apar_subject_id` (`subject_id`),
   KEY `IX_finance_apar_org_id` (`org_id`),
   CONSTRAINT `FK_finance_apar_subject` FOREIGN KEY (`subject_id`) REFERENCES `finance_subject` (`Id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='应收应付账款表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='应收应付账款表';
 
 -- Add FinanceAttachment Table
 CREATE TABLE `finance_attachment` (
@@ -53,7 +53,7 @@ CREATE TABLE `finance_attachment` (
   `uploader` varchar(50) DEFAULT NULL COMMENT '上传人',
   PRIMARY KEY (`Id`),
   KEY `IX_finance_attachment_target` (`target_type`, `target_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='财务附件表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='财务附件表';
 
 -- Seed Initial Finance Subjects
 INSERT INTO `finance_subject` (`code`, `name`, `direction`, `is_system`, `description`, `created_at`) VALUES

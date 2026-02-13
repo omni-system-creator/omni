@@ -8,4 +8,4 @@ CREATE TABLE `sys_task_member` (
   KEY `IX_sys_task_member_user_id` (`user_id`),
   CONSTRAINT `FK_sys_task_member_sys_task_task_id` FOREIGN KEY (`task_id`) REFERENCES `sys_task` (`id`) ON DELETE CASCADE,
   CONSTRAINT `FK_sys_task_member_sys_user_user_id` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='任务成员表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='任务成员表';
