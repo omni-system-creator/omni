@@ -124,9 +124,10 @@ const renderedContent = computed(() => {
 .markdown-body :deep(pre),
 .markdown-body :deep(code) {
   padding: 0;
-  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
-  font-variant-ligatures: none; /* Disable ligatures which can mess up alignment */
+  font-family: "Courier New", "NSimSun", monospace; /* Courier New + NSimSun provides better CJK alignment on Windows */
+  font-variant-ligatures: none;
   -webkit-font-smoothing: antialiased;
+  letter-spacing: 0;
 }
 
 .markdown-body :deep(pre) {
@@ -157,7 +158,7 @@ const renderedContent = computed(() => {
   background: transparent !important; /* Force remove background */
   border: 0;
   border-radius: 0;
-  line-height: inherit;
+  line-height: 1.2;
   font-family: inherit; /* Ensure font matches pre */
 }
 
