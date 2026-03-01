@@ -1,7 +1,7 @@
 <template>
   <div class="pdf-page" ref="pageRef" :data-page-number="pageNumber">
     <div class="page-container" ref="containerRef">
-      <div class="page-number-indicator" :class="{ 'inside': isInside }">{{ pageNumber }} / {{ pdfDoc.numPages }}</div>
+      <div class="page-number-indicator">{{ pageNumber }} / {{ pdfDoc.numPages }}</div>
       <a-spin :spinning="loading">
         <div class="canvas-wrapper" :style="wrapperStyle">
           <canvas ref="canvasRef"></canvas>
@@ -24,6 +24,7 @@ const props = defineProps<{
   pageNumber: number;
   pdfDoc: any;
   scale: number;
+  rotation?: number;
 }>();
 
 const emit = defineEmits(['loaded', 'update:visible']);
@@ -35,11 +36,9 @@ const containerRef = ref<HTMLDivElement | null>(null);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const textLayerRef = ref<HTMLDivElement | null>(null);
 const viewport = ref<any>(null);
-const isInside = ref(false);
 
 let renderTask: any = null;
 let observer: IntersectionObserver | null = null;
-let resizeObserver: ResizeObserver | null = null;
 
 const wrapperStyle = computed(() => {
   if (!viewport.value) {
@@ -63,7 +62,12 @@ const renderPage = async () => {
   
   try {
     const page = await props.pdfDoc.getPage(props.pageNumber);
-    const scaledViewport = page.getViewport({ scale: props.scale });
+    // Use props.rotation if provided, otherwise default to 0
+    const currentRotation = (page.rotate + (props.rotation || 0)) % 360;
+    const scaledViewport = page.getViewport({ 
+      scale: props.scale,
+      rotation: currentRotation
+    });
     viewport.value = scaledViewport;
     
     const canvas = canvasRef.value;
@@ -74,6 +78,8 @@ const renderPage = async () => {
     // Fix high DPI screens blurriness
     const outputScale = window.devicePixelRatio || 1;
     
+    // When rotated 90 or 270 degrees, the viewport dimensions are already swapped by getViewport
+    // But we need to ensure the canvas dimensions match
     canvas.height = Math.floor(scaledViewport.height * outputScale);
     canvas.width = Math.floor(scaledViewport.width * outputScale);
     
@@ -98,15 +104,25 @@ const renderPage = async () => {
     // Render text layer
     if (textLayerRef.value) {
       textLayerRef.value.innerHTML = '';
-      textLayerRef.value.style.height = `${scaledViewport.height}px`;
-      textLayerRef.value.style.width = `${scaledViewport.width}px`;
-      // Use CSS property for scaling
-      // Correction factor adjusted based on visual alignment
-      textLayerRef.value.style.setProperty('--scale-factor', `${props.scale * 0.76}`);
       
-      // Clear any existing transforms that might affect scaling or positioning
-      textLayerRef.value.style.transform = '';
-      textLayerRef.value.style.transformOrigin = '';
+      // Check if we need to swap width/height for text layer based on rotation
+      // Although getViewport swaps dimensions, sometimes text layer container needs explicit handling
+      // especially when combined with our CSS scaling correction
+      const isRotated = currentRotation % 180 !== 0;
+      
+      // For TextLayer, we use the viewport dimensions directly
+      // But we need to account for our CSS correction factor
+      const correction = 0.76;
+      
+      if (isRotated) {
+        textLayerRef.value.style.width = `${scaledViewport.height / correction}px`;
+        textLayerRef.value.style.height = `${scaledViewport.width / correction}px`;
+      } else {
+        textLayerRef.value.style.width = `${scaledViewport.width / correction}px`;
+        textLayerRef.value.style.height = `${scaledViewport.height / correction}px`;
+      }
+      
+      textLayerRef.value.style.setProperty('--scale-factor', `${correction}`);
       
       const textContent = await page.getTextContent();
       
@@ -118,6 +134,19 @@ const renderPage = async () => {
             viewport: scaledViewport
           });
           await textLayer.render();
+
+          // textLayer在这里判断旋转是90度或者270度交换textLayer的宽高
+          if (isRotated) {
+            // Force reflow to ensure styles are applied
+            // Using getComputedStyle to get the actual rendered dimensions if style is not set or relative
+            const style = window.getComputedStyle(textLayerRef.value);
+            const currentWidth = style.width;
+            const currentHeight = style.height;
+            
+            // Apply swapped dimensions
+            textLayerRef.value.style.width = currentHeight;
+            textLayerRef.value.style.height = currentWidth;
+          }
         } catch (e) {
           console.warn('Text layer rendering failed:', e);
         }
@@ -144,7 +173,7 @@ const resetRender = () => {
   }
 };
 
-watch(() => props.scale, () => {
+watch(() => [props.scale, props.rotation], () => {
   resetRender();
   // If visible, re-render immediately
   if (pageRef.value && isElementInViewport(pageRef.value)) {
@@ -166,39 +195,7 @@ const isElementInViewport = (el: HTMLElement) => {
   );
 };
 
-const checkPosition = () => {
-  if (!containerRef.value || !pageRef.value) return;
-  
-  const containerRect = containerRef.value.getBoundingClientRect();
-  const pageRect = pageRef.value.getBoundingClientRect();
-  const parentRect = pageRef.value.parentElement?.getBoundingClientRect();
-  
-  if (!parentRect) return;
-  
-  // Calculate available space on the left
-  const spaceLeft = containerRect.left - parentRect.left;
-  
-  // If space on left is less than 70px (indicator width + margin), move inside
-  isInside.value = spaceLeft < 70;
-};
-
 onMounted(() => {
-  // Initial check
-  checkPosition();
-  
-  // Watch for resize to adjust position
-  resizeObserver = new ResizeObserver(() => {
-    checkPosition();
-  });
-  
-  if (pageRef.value) {
-    resizeObserver.observe(pageRef.value);
-    // Also observe parent to detect container changes
-    if (pageRef.value.parentElement) {
-      resizeObserver.observe(pageRef.value.parentElement);
-    }
-  }
-
   observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
@@ -220,9 +217,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-  }
   if (observer) {
     observer.disconnect();
   }
@@ -278,8 +272,8 @@ onUnmounted(() => {
 
 .page-number-indicator {
   position: absolute;
-  top: 0;
-  left: -60px; /* Position to the left of the page */
+  top: 10px;
+  left: 10px;
   background-color: rgba(0, 0, 0, 0.6);
   color: white;
   padding: 4px 8px;
@@ -288,10 +282,5 @@ onUnmounted(() => {
   pointer-events: none;
   z-index: 10;
   transition: all 0.3s ease;
-}
-
-.page-number-indicator.inside {
-  left: 10px;
-  top: 10px;
 }
 </style>

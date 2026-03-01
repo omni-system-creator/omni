@@ -36,15 +36,37 @@
         <a-divider type="vertical" />
         <a-dropdown :trigger="['click']">
           <a-button size="small">
-            {{ isContinuous ? '连续滚动' : '单页视图' }} <DownOutlined />
+            {{ getViewModeLabel(viewMode) }} <DownOutlined />
           </a-button>
           <template #overlay>
             <a-menu>
-              <a-menu-item key="continuous" @click="setContinuous(true)">
-                连续滚动
-              </a-menu-item>
-              <a-menu-item key="single" @click="setContinuous(false)">
+              <a-menu-item key="single" @click="setViewMode('single')">
                 单页视图
+              </a-menu-item>
+              <a-menu-item key="continuous" @click="setViewMode('continuous')">
+                单页连续
+              </a-menu-item>
+              <a-menu-item key="double" @click="setViewMode('double')">
+                双页视图
+              </a-menu-item>
+              <a-menu-item key="double-continuous" @click="setViewMode('double-continuous')">
+                双页连续
+              </a-menu-item>
+              <a-menu-item key="multi-continuous" @click="setViewMode('multi-continuous')">
+                多页视图
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+        <a-divider type="vertical" />
+        <a-dropdown :trigger="['click']">
+          <a-button size="small">
+            <RotateRightOutlined /> {{ rotateOptions.find(opt => opt.value === rotation)?.label || `${rotation}°` }} <DownOutlined />
+          </a-button>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item v-for="option in rotateOptions" :key="option.value" @click="rotatePage(option.value)">
+                {{ option.label }}
               </a-menu-item>
             </a-menu>
           </template>
@@ -85,26 +107,57 @@
       
       <div class="pdf-container" ref="containerRef" @wheel="onWheel">
          <a-spin :spinning="loading">
-           <div class="pages-wrapper" :class="{ 'single-page-mode': !isContinuous }">
-             <template v-if="isContinuous">
+           <div class="pages-wrapper" :class="{ 
+             'single-page-mode': viewMode === 'single',
+             'double-page-mode': viewMode === 'double',
+             'double-continuous-mode': viewMode === 'double-continuous',
+             'multi-continuous-mode': viewMode === 'multi-continuous'
+           }">
+             <template v-if="viewMode.includes('continuous')">
                <PdfPage
                  v-for="page in totalPages"
                  :key="page"
                  :pageNumber="page"
                  :pdfDoc="pdfDoc"
                  :scale="scale"
+                 :rotation="rotation"
                  @update:visible="onPageVisible"
                />
              </template>
              <template v-else>
-               <PdfPage
-                 v-if="currentPage > 0"
-                 :key="currentPage"
-                 :pageNumber="currentPage"
-                 :pdfDoc="pdfDoc"
-                 :scale="scale"
-                 @loaded="onSinglePageLoaded"
-               />
+               <template v-if="viewMode === 'single'">
+                 <PdfPage
+                   v-if="currentPage > 0"
+                   :key="currentPage"
+                   :pageNumber="currentPage"
+                   :pdfDoc="pdfDoc"
+                   :scale="scale"
+                   :rotation="rotation"
+                   @loaded="onSinglePageLoaded"
+                 />
+               </template>
+               <template v-else-if="viewMode === 'double'">
+                 <!-- Display two pages side by side -->
+                 <div class="double-page-container">
+                   <PdfPage
+                     v-if="currentPage > 0"
+                     :key="currentPage"
+                     :pageNumber="currentPage"
+                     :pdfDoc="pdfDoc"
+                     :scale="scale"
+                     :rotation="rotation"
+                     @loaded="onSinglePageLoaded"
+                   />
+                   <PdfPage
+                     v-if="currentPage + 1 <= totalPages"
+                     :key="currentPage + 1"
+                     :pageNumber="currentPage + 1"
+                     :pdfDoc="pdfDoc"
+                     :scale="scale"
+                     :rotation="rotation"
+                   />
+                 </div>
+               </template>
              </template>
            </div>
          </a-spin>
@@ -124,7 +177,8 @@ import {
   MenuUnfoldOutlined,
   ExpandOutlined,
   CompressOutlined,
-  DownOutlined
+  DownOutlined,
+  RotateRightOutlined
 } from '@ant-design/icons-vue';
 import { Empty } from 'ant-design-vue';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
@@ -145,10 +199,12 @@ const props = defineProps<{
 const currentPage = ref(1);
 const totalPages = ref(0);
 const scale = ref(1.0);
+const rotation = ref(0);
 const loading = ref(false);
 const containerRef = ref<HTMLDivElement | null>(null);
 const isFitWidth = ref(false);
-const isContinuous = ref(true);
+type ViewMode = 'single' | 'continuous' | 'double' | 'double-continuous' | 'multi-continuous';
+const viewMode = ref<ViewMode>('continuous');
 
 const zoomOptions = [
   { label: '50%', value: 0.5 },
@@ -160,12 +216,20 @@ const zoomOptions = [
   { label: '适应页宽', value: 'fit-width' }
 ];
 
+const rotateOptions = [
+  { label: '不旋转', value: 0 },
+  { label: '顺时针旋转90°', value: 90 },
+  { label: '旋转180°', value: 180 },
+  { label: '逆时针旋转90°', value: 270 }
+];
+
 // Sidebar state
 const showSidebar = ref(true);
 const activeTab = ref('thumbnails');
 const outline = ref<any[]>([]);
 
 let pdfDoc: any = null;
+let resizeObserver: ResizeObserver | null = null;
 
 const loadPdf = async () => {
   if (!props.url) return;
@@ -237,16 +301,39 @@ const onOutlineSelect = async (_selectedKeys: any[], { node }: any) => {
   }
 };
 
-const setContinuous = (value: boolean) => {
-  if (isContinuous.value === value) return;
+const setViewMode = (mode: ViewMode) => {
+  if (viewMode.value === mode) return;
   
-  isContinuous.value = value;
-  // If switching to continuous mode, ensure we scroll to current page
-  if (value) {
+  viewMode.value = mode;
+  
+  // If switching to any continuous mode, ensure we scroll to current page
+  if (mode.includes('continuous')) {
     nextTick(() => {
       scrollToPage(currentPage.value);
     });
   }
+  
+  // Re-calculate fit width if enabled
+  if (isFitWidth.value) {
+    nextTick(() => {
+      toggleFitWidth();
+    });
+  }
+};
+
+const getViewModeLabel = (mode: ViewMode) => {
+  const map: Record<ViewMode, string> = {
+    'single': '单页视图',
+    'continuous': '多页连续',
+    'double': '双页视图',
+    'double-continuous': '双页连续',
+    'multi-continuous': '多页视图'
+  };
+  return map[mode];
+};
+
+const rotatePage = (deg: number) => {
+  rotation.value = deg;
 };
 
 const handleZoomChange = (value: number | string) => {
@@ -267,9 +354,27 @@ const toggleFitWidth = async () => {
   if (isFitWidth.value && pdfDoc && containerRef.value) {
     try {
       const page = await pdfDoc.getPage(currentPage.value);
-      const viewport = page.getViewport({ scale: 1.0 });
+      // Use props.rotation if provided, otherwise default to 0
+      const currentRotation = (page.rotate + (rotation.value || 0)) % 360;
+      const viewport = page.getViewport({ 
+        scale: 1.0,
+        rotation: currentRotation
+      });
       const containerWidth = containerRef.value.clientWidth - 48; // Subtract padding
-      scale.value = containerWidth / viewport.width;
+      
+      let targetWidth = containerWidth;
+      
+      // If in double page mode (double or double-continuous), we need to fit two pages
+      if (viewMode.value === 'double' || viewMode.value === 'double-continuous') {
+        // Subtract gap between pages (20px) and divide by 2
+        targetWidth = (containerWidth - 20) / 2;
+      }
+      // Note: multi-continuous mode logic is tricky because it flows. 
+      // Standard fit-width usually means "fit one page width to container" for reflowable,
+      // or we could treat it same as single page fit width (pages become huge and stack vertically).
+      // For now, let's keep multi-continuous same as standard continuous (fit one page).
+      
+      scale.value = targetWidth / viewport.width;
     } catch (error) {
       console.error('Error fitting width:', error);
     }
@@ -291,31 +396,46 @@ const onSinglePageLoaded = () => {
 const scrollToPage = (page: number) => {
   if (page < 1 || page > totalPages.value) return;
   
-  if (isContinuous.value) {
-    const pageElement = containerRef.value?.querySelector(`[data-page-number="${page}"]`);
+  // Ensure page is within valid range
+  let targetPage = page;
+  
+  if (viewMode.value === 'double') {
+    // In double mode, ensure we land on the first page of the pair if needed
+    // Usually odd pages are on left (1-2, 3-4) or right? 
+    // Standard PDF reader: 1 (cover), 2-3, 4-5.
+    // Simplified logic: 1-2, 3-4.
+    // If user requests page 2, we show 1-2.
+    // So normalize to odd number: 
+    if (targetPage % 2 === 0) targetPage -= 1;
+  }
+
+  if (viewMode.value.includes('continuous')) {
+    const pageElement = containerRef.value?.querySelector(`[data-page-number="${targetPage}"]`);
     if (pageElement) {
       pageElement.scrollIntoView({ behavior: 'auto' });
-      currentPage.value = page;
+      currentPage.value = targetPage;
     }
   } else {
-    currentPage.value = page;
+    currentPage.value = targetPage;
   }
 };
 
 const onPageVisible = ({ pageNumber, isIntersecting }: { pageNumber: number, isIntersecting: boolean }) => {
-  if (isContinuous.value && isIntersecting) {
+  if (viewMode.value.includes('continuous') && isIntersecting) {
     currentPage.value = pageNumber;
   }
 };
 
 const prevPage = () => {
   if (currentPage.value <= 1) return;
-  scrollToPage(currentPage.value - 1);
+  const step = viewMode.value === 'double' ? 2 : 1;
+  scrollToPage(currentPage.value - step);
 };
 
 const nextPage = () => {
   if (currentPage.value >= totalPages.value) return;
-  scrollToPage(currentPage.value + 1);
+  const step = viewMode.value === 'double' ? 2 : 1;
+  scrollToPage(currentPage.value + step);
 };
 
 const zoomIn = () => {
@@ -351,6 +471,25 @@ watch(() => props.url, () => {
 
 onMounted(() => {
   loadPdf();
+  
+  // Observe container resize to auto-fit width
+  if (containerRef.value) {
+    resizeObserver = new ResizeObserver(() => {
+      if (isFitWidth.value) {
+        // Use requestAnimationFrame to avoid "ResizeObserver loop limit exceeded" error
+        requestAnimationFrame(() => {
+          toggleFitWidth();
+        });
+      }
+    });
+    resizeObserver.observe(containerRef.value);
+  }
+});
+
+onUnmounted(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+  }
 });
 
 onUnmounted(() => {
@@ -431,17 +570,13 @@ onUnmounted(() => {
 .pdf-container {
   flex: 1;
   overflow: auto;
-  display: flex;
-  justify-content: center;
-  padding: 24px;
+  position: relative;
   background-color: #f0f2f5;
-  /* Ensure container takes full height */
-  height: 100%;
 }
 
 :deep(.ant-spin-nested-loading) {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
 }
 
 :deep(.ant-spin-container) {
@@ -483,7 +618,50 @@ onUnmounted(() => {
   transform-origin: 0% 0%;
 }
 
-:deep(.ant-tabs-content) {
-  height: 100%;
+:deep(.ant-spin-nested-loading), :deep(.ant-spin-container) {
+  min-height: 100%;
 }
+
+.pages-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 20px 40px 20px;
+}
+
+.pages-wrapper.single-page-mode {
+  /* Center single page vertically if needed */
+  justify-content: center;
+  min-height: 100%;
+}
+
+.pages-wrapper.double-page-mode {
+  justify-content: center;
+  min-height: 100%;
+}
+
+.double-page-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 20px;
+}
+
+.pages-wrapper.double-continuous-mode {
+  display: grid;
+  grid-template-columns: repeat(2, min-content);
+  justify-content: center;
+  gap: 20px;
+}
+
+.pages-wrapper.multi-continuous-mode {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+}
+
+/* Ensure pages in double continuous mode don't stretch too wide */
+/* We might need a wrapper around PdfPage for margins if not using gap */
 </style>
