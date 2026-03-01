@@ -149,7 +149,7 @@ const renderedContent = computed(() => {
 }
 
 .markdown-body :deep(pre) :deep(code) {
-  padding: 0;
+  padding: 0 !important;
   margin: 0;
   font-size: 100%;
   word-break: normal;
