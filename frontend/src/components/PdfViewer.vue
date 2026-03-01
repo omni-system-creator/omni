@@ -2,6 +2,11 @@
   <div class="pdf-viewer">
     <div class="pdf-controls">
       <a-space>
+        <a-button @click="toggleSidebar" size="small">
+          <MenuUnfoldOutlined v-if="!showSidebar" />
+          <MenuFoldOutlined v-else />
+        </a-button>
+        <a-divider type="vertical" />
         <a-button @click="prevPage" :disabled="currentPage <= 1 || loading" size="small">
           <LeftOutlined /> 上一页
         </a-button>
@@ -20,12 +25,44 @@
       </a-space>
     </div>
     
-    <div class="pdf-container">
-      <a-spin :spinning="loading">
-        <div class="canvas-wrapper">
-          <canvas ref="canvasRef"></canvas>
-        </div>
-      </a-spin>
+    <div class="pdf-main">
+      <div class="pdf-sidebar" v-if="showSidebar">
+        <a-tabs v-model:activeKey="activeTab" size="small" :tabBarStyle="{ margin: 0, padding: '0 8px' }">
+          <a-tab-pane key="thumbnails" tab="缩略图">
+            <div class="sidebar-content thumbnails-list">
+              <PdfThumbnail
+                v-for="page in totalPages"
+                :key="page"
+                :pageNumber="page"
+                :pdfDoc="pdfDoc"
+                :scale="0.2"
+                :active="currentPage === page"
+                @click="goToPage(page)"
+              />
+            </div>
+          </a-tab-pane>
+          <a-tab-pane key="outline" tab="大纲">
+            <div class="sidebar-content outline-tree">
+              <a-tree
+                v-if="outline.length > 0"
+                :treeData="outline"
+                :fieldNames="{ title: 'title', key: 'key', children: 'items' }"
+                @select="onOutlineSelect"
+                blockNode
+              />
+              <a-empty v-else description="暂无大纲" :image="Empty.PRESENTED_IMAGE_SIMPLE" />
+            </div>
+          </a-tab-pane>
+        </a-tabs>
+      </div>
+      
+      <div class="pdf-container">
+        <a-spin :spinning="loading">
+          <div class="canvas-wrapper">
+            <canvas ref="canvasRef"></canvas>
+          </div>
+        </a-spin>
+      </div>
     </div>
   </div>
 </template>
@@ -36,12 +73,16 @@ import {
   LeftOutlined, 
   RightOutlined, 
   MinusOutlined, 
-  PlusOutlined 
+  PlusOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined
 } from '@ant-design/icons-vue';
+import { Empty } from 'ant-design-vue';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
+import PdfThumbnail from './PdfThumbnail.vue';
 
 // Set worker source to static file in public directory
-GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.mjs';
+GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.js';
 
 const props = defineProps<{
   url: string;
@@ -52,6 +93,11 @@ const totalPages = ref(0);
 const scale = ref(1.0);
 const loading = ref(false);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
+
+// Sidebar state
+const showSidebar = ref(true);
+const activeTab = ref('thumbnails');
+const outline = ref<any[]>([]);
 
 let pdfDoc: any = null;
 let renderTask: any = null;
@@ -68,16 +114,62 @@ const loadPdf = async () => {
     }
     currentPage.value = 1;
     totalPages.value = 0;
+    outline.value = [];
     
     const loadingTask = getDocument(props.url);
     pdfDoc = await loadingTask.promise;
     totalPages.value = pdfDoc.numPages;
+    
+    // Load outline
+    const rawOutline = await pdfDoc.getOutline();
+    if (rawOutline) {
+      outline.value = await processOutline(rawOutline);
+    }
     
     await renderPage(currentPage.value);
   } catch (error) {
     console.error('Error loading PDF:', error);
   } finally {
     loading.value = false;
+  }
+};
+
+const processOutline = async (items: any[]): Promise<any[]> => {
+  const result = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const node: any = {
+      title: item.title,
+      key: `outline-${i}-${Math.random()}`,
+      dest: item.dest
+    };
+    
+    if (item.items && item.items.length > 0) {
+      node.items = await processOutline(item.items);
+    } else {
+      node.isLeaf = true;
+    }
+    
+    result.push(node);
+  }
+  return result;
+};
+
+const onOutlineSelect = async (_selectedKeys: any[], { node }: any) => {
+  if (!node.dest) return;
+  
+  try {
+    let dest = node.dest;
+    if (typeof dest === 'string') {
+      dest = await pdfDoc.getDestination(dest);
+    }
+    
+    if (dest) {
+      const pageIndex = await pdfDoc.getPageIndex(dest[0]);
+      goToPage(pageIndex + 1);
+    }
+  } catch (error) {
+    console.error('Error navigating to outline destination:', error);
   }
 };
 
@@ -133,6 +225,12 @@ const nextPage = () => {
   renderPage(currentPage.value);
 };
 
+const goToPage = (page: number) => {
+  if (page < 1 || page > totalPages.value) return;
+  currentPage.value = page;
+  renderPage(currentPage.value);
+};
+
 const zoomIn = () => {
   if (scale.value >= 3.0) return;
   scale.value += 0.1;
@@ -143,6 +241,10 @@ const zoomOut = () => {
   if (scale.value <= 0.5) return;
   scale.value -= 0.1;
   renderPage(currentPage.value);
+};
+
+const toggleSidebar = () => {
+  showSidebar.value = !showSidebar.value;
 };
 
 watch(() => props.url, () => {
@@ -177,11 +279,38 @@ onUnmounted(() => {
   background-color: #fff;
   border-bottom: 1px solid #d9d9d9;
   display: flex;
-  justify-content: center;
   align-items: center;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   z-index: 10;
   flex-shrink: 0;
+}
+
+.pdf-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.pdf-sidebar {
+  width: 240px;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  height: calc(100vh - 150px); /* Approximate height minus headers */
+}
+
+.thumbnails-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .pdf-container {
@@ -190,6 +319,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   padding: 24px;
+  background-color: #f0f2f5;
 }
 
 .canvas-wrapper {
@@ -198,5 +328,9 @@ onUnmounted(() => {
   line-height: 0; /* Remove extra space below canvas */
   height: fit-content; /* Ensure wrapper takes content height */
   width: fit-content; /* Ensure wrapper takes content width */
+}
+
+:deep(.ant-tabs-content) {
+  height: 100%;
 }
 </style>
