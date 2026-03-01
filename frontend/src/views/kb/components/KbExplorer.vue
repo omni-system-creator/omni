@@ -83,13 +83,13 @@
             :key="file.id"
             class="file-card"
             :class="{ active: selectedFiles.includes(file.id) }"
-            @click="file.isFolder ? handleFolderClick(file) : viewFile(file)"
+            @click="handleSelectFile(file, $event)"
             @contextmenu.prevent="handleContextMenu($event)"
           >
-            <div class="file-icon">
+            <div class="file-icon" @click.stop="file.isFolder ? handleFolderClick(file) : viewFile(file)">
               <component :is="getFileIcon(getFileType(file))" :style="{ color: getFileColor(getFileType(file)) }" />
             </div>
-            <div class="file-name" :title="file.name">
+            <div class="file-name" :title="file.name" @click.stop="file.isFolder ? handleFolderClick(file) : viewFile(file)">
                 {{ file.name }}
             </div>
             <div class="file-meta">{{ file.size }}</div>
@@ -108,10 +108,10 @@
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'name'">
-                <div class="list-name-cell" @click="record.isFolder ? handleFolderClick(record as KbFileDto) : viewFile(record as KbFileDto)">
+                <div class="list-name-cell">
                   <component :is="getFileIcon(getFileType(record as KbFileDto))" :style="{ color: getFileColor(getFileType(record as KbFileDto)), marginRight: '8px', fontSize: '18px', flexShrink: 0 }" />
                   <a-tooltip :title="record.name" placement="topLeft">
-                    <span class="file-name-text">{{ record.name }}</span>
+                    <span class="file-name-text" @click.stop="record.isFolder ? handleFolderClick(record as KbFileDto) : viewFile(record as KbFileDto)">{{ record.name }}</span>
                   </a-tooltip>
                 </div>
               </template>
@@ -401,6 +401,7 @@ watch(() => props.currentKb, (kb) => {
 }, { immediate: true });
 
 const handleSelectFile = (file: KbFileDto, event: MouseEvent) => {
+  event.stopPropagation(); // Stop propagation to avoid triggering row click if nested
   let newSelected: string[] = [];
   if (event.ctrlKey || event.metaKey) {
     const index = selectedFiles.value.indexOf(file.id);
@@ -411,6 +412,8 @@ const handleSelectFile = (file: KbFileDto, event: MouseEvent) => {
       newSelected = [...selectedFiles.value, file.id];
     }
   } else {
+    // If clicking on an already selected item without ctrl, keep it selected (or deselect others)
+    // But here we want standard behavior: click selects only this one
     newSelected = [file.id];
   }
   selectedFiles.value = newSelected;
@@ -422,7 +425,7 @@ const onSelectChange = (keys: any[]) => {
 
 const customRow = (record: KbFileDto) => {
   return {
-    onDblclick: () => record.isFolder ? handleFolderClick(record) : viewFile(record),
+    onClick: (event: MouseEvent) => handleSelectFile(record, event),
     onContextmenu: (e: MouseEvent) => handleContextMenu(e, record)
   };
 };
