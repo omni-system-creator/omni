@@ -66,6 +66,7 @@ const renderedContent = computed(() => {
 .markdown-body :deep(td) {
   padding: 8px 16px;
   border: 1px solid #d0d7de;
+  text-align: left;
 }
 
 .markdown-body :deep(th) {
