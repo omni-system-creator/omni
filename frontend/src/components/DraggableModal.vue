@@ -97,6 +97,18 @@ const props = defineProps({
     type: Number,
     default: undefined
   },
+  initialMaximized: {
+    type: Boolean,
+    default: false
+  },
+  minWidth: {
+    type: Number,
+    default: 400
+  },
+  minHeight: {
+    type: Number,
+    default: 300
+  },
   centered: {
     type: Boolean,
     default: false
@@ -129,6 +141,9 @@ watch(() => props.visible, (newVal) => {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
+    // Set initial maximized state
+    isMaximized.value = props.initialMaximized;
+
     const parseSize = (val: number | string, viewportSize: number, defaultVal: number): number | string => {
       if (val === 'auto') return 'auto';
       if (typeof val === 'number') return val;
@@ -148,14 +163,18 @@ watch(() => props.visible, (newVal) => {
     const targetWidth = parseSize(props.width, viewportWidth, 800);
     const targetHeight = parseSize(props.height, viewportHeight, 600);
 
-    modalState.value.width = targetWidth;
-    modalState.value.height = targetHeight;
+    // Ensure dimensions respect min constraints
+    const finalWidth = typeof targetWidth === 'number' ? Math.max(targetWidth, props.minWidth) : targetWidth;
+    const finalHeight = typeof targetHeight === 'number' ? Math.max(targetHeight, props.minHeight) : targetHeight;
+
+    modalState.value.width = finalWidth;
+    modalState.value.height = finalHeight;
     
     // Ensure the modal is centered or uses initial position
     if (props.initialX !== undefined) {
       modalState.value.x = props.initialX;
     } else {
-      const numericWidth = typeof targetWidth === 'number' ? targetWidth : 800;
+      const numericWidth = typeof finalWidth === 'number' ? finalWidth : 800;
       modalState.value.x = Math.max(0, (viewportWidth - numericWidth) / 2);
     }
     
@@ -173,7 +192,7 @@ watch(() => props.visible, (newVal) => {
     } else if (targetHeight === 'auto') {
       modalState.value.y = 100;
     } else {
-      const numericHeight = typeof targetHeight === 'number' ? targetHeight : 600;
+      const numericHeight = typeof finalHeight === 'number' ? finalHeight : 600;
       modalState.value.y = Math.max(0, (viewportHeight - numericHeight) / 2);
     }
   }
@@ -256,8 +275,8 @@ const onResize = (e: MouseEvent) => {
   if (!isResizing.value) return;
   const dx = e.clientX - resizeStart.value.x;
   const dy = e.clientY - resizeStart.value.y;
-  modalState.value.width = Math.max(400, resizeStart.value.width + dx);
-  modalState.value.height = Math.max(300, resizeStart.value.height + dy);
+  modalState.value.width = Math.max(props.minWidth, resizeStart.value.width + dx);
+  modalState.value.height = Math.max(props.minHeight, resizeStart.value.height + dy);
 };
 
 const stopResize = () => {

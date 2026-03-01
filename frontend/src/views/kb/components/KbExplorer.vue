@@ -83,8 +83,7 @@
             :key="file.id"
             class="file-card"
             :class="{ active: selectedFiles.includes(file.id) }"
-            @click="handleSelectFile(file, $event)"
-            @dblclick="file.isFolder ? handleFolderClick(file) : viewFile(file)"
+            @click="file.isFolder ? handleFolderClick(file) : viewFile(file)"
             @contextmenu.prevent="handleContextMenu($event)"
           >
             <div class="file-icon">
@@ -109,7 +108,7 @@
           >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'name'">
-                <div class="list-name-cell" @dblclick="record.isFolder ? handleFolderClick(record as KbFileDto) : viewFile(record as KbFileDto)">
+                <div class="list-name-cell" @click="record.isFolder ? handleFolderClick(record as KbFileDto) : viewFile(record as KbFileDto)">
                   <component :is="getFileIcon(getFileType(record as KbFileDto))" :style="{ color: getFileColor(getFileType(record as KbFileDto)), marginRight: '8px', fontSize: '18px', flexShrink: 0 }" />
                   <a-tooltip :title="record.name" placement="topLeft">
                     <span class="file-name-text">{{ record.name }}</span>
@@ -166,6 +165,31 @@
         tree-default-expand-all
       />
     </a-modal>
+    
+    <DraggableModal
+      v-model:visible="isViewerVisible"
+      :title="viewerFile?.name"
+      width="80%"
+      height="80vh"
+      :footer="false"
+      bodyPadding="0"
+      :initialMaximized="true"
+      :minWidth="600"
+      :minHeight="400"
+    >
+      <div class="viewer-container" style="height: 100%; display: flex; flex-direction: column;">
+        <a-spin :spinning="viewerLoading" wrapperClassName="viewer-spin" style="height: 100%;">
+          <div v-if="viewerType === 'image'" style="height: 100%; width: 100%; overflow: auto; display: flex; justify-content: center; align-items: center; background: #f0f2f5;">
+            <img :src="viewerContent" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+          </div>
+          <div v-else-if="viewerType === 'pdf'" style="height: 100%; width: 100%;">
+            <iframe :src="viewerContent" style="width: 100%; height: 100%; border: none;"></iframe>
+          </div>
+          <div v-else-if="viewerType === 'markdown'" class="markdown-body" style="padding: 24px; overflow: auto; height: 100%; box-sizing: border-box;" v-html="md.render(viewerContent)"></div>
+          <div v-else-if="viewerType === 'text'" style="padding: 24px; overflow: auto; height: 100%; white-space: pre-wrap; font-family: monospace; box-sizing: border-box;">{{ viewerContent }}</div>
+        </a-spin>
+      </div>
+    </DraggableModal>
   </div>
 </template>
 
@@ -207,6 +231,10 @@ import {
 } from '@/api/kb';
 import type { TreeSelectProps } from 'ant-design-vue';
 import { usePermissionStore } from '@/stores/permission';
+import MarkdownIt from 'markdown-it';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github.css';
+import DraggableModal from '@/components/DraggableModal.vue';
 
 const props = defineProps<{ currentKb: KbInfoDto | null }>();
 
@@ -299,6 +327,30 @@ const isNewFolderVisible = ref(false);
 const newFolderName = ref('');
 const currentFolderId = ref<string | null>(null);
 const folderTreeData = ref<TreeSelectProps['treeData']>([]);
+
+// Viewer state
+const isViewerVisible = ref(false);
+const viewerFile = ref<KbFileDto | null>(null);
+const viewerContent = ref<string>('');
+const viewerLoading = ref(false);
+const viewerType = ref<'markdown' | 'image' | 'pdf' | 'text' | 'unknown'>('unknown');
+
+// Markdown Setup
+const md: any = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  highlight: function (str: string, lang: string): string {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        return '<pre class="hljs"><code>' +
+               hljs.highlight(str, { language: lang, ignoreIllegals: true }).value +
+               '</code></pre>';
+      } catch (__) {}
+    }
+    return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
+  }
+});
 
 const filteredFiles = computed(() => {
   let list = files.value;
@@ -413,8 +465,56 @@ const customUpload = async (options: any) => {
   }
 };
 
-const viewFile = (file: KbFileDto) => {
-  message.info(`预览文件: ${file.name}`);
+const viewFile = async (file: KbFileDto) => {
+  const type = getFileType(file);
+  viewerFile.value = file;
+  isViewerVisible.value = true;
+  viewerLoading.value = true;
+  viewerContent.value = '';
+  viewerType.value = 'unknown';
+
+  try {
+    const url = getKbFileDownloadUrl(file.id);
+    
+    if (type === 'image') {
+      viewerType.value = 'image';
+      viewerContent.value = url;
+      viewerLoading.value = false;
+    } else if (type === 'pdf') {
+      viewerType.value = 'pdf';
+      viewerContent.value = url;
+      viewerLoading.value = false;
+    } else if (type === 'text' || type === 'unknown') {
+      // Try to fetch as text
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${JSON.parse(localStorage.getItem('oms.auth') || '{}').token}`
+        }
+      });
+      if (response.ok) {
+        const text = await response.text();
+        viewerContent.value = text;
+        if (file.name.toLowerCase().endsWith('.md')) {
+          viewerType.value = 'markdown';
+        } else {
+          viewerType.value = 'text';
+        }
+      } else {
+        throw new Error('Failed to load file content');
+      }
+      viewerLoading.value = false;
+    } else {
+      // Fallback for other types
+      message.info(`该文件类型暂不支持在线预览: ${file.name}`);
+      isViewerVisible.value = false;
+      viewerLoading.value = false;
+    }
+  } catch (e) {
+    console.error(e);
+    message.error('加载文件失败');
+    isViewerVisible.value = false;
+    viewerLoading.value = false;
+  }
 };
 
 const downloadFile = (file: KbFileDto) => {
@@ -626,6 +726,11 @@ const handleDrop = () => {
   transform: translateY(-2px);
 }
 
+.file-card:hover .file-name {
+  color: #1890ff;
+  text-decoration: underline;
+}
+
 .file-card.active {
   border-color: #1890ff;
   background: #e6f7ff;
@@ -661,9 +766,52 @@ const handleDrop = () => {
   cursor: pointer;
 }
 
+.list-name-cell:hover .file-name-text {
+  color: #1890ff;
+  text-decoration: underline;
+}
+
 .file-name-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.viewer-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.full-screen-modal) {
+  top: 0;
+  padding: 0;
+}
+
+:deep(.full-screen-modal .ant-modal) {
+  top: 0;
+  padding: 0;
+  max-width: 100%;
+  height: 100vh;
+}
+
+:deep(.full-screen-modal .ant-modal-content) {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border-radius: 0;
+}
+
+:deep(.full-screen-modal .ant-modal-body) {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+}
+
+:deep(.viewer-spin) {
+  height: 100%;
+}
+:deep(.viewer-spin .ant-spin-container) {
+  height: 100%;
 }
 </style>
