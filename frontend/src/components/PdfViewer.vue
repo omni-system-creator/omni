@@ -40,12 +40,8 @@ import {
 } from '@ant-design/icons-vue';
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
 
-// Import worker as a URL resource using Vite's ?url suffix
-// @ts-ignore
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-
-// Set worker source to local file
-GlobalWorkerOptions.workerSrc = pdfWorker;
+// Set worker source to static file in public directory
+GlobalWorkerOptions.workerSrc = '/static/pdf.worker.min.mjs';
 
 const props = defineProps<{
   url: string;
@@ -200,5 +196,7 @@ onUnmounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   background-color: #fff;
   line-height: 0; /* Remove extra space below canvas */
+  height: fit-content; /* Ensure wrapper takes content height */
+  width: fit-content; /* Ensure wrapper takes content width */
 }
 </style>
