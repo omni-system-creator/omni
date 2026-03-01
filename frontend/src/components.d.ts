@@ -106,6 +106,7 @@ declare module 'vue' {
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     IconSelector: typeof import('./components/IconSelector.vue')['default']
     MarkdownViewer: typeof import('./components/MarkdownViewer.vue')['default']
+    PdfPage: typeof import('./components/PdfPage.vue')['default']
     PdfThumbnail: typeof import('./components/PdfThumbnail.vue')['default']
     PdfViewer: typeof import('./components/PdfViewer.vue')['default']
     PendingTasks: typeof import('./components/widgets/PendingTasks.vue')['default']
