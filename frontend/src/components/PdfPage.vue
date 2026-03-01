@@ -1,6 +1,6 @@
 <template>
   <div class="pdf-page" ref="pageRef" :data-page-number="pageNumber">
-    <div class="page-container" ref="containerRef">
+    <div class="page-container">
       <div class="page-number-indicator">{{ pageNumber }} / {{ pdfDoc.numPages }}</div>
       <a-spin :spinning="loading">
         <div class="canvas-wrapper" :style="wrapperStyle">
@@ -32,7 +32,6 @@ const emit = defineEmits(['loaded', 'update:visible']);
 const loading = ref(true);
 const rendered = ref(false);
 const pageRef = ref<HTMLDivElement | null>(null);
-const containerRef = ref<HTMLDivElement | null>(null);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const textLayerRef = ref<HTMLDivElement | null>(null);
 const viewport = ref<any>(null);

@@ -175,8 +175,6 @@ import {
   PlusOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  ExpandOutlined,
-  CompressOutlined,
   DownOutlined,
   RotateRightOutlined
 } from '@ant-design/icons-vue';
