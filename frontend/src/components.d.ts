@@ -105,6 +105,7 @@ declare module 'vue' {
     DynamicIcon: typeof import('./components/DynamicIcon.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     IconSelector: typeof import('./components/IconSelector.vue')['default']
+    MarkdownViewer: typeof import('./components/MarkdownViewer.vue')['default']
     PendingTasks: typeof import('./components/widgets/PendingTasks.vue')['default']
     ProjectList: typeof import('./components/widgets/ProjectList.vue')['default']
     QuickNav: typeof import('./components/widgets/QuickNav.vue')['default']

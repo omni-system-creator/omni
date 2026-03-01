@@ -185,7 +185,7 @@
           <div v-else-if="viewerType === 'pdf'" style="height: 100%; width: 100%;">
             <iframe :src="viewerContent" style="width: 100%; height: 100%; border: none;"></iframe>
           </div>
-          <div v-else-if="viewerType === 'markdown'" class="markdown-body" style="padding: 24px; overflow: auto; height: 100%; box-sizing: border-box;" v-html="md.render(viewerContent)"></div>
+          <MarkdownViewer v-else-if="viewerType === 'markdown'" :content="viewerContent" />
           <div v-else-if="viewerType === 'text'" style="padding: 24px; overflow: auto; height: 100%; white-space: pre-wrap; font-family: monospace; box-sizing: border-box;">{{ viewerContent }}</div>
         </a-spin>
       </div>
@@ -231,10 +231,8 @@ import {
 } from '@/api/kb';
 import type { TreeSelectProps } from 'ant-design-vue';
 import { usePermissionStore } from '@/stores/permission';
-import MarkdownIt from 'markdown-it';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/github.css';
 import DraggableModal from '@/components/DraggableModal.vue';
+import MarkdownViewer from '@/components/MarkdownViewer.vue';
 
 const props = defineProps<{ currentKb: KbInfoDto | null }>();
 
@@ -336,6 +334,7 @@ const viewerLoading = ref(false);
 const viewerType = ref<'markdown' | 'image' | 'pdf' | 'text' | 'unknown'>('unknown');
 
 // Markdown Setup
+/*
 const md: any = new MarkdownIt({
   html: true,
   linkify: true,
@@ -351,6 +350,7 @@ const md: any = new MarkdownIt({
     return '<pre class="hljs"><code>' + md.utils.escapeHtml(str) + '</code></pre>';
   }
 });
+*/
 
 const filteredFiles = computed(() => {
   let list = files.value;
@@ -817,4 +817,6 @@ const handleDrop = () => {
 :deep(.viewer-spin .ant-spin-container) {
   height: 100%;
 }
+
+/* Markdown Styles Removed (Moved to MarkdownViewer.vue) */
 </style>
