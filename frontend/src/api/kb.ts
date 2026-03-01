@@ -102,6 +102,68 @@ export function sendChatMessage(data: SendMessageDto) {
   return request.post<any, ChatMessageDto>('/kb/chat', data)
 }
 
+export async function sendChatMessageStream(
+  data: SendMessageDto, 
+  onChunk: (content: string) => void,
+  onDone?: () => void,
+  onError?: (err: any) => void
+) {
+  try {
+    const authData = JSON.parse(localStorage.getItem('oms.auth') || '{}');
+    const token = authData.token;
+    
+    const response = await fetch('/api/kb/chat/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+    
+    if (!reader) return;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data: ')) continue;
+        
+        const dataStr = trimmed.slice(6);
+        if (dataStr === '[DONE]') {
+          onDone?.();
+          return;
+        }
+        
+        try {
+          const parsed = JSON.parse(dataStr);
+          if (parsed.content) {
+            onChunk(parsed.content);
+          }
+        } catch (e) {
+          console.error('Error parsing SSE data', e);
+        }
+      }
+    }
+    onDone?.();
+  } catch (error) {
+    onError?.(error);
+    console.error('Stream error:', error);
+  }
+}
+
 export function getAvailableModels() {
   return request.get<any, SiliconModelDto[]>('/kb/models')
 }

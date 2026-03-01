@@ -100,7 +100,7 @@ import {
 import { message } from 'ant-design-vue';
 import type { ChatMessageDto, KbInfoDto, SendMessageDto, SiliconModelDto } from '@/types/kb';
 import type { DictDataDto } from '../../../api/dict';
-import { getChatHistory, sendChatMessage, getAvailableModels, deleteChatHistory, deleteKbQaHistory } from '@/api/kb';
+import { getChatHistory, sendChatMessageStream, getAvailableModels, deleteChatHistory, deleteKbQaHistory } from '@/api/kb';
 import { useUserStore } from '@/stores/user';
 import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
@@ -279,24 +279,30 @@ const sendMessage = async () => {
   const aiIndex = messages.value.length - 1;
   try {
     const payload: SendMessageDto = { kbId: props.currentKb.id, message: prompt, model: selectedModel.value };
-    const res = await sendChatMessage(payload);
-    // Update IDs for both user prompt and AI answer
-    const userMsg = messages.value[aiIndex - 1];
-    if (userMsg) {
-      userMsg.id = res.id;
-    }
-    const aiMsg = messages.value[aiIndex];
-    if (aiMsg) {
-      aiMsg.id = res.id;
-      aiMsg.content = res.content || '';
-      aiMsg.sources = res.sources || [];
-      aiMsg.createdAt = res.createdAt;
-    }
-  } catch {
+    
+    await sendChatMessageStream(payload, 
+      (chunk) => {
+        if (messages.value[aiIndex]) {
+          messages.value[aiIndex].content += chunk;
+          scrollToBottom();
+        }
+      },
+      () => {
+        isThinking.value = false;
+      },
+      (err) => {
+        console.error(err);
+        if (messages.value[aiIndex]) {
+          messages.value[aiIndex].content += '\n[发生错误，请重试]';
+        }
+        isThinking.value = false;
+      }
+    );
+  } catch (e) {
+    console.error(e);
     if (messages.value[aiIndex]) {
       messages.value[aiIndex].content += '\n[发生错误，请重试]';
     }
-  } finally {
     isThinking.value = false;
   }
 };
