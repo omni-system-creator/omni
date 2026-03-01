@@ -123,17 +123,21 @@ const renderedContent = computed(() => {
 
 .markdown-body :deep(pre),
 .markdown-body :deep(code) {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  padding: 0;
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  font-variant-ligatures: none; /* Disable ligatures which can mess up alignment */
+  -webkit-font-smoothing: antialiased;
 }
 
 .markdown-body :deep(pre) {
   padding: 16px;
   overflow: auto;
-  font-size: 85%;
-  line-height: 1.45;
+  font-size: 14px; /* Set explicit size */
+  line-height: 1.2; /* Tighter line height for ASCII art */
   background-color: #f6f8fa;
   border-radius: 6px;
   margin-bottom: 16px;
+  white-space: pre; /* Ensure whitespace is preserved exactly */
 }
 
 .markdown-body :deep(code) {
@@ -152,8 +156,9 @@ const renderedContent = computed(() => {
   white-space: pre;
   background: transparent;
   border: 0;
-  border-radius: 0; /* Remove border radius for code block content */
-  line-height: inherit; /* Ensure line height matches pre */
+  border-radius: 0;
+  line-height: inherit;
+  font-family: inherit; /* Ensure font matches pre */
 }
 
 .markdown-body :deep(img) {
