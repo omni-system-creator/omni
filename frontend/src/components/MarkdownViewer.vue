@@ -152,6 +152,8 @@ const renderedContent = computed(() => {
   white-space: pre;
   background: transparent;
   border: 0;
+  border-radius: 0; /* Remove border radius for code block content */
+  line-height: inherit; /* Ensure line height matches pre */
 }
 
 .markdown-body :deep(img) {
