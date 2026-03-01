@@ -133,8 +133,8 @@ const renderedContent = computed(() => {
   padding: 16px;
   overflow: auto;
   font-size: 14px; /* Set explicit size */
-  line-height: 1.2; /* Tighter line height for ASCII art */
-  background-color: #f6f8fa;
+  line-height: 1.0; /* Tighter line height for ASCII art */
+  background-color: #f6f8fa; /* Ensure background is present */
   border-radius: 6px;
   margin-bottom: 16px;
   white-space: pre; /* Ensure whitespace is preserved exactly */
@@ -144,7 +144,7 @@ const renderedContent = computed(() => {
   padding: 0.2em 0.4em;
   margin: 0;
   font-size: 85%;
-  background-color: rgba(175, 184, 193, 0.2);
+  background-color: rgba(175, 184, 193, 0.2); /* Restore inline code background */
   border-radius: 6px;
 }
 
@@ -154,7 +154,7 @@ const renderedContent = computed(() => {
   font-size: 100%;
   word-break: normal;
   white-space: pre;
-  background: transparent;
+  background: none !important; /* Force remove background */
   border: 0;
   border-radius: 0;
   line-height: inherit;
