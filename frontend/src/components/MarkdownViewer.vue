@@ -148,13 +148,13 @@ const renderedContent = computed(() => {
   border-radius: 6px;
 }
 
-.markdown-body :deep(pre) :deep(code) {
+.markdown-body :deep(pre code) {
   padding: 0 !important;
   margin: 0;
   font-size: 100%;
   word-break: normal;
   white-space: pre;
-  background: none !important; /* Force remove background */
+  background: transparent !important; /* Force remove background */
   border: 0;
   border-radius: 0;
   line-height: inherit;
