@@ -121,6 +121,11 @@ const renderedContent = computed(() => {
   border-left: 0.25em solid #d0d7de;
 }
 
+.markdown-body :deep(pre),
+.markdown-body :deep(code) {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
 .markdown-body :deep(pre) {
   padding: 16px;
   overflow: auto;
@@ -156,9 +161,9 @@ const renderedContent = computed(() => {
 }
 
 .markdown-body :deep(hr) {
-  height: 0.25em;
+  height: 1px;
   padding: 0;
-  margin: 24px 0;
+  margin: 16px 0;
   background-color: #d0d7de;
   border: 0;
 }
