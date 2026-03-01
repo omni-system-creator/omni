@@ -183,7 +183,7 @@
             <img :src="viewerContent" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
           </div>
           <div v-else-if="viewerType === 'pdf'" style="height: 100%; width: 100%;">
-            <iframe :src="viewerContent" style="width: 100%; height: 100%; border: none;"></iframe>
+            <PdfViewer :url="viewerContent" />
           </div>
           <MarkdownViewer v-else-if="viewerType === 'markdown'" :content="viewerContent" />
           <div v-else-if="viewerType === 'text'" style="padding: 24px; overflow: auto; height: 100%; white-space: pre-wrap; font-family: monospace; box-sizing: border-box;">{{ viewerContent }}</div>
@@ -233,6 +233,7 @@ import type { TreeSelectProps } from 'ant-design-vue';
 import { usePermissionStore } from '@/stores/permission';
 import DraggableModal from '@/components/DraggableModal.vue';
 import MarkdownViewer from '@/components/MarkdownViewer.vue';
+import PdfViewer from '@/components/PdfViewer.vue';
 
 const props = defineProps<{ currentKb: KbInfoDto | null }>();
 
