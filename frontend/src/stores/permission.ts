@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { getRoutes, getPermissions } from '@/api/auth';
-import type { RouteRecordRaw } from 'vue-router';
+import { RouterView, type RouteRecordRaw } from 'vue-router';
 
 // 导入所有视图组件
 const modules = import.meta.glob('../views/**/*.vue');
@@ -69,7 +69,7 @@ export const usePermissionStore = defineStore('permission', () => {
 });
 
 // 递归处理后端路由数据
-function filterAsyncRoutes(routes: any[]) {
+function filterAsyncRoutes(routes: any[], depth = 0) {
   const res: RouteRecordRaw[] = [];
 
   routes.forEach(route => {
@@ -104,8 +104,8 @@ function filterAsyncRoutes(routes: any[]) {
       const componentPath = `../${component}`;
       tmp = {
         path: route.path,
-        component: component === 'Layout' 
-          ? () => import('@/layouts/MainLayout.vue') 
+        component: component === 'Layout'
+          ? (depth === 0 ? () => import('@/layouts/MainLayout.vue') : RouterView)
           : (modules[componentPath] || (() => import('@/views/error/404.vue'))),
         name: route.key,
         meta: {
@@ -117,7 +117,7 @@ function filterAsyncRoutes(routes: any[]) {
       };
 
       if (route.children && route.children.length > 0) {
-        tmp.children = filterAsyncRoutes(route.children);
+        tmp.children = filterAsyncRoutes(route.children, depth + 1);
       }
     }
 

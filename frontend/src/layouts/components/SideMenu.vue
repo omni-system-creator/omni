@@ -28,30 +28,7 @@
           :builtinPlacements="builtinPlacements"
           @openChange="onOpenChange as any"
         >
-          <template v-for="item in menuData" :key="item.key">
-            <!-- If item has children, render SubMenu -->
-            <a-sub-menu v-if="item.children && item.children.length > 0" :key="item.key + '_sub'" popupClassName="sider-popup-menu">
-              <template #title>
-                <span>
-                  <DynamicIcon :icon="item.icon" v-if="item.icon" />
-                  <span>{{ item.title }}</span>
-                </span>
-              </template>
-              <!-- 仅在弹出菜单中显示的标题 -->
-              <a-menu-item :key="item.key + '_title'" disabled class="popup-menu-title">
-                {{ item.title }}
-              </a-menu-item>
-              <a-menu-item v-for="child in item.children" :key="child.key" @click="handleMenuClick(child)">
-                {{ child.title }}
-              </a-menu-item>
-            </a-sub-menu>
-
-            <!-- If item has no children, render MenuItem -->
-            <a-menu-item v-else :key="item.key" @click="handleMenuClick(item)">
-              <DynamicIcon :icon="item.icon" v-if="item.icon" />
-              <span>{{ item.title }}</span>
-            </a-menu-item>
-          </template>
+          <SideMenuTree :items="menuData" :on-item-click="handleMenuClick" />
         </a-menu>
       </a-spin>
     </div>
@@ -71,6 +48,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useSystemStore } from '@/stores/system';
 import { useUserStore } from '@/stores/user';
 import DynamicIcon from '@/components/DynamicIcon.vue';
+import SideMenuTree from './SideMenuTree.vue';
 import type { MenuItem } from '@/types/menu';
 
 const props = defineProps<{
@@ -508,6 +486,15 @@ watch(
 }
 .menu-container.is-expanded :deep(.ant-menu-sub .ant-menu-item) {
   padding-left: 42px !important;
+}
+.menu-container.is-expanded :deep(.ant-menu-sub .ant-menu-submenu-title) {
+  padding-left: 42px !important;
+}
+.menu-container.is-expanded :deep(.ant-menu-sub .ant-menu-sub .ant-menu-item) {
+  padding-left: 66px !important;
+}
+.menu-container.is-expanded :deep(.ant-menu-sub .ant-menu-sub .ant-menu-submenu-title) {
+  padding-left: 66px !important;
 }
 
 .menu-container.is-collapsed :deep(.ant-menu-inline-collapsed >.ant-menu-submenu>.ant-menu-submenu-title .anticon +span) {
