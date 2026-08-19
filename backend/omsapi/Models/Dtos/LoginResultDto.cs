@@ -16,7 +16,6 @@ namespace omsapi.Models.Dtos
         public string? Avatar { get; set; }
         public string? Status { get; set; }
         public List<long> Roles { get; set; } = new();
-        public List<string> RoleCodes { get; set; } = new();
         public long? DeptId { get; set; }
         public bool IsAdmin { get; set; }
     }

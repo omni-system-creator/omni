@@ -19,7 +19,6 @@
             <a-select-option value="">全部</a-select-option>
             <a-select-option value="pending">待审核</a-select-option>
             <a-select-option value="approved">已通过</a-select-option>
-            <a-select-option value="disabled">已停用</a-select-option>
             <a-select-option value="rejected">已拒绝</a-select-option>
           </a-select>
         </a-space>
@@ -68,12 +67,6 @@
                         <a href="javascript:;" @click="handleReject(record)" style="color: #ff4d4f">拒绝</a>
                       </a-menu-item>
                     </template>
-                    <a-menu-item v-if="record.status === 'approved'" key="disable">
-                      <a href="javascript:;" @click="handleDisable(record)" style="color: #fa8c16">停用</a>
-                    </a-menu-item>
-                    <a-menu-item v-if="record.status === 'disabled'" key="enable">
-                      <a href="javascript:;" @click="handleEnable(record)" style="color: #52c41a">启用</a>
-                    </a-menu-item>
                     <a-menu-item key="delete">
                       <a href="javascript:;" @click="handleDelete(record)" style="color: #ff4d4f">删除</a>
                     </a-menu-item>
@@ -108,9 +101,6 @@
             {{ getStatusText(currentRecord.status) }}
           </a-tag>
         </a-descriptions-item>
-        <a-descriptions-item label="停用说明" v-if="currentRecord.status === 'disabled'">
-          当前组织已停用，组织下所有用户暂不允许登录；恢复启用后可再次登录。
-        </a-descriptions-item>
         <a-descriptions-item label="拒绝原因" v-if="currentRecord.status === 'rejected'">
           {{ currentRecord.rejectReason }}
         </a-descriptions-item>
@@ -139,20 +129,6 @@
             <a-button type="primary" @click="handleApprove(currentRecord)">通过</a-button>
             <a-button danger @click="handleReject(currentRecord)">拒绝</a-button>
           </template>
-          <a-button
-            v-if="currentRecord && currentRecord.status === 'approved'"
-            danger
-            @click="handleDisable(currentRecord)"
-          >
-            停用组织
-          </a-button>
-          <a-button
-            v-if="currentRecord && currentRecord.status === 'disabled'"
-            type="primary"
-            @click="handleEnable(currentRecord)"
-          >
-            启用组织
-          </a-button>
           <a-popconfirm
             v-if="currentRecord"
             title="确定要删除该申请记录吗？"
@@ -187,15 +163,7 @@
 import { ref, onMounted, reactive, createVNode } from 'vue';
 import { message, Modal } from 'ant-design-vue';
 import { ReloadOutlined, MoreOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue';
-import {
-  getOrgRegistrationList,
-  approveOrgRegistration,
-  rejectOrgRegistration,
-  disableOrgRegistration,
-  enableOrgRegistration,
-  deleteOrgRegistration,
-  type SysOrgRegistration,
-} from '@/api/system/orgRegistration';
+import { getOrgRegistrationList, approveOrgRegistration, rejectOrgRegistration, deleteOrgRegistration, type SysOrgRegistration } from '@/api/system/orgRegistration';
 import dayjs from 'dayjs';
 
 const searchText = ref('');
@@ -211,19 +179,12 @@ const pagination = reactive({
 });
 
 const columns: ColumnType[] = [
-  {
-    title: '序号',
-    key: 'index',
-    width: 60,
-    align: 'center' as const,
-    customRender: ({ index }: { index: number }) => (pagination.current - 1) * pagination.pageSize + index + 1,
-  },
   { title: '组织名称', dataIndex: 'orgName', key: 'orgName' },
   { title: '联系人', dataIndex: 'contactName', key: 'contactName' },
   { title: '联系电话', dataIndex: 'contactPhone', key: 'contactPhone' },
   { title: '申请时间', dataIndex: 'createdAt', key: 'createdAt' },
   { title: '状态', dataIndex: 'status', key: 'status' },
-  { title: '操作', key: 'action', width: 150, align: 'center' as const },
+  { title: '操作', key: 'action', align: 'center' as const },
 ];
 
 const detailVisible = ref(false);
@@ -267,7 +228,6 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case 'pending': return 'orange';
     case 'approved': return 'green';
-    case 'disabled': return 'red';
     case 'rejected': return 'red';
     default: return 'default';
   }
@@ -277,7 +237,6 @@ const getStatusText = (status: string) => {
   switch (status) {
     case 'pending': return '待审核';
     case 'approved': return '已通过';
-    case 'disabled': return '已停用';
     case 'rejected': return '已拒绝';
     default: return status;
   }
@@ -314,47 +273,6 @@ const handleReject = (record: any) => {
   rejectId.value = record.id;
   rejectReason.value = '';
   rejectModalVisible.value = true;
-};
-
-const handleDisable = (record: Record<string, any>) => {
-  Modal.confirm({
-    title: '确认停用组织',
-    icon: createVNode(ExclamationCircleOutlined),
-    content: '停用后，该组织下所有用户都将暂时无法登录，但不会改变这些用户原本的启用停用状态。确定继续吗？',
-    okType: 'danger',
-    onOk: async () => {
-      try {
-        await disableOrgRegistration(record.id);
-        message.success('组织已停用');
-        if (currentRecord.value?.id === record.id) {
-          currentRecord.value.status = 'disabled';
-        }
-        loadData();
-      } catch (error) {
-        console.error(error);
-      }
-    },
-  });
-};
-
-const handleEnable = (record: Record<string, any>) => {
-  Modal.confirm({
-    title: '确认启用组织',
-    icon: createVNode(ExclamationCircleOutlined),
-    content: '启用后，该组织将恢复可登录状态，但各个用户原本的启用停用状态保持不变。确定继续吗？',
-    onOk: async () => {
-      try {
-        await enableOrgRegistration(record.id);
-        message.success('组织已启用');
-        if (currentRecord.value?.id === record.id) {
-          currentRecord.value.status = 'approved';
-        }
-        loadData();
-      } catch (error) {
-        console.error(error);
-      }
-    },
-  });
 };
 
 const submitReject = async () => {

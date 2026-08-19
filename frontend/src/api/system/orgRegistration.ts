@@ -4,8 +4,6 @@ export const Api = {
   List: '/sys/org-registration/list',
   Approve: '/sys/org-registration/approve',
   Reject: '/sys/org-registration/reject',
-  Disable: '/sys/org-registration/disable',
-  Enable: '/sys/org-registration/enable',
 } as const;
 
 export interface SysOrgRegistration {
@@ -38,12 +36,6 @@ export const approveOrgRegistration = (id: number) =>
 
 export const rejectOrgRegistration = (id: number, reason: string) =>
   request.post(`${Api.Reject}/${id}`, { reason });
-
-export const disableOrgRegistration = (id: number) =>
-  request.post(`${Api.Disable}/${id}`);
-
-export const enableOrgRegistration = (id: number) =>
-  request.post(`${Api.Enable}/${id}`);
 
 export const deleteOrgRegistration = (id: number) =>
   request.delete(`/sys/org-registration/${id}`);

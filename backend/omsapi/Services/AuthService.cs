@@ -64,19 +64,6 @@ namespace omsapi.Services
                 return (false, "账号已被禁用", null);
             }
 
-            // 组织启停状态单独存放在注册单状态中。
-            // 这里仅拦截“通过注册创建且当前已停用”的组织，不影响用户自身启用停用字段。
-            var currentRootOrgId = await GetUserCurrentRootOrgIdAsync(user);
-            if (currentRootOrgId.HasValue)
-            {
-                var orgRegistrationStatus = await GetOrgRegistrationStatusAsync(currentRootOrgId.Value);
-                if (orgRegistrationStatus == "disabled")
-                {
-                    await LogLoginAsync(user.Id, user.Username, false, "所属组织已停用", startTime, ipAddress, userAgent);
-                    return (false, "所属组织已停用，暂不允许登录", null);
-                }
-            }
-
             // 更新最后登录时间
             user.LastLoginAt = DateTime.Now;
             await _context.SaveChangesAsync();
@@ -100,7 +87,6 @@ namespace omsapi.Services
                     Phone = user.Phone,
                     Avatar = user.Avatar,
                     Roles = roleIds,
-                    RoleCodes = roleCodes,
                     DeptId = user.DeptId,
                     IsAdmin = isAdmin
                 }
@@ -108,134 +94,6 @@ namespace omsapi.Services
 
             await LogLoginAsync(user.Id, user.Username, true, "登录成功", startTime, ipAddress, userAgent);
             return (true, "登录成功", result);
-        }
-
-        /// <summary>
-        /// 管理员模拟登录指定用户。
-        /// 平台管理员可模拟任意非超级管理员；
-        /// 组织管理员仅可模拟自己管理范围内的非超级管理员用户。
-        /// </summary>
-        public async Task<(bool Success, string Message, LoginResultDto? Data)> ImpersonateAsync(long operatorUserId, long targetUserId)
-        {
-            if (operatorUserId == targetUserId)
-            {
-                return (false, "无需模拟登录自己", null);
-            }
-
-            var operatorUser = await _context.Users.FindAsync(operatorUserId);
-            if (operatorUser == null || !operatorUser.IsActive)
-            {
-                return (false, "当前操作用户无效", null);
-            }
-
-            var targetUser = await _context.Users.FindAsync(targetUserId);
-            if (targetUser == null)
-            {
-                return (false, "目标用户不存在", null);
-            }
-
-            if (!targetUser.IsActive)
-            {
-                return (false, "目标用户已被禁用，不能模拟登录", null);
-            }
-
-            var operatorRoleIds = await GetEffectiveRoleIdsAsync(operatorUserId);
-            var targetRoleIds = await GetEffectiveRoleIdsAsync(targetUserId);
-
-            var operatorIsSuperAdmin = await _context.Roles.AnyAsync(r => operatorRoleIds.Contains(r.Id) && r.Code == "SuperAdmin");
-            var targetIsSuperAdmin = await _context.Roles.AnyAsync(r => targetRoleIds.Contains(r.Id) && r.Code == "SuperAdmin");
-
-            if (targetIsSuperAdmin)
-            {
-                return (false, "不能模拟登录超级管理员", null);
-            }
-
-            if (!operatorIsSuperAdmin)
-            {
-                var operatorIsOrgAdmin = await _context.Roles.AnyAsync(r => operatorRoleIds.Contains(r.Id) && r.Code == "OrgAdmin");
-                if (!operatorIsOrgAdmin)
-                {
-                    return (false, "只有平台管理员或组织管理员可以模拟登录其他用户", null);
-                }
-
-                var managedDeptIds = await GetManagedDeptIdsAsync(operatorUserId);
-                if (managedDeptIds.Count == 0)
-                {
-                    return (false, "当前用户没有可管理的组织或部门", null);
-                }
-
-                var targetManaged = targetUser.DeptId.HasValue && managedDeptIds.Contains(targetUser.DeptId.Value);
-                if (!targetManaged)
-                {
-                    var targetPostDeptIds = await _context.UserPosts
-                        .Where(up => up.UserId == targetUserId)
-                        .Select(up => up.DeptId)
-                        .Distinct()
-                        .ToListAsync();
-                    targetManaged = targetPostDeptIds.Any(deptId => managedDeptIds.Contains(deptId));
-                }
-
-                if (!targetManaged)
-                {
-                    return (false, "只能模拟登录自己管理范围内的用户", null);
-                }
-            }
-
-            var currentRootOrgId = await GetUserCurrentRootOrgIdAsync(targetUser);
-            if (currentRootOrgId.HasValue)
-            {
-                var orgRegistrationStatus = await GetOrgRegistrationStatusAsync(currentRootOrgId.Value);
-                if (orgRegistrationStatus == "disabled")
-                {
-                    return (false, "目标用户所属组织已停用，不能模拟登录", null);
-                }
-            }
-
-            targetUser.LastLoginAt = DateTime.Now;
-            await _context.SaveChangesAsync();
-
-            var targetRoleCodes = await _context.Roles
-                .Where(r => targetRoleIds.Contains(r.Id))
-                .Select(r => r.Code)
-                .ToListAsync();
-
-            var token = GenerateJwtToken(targetUser.Username, targetUser.Id, targetRoleCodes);
-            var isAdmin = await _context.Roles.AnyAsync(r => targetRoleIds.Contains(r.Id) && r.Code == "SuperAdmin");
-            var result = new LoginResultDto
-            {
-                Token = token,
-                User = new UserDto
-                {
-                    Id = targetUser.Id,
-                    Username = targetUser.Username,
-                    Nickname = targetUser.Nickname,
-                    Email = targetUser.Email,
-                    Phone = targetUser.Phone,
-                    Avatar = targetUser.Avatar,
-                    Roles = targetRoleIds,
-                    RoleCodes = targetRoleCodes,
-                    DeptId = targetUser.DeptId,
-                    IsAdmin = isAdmin
-                }
-            };
-
-            var now = DateTime.Now;
-            await _auditLogService.LogAsync(new omsapi.Models.Entities.SystemAuditLog
-            {
-                UserId = operatorUserId,
-                UserName = operatorUser.Username,
-                Action = "ImpersonateLogin",
-                Route = $"/api/auth/impersonate/{targetUserId}",
-                Method = "POST",
-                IpAddress = _httpContextAccessor.HttpContext?.GetClientIp(),
-                UserAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString(),
-                IsSuccess = true,
-                ExecutionDuration = 0,
-                CreatedAt = now,
-                Parameters = $"{{\"targetUserId\":{targetUser.Id},\"targetUsername\":\"{targetUser.Username}\"}}"
-            });
-
-            return (true, $"已切换为用户【{targetUser.Nickname ?? targetUser.Username}】", result);
         }
 
         public async Task<(bool Success, string Message, object? Data)> RegisterAsync(RegisterRequest request)
@@ -338,68 +196,6 @@ namespace omsapi.Services
             catch (Exception ex)
             {
                 return (false, $"上传失败: {ex.Message}", null);
-            }
-        }
-
-        /// <summary>
-        /// 删除组织注册时上传但最终未保存的临时文件（营业执照、授权书）。
-        /// 严格限制只能删除 wwwroot/uploads/registration 目录下的文件，防止路径穿越。
-        /// </summary>
-        public Task<(bool Success, string Message)> DeleteRegistrationFileAsync(string fileUrl)
-        {
-            if (string.IsNullOrWhiteSpace(fileUrl))
-            {
-                return Task.FromResult((true, "文件路径为空，无需删除"));
-            }
-
-            try
-            {
-                // 将完整 URL（如 http://xxx/uploads/registration/xxx.png）统一转换成相对路径
-                var relativePath = fileUrl;
-                if (fileUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (Uri.TryCreate(fileUrl, UriKind.Absolute, out var uri))
-                    {
-                        relativePath = uri.AbsolutePath;
-                    }
-                }
-
-                // 去掉开头斜杠，便于 Path.Combine 正常拼接
-                if (relativePath.StartsWith("/"))
-                {
-                    relativePath = relativePath.Substring(1);
-                }
-
-                // 归一化目录分隔符，替换 URL 中的 '/' 为本地 OS 分隔符
-                relativePath = relativePath.Replace('/', Path.DirectorySeparatorChar);
-
-                // 白名单：只有以 "uploads{分隔符}registration{分隔符}" 开头的相对路径才允许删除
-                var allowedPrefix = $"uploads{Path.DirectorySeparatorChar}registration{Path.DirectorySeparatorChar}";
-                if (!relativePath.StartsWith(allowedPrefix, StringComparison.OrdinalIgnoreCase))
-                {
-                    return Task.FromResult((false, "非法的文件路径，仅允许删除注册上传目录下的文件"));
-                }
-
-                // 基于 WebRootPath 得到完整物理路径，再用 GetFullPath 归一化防止 `../` 路径穿越
-                var basePath = Path.GetFullPath(_environment.WebRootPath.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
-                var candidatePath = Path.GetFullPath(Path.Combine(_environment.WebRootPath, relativePath));
-
-                // 必须位于 WebRootPath 以内
-                if (!candidatePath.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
-                {
-                    return Task.FromResult((false, "非法的文件路径，路径越界"));
-                }
-
-                if (System.IO.File.Exists(candidatePath))
-                {
-                    System.IO.File.Delete(candidatePath);
-                }
-
-                return Task.FromResult((true, "删除成功"));
-            }
-            catch (Exception ex)
-            {
-                return Task.FromResult((false, $"删除失败: {ex.Message}"));
             }
         }
 
@@ -559,84 +355,6 @@ namespace omsapi.Services
             return effectiveRoleIds.ToList();
         }
 
-        /// <summary>
-        /// 获取当前用户可管理的部门范围。
-        /// 超级管理员无需使用此方法，组织管理员默认可管理所在根组织及下级部门。
-        /// </summary>
-        private async Task<HashSet<long>> GetManagedDeptIdsAsync(long userId)
-        {
-            var managed = new HashSet<long>();
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null)
-            {
-                return managed;
-            }
-
-            if (!string.IsNullOrWhiteSpace(user.Username))
-            {
-                var leaderDeptIds = await _context.Depts
-                    .Where(d => d.Leader == user.Username)
-                    .Select(d => d.Id)
-                    .ToListAsync();
-
-                foreach (var deptId in leaderDeptIds)
-                {
-                    var descendants = await GetDescendantDeptIdsAsync(deptId);
-                    foreach (var id in descendants)
-                    {
-                        managed.Add(id);
-                    }
-                }
-            }
-
-            if (managed.Count == 0 && user.DeptId.HasValue)
-            {
-                var rootId = await GetDeptRootIdAsync(user.DeptId.Value);
-                if (rootId.HasValue)
-                {
-                    var descendants = await GetDescendantDeptIdsAsync(rootId.Value);
-                    foreach (var id in descendants)
-                    {
-                        managed.Add(id);
-                    }
-                }
-            }
-
-            return managed;
-        }
-
-        /// <summary>
-        /// 获取指定部门及其全部下级部门。
-        /// </summary>
-        private async Task<List<long>> GetDescendantDeptIdsAsync(long rootId)
-        {
-            var result = new List<long> { rootId };
-            var queue = new Queue<long>();
-            queue.Enqueue(rootId);
-
-            while (queue.Count > 0)
-            {
-                var parentId = queue.Dequeue();
-                var children = await _context.Depts
-                    .Where(d => d.ParentId == parentId)
-                    .Select(d => d.Id)
-                    .ToListAsync();
-
-                foreach (var childId in children)
-                {
-                    if (result.Contains(childId))
-                    {
-                        continue;
-                    }
-
-                    result.Add(childId);
-                    queue.Enqueue(childId);
-                }
-            }
-
-            return result;
-        }
-
         private List<MenuItemDto> BuildMenuTree(List<omsapi.Models.Entities.SystemPermission> allMenus, long? parentId)
         {
             return allMenus
@@ -716,81 +434,6 @@ namespace omsapi.Services
                 }
                 return builder.ToString();
             }
-        }
-
-        /// <summary>
-        /// 从任意部门向上回溯，获取根组织 ID。
-        /// </summary>
-        private async Task<long?> GetDeptRootIdAsync(long deptId)
-        {
-            var currentDept = await _context.Depts.FindAsync(deptId);
-            if (currentDept == null)
-            {
-                return null;
-            }
-
-            while (currentDept.ParentId.HasValue)
-            {
-                var parentDept = await _context.Depts.FindAsync(currentDept.ParentId.Value);
-                if (parentDept == null)
-                {
-                    break;
-                }
-
-                currentDept = parentDept;
-            }
-
-            return currentDept.Id;
-        }
-
-        /// <summary>
-        /// 获取用户当前所属的根组织 ID，优先使用 CurrentOrgId，缺失时回退到 DeptId 反查。
-        /// </summary>
-        private async Task<long?> GetUserCurrentRootOrgIdAsync(omsapi.Models.Entities.SystemUser user)
-        {
-            var deptId = user.CurrentOrgId ?? user.DeptId;
-            if (!deptId.HasValue)
-            {
-                return null;
-            }
-
-            var currentDept = await _context.Depts.FindAsync(deptId.Value);
-            if (currentDept == null)
-            {
-                return null;
-            }
-
-            while (currentDept.ParentId.HasValue)
-            {
-                var parentDept = await _context.Depts.FindAsync(currentDept.ParentId.Value);
-                if (parentDept == null)
-                {
-                    break;
-                }
-
-                currentDept = parentDept;
-            }
-
-            return currentDept.Id;
-        }
-
-        /// <summary>
-        /// 通过根组织名称匹配注册记录，返回组织注册状态。
-        /// 对于非注册流程创建的组织，返回 null，保持原有登录行为不变。
-        /// </summary>
-        private async Task<string?> GetOrgRegistrationStatusAsync(long rootOrgId)
-        {
-            var rootOrg = await _context.Depts.FindAsync(rootOrgId);
-            if (rootOrg == null)
-            {
-                return null;
-            }
-
-            return await _context.OrgRegistrations
-                .Where(r => r.OrgName == rootOrg.Name)
-                .OrderByDescending(r => r.Id)
-                .Select(r => r.Status)
-                .FirstOrDefaultAsync();
         }
     }
 }

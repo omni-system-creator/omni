@@ -8,13 +8,6 @@ export const login = (data: any) => {
   });
 };
 
-export const impersonateLogin = (targetUserId: number) => {
-  return request({
-    url: `/auth/impersonate/${targetUserId}`,
-    method: 'post',
-  });
-};
-
 export const register = (data: any) => {
   return request({
     url: '/auth/register',
@@ -35,10 +28,6 @@ export const uploadRegistrationFile = (file: File) => {
     },
   });
 };
-
-// 注册页未点提交就删除上传的证照/授权书时调用，同步清理后端已上传的物理文件，避免垃圾残留
-export const deleteRegistrationFile = (fileUrl: string) =>
-  request.post('/auth/delete-registration-file', { fileUrl });
 
 export const recognizeLicense = (file: File) => {
   const formData = new FormData();

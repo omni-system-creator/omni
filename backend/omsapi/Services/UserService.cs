@@ -212,11 +212,6 @@ namespace omsapi.Services
 
                 foreach (var root in rootDepts)
                 {
-                    if (!await IsOrganizationEnabledAsync(root.Id))
-                    {
-                        continue;
-                    }
-
                      if (!result.Any(r => r.Id == root.Id))
                      {
                         result.Add(new UserOrgDto
@@ -260,11 +255,6 @@ namespace omsapi.Services
                     // Add if not exists
                     if (!result.Any(r => r.Id == root.Id))
                     {
-                        if (!await IsOrganizationEnabledAsync(root.Id))
-                        {
-                            continue;
-                        }
-
                         if (result.Count >= 11) break;
                         result.Add(new UserOrgDto
                         {
@@ -282,7 +272,7 @@ namespace omsapi.Services
             if (user.CurrentOrgId.HasValue && !result.Any(r => r.Id == user.CurrentOrgId.Value))
             {
                 var currentOrg = await _context.Depts.FindAsync(user.CurrentOrgId.Value);
-                if (currentOrg != null && await IsOrganizationEnabledAsync(currentOrg.Id))
+                if (currentOrg != null)
                 {
                      result.Add(new UserOrgDto
                      {
@@ -312,11 +302,6 @@ namespace omsapi.Services
             {
                  // Maybe it is the fake ID 0? If we removed fake ID 0 logic, we expect real ID.
                  return (false, "组织不存在");
-            }
-
-            if (!await IsOrganizationEnabledAsync(orgId))
-            {
-                return (false, "该组织已停用，无法切换");
             }
 
             user.CurrentOrgId = orgId;
@@ -358,27 +343,6 @@ namespace omsapi.Services
                 current = await _context.Depts.FindAsync(current.ParentId);
             }
             return current?.Id;
-        }
-
-        /// <summary>
-        /// 判断组织是否可用。
-        /// 若组织来自注册流程，则以注册状态为准；没有注册记录的组织保持可用。
-        /// </summary>
-        private async Task<bool> IsOrganizationEnabledAsync(long orgId)
-        {
-            var org = await _context.Depts.FindAsync(orgId);
-            if (org == null)
-            {
-                return false;
-            }
-
-            var registrationStatus = await _context.OrgRegistrations
-                .Where(r => r.OrgName == org.Name)
-                .OrderByDescending(r => r.Id)
-                .Select(r => r.Status)
-                .FirstOrDefaultAsync();
-
-            return string.IsNullOrEmpty(registrationStatus) || registrationStatus == "approved";
         }
 
         private async Task<List<long>> GetDescendantDeptIdsAsync(long rootId)

@@ -35,7 +35,6 @@
                     v-model:file-list="licenseFileList"
                     :max-count="1"
                     :before-upload="beforeUpload"
-                    :on-remove="beforeRemoveLicense"
                     :custom-request="customUploadLicense"
                   >
                     <a-button>
@@ -57,7 +56,6 @@
                     v-model:file-list="authLetterFileList"
                     :max-count="1"
                     :before-upload="beforeUpload"
-                    :on-remove="beforeRemoveAuthLetter"
                     :custom-request="customUploadAuthLetter"
                   >
                     <a-button>
@@ -269,8 +267,8 @@ import { useRouter } from 'vue-router';
 import { UserOutlined, LockOutlined, BankOutlined, UploadOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
-import type { UploadProps, UploadFile } from 'ant-design-vue';
-import { register, uploadRegistrationFile, recognizeLicense, deleteRegistrationFile } from '@/api/auth';
+import type { UploadProps } from 'ant-design-vue';
+import { register, uploadRegistrationFile, recognizeLicense } from '@/api/auth';
 
 const router = useRouter();
 const loading = ref(false);
@@ -370,47 +368,6 @@ const customUploadAuthLetter = async (options: any) => {
     onError(err);
     message.error('授权书上传出错');
   }
-};
-
-// 从 UploadFileItem 身上反解出后端保存路径（/uploads/registration/xxx.png）
-// custom-request 返回的数据里 onSuccess 会把 res 挂到 file.response 上
-const resolveFileUrl = (file: any): string => {
-  if (!file) return '';
-  // 响应体字段兼容大小写：{ Url }、{ url }、{ data: { url/Url } }
-  const res = file.response as any;
-  const url = res?.url ?? res?.Url ?? res?.data?.url ?? res?.data?.Url;
-  if (url) return String(url);
-  // 兜底：fileList 里本来也可能带原始 url / thumbUrl
-  return String(file.url || file.thumbUrl || '');
-};
-
-// 营业执照未点提交就删除时：同步删除后端 /uploads/registration 下的物理文件，避免产生垃圾
-// 注：Ant Design Vue 的 Upload 组件删除回调名是 onRemove（而非 beforeRemove），后者是 Element UI / React Antd 的用法
-const beforeRemoveLicense = async (file: UploadFile) => {
-  const url = resolveFileUrl(file);
-  // 清空 formState 里保存的 URL，防止用户点"提交"时还带着旧的文件路径
-  formState.licenseFileUrl = '';
-  if (!url) return true;
-  try {
-    await deleteRegistrationFile(url);
-  } catch (e) {
-    // 删除失败只打日志，不阻止前端文件列表的移除（避免用户点不掉已上传的文件）
-    console.warn('删除营业执照临时文件失败', e, url);
-  }
-  return true;
-};
-
-// 授权书未点提交就删除时：同步删除后端 /uploads/registration 下的物理文件
-const beforeRemoveAuthLetter = async (file: UploadFile) => {
-  const url = resolveFileUrl(file);
-  formState.authLetterFileUrl = '';
-  if (!url) return true;
-  try {
-    await deleteRegistrationFile(url);
-  } catch (e) {
-    console.warn('删除授权书临时文件失败', e, url);
-  }
-  return true;
 };
 
 const downloadAuthTemplate = () => {

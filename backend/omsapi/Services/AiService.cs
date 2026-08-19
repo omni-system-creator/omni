@@ -13,8 +13,6 @@ namespace omsapi.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
-        private const string DefaultVisionModel = "Qwen/Qwen3-VL-32B-Instruct";
-        private const string DefaultOcrModel = "Qwen/Qwen3-VL-32B-Instruct";
         private static List<string>? _cachedModels;
         private static readonly SemaphoreSlim _modelLock = new(1, 1);
 
@@ -22,27 +20,6 @@ namespace omsapi.Services
         {
             _httpClient = httpClient;
             _configuration = configuration;
-        }
-
-        /// <summary>
-        /// 统一读取视觉模型配置；当调用方未传入模型时，回退到配置文件中的默认视觉模型。
-        /// </summary>
-        private string GetVisionModel(string? model = null)
-        {
-            if (!string.IsNullOrWhiteSpace(model) && !model.Equals("deepseek-ai/DeepSeek-V2.5", StringComparison.OrdinalIgnoreCase))
-            {
-                return model;
-            }
-
-            return _configuration["SiliconFlow:VisionModel"] ?? DefaultVisionModel;
-        }
-
-        /// <summary>
-        /// 统一读取 OCR 模型配置，营业执照等证照识别场景单独使用专项模型。
-        /// </summary>
-        private string GetOcrModel()
-        {
-            return _configuration["SiliconFlow:OcrModel"] ?? DefaultOcrModel;
         }
 
         private async Task<string> ValidateModelAsync(string model)
@@ -227,15 +204,12 @@ namespace omsapi.Services
             return "Analysis failed due to API error.";
         }
 
-        public async Task<string> GetImageAnalysisAsync(byte[] imageBytes, string prompt = "Extract all text from this image.", string model = "")
+        public async Task<string> GetImageAnalysisAsync(byte[] imageBytes, string prompt = "Extract all text from this image.", string model = "Qwen/Qwen2-VL-72B-Instruct")
         {
             var apiKey = _configuration["SiliconFlow:ApiKey"];
             var baseUrl = _configuration["SiliconFlow:BaseUrl"] ?? "https://api.siliconflow.cn/v1";
 
             if (string.IsNullOrEmpty(apiKey)) return "";
-
-            // 视觉识别默认走配置文件中的视觉模型，避免业务代码里散落硬编码。
-            model = GetVisionModel(model);
 
             var base64Image = Convert.ToBase64String(imageBytes);
             var imageUri = $"data:image/jpeg;base64,{base64Image}";
@@ -361,14 +335,24 @@ namespace omsapi.Services
                 return "[System: Image description requires API Key]";
             }
 
-            // 视觉描述通过图片输入走对话接口。
+            // SiliconFlow / OpenAI Vision API
+            // Usually uses chat/completions with image_url content type
             var base64Image = Convert.ToBase64String(imageBytes);
             var dataUrl = $"data:{mimeType};base64,{base64Image}";
 
-            if (string.IsNullOrWhiteSpace(model) || model == "deepseek-ai/DeepSeek-V2.5")
+            // Auto-switch to a vision-capable model if the requested one is likely text-only
+            // Common vision models: gpt-4-vision-preview, qwen-vl-max, etc.
+            // On SiliconFlow, Qwen-VL or Yi-VL might be available.
+            // Let's try to use a safe default if the user didn't specify a known vision model, 
+            // but usually we respect the parameter. 
+            // However, DeepSeek-V2.5 is text-only (as of knowledge cutoff). 
+            // Let's hardcode a known vision model if the default is passed, or trust the user.
+            // For now, let's use "Qwen/Qwen2-VL-72B-Instruct" as a powerful vision model available on SiliconFlow (assuming it is).
+            // Or "OpenGVLab/InternVL2-26B" etc.
+            // Let's default to "Qwen/Qwen2-VL-72B-Instruct" if the passed model is the default text one.
+            if (model == "deepseek-ai/DeepSeek-V2.5")
             {
-                // 当调用方沿用文本模型默认值时，自动切换到配置中的视觉模型。
-                model = GetVisionModel(model);
+                model = "Qwen/Qwen2-VL-72B-Instruct";
             }
 
             var requestBody = new
@@ -397,6 +381,7 @@ namespace omsapi.Services
             try
             {
                 var response = await _httpClient.SendAsync(request);
+                // If 404 or 400, it might be model not found or not supporting vision.
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
@@ -583,8 +568,8 @@ namespace omsapi.Services
             var base64Image = Convert.ToBase64String(imageBytes);
             var dataUrl = $"data:{mimeType};base64,{base64Image}";
 
-            // 营业执照 OCR 单独走配置中的 OCR 模型，便于和通用视觉模型分开调优。
-            string model = GetOcrModel();
+            // Use a vision model
+            string model = "Qwen/Qwen2-VL-72B-Instruct"; // Default to a good vision model
 
             var requestBody = new
             {

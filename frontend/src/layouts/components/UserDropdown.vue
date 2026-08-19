@@ -1,67 +1,59 @@
 <template>
-  <!--
-    外层包 div 根：放进 MainLayout.header-actions 后，flex align-items: stretch 会把根 div 拉满 header 高度，
-    再通过 .user-dropdown-root display:flex align-items:center 把内部的 a-dropdown 垂直居中，
-    hover 背景色（.user-dropdown-link:hover 淡灰）就会作用到完整 64px 高度，
-    和 StatusDropdown / ExitImpersonationButton 的高亮条严格齐平。
-  -->
-  <div class="user-dropdown-root">
-    <a-dropdown>
-      <span class="user-dropdown-link">
-        <a-avatar v-if="userStore.avatar" :src="userStore.avatar" />
-        <a-avatar v-else style="background-color: #bfbfbf">
-          <template #icon><UserOutlined /></template>
-        </a-avatar>
-        <div class="user-info">
-          <span class="username-text">{{ userStore.nickname || userStore.username }}</span>
-          <a-tooltip v-if="userStore.currentOrg" :title="userStore.currentOrg.name" placement="left">
-              <span class="org-name">{{ userStore.currentOrg.orgAbbr || userStore.currentOrg.name }}</span>
-          </a-tooltip>
-        </div>
-      </span>
-      <template #overlay>
-        <a-menu>
-          <a-sub-menu key="orgs" v-if="userStore.organizations.length > 1">
-              <template #title>
-                  <span style="display: inline-flex; align-items: center; white-space: nowrap;">
-                      <DynamicIcon icon="ant-design:bank-outlined" />
-                      <span style="margin-left: 8px">切换组织</span>
-                  </span>
-              </template>
-              <a-menu-item v-for="org in userStore.organizations.slice(0, 10)" :key="'org-'+org.id" @click="handleSwitchOrg(org)">
-                  <span style="display: flex; justify-content: space-between; align-items: center; min-width: 150px;">
-                      <span>{{ org.orgAbbr || org.name }}</span>
-                      <CheckOutlined v-if="userStore.currentOrg?.id === org.id" style="color: #52c41a" />
-                  </span>
-              </a-menu-item>
-              <a-menu-divider v-if="userStore.organizations.length > 10" />
-              <a-menu-item v-if="userStore.organizations.length > 10" key="org-more" @click="openOrgSelectModal">
-                  <span style="color: #1890ff">更多组织...</span>
-              </a-menu-item>
-          </a-sub-menu>
-          <a-menu-divider v-if="userStore.organizations.length > 1" />
+  <a-dropdown>
+    <span class="user-dropdown-link">
+      <a-avatar v-if="userStore.avatar" :src="userStore.avatar" />
+      <a-avatar v-else style="background-color: #bfbfbf">
+        <template #icon><UserOutlined /></template>
+      </a-avatar>
+      <div class="user-info">
+        <span class="username-text">{{ userStore.nickname || userStore.username }}</span>
+        <a-tooltip v-if="userStore.currentOrg" :title="userStore.currentOrg.name" placement="left">
+            <span class="org-name">{{ userStore.currentOrg.orgAbbr || userStore.currentOrg.name }}</span>
+        </a-tooltip>
+      </div>
+    </span>
+    <template #overlay>
+      <a-menu>
+        <a-sub-menu key="orgs" v-if="userStore.organizations.length > 1">
+            <template #title>
+                <span style="display: inline-flex; align-items: center; white-space: nowrap;">
+                    <DynamicIcon icon="ant-design:bank-outlined" />
+                    <span style="margin-left: 8px">切换组织</span>
+                </span>
+            </template>
+            <a-menu-item v-for="org in userStore.organizations.slice(0, 10)" :key="'org-'+org.id" @click="handleSwitchOrg(org)">
+                <span style="display: flex; justify-content: space-between; align-items: center; min-width: 150px;">
+                    <span>{{ org.orgAbbr || org.name }}</span>
+                    <CheckOutlined v-if="userStore.currentOrg?.id === org.id" style="color: #52c41a" />
+                </span>
+            </a-menu-item>
+            <a-menu-divider v-if="userStore.organizations.length > 10" />
+            <a-menu-item v-if="userStore.organizations.length > 10" key="org-more" @click="openOrgSelectModal">
+                <span style="color: #1890ff">更多组织...</span>
+            </a-menu-item>
+        </a-sub-menu>
+        <a-menu-divider v-if="userStore.organizations.length > 1" />
 
-          <a-menu-item key="account" @click="router.push('/personal/account')">
-            <DynamicIcon icon="ant-design:user-outlined" />
-            <span style="margin-left: 8px">个人中心</span>
-          </a-menu-item>
-          <a-menu-item key="password" @click="showChangePassword">
-            <DynamicIcon icon="ant-design:lock-outlined" />
-            <span style="margin-left: 8px">修改密码</span>
-          </a-menu-item>
-          <a-menu-item key="about" @click="showAbout">
-            <DynamicIcon icon="ant-design:info-circle-outlined" />
-            <span style="margin-left: 8px">关于系统</span>
-          </a-menu-item>
-          <a-menu-divider />
-          <a-menu-item key="logout" @click="handleLogout">
-            <DynamicIcon icon="ant-design:logout-outlined" />
-            <span style="margin-left: 8px">退出登录</span>
-          </a-menu-item>
-        </a-menu>
-      </template>
-    </a-dropdown>
-  </div>
+        <a-menu-item key="account" @click="router.push('/personal/account')">
+          <DynamicIcon icon="ant-design:user-outlined" />
+          <span style="margin-left: 8px">个人中心</span>
+        </a-menu-item>
+        <a-menu-item key="password" @click="showChangePassword">
+          <DynamicIcon icon="ant-design:lock-outlined" />
+          <span style="margin-left: 8px">修改密码</span>
+        </a-menu-item>
+        <a-menu-item key="about" @click="showAbout">
+          <DynamicIcon icon="ant-design:info-circle-outlined" />
+          <span style="margin-left: 8px">关于系统</span>
+        </a-menu-item>
+        <a-menu-divider />
+        <a-menu-item key="logout" @click="handleLogout">
+          <DynamicIcon icon="ant-design:logout-outlined" />
+          <span style="margin-left: 8px">退出登录</span>
+        </a-menu-item>
+      </a-menu>
+    </template>
+  </a-dropdown>
 
   <AboutModal v-model:open="aboutVisible" />
 
@@ -227,14 +219,6 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
-/* 外层容器：撑满父 header 高度，内部内容垂直居中 */
-.user-dropdown-root {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-
 .user-dropdown-link {
   cursor: pointer;
   display: flex;

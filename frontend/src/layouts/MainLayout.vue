@@ -26,7 +26,7 @@
           </a-breadcrumb>
         </div>
         <div class="header-right">
-          <a-space :size="4" align="center">
+          <a-space :size="4">
             <template v-for="(link, index) in externalLinks" :key="index">
               <a-tooltip :title="link.tooltip">
                 <a-button type="text" shape="circle" @click="openLink(link.url)">
@@ -36,10 +36,9 @@
             </template>
             <HelpButton />
             <FullscreenButton />
-            <OnlineUsersButton />
-            <NotificationBell />
+            <OnlineUsersButton />            
+            <NotificationBell />            
             <StatusDropdown />
-            <ExitImpersonationButton />
             <UserDropdown />
           </a-space>
         </div>
@@ -99,7 +98,6 @@ import FullscreenButton from './components/FullscreenButton.vue';
 import NotificationBell from './components/NotificationBell.vue';
 import StatusDropdown from './components/StatusDropdown.vue';
 import UserDropdown from './components/UserDropdown.vue';
-import ExitImpersonationButton from './components/ExitImpersonationButton.vue';
 import OnlineUsersButton from './components/OnlineUsersButton.vue';
 import IframeView from './components/IframeView.vue';
 import DynamicIcon from '@/components/DynamicIcon.vue';

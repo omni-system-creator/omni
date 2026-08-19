@@ -10,7 +10,6 @@ namespace omsapi.Services
     public class RoleService : IRoleService
     {
         private readonly OmsContext _context;
-        private const string BuiltInOrgAdminRoleCode = "OrgAdmin";
 
         public RoleService(OmsContext context)
         {
@@ -118,7 +117,7 @@ namespace omsapi.Services
                     Code = GetCodeSuffix(r.Code),
                     FullCode = r.Code,
                     Description = r.Description,
-                    IsSystem = r.IsSystem || r.Code == BuiltInOrgAdminRoleCode,
+                    IsSystem = r.IsSystem,
                     CreatedAt = r.CreatedAt,
                     DeptId = r.DeptId,
                     ChildRoleIds = r.ChildRoleRelations.Select(cr => cr.ChildRoleId).ToList()
@@ -143,7 +142,7 @@ namespace omsapi.Services
                 Code = GetCodeSuffix(role.Code),
                 FullCode = role.Code,
                 Description = role.Description,
-                IsSystem = role.IsSystem || role.Code == BuiltInOrgAdminRoleCode,
+                IsSystem = role.IsSystem,
                 CreatedAt = role.CreatedAt,
                 DeptId = role.DeptId,
                 ChildRoleIds = role.ChildRoleRelations.Select(cr => cr.ChildRoleId).ToList()
@@ -289,7 +288,7 @@ namespace omsapi.Services
             var role = await _context.Roles.FindAsync(id);
             if (role == null) return (false, "角色不存在");
 
-            if (role.IsSystem || role.Code == BuiltInOrgAdminRoleCode) return (false, "系统角色不可删除");
+            if (role.IsSystem) return (false, "系统角色不可删除");
 
             // 检查是否有用户关联
             if (await _context.UserRoles.AnyAsync(ur => ur.RoleId == id))

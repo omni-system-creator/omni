@@ -192,7 +192,6 @@ const handleLogin = async (_values: any) => {
           nickname: res.user.nickname,
           avatar: res.user.avatar,
           roles: res.user.roles,
-          roleCodes: res.user.roleCodes,
           deptId: res.user.deptId,
           isAdmin: res.user.isAdmin
         });
@@ -205,8 +204,8 @@ const handleLogin = async (_values: any) => {
       }
       
       message.success('登录成功');
-      // 跳 '/'，后续由 TabsView 在会话恢复完成后根据库里最后活跃 Tab 是否非首页来决定是否跳转
-      // 这样即便 fetchOrganizations 的 switchOrg 导致 initializeTabsSession 再跑一次，也能被同样的规则兜底
+      // 使用 replace 替换当前历史记录，避免返回登录页
+      // 这里的 '/' 会被路由守卫拦截，触发动态路由加载
       const redirect = route.query.redirect as string;
       router.replace(redirect ? decodeURIComponent(redirect) : '/');
     } else {

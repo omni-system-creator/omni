@@ -93,53 +93,20 @@
               </template>
 
               <template v-else-if="column.key === 'action'">
-                <div style="display: flex; justify-content: center;">
-                  <a-dropdown :trigger="['hover']">
-                    <a class="ant-dropdown-link" @click.prevent>
-                      <MoreOutlined />
-                    </a>
-                    <template #overlay>
-                      <a-menu>
-                        <a-menu-item
-                          v-if="showImpersonateAction(record as UserListDto)"
-                          key="impersonate"
-                          @click="handleImpersonate(record as UserListDto)"
-                        >
-                          <!-- 用户指定的模拟登录 SVG 图标 -->
-                          <svg
-                            viewBox="0 0 16 16"
-                            width="1em"
-                            height="1em"
-                            fill="currentColor"
-                            style="vertical-align: -2px"
-                          >
-                            <g transform="translate(0, 0) scale(0.0625)">
-                              <path d="m140.24 132.24l-40 40a6 6 0 0 1-8.48-8.48L121.51 134H24a6 6 0 0 1 0-12h97.51L91.76 92.24a6 6 0 0 1 8.48-8.48l40 40a6 6 0 0 1 0 8.48M200 34h-64a6 6 0 0 0 0 12h58v164h-58a6 6 0 0 0 0 12h64a6 6 0 0 0 6-6V40a6 6 0 0 0-6-6"></path>
-                            </g>
-                          </svg>
-                          模拟登录
-                        </a-menu-item>
-                        <a-menu-item key="resetPwd" @click="handleResetPwd(record as UserListDto)">
-                          <KeyOutlined />
-                          重置密码
-                        </a-menu-item>
-                        <a-menu-item key="edit" @click="handleEdit(record as UserListDto)">
-                          <EditOutlined />
-                          编辑
-                        </a-menu-item>
-                        <a-menu-item
-                          v-if="record.username !== 'admin'"
-                          key="delete"
-                          danger
-                          @click="handleDelete(record as UserListDto)"
-                        >
-                          <DeleteOutlined />
-                          删除
-                        </a-menu-item>
-                      </a-menu>
-                    </template>
-                  </a-dropdown>
-                </div>
+                <a-space divider type="vertical">
+                  <a @click="handleEdit(record as UserListDto)">编辑</a>
+                  <a @click="handleResetPwd(record as UserListDto)">重置密码</a>
+                  <a-popconfirm
+                    title="确定要删除该用户吗？此操作不可恢复"
+                    ok-text="删除"
+                    cancel-text="取消"
+                    ok-type="danger"
+                    @confirm="handleDelete(record as UserListDto)"
+                    v-if="record.username !== 'admin'"
+                  >
+                    <a class="text-danger">删除</a>
+                  </a-popconfirm>
+                </a-space>
               </template>
             </template>
           </a-table>
@@ -302,13 +269,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, computed, reactive, watch, h } from 'vue';
-import { message, Modal } from 'ant-design-vue';
+import { ref, onMounted, computed, reactive, watch } from 'vue';
+import { message } from 'ant-design-vue';
 import type { Rule } from 'ant-design-vue/es/form';
 import type { TreeSelectProps } from 'ant-design-vue/es/tree-select';
-import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined, ThunderboltOutlined, ExclamationCircleOutlined, MoreOutlined, KeyOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+import { PlusOutlined, UserOutlined, ApartmentOutlined, MinusCircleOutlined, ThunderboltOutlined } from '@ant-design/icons-vue';
 import { getUserList, createUser, updateUser, deleteUser, resetUserPassword, type UserListDto } from '@/api/user';
-import { impersonateLogin } from '@/api/auth';
 import { getRoleList, type RoleDto } from '@/api/role';
 import { getDeptTree, type Dept } from '@/api/dept';
 import { getPostList, type Post } from '@/api/post';
@@ -318,7 +284,6 @@ import DeptTree from '@/components/DeptTree/index.vue';
 import SplitLayout from '@/components/SplitLayout/index.vue';
 import UserSelector from '@/components/UserSelector.vue';
 import { useUserStore } from '@/stores/user';
-import router from '@/router';
 
 const loading = ref(false);
 const users = ref<UserListDto[]>([]);
@@ -370,7 +335,7 @@ const columns: ColumnType[] = [
   { title: '汇报', dataIndex: 'superiorName', key: 'superiorName' },
   { title: '状态', key: 'isActive', width: 80 },
   { title: '创建时间', key: 'createdAt', width: 160 },
-  { title: '操作', key: 'action', width: 90, align: 'center' as const },
+  { title: '操作', key: 'action', width: 180, align: 'center' as const },
 ];
 
 const filteredUsers = computed(() => {
@@ -647,68 +612,6 @@ const handleDelete = async (record: UserListDto) => {
   } catch (error) {
     console.error(error);
   }
-};
-
-const showImpersonateAction = (record: UserListDto) => {
-  if (!userStore.isAdmin && !userStore.canImpersonate) {
-    return false;
-  }
-
-  if (record.id === userStore.id) {
-    return false;
-  }
-
-  if (record.username === 'admin') {
-    return false;
-  }
-
-  return true;
-};
-
-const handleImpersonate = (record: UserListDto) => {
-  Modal.confirm({
-    title: '确认模拟登录',
-    icon: h(ExclamationCircleOutlined),
-    content: `确定要切换为用户“${record.nickname || record.username}”吗？系统将直接进入该用户当前会话。`,
-    okText: '确认切换',
-    cancelText: '取消',
-    onOk: async () => {
-      const res = await impersonateLogin(record.id) as any;
-      if (!res?.token || !res?.user) {
-        message.error('模拟登录失败，未获取到目标用户凭证');
-        return;
-      }
-
-      // 调试信息：被模拟用户的 id + 他的当前默认组织 id，
-      // 与 TabsView.restoreTabsConfig 打印的 {userId, orgId} 对比，
-      // 能直接看出「模拟登录后恢复的 user+org 维度是不是就是这个用户」
-      console.debug('[SysUser.handleImpersonate] 即将发起模拟登录', {
-        targetUserId: res.user.id,
-        targetUsername: res.user.username,
-        targetRoleCodes: res.user.roleCodes,
-        // 模拟登录后后端会把目标用户的默认组织写回 JWT，这里先留日志便于比对恢复时的 orgId
-        note: '刷新后 TabsView 会按 userStore.id + userStore.currentOrg.id 维度读取 tab 会话',
-      });
-
-      await userStore.beginImpersonation({
-        token: res.token,
-        user: {
-          id: res.user.id,
-          username: res.user.username,
-          nickname: res.user.nickname || '',
-          avatar: res.user.avatar || '',
-          status: res.user.status || 'online',
-          roles: res.user.roles || [],
-          roleCodes: res.user.roleCodes || [],
-          deptId: typeof res.user.deptId === 'number' ? res.user.deptId : null,
-          isAdmin: !!res.user.isAdmin
-        },
-        currentOrg: null,
-        currentRoutePath: '/'
-      });
-      message.success(`已切换为用户：${record.nickname || record.username}`);
-    }
-  });
 };
 
 const handleResetPwd = async (record: UserListDto) => {
