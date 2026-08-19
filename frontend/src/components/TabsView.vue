@@ -123,11 +123,47 @@ import { useRoute, useRouter } from 'vue-router';
 import draggable from 'vuedraggable';
 import DynamicIcon from '@/components/DynamicIcon.vue';
 import { useWorkbenchStore } from '@/stores/workbench';
+import { userConfigApi } from '@/api/userConfig';
+import { useUserStore } from '@/stores/user';
+import { useLoadingStore } from '@/stores/loading';
 
 const tabsStore = useTabsStore();
 const workbenchStore = useWorkbenchStore();
+const userStore = useUserStore();
+const loadingStore = useLoadingStore();
 const route = useRoute();
 const router = useRouter();
+
+const TAB_SESSION_CONFIG_KEY = 'ui.tabs.session';
+const TAB_SESSION_CONFIG_PREFIX = 'ui.tabs.';
+
+interface StoredTabItem {
+  title: string;
+  path: string;
+  name: string;
+  fullPath: string;
+  tooltip?: string;
+  activeAt: string;
+  openedAt?: string;
+}
+
+interface StoredTabSession {
+  version: number;
+  tabs: StoredTabItem[];
+}
+
+const isRestoringTabs = ref(false);
+// 恢复最后活跃 Tab 的 Loading 走全局通用 loadingStore（App.vue 统一挂遮罩）
+const currentOrgId = computed(() => userStore.currentOrg?.id);
+const tabsSessionScope = computed(() => {
+  if (!userStore.id || !currentOrgId.value) {
+    return '';
+  }
+
+  // 标签页会话按“用户 + 组织”隔离，模拟登录切换用户时也必须重新恢复。
+  return `${userStore.id}:${currentOrgId.value}`;
+});
+let persistTabsTimer: ReturnType<typeof setTimeout> | null = null;
 
 function toggleFullScreen() {
   tabsStore.toggleWebFull();
@@ -176,7 +212,7 @@ function getPathWithWebFull(path: string) {
 const visitedViews = computed({
   get: () => tabsStore.visitedViews,
   set: (val) => {
-    tabsStore.visitedViews = val;
+    tabsStore.replaceViews(val);
   },
 });
 const activeKey = ref(route.fullPath);
@@ -193,6 +229,7 @@ watch(
   () => route.fullPath,
   () => {
     addTags();
+    tabsStore.touchView(route.fullPath);
     activeKey.value = route.fullPath;
   }
 );
@@ -224,6 +261,252 @@ function initTags() {
 function addTags() {
   if (route.name) {
     tabsStore.addView(route);
+  }
+}
+
+function buildStoredTabSession(): StoredTabSession {
+  return {
+    version: 1,
+    tabs: tabsStore.visitedViews.map(view => ({
+      title: view.title,
+      path: view.path,
+      name: view.name,
+      fullPath: view.fullPath,
+      tooltip: view.tooltip,
+      activeAt: view.activeAt,
+    })),
+  };
+}
+
+async function persistTabsConfig() {
+  if (isRestoringTabs.value || !currentOrgId.value || !userStore.id) {
+    return;
+  }
+
+  await userConfigApi.setConfig({
+    key: TAB_SESSION_CONFIG_KEY,
+    value: JSON.stringify(buildStoredTabSession()),
+    description: '用户标签页会话',
+  });
+}
+
+function schedulePersistTabsConfig() {
+  if (isRestoringTabs.value) {
+    return;
+  }
+
+  if (persistTabsTimer) {
+    clearTimeout(persistTabsTimer);
+  }
+
+  // 用短延迟合并频繁操作，避免拖拽排序时连续发送请求。
+  persistTabsTimer = setTimeout(() => {
+    void persistTabsConfig();
+  }, 300);
+}
+
+function isNotFoundRoute(fullPath: string) {
+  const resolved = router.resolve(fullPath);
+  return resolved.matched.some(item => item.path === '/:pathMatch(.*)*');
+}
+
+function mapStoredTabToView(savedTab: StoredTabItem) {
+  const resolved = router.resolve(savedTab.fullPath);
+  if (!resolved?.matched?.length || isNotFoundRoute(savedTab.fullPath)) {
+    return null;
+  }
+
+  return {
+    title: savedTab.title || (resolved.meta.title as string) || (resolved.name as string),
+    path: resolved.path,
+    name: (resolved.name as string) || savedTab.name,
+    fullPath: savedTab.fullPath,
+    meta: resolved.meta,
+    tooltip: savedTab.tooltip,
+    activeAt: savedTab.activeAt || savedTab.openedAt || new Date().toISOString(),
+  } as TabItem;
+}
+
+async function restoreTabsConfig() {
+  if (!currentOrgId.value || !userStore.id) {
+    return;
+  }
+
+  try {
+    const res = await userConfigApi.getConfigs(TAB_SESSION_CONFIG_PREFIX);
+    // 响应拦截器里已经把 ApiResponse.data 剥出来了，这里做运行时防御 + 类型收敛
+    if (!res || !Array.isArray(res)) {
+      console.debug('[TabsView.restoreTabsConfig] 后端未返回数组', res);
+      return;
+    }
+    const sessionConfig = res.find(config => config.key === TAB_SESSION_CONFIG_KEY);
+    if (!sessionConfig?.value) {
+      console.debug('[TabsView.restoreTabsConfig] 当前 user+org 在后端没有已保存的 tab 会话', {
+        userId: userStore.id,
+        orgId: currentOrgId.value,
+      });
+      return;
+    }
+
+    const parsed = JSON.parse(sessionConfig.value) as StoredTabSession;
+    if (!parsed || !Array.isArray(parsed.tabs)) {
+      return;
+    }
+    // 关键调试：先把后端存的原始 tab 快照打印出来，区分「库里本来就没存那个 tab」还是「恢复时被过滤掉了」
+    console.debug('[TabsView.restoreTabsConfig] 后端原始会话快照', {
+      userId: userStore.id,
+      orgId: currentOrgId.value,
+      rawTabs: parsed.tabs.map(t => ({ title: t.title, path: t.path, name: t.name, fullPath: t.fullPath, activeAt: t.activeAt })),
+    });
+
+    const affixViews = tabsStore.visitedViews.filter(isAffix);
+    const restoredViews: TabItem[] = [...affixViews];
+    // 先找已存在的首页引用，后面用持久化的 activeAt 覆盖它（initTags 刚刚给它塞了 new Date()，会污染最大活跃时间判定）
+    const homeView = restoredViews.find(v => v.path === '/' || v.name === 'HomeView');
+
+    const skippedByFilter: string[] = [];
+    const skippedByExist: string[] = [];
+
+    for (const savedTab of parsed.tabs) {
+      if (!savedTab?.fullPath) {
+        continue;
+      }
+
+      const isHome = savedTab.path === '/' || savedTab.name === 'HomeView';
+      // 首页不重复入列，但必须把持久化的 activeAt 写回已有首页对象，避免它永远被 new Date() 冒充"最后活跃"
+      if (isHome) {
+        if (homeView) {
+          homeView.activeAt = savedTab.activeAt || savedTab.openedAt || homeView.activeAt;
+        }
+        continue;
+      }
+
+      const restoredTab = mapStoredTabToView(savedTab);
+      if (!restoredTab) {
+        // mapStoredTabToView 内部会用 router.resolve 校验 matched 和 /:pathMatch(.*)*
+        skippedByFilter.push(savedTab.fullPath);
+        continue;
+      }
+
+      const exists = restoredViews.some(view => tabsStore.getTabIdentity(view.fullPath) === tabsStore.getTabIdentity(restoredTab.fullPath));
+      if (!exists) {
+        restoredViews.push(restoredTab);
+      } else {
+        skippedByExist.push(savedTab.fullPath);
+      }
+    }
+
+    tabsStore.replaceViews(restoredViews);
+    console.debug('[TabsView.restoreTabsConfig] 恢复完成', {
+      restored: restoredViews.map(v => ({ title: v.title, fullPath: v.fullPath, activeAt: v.activeAt })),
+      skippedByFilter,
+      skippedByExist,
+      homeViewActiveAtAfter: homeView?.activeAt,
+    });
+  } catch (error) {
+    console.error('恢复标签页会话失败', error);
+  }
+}
+
+async function initializeTabsSession() {
+  if (persistTabsTimer) {
+    clearTimeout(persistTabsTimer);
+    persistTabsTimer = null;
+  }
+
+  isRestoringTabs.value = true;
+  try {
+    tabsStore.replaceViews(tabsStore.visitedViews.filter(isAffix));
+    initTags();
+    await restoreTabsConfig();
+    addTags();
+  } finally {
+    isRestoringTabs.value = false;
+    schedulePersistTabsConfig();
+  }
+}
+
+// 会话切换（登录/模拟登录/退出模拟/组织切换初始化）后的恢复兜底：
+// 只要 tabs 会话刚从 user_config 恢复完成、当前地址仍然停留在首页「/」，
+// 就跳到该用户+组织维度下 activeAt 最大的最后活跃 Tab。
+//
+// 为什么不再依赖 localStorage 一次性 flag？
+// 因为整页刷新后会先 onMounted（已拿到 flag → 清掉 → 准备跳转），
+// 但 App 启动时 userStore.fetchOrganizations() 会给 B 用户自动 switchOrg(默认组织)，
+// switchOrg 改 currentOrg → tabsSessionScope 变化 → watch 里再跑一遍 initializeTabsSession，
+// 此时 localStorage 里 flag 已经被第一遍清掉了，第二遍初始化后就停在首页不再跳。
+// 现在改为「只要当前地址是 / 且配置里有最后活跃的非首页 Tab 就跳」，两种初始化入口都能覆盖。
+async function maybeRestoreLastActiveTab() {
+  // 如果用户手动刷新时带了具体路由（例如 /personal/todo），尊重显式访问意图，不强制跳
+  const currentPathOnly = route.path;
+  if (currentPathOnly !== '/') {
+    return;
+  }
+
+  const latestView = tabsStore.getLatestActiveView();
+  if (!latestView) {
+    return;
+  }
+
+  // 库里最后活跃就是首页本身，没别的业务 Tab 可切
+  if (!latestView.path || latestView.path === '/' || latestView.name === 'HomeView') {
+    return;
+  }
+
+  const currentIdentity = tabsStore.getTabIdentity(route.fullPath);
+  const latestIdentity = tabsStore.getTabIdentity(latestView.fullPath);
+  if (currentIdentity === latestIdentity) {
+    return;
+  }
+
+  const targetTitle = latestView.title || latestView.name;
+  const targetFullPath = getPathWithWebFull(latestView.fullPath);
+
+  // 全屏遮罩：显示「正在打开 xxx...」Spin，压过所有内容（遮罩 DOM 挂 App.vue 根下，走全局通用 loadingStore）
+  // 固定 id = 'tabs-restore-last-active' 保证「多次触发时只留最后一次文案」，不会重复叠加
+  const closeLoading = loadingStore.show(`正在打开 ${targetTitle} ...`, 'tabs-restore-last-active');
+
+  let loadingClosed = false;
+  const safeHide = () => {
+    if (!loadingClosed) {
+      loadingClosed = true;
+      closeLoading();
+    }
+  };
+
+  try {
+    console.debug('[TabsView] 自动跳转到最后活跃 Tab:', {
+      from: route.fullPath,
+      to: latestView.fullPath,
+      toTitle: latestView.title,
+      toActiveAt: latestView.activeAt,
+    });
+
+    tabsStore.touchView(latestView.fullPath);
+    activeKey.value = latestView.fullPath;
+
+    // 注册一次性 afterEach：路由真正 resolve（异步组件加载完成）后再关 loading
+    const offAfterEach = router.afterEach((_to, _from, failure) => {
+      offAfterEach();
+      if (failure) {
+        console.warn('[TabsView] 跳转最后活跃 Tab 被中断', failure);
+      }
+      // 再等一个 nextTick 让目标组件的 setup 至少执行完，页面才不会继续空
+      void nextTick().then(safeHide);
+    });
+
+    // 兜底超时：不管 afterEach 有没有触发，3s 后强制关，避免遮罩永远盖着
+    const timeoutTimer = setTimeout(safeHide, 3000);
+    const offBefore = router.beforeEach(() => {
+      // 如果目标 Tab 还在加载中，用户又被守卫重定向到了别的地方（比如 401 跳登录），提前关遮罩
+      clearTimeout(timeoutTimer);
+      offBefore();
+    });
+
+    await router.replace(targetFullPath);
+  } catch (error) {
+    console.warn('恢复最后活跃 Tab 失败', error);
+    safeHide();
   }
 }
 
@@ -289,7 +572,7 @@ function removeTab(key: string) {
 }
 
 function toLastView(visitedViews: TabItem[], view: TabItem) {
-  const latestView = visitedViews.slice(-1)[0];
+  const latestView = tabsStore.getLatestActiveView(visitedViews);
   if (latestView) {
     router.push(getPathWithWebFull(latestView.fullPath));
   } else {
@@ -315,14 +598,14 @@ function refreshSelectedTag(view: TabItem) {
 function closeLeftTags(view: TabItem) {
   tabsStore.delLeftViews(view);
   if (!visitedViews.value.find((v) => v.fullPath === route.fullPath)) {
-    router.push(getPathWithWebFull(view.fullPath));
+    toLastView(tabsStore.visitedViews, view);
   }
 }
 
 function closeRightTags(view: TabItem) {
   tabsStore.delRightViews(view);
   if (!visitedViews.value.find((v) => v.fullPath === route.fullPath)) {
-    router.push(getPathWithWebFull(view.fullPath));
+    toLastView(tabsStore.visitedViews, view);
   }
 }
 
@@ -464,6 +747,9 @@ onBeforeUnmount(() => {
   if (scrollIntervalId !== null) {
     cancelAnimationFrame(scrollIntervalId);
   }
+  if (persistTabsTimer) {
+    clearTimeout(persistTabsTimer);
+  }
 });
 
 function scrollToActiveTab() {
@@ -477,13 +763,13 @@ function scrollToActiveTab() {
 }
 
 onMounted(() => {
-  initTags();
-  addTags();
-  nextTick(() => {
-    scrollToActiveTab();
-    checkScrollState();
-    window.addEventListener('resize', checkScrollState);
-  });
+  void initializeTabsSession()
+    .then(() => maybeRestoreLastActiveTab())
+    .then(() => nextTick(() => {
+      scrollToActiveTab();
+      checkScrollState();
+      window.addEventListener('resize', checkScrollState);
+    }));
 });
 
 onBeforeUnmount(() => {
@@ -495,6 +781,37 @@ watch(
   () => tabsStore.visitedViews.length,
   () => {
     nextTick(checkScrollState);
+  }
+);
+
+watch(
+  () => tabsStore.visitedViews,
+  () => {
+    schedulePersistTabsConfig();
+  },
+  { deep: true }
+);
+
+watch(
+  tabsSessionScope,
+  async (newScope, oldScope) => {
+    if (!newScope || newScope === oldScope) {
+      return;
+    }
+
+    await initializeTabsSession();
+    // 模拟登录/退出模拟会通过整页刷新走 onMounted 路径
+    // 这里兜底：如果是带标记的会话切换场景，也尝试恢复最后活跃 Tab
+    await maybeRestoreLastActiveTab();
+    await nextTick();
+    if (route.fullPath) {
+      addTags();
+      tabsStore.touchView(route.fullPath);
+      activeKey.value = route.fullPath;
+    }
+    await nextTick();
+    scrollToActiveTab();
+    checkScrollState();
   }
 );
 </script>

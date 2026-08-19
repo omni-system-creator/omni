@@ -1,17 +1,26 @@
 <template>
-  <a-dropdown>
-    <span class="action-item" style="display: flex; align-items: center; cursor: pointer; padding: 0 8px;">
-      <a-badge :color="currentStatusColor" :text="statusOptions.find(s => s.value === userStatus)?.label" />
-    </span>
-    <template #overlay>
-      <a-menu>
-        <a-menu-item v-for="option in statusOptions" :key="option.value" @click="handleStatusChange(option.value)">
-          <a-badge :status="option.color as any" :text="option.label" />
-          <DynamicIcon v-if="userStatus === option.value" icon="ant-design:check-outlined" style="margin-left: 8px; font-size: 12px;" />
-        </a-menu-item>
-      </a-menu>
-    </template>
-  </a-dropdown>
+  <!--
+    外层用 div 加 flex + height:100%：
+    1. 根是 block/div，放进 MainLayout.header-actions 的 flex 容器后会被 align-items: stretch 拉满 64px
+    2. 内部的 a-dropdown + badge 靠 align-items:center 垂直居中，不会被拉伸
+    3. hover 背景色（StatusDropdown.action-item 里的淡灰）直接作用于整个 64px 高的外层，
+       高亮光条和 ExitImpersonationButton / OnlineUsersButton 完全齐平
+  -->
+  <div class="status-dropdown-root">
+    <a-dropdown>
+      <span class="action-item" style="display: flex; align-items: center; cursor: pointer; padding: 0 8px;">
+        <a-badge :color="currentStatusColor" :text="statusOptions.find(s => s.value === userStatus)?.label" />
+      </span>
+      <template #overlay>
+        <a-menu>
+          <a-menu-item v-for="option in statusOptions" :key="option.value" @click="handleStatusChange(option.value)">
+            <a-badge :status="option.color as any" :text="option.label" />
+            <DynamicIcon v-if="userStatus === option.value" icon="ant-design:check-outlined" style="margin-left: 8px; font-size: 12px;" />
+          </a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -71,5 +80,13 @@ const currentStatusColor = computed(() => {
 }
 .action-item:hover {
   background: rgba(0, 0, 0, 0.025);
+}
+
+/* 外层 div 做容器：撑满父 header 高度，并把内部的 a-dropdown/badge 垂直居中 */
+.status-dropdown-root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 </style>

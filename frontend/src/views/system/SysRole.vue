@@ -125,7 +125,7 @@
     <!-- 成员管理选择器 -->
     <UserSelector
       ref="userSelectorRef"
-      v-model:value="selectedUsernames"
+      v-model:value="selectedUserIds"
       :initial-display-data="initialMemberUsers"
       :show-trigger="false"
       :multiple="true"
@@ -462,7 +462,7 @@ const handlePermOk = async () => {
 
 // 成员管理
 const userSelectorRef = ref();
-const selectedUsernames = ref<string[]>([]);
+const selectedUserIds = ref<number[]>([]);
 const initialMemberUsers = ref<any[]>([]);
 
 const handleMembers = async (record: RoleDto) => {
@@ -477,7 +477,7 @@ const handleMembers = async (record: RoleDto) => {
         organization: u.dept?.name || '',
         deptId: u.dept?.id
       }));
-      selectedUsernames.value = res.map(u => u.username);
+      selectedUserIds.value = res.map(u => u.id);
     }
     userSelectorRef.value.open();
   } catch (error) {
